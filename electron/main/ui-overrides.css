@@ -30,20 +30,23 @@
   --wj-control-hover-bg: color-mix(in srgb, var(--wj-surface-3) 86%, var(--wj-accent) 14%);
   --wj-control-hover-border: color-mix(in srgb, var(--wj-accent) 38%, var(--wj-border) 62%);
   --wj-control-hover-text: var(--wj-text);
-  --wj-control-selected-bg: var(--wj-accent);
-  --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
-  --wj-control-selected-border: color-mix(in srgb, var(--wj-accent) 72%, #ffffff 28%);
-  --wj-control-selected-text: #ffffff;
-  --wj-control-selected-shadow:
+  --wj-action-bg: var(--wj-accent);
+  --wj-action-hover-bg: color-mix(in srgb, var(--wj-action-bg) 86%, #000000 14%);
+  --wj-action-border: color-mix(in srgb, var(--wj-action-bg) 72%, #ffffff 28%);
+  --wj-action-text: #ffffff;
+  --wj-action-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
     0 3px 0 rgba(0, 0, 0, 0.22);
-  --wj-control-primary-bg: var(--wj-accent);
-  --wj-control-primary-hover-bg: color-mix(in srgb, var(--wj-accent) 86%, #000000 14%);
-  --wj-control-primary-border: color-mix(in srgb, var(--wj-accent) 72%, #ffffff 28%);
-  --wj-control-primary-text: #ffffff;
-  --wj-control-primary-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 3px 0 rgba(0, 0, 0, 0.24);
+  --wj-control-selected-bg: var(--wj-action-bg);
+  --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
+  --wj-control-selected-border: var(--wj-action-border);
+  --wj-control-selected-text: var(--wj-action-text);
+  --wj-control-selected-shadow: var(--wj-action-shadow);
+  --wj-control-primary-bg: var(--wj-action-bg);
+  --wj-control-primary-hover-bg: var(--wj-action-hover-bg);
+  --wj-control-primary-border: var(--wj-action-border);
+  --wj-control-primary-text: var(--wj-action-text);
+  --wj-control-primary-shadow: var(--wj-action-shadow);
   --wj-card-bg: color-mix(in srgb, var(--wj-surface) 88%, var(--wj-bg) 12%);
   --wj-card-hover-bg: color-mix(in srgb, var(--wj-surface-2) 86%, var(--wj-accent) 14%);
   --wj-card-selected-bg: color-mix(in srgb, var(--wj-surface-2) 88%, var(--wj-accent) 12%);
@@ -515,12 +518,9 @@ html.theme-light {
   --wanjuan-theme-muted: #67759d;
   --wanjuan-theme-accent: #4f6dff;
   --wanjuan-theme-accent-2: #ff8a5b;
-  --wj-control-selected-bg: #3657e5;
-  --wj-control-selected-hover-bg: #3657e5;
-  --wj-control-selected-border: #8fb1ff;
-  --wj-control-primary-bg: #3657e5;
-  --wj-control-primary-hover-bg: #2f49c8;
-  --wj-control-primary-border: #8fb1ff;
+  --wj-action-bg: #3657e5;
+  --wj-action-hover-bg: #2f49c8;
+  --wj-action-border: #8fb1ff;
 }
 
 html.theme-warm-light {
@@ -532,12 +532,9 @@ html.theme-warm-light {
   --wanjuan-theme-text: #2b2720;
   --wanjuan-theme-muted: #74695b;
   --wanjuan-theme-accent: #c46a2b;
-  --wj-control-selected-bg: #9a4f16;
-  --wj-control-selected-hover-bg: #9a4f16;
-  --wj-control-selected-border: #d18a42;
-  --wj-control-primary-bg: #9a4f16;
-  --wj-control-primary-hover-bg: #7f3f10;
-  --wj-control-primary-border: #d18a42;
+  --wj-action-bg: #9a4f16;
+  --wj-action-hover-bg: #7f3f10;
+  --wj-action-border: #d18a42;
 }
 
 html.theme-mist-blue {
@@ -550,12 +547,9 @@ html.theme-mist-blue {
   --wanjuan-theme-muted: #62789b;
   --wanjuan-theme-accent: #4b73ff;
   --wanjuan-theme-accent-2: #ff8d62;
-  --wj-control-selected-bg: #365fdb;
-  --wj-control-selected-hover-bg: #365fdb;
-  --wj-control-selected-border: #87a8ff;
-  --wj-control-primary-bg: #365fdb;
-  --wj-control-primary-hover-bg: #2f52c0;
-  --wj-control-primary-border: #87a8ff;
+  --wj-action-bg: #365fdb;
+  --wj-action-hover-bg: #2f52c0;
+  --wj-action-border: #87a8ff;
 }
 
 html.theme-chrome-blue {
@@ -568,12 +562,9 @@ html.theme-chrome-blue {
   --wanjuan-theme-muted: #617097;
   --wanjuan-theme-accent: #4d68ff;
   --wanjuan-theme-accent-2: #ff8759;
-  --wj-control-selected-bg: #3559d4;
-  --wj-control-selected-hover-bg: #3559d4;
-  --wj-control-selected-border: #8fa8ff;
-  --wj-control-primary-bg: #3559d4;
-  --wj-control-primary-hover-bg: #2f4db8;
-  --wj-control-primary-border: #8fa8ff;
+  --wj-action-bg: #3559d4;
+  --wj-action-hover-bg: #2f4db8;
+  --wj-action-border: #8fa8ff;
 }
 
 html.theme-chrome-rose {
@@ -586,12 +577,9 @@ html.theme-chrome-rose {
   --wanjuan-theme-muted: #8b6070;
   --wanjuan-theme-accent: #d6476f;
   --wanjuan-theme-accent-2: #ff9f6e;
-  --wj-control-selected-bg: #b4235a;
-  --wj-control-selected-hover-bg: #b4235a;
-  --wj-control-selected-border: #f18aac;
-  --wj-control-primary-bg: #b4235a;
-  --wj-control-primary-hover-bg: #991f4f;
-  --wj-control-primary-border: #f18aac;
+  --wj-action-bg: #b4235a;
+  --wj-action-hover-bg: #991f4f;
+  --wj-action-border: #f18aac;
 }
 
 html.theme-chrome-sand {
@@ -604,12 +592,9 @@ html.theme-chrome-sand {
   --wanjuan-theme-muted: #7d6a55;
   --wanjuan-theme-accent: #b7791f;
   --wanjuan-theme-accent-2: #e75a3c;
-  --wj-control-selected-bg: #8a580f;
-  --wj-control-selected-hover-bg: #8a580f;
-  --wj-control-selected-border: #d7a652;
-  --wj-control-primary-bg: #8a580f;
-  --wj-control-primary-hover-bg: #70470c;
-  --wj-control-primary-border: #d7a652;
+  --wj-action-bg: #8a580f;
+  --wj-action-hover-bg: #70470c;
+  --wj-action-border: #d7a652;
 }
 
 html.theme-chrome-teal {
@@ -622,12 +607,9 @@ html.theme-chrome-teal {
   --wanjuan-theme-muted: #5f7a7c;
   --wanjuan-theme-accent: #0f9d8a;
   --wanjuan-theme-accent-2: #5b8cff;
-  --wj-control-selected-bg: #00796b;
-  --wj-control-selected-hover-bg: #00796b;
-  --wj-control-selected-border: #64d8c5;
-  --wj-control-primary-bg: #00796b;
-  --wj-control-primary-hover-bg: #00675b;
-  --wj-control-primary-border: #64d8c5;
+  --wj-action-bg: #00796b;
+  --wj-action-hover-bg: #00675b;
+  --wj-action-border: #64d8c5;
 }
 
 html.theme-sage-green {
@@ -639,12 +621,9 @@ html.theme-sage-green {
   --wanjuan-theme-text: #20291f;
   --wanjuan-theme-muted: #64735f;
   --wanjuan-theme-accent: #188038;
-  --wj-control-selected-bg: #0b6b2f;
-  --wj-control-selected-hover-bg: #0b6b2f;
-  --wj-control-selected-border: #68c285;
-  --wj-control-primary-bg: #0b6b2f;
-  --wj-control-primary-hover-bg: #095826;
-  --wj-control-primary-border: #68c285;
+  --wj-action-bg: #0b6b2f;
+  --wj-action-hover-bg: #095826;
+  --wj-action-border: #68c285;
 }
 
 html.theme-dark {
@@ -659,12 +638,9 @@ html.theme-dark {
   --wanjuan-theme-accent-2: #ff8a5b;
   --wanjuan-theme-glow: rgba(124, 140, 255, 0.24);
   --wanjuan-theme-shadow: rgba(4, 8, 24, 0.54);
-  --wj-control-selected-bg: #4f46e5;
-  --wj-control-selected-hover-bg: #4f46e5;
-  --wj-control-selected-border: #a5b4fc;
-  --wj-control-primary-bg: #4f46e5;
-  --wj-control-primary-hover-bg: #4338ca;
-  --wj-control-primary-border: #a5b4fc;
+  --wj-action-bg: #4f46e5;
+  --wj-action-hover-bg: #4338ca;
+  --wj-action-border: #a5b4fc;
 }
 
 html.theme-graphite {
@@ -679,12 +655,9 @@ html.theme-graphite {
   --wanjuan-theme-accent-2: #7dd3fc;
   --wanjuan-theme-glow: rgba(14, 165, 233, 0.14);
   --wanjuan-theme-shadow: rgba(9, 12, 16, 0.58);
-  --wj-control-selected-bg: #0369a1;
-  --wj-control-selected-hover-bg: #0369a1;
-  --wj-control-selected-border: #38bdf8;
-  --wj-control-primary-bg: #0369a1;
-  --wj-control-primary-hover-bg: #075985;
-  --wj-control-primary-border: #38bdf8;
+  --wj-action-bg: #0369a1;
+  --wj-action-hover-bg: #075985;
+  --wj-action-border: #38bdf8;
   --wj-card-bg: #333333;
   --wj-card-hover-bg: #3f3f3f;
   --wj-card-selected-bg: #383838;
@@ -4728,18 +4701,11 @@ html.theme-graphite {
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
-  --wj-control-selected-bg: #0369a1;
-  --wj-control-selected-hover-bg: #0369a1;
-  --wj-control-selected-border: #38bdf8;
-  --wj-control-selected-text: #ffffff;
-  --wj-control-primary-bg: var(--wj-control-selected-bg);
-  --wj-control-primary-hover-bg: #075985;
-  --wj-control-primary-border: var(--wj-control-selected-border);
-  --wj-control-primary-text: var(--wj-control-selected-text);
-  --wj-control-primary-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 3px 0 rgba(0, 0, 0, 0.32);
-  --wj-control-selected-shadow:
+  --wj-action-bg: #0369a1;
+  --wj-action-hover-bg: #075985;
+  --wj-action-border: #38bdf8;
+  --wj-action-text: #ffffff;
+  --wj-action-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
     0 3px 0 rgba(0, 0, 0, 0.32);
   --wj-card-bg: #333333;

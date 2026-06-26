@@ -19,7 +19,7 @@
 - 主要按钮：使用主题主色实色面片，可以比选中态稍强。
 - 危险按钮：使用红色实色面片或红色文字边框，任何主题下不随主题色改变。
 - 禁用按钮：降低文字和边框对比，但仍保留可识别边界。
-- 主题 accent 与操作 action 分离：`--wj-accent` 用于装饰、焦点和弱反馈；`--wj-control-selected-*` / `--wj-control-primary-*` 用于选中和主要操作，可以比 accent 更深以保证白字对比。
+- 主题 accent 与操作 action 分离：`--wj-accent` 用于装饰、焦点和弱反馈；`--wj-action-*` 是选中和主要操作的上游语义色；`--wj-control-selected-*` / `--wj-control-primary-*` 只消费 action 变量，可以比 accent 更深以保证白字对比。
 
 ## 主题色
 
@@ -33,6 +33,7 @@
 ## 实现原则
 
 - 优先补齐统一 CSS 变量，再让现有组件类接入变量；保留必要的旧类名匹配器，但输出颜色应走语义变量。
+- 新增或调整主题时，先改 `--wj-action-bg`、`--wj-action-hover-bg`、`--wj-action-border`、`--wj-action-text`、`--wj-action-shadow`，再让选中态和主按钮自然继承，避免直接在各组件里硬写 selected/primary 颜色。
 - 减少 `nth-child`、硬编码 hex、只针对某张截图的选择器。
 - 对已有类名做语义化桥接，例如 active、aria-pressed、data-active、danger。
 - Electron 注入层只做最终桌面一致性兜底，核心规则放在 renderer 样式文件。
