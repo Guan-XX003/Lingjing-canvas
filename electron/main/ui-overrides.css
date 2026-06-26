@@ -11,6 +11,7 @@
   --wj-surface-2: var(--wanjuan-theme-surface-2, color-mix(in srgb, var(--wanjuan-panel) 74%, #000 26%));
   --wj-surface-3: var(--wanjuan-theme-surface-3, color-mix(in srgb, var(--wanjuan-panel) 62%, #fff 8%));
   --wj-border: var(--wanjuan-theme-border, var(--wanjuan-border));
+  --wj-border-strong: color-mix(in srgb, var(--wj-border) 78%, var(--wj-text, #f8fafc) 22%);
   --wj-text: var(--wanjuan-theme-text, var(--wanjuan-text));
   --wj-muted: var(--wanjuan-theme-muted, var(--wanjuan-muted));
   --wj-accent: var(--wanjuan-theme-accent, var(--wanjuan-accent));
@@ -151,6 +152,24 @@
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 color-mix(in srgb, var(--wj-text) 9%, transparent),
     0 10px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 32%, transparent);
+  --wj-node-surface: color-mix(in srgb, var(--wj-surface) 90%, var(--wj-bg) 10%);
+  --wj-node-surface-raised: color-mix(in srgb, var(--wj-surface-2) 86%, var(--wj-surface) 14%);
+  --wj-node-surface-subtle: color-mix(in srgb, var(--wj-bg) 74%, var(--wj-surface) 26%);
+  --wj-node-border: color-mix(in srgb, var(--wj-border) 78%, transparent);
+  --wj-node-border-hover: color-mix(in srgb, var(--wj-accent) 38%, var(--wj-border-strong) 62%);
+  --wj-node-text: var(--wj-text);
+  --wj-node-muted: color-mix(in srgb, var(--wj-muted) 72%, var(--wj-text) 28%);
+  --wj-node-hover-bg: color-mix(in srgb, var(--wj-accent) 11%, var(--wj-node-surface-raised) 89%);
+  --wj-node-soft-action-bg: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-node-surface-raised) 86%);
+  --wj-node-soft-action-hover-bg: color-mix(in srgb, var(--wj-accent) 22%, var(--wj-node-surface-raised) 78%);
+  --wj-node-soft-action-border: color-mix(in srgb, var(--wj-accent) 46%, var(--wj-border) 54%);
+  --wj-node-soft-action-text: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-text) 22%);
+  --wj-node-upload-bg: var(--wj-node-surface-subtle);
+  --wj-node-upload-border: color-mix(in srgb, var(--wj-border) 78%, transparent);
+  --wj-node-upload-text: color-mix(in srgb, var(--wj-muted) 76%, var(--wj-text) 24%);
+  --wj-node-upload-hover-bg: var(--wj-node-hover-bg);
+  --wj-node-upload-hover-border: var(--wj-node-border-hover);
+  --wj-node-upload-hover-text: var(--wj-text);
   --wj-canvas-control-bg: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%);
   --wj-canvas-control-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
   --wj-canvas-control-text: color-mix(in srgb, var(--wj-text) 84%, var(--wj-muted) 16%);
@@ -878,6 +897,24 @@ html.theme-graphite {
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
+  --wj-node-surface: #2c2c2c;
+  --wj-node-surface-raised: #363636;
+  --wj-node-surface-subtle: #252525;
+  --wj-node-border: #676767;
+  --wj-node-border-hover: #969696;
+  --wj-node-text: #f8fafc;
+  --wj-node-muted: #d0d0d0;
+  --wj-node-hover-bg: #414141;
+  --wj-node-soft-action-bg: #383838;
+  --wj-node-soft-action-hover-bg: #434343;
+  --wj-node-soft-action-border: #747474;
+  --wj-node-soft-action-text: #f2f4f6;
+  --wj-node-upload-bg: #252525;
+  --wj-node-upload-border: #646464;
+  --wj-node-upload-text: #d0d0d0;
+  --wj-node-upload-hover-bg: #414141;
+  --wj-node-upload-hover-border: #969696;
+  --wj-node-upload-hover-text: #ffffff;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite),
@@ -1866,20 +1903,26 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
   .react-flow__node :is(
     .wanjuan-node-config-panel,
-    .wanjuan-node-upload-trigger,
     .wanjuan-mention-picker-header,
     .wanjuan-mention-picker-tabs,
-    .wanjuan-mention-picker-list,
-    .wanjuan-mention-picker-item
+    .wanjuan-mention-picker-list
   ) {
-  background: var(--wanjuan-node-picker-surface) !important;
-  border-color: var(--wanjuan-theme-border) !important;
-  color: var(--wanjuan-theme-text-strong) !important;
+  background: var(--wj-node-surface) !important;
+  border-color: var(--wj-node-border) !important;
+  color: var(--wj-node-text) !important;
+}
+
+html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
+  .react-flow__node :is(.wanjuan-node-upload-trigger, .wanjuan-custom-node-upload-target, .wanjuan-mention-picker-item) {
+  background: var(--wj-node-upload-bg) !important;
+  border-color: var(--wj-node-upload-border) !important;
+  color: var(--wj-node-upload-text) !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
   .react-flow__node :is(.wanjuan-node-config-panel, .wanjuan-mention-picker-tabs, .wanjuan-mention-picker-item) :is(label, span, pre, div[class*="text-"]) {
-  color: var(--wanjuan-theme-muted-soft) !important;
+  color: var(--wj-node-muted) !important;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
@@ -1890,9 +1933,10 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
-  .react-flow__node :is(.wanjuan-node-upload-trigger, .wanjuan-mention-picker-item):hover {
-  background: var(--wanjuan-theme-hover) !important;
-  border-color: var(--wanjuan-node-picker-selected-border) !important;
+  .react-flow__node :is(.wanjuan-node-upload-trigger, .wanjuan-custom-node-upload-target, .wanjuan-mention-picker-item):hover {
+  background: var(--wj-node-upload-hover-bg) !important;
+  border-color: var(--wj-node-upload-hover-border) !important;
+  color: var(--wj-node-upload-hover-text) !important;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite)
@@ -2507,12 +2551,11 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .wanjuan-tts-node-run-button {
   background: var(--wj-control-primary-bg) !important;
-  background-image: var(--wj-control-primary-bg) !important;
+  background-image: none !important;
   border: 1px solid var(--wj-control-primary-border) !important;
   color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
   box-shadow: var(--wj-control-primary-shadow) !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
 }
 
 .wanjuan-custom-node-title-input,
@@ -2538,7 +2581,7 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   border-color: color-mix(in srgb, var(--wanjuan-theme-border) 82%, var(--wanjuan-theme-accent) 18%) !important;
 }
 
-.wanjuan-custom-node :is(button, [role="button"]):hover,
+.wanjuan-custom-node :is(button, [role="button"]):not(.wanjuan-custom-node-primary-soft-button):not(.wanjuan-custom-node-primary-button):not(.wanjuan-custom-node-run-button):hover,
 .wanjuan-custom-node-upload-target:hover {
   background: var(--wanjuan-custom-node-button-hover) !important;
   color: var(--wanjuan-theme-text-strong, var(--wanjuan-theme-text)) !important;
@@ -2546,16 +2589,17 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 }
 
 .wanjuan-custom-node-primary-soft-button {
-  background: var(--wanjuan-custom-node-primary-bg) !important;
-  border-color: var(--wanjuan-custom-node-primary-border) !important;
-  color: var(--wanjuan-custom-node-primary-text) !important;
+  background: var(--wj-node-soft-action-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-node-soft-action-border) !important;
+  color: var(--wj-node-soft-action-text) !important;
   -webkit-text-fill-color: currentColor !important;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--wanjuan-theme-accent) 14%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent) !important;
 }
 
 .wanjuan-custom-node-primary-soft-button:hover {
-  background: var(--wanjuan-custom-node-primary-hover) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent) 72%, var(--wanjuan-theme-border) 28%) !important;
+  background: var(--wj-node-soft-action-hover-bg) !important;
+  border-color: var(--wj-node-soft-action-border) !important;
 }
 
 .wanjuan-custom-node-primary-soft-button :is(span, div, svg, path),
@@ -2568,13 +2612,22 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .wanjuan-custom-node-primary-button,
 .wanjuan-custom-node-run-button {
-  background: var(--wanjuan-custom-node-gradient) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent-2, var(--wanjuan-theme-accent)) 46%, var(--wanjuan-theme-border) 54%) !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  box-shadow:
-    0 12px 24px color-mix(in srgb, var(--wanjuan-theme-accent) 20%, transparent),
-    0 6px 14px color-mix(in srgb, var(--wanjuan-theme-accent-2, var(--wanjuan-theme-accent)) 12%, transparent) !important;
+  background: var(--wj-control-primary-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
+}
+
+.wanjuan-custom-node-primary-button:hover,
+.wanjuan-custom-node-run-button:hover {
+  background: var(--wj-control-primary-hover-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
 .wanjuan-custom-node-save-button {
@@ -4328,31 +4381,30 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
 }
 
 .react-flow__node .wanjuan-file-link-cloud-button {
-  background: #111827 !important;
-  border-color: #475569 !important;
-  color: #cbd5e1 !important;
+  background: var(--wj-node-soft-action-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-node-soft-action-border) !important;
+  color: var(--wj-node-soft-action-text) !important;
   -webkit-text-fill-color: currentColor !important;
-  box-shadow: none !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent) !important;
 }
 
 .react-flow__node .wanjuan-file-link-cloud-button:hover {
-  background: #172033 !important;
-  border-color: #22d3ee !important;
-  color: #ecfeff !important;
+  background: var(--wj-node-soft-action-hover-bg) !important;
+  border-color: var(--wj-node-soft-action-border) !important;
+  color: var(--wj-node-soft-action-text) !important;
 }
 
 .react-flow__node .wanjuan-file-link-cloud-button-active,
 .react-flow__node .wanjuan-file-link-cloud-button-active:hover,
 .react-flow__node .wanjuan-file-link-cloud-button[data-active="true"],
 .react-flow__node .wanjuan-file-link-cloud-button[data-active="true"]:hover {
-  background: color-mix(in srgb, var(--wanjuan-theme-accent, #22d3ee) 16%, var(--wanjuan-theme-surface-2, #1f2937) 84%) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent, #67e8f9) 58%, var(--wanjuan-theme-border, #475569) 42%) !important;
-  color: color-mix(in srgb, var(--wanjuan-theme-accent, #67e8f9) 30%, #ffffff 70%) !important;
-  -webkit-text-fill-color: currentColor !important;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--wanjuan-theme-accent, #67e8f9) 28%, transparent),
-    0 6px 16px color-mix(in srgb, var(--wanjuan-theme-accent, #0891b2) 18%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  background: var(--wj-control-selected-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-selected-border) !important;
+  color: var(--wj-control-selected-text) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text) !important;
+  box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
 /* Compact the lower-left canvas zoom/control stack as one visual module. */
@@ -4364,15 +4416,14 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
 /* Keep the inline @ resource picker readable and opaque over busy canvas nodes. */
 .wanjuan-mention-picker,
 .react-flow__node .wanjuan-mention-picker {
-  background: #202732 !important;
+  background: var(--wj-node-surface) !important;
   background-image: none !important;
-  border-color: #526071 !important;
-  color: #f8fafc !important;
+  border-color: var(--wj-node-border) !important;
+  color: var(--wj-node-text) !important;
   opacity: 1 !important;
   box-shadow:
-    0 24px 58px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(148, 163, 184, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    var(--wj-shadow-popover),
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 6%, transparent) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   isolation: isolate !important;
@@ -4381,30 +4432,32 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
 
 .wanjuan-mention-picker > div:first-child,
 .wanjuan-mention-picker .wanjuan-mention-picker-header {
-  background: #1a222d !important;
+  background: var(--wj-node-surface-raised) !important;
   background-image: none !important;
-  border-bottom-color: #3e4a5a !important;
+  border-bottom-color: var(--wj-node-border) !important;
 }
 
 .wanjuan-mention-picker > div:nth-child(2),
 .wanjuan-mention-picker .wanjuan-mention-picker-list {
-  background: #202732 !important;
+  background: var(--wj-node-surface) !important;
   background-image: none !important;
 }
 
 .wanjuan-mention-picker .wanjuan-mention-picker-tabs {
-  background: #111827 !important;
-  border-color: #3b4656 !important;
+  background: var(--wj-node-surface-subtle) !important;
+  border-color: var(--wj-node-border) !important;
 }
 
 .wanjuan-mention-picker .wanjuan-mention-picker-item {
-  background: #111827 !important;
-  border-color: #3f4b5c !important;
+  background: var(--wj-node-upload-bg) !important;
+  border-color: var(--wj-node-upload-border) !important;
+  color: var(--wj-node-upload-text) !important;
 }
 
 .wanjuan-mention-picker .wanjuan-mention-picker-item:hover {
-  background: #172033 !important;
-  border-color: #60a5fa !important;
+  background: var(--wj-node-upload-hover-bg) !important;
+  border-color: var(--wj-node-upload-hover-border) !important;
+  color: var(--wj-node-upload-hover-text) !important;
 }
 
 
@@ -5109,6 +5162,24 @@ html.theme-graphite {
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
+  --wj-node-surface: #2c2c2c;
+  --wj-node-surface-raised: #363636;
+  --wj-node-surface-subtle: #252525;
+  --wj-node-border: #676767;
+  --wj-node-border-hover: #969696;
+  --wj-node-text: #f8fafc;
+  --wj-node-muted: #d0d0d0;
+  --wj-node-hover-bg: #414141;
+  --wj-node-soft-action-bg: #383838;
+  --wj-node-soft-action-hover-bg: #434343;
+  --wj-node-soft-action-border: #747474;
+  --wj-node-soft-action-text: #f2f4f6;
+  --wj-node-upload-bg: #252525;
+  --wj-node-upload-border: #646464;
+  --wj-node-upload-text: #d0d0d0;
+  --wj-node-upload-hover-bg: #414141;
+  --wj-node-upload-hover-border: #969696;
+  --wj-node-upload-hover-text: #ffffff;
   --wj-canvas-control-bg: #303030;
   --wj-canvas-control-border: #676767;
   --wj-canvas-control-text: #e9ecef;

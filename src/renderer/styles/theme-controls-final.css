@@ -135,6 +135,24 @@
   --wj-card-selected-rail: var(--wj-accent);
   --wj-card-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent), 0 8px 18px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 28%, transparent);
   --wj-card-selected-shadow: inset 4px 0 0 var(--wj-card-selected-rail), inset 0 1px 0 color-mix(in srgb, var(--wj-text) 9%, transparent), 0 10px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 32%, transparent);
+  --wj-node-surface: color-mix(in srgb, var(--wj-surface) 90%, var(--wj-bg) 10%);
+  --wj-node-surface-raised: color-mix(in srgb, var(--wj-surface-2) 86%, var(--wj-surface) 14%);
+  --wj-node-surface-subtle: color-mix(in srgb, var(--wj-bg) 74%, var(--wj-surface) 26%);
+  --wj-node-border: color-mix(in srgb, var(--wj-border) 78%, transparent);
+  --wj-node-border-hover: color-mix(in srgb, var(--wj-accent) 38%, var(--wj-border-strong) 62%);
+  --wj-node-text: var(--wj-text);
+  --wj-node-muted: color-mix(in srgb, var(--wj-muted) 72%, var(--wj-text) 28%);
+  --wj-node-hover-bg: color-mix(in srgb, var(--wj-accent) 11%, var(--wj-node-surface-raised) 89%);
+  --wj-node-soft-action-bg: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-node-surface-raised) 86%);
+  --wj-node-soft-action-hover-bg: color-mix(in srgb, var(--wj-accent) 22%, var(--wj-node-surface-raised) 78%);
+  --wj-node-soft-action-border: color-mix(in srgb, var(--wj-accent) 46%, var(--wj-border) 54%);
+  --wj-node-soft-action-text: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-text) 22%);
+  --wj-node-upload-bg: var(--wj-node-surface-subtle);
+  --wj-node-upload-border: color-mix(in srgb, var(--wj-border) 78%, transparent);
+  --wj-node-upload-text: color-mix(in srgb, var(--wj-muted) 76%, var(--wj-text) 24%);
+  --wj-node-upload-hover-bg: var(--wj-node-hover-bg);
+  --wj-node-upload-hover-border: var(--wj-node-border-hover);
+  --wj-node-upload-hover-text: var(--wj-text);
   --wj-canvas-control-bg: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%);
   --wj-canvas-control-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
   --wj-canvas-control-text: color-mix(in srgb, var(--wj-text) 84%, var(--wj-muted) 16%);
@@ -755,6 +773,65 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .react-flow__node .wanjuan-tts-node .wanjuan-tts-node-run-button:disabled {
   cursor: wait !important;
+}
+
+.react-flow__node :is(.wanjuan-node-upload-trigger, .wanjuan-custom-node-upload-target, .wanjuan-mention-picker-item) {
+  background: var(--wj-node-upload-bg) !important;
+  border-color: var(--wj-node-upload-border) !important;
+  color: var(--wj-node-upload-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 5%, transparent) !important;
+}
+
+.react-flow__node :is(.wanjuan-node-upload-trigger, .wanjuan-custom-node-upload-target, .wanjuan-mention-picker-item):not([aria-disabled="true"]):not(:disabled):hover {
+  background: var(--wj-node-upload-hover-bg) !important;
+  border-color: var(--wj-node-upload-hover-border) !important;
+  color: var(--wj-node-upload-hover-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.react-flow__node :is(.wanjuan-custom-node-primary-soft-button, .wanjuan-file-link-cloud-button) {
+  background: var(--wj-node-soft-action-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-node-soft-action-border) !important;
+  color: var(--wj-node-soft-action-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent) !important;
+}
+
+.react-flow__node :is(.wanjuan-custom-node-primary-soft-button, .wanjuan-file-link-cloud-button):hover {
+  background: var(--wj-node-soft-action-hover-bg) !important;
+  border-color: var(--wj-node-soft-action-border) !important;
+  color: var(--wj-node-soft-action-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.react-flow__node :is(.wanjuan-custom-node-primary-button, .wanjuan-custom-node-run-button, .wanjuan-tts-node-run-button) {
+  background: var(--wj-control-primary-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
+}
+
+.react-flow__node :is(.wanjuan-custom-node-primary-button, .wanjuan-custom-node-run-button, .wanjuan-tts-node-run-button):hover {
+  background: var(--wj-control-primary-hover-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
+}
+
+.react-flow__node :is(.wanjuan-file-link-cloud-button-active, .wanjuan-file-link-cloud-button[data-active="true"]),
+.react-flow__node :is(.wanjuan-file-link-cloud-button-active, .wanjuan-file-link-cloud-button[data-active="true"]):hover {
+  background: var(--wj-control-selected-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-selected-border) !important;
+  color: var(--wj-control-selected-text) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text) !important;
+  box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
 .wanjuan-resource-filter-group {
@@ -1432,6 +1509,24 @@ html.theme-graphite {
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
+  --wj-node-surface: #2c2c2c;
+  --wj-node-surface-raised: #363636;
+  --wj-node-surface-subtle: #252525;
+  --wj-node-border: #676767;
+  --wj-node-border-hover: #969696;
+  --wj-node-text: #f8fafc;
+  --wj-node-muted: #d0d0d0;
+  --wj-node-hover-bg: #414141;
+  --wj-node-soft-action-bg: #383838;
+  --wj-node-soft-action-hover-bg: #434343;
+  --wj-node-soft-action-border: #747474;
+  --wj-node-soft-action-text: #f2f4f6;
+  --wj-node-upload-bg: #252525;
+  --wj-node-upload-border: #646464;
+  --wj-node-upload-text: #d0d0d0;
+  --wj-node-upload-hover-bg: #414141;
+  --wj-node-upload-hover-border: #969696;
+  --wj-node-upload-hover-text: #ffffff;
   --wj-canvas-control-bg: #303030;
   --wj-canvas-control-border: #676767;
   --wj-canvas-control-text: #e9ecef;
