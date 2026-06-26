@@ -59,6 +59,31 @@
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 color-mix(in srgb, var(--wj-text) 9%, transparent),
     0 10px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 32%, transparent);
+  --wj-canvas-control-bg: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%);
+  --wj-canvas-control-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
+  --wj-canvas-control-text: color-mix(in srgb, var(--wj-text) 84%, var(--wj-muted) 16%);
+  --wj-canvas-control-hover-bg: var(--wj-control-hover-bg);
+  --wj-canvas-control-hover-border: var(--wj-control-hover-border);
+  --wj-canvas-control-hover-text: var(--wj-control-hover-text);
+  --wj-canvas-control-shadow:
+    0 14px 30px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.34)) 36%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent);
+  --wj-canvas-control-hover-shadow:
+    inset 0 0 0 1px var(--wj-canvas-control-hover-border),
+    0 4px 12px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.3)) 34%, transparent);
+  --wj-edge-glow: color-mix(in srgb, var(--wj-accent) 18%, transparent);
+  --wj-edge-main: color-mix(in srgb, var(--wj-text) 34%, var(--wj-muted) 66%);
+  --wj-edge-selected: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-text) 22%);
+  --wj-edge-active-glow: color-mix(in srgb, var(--wj-accent) 25%, transparent);
+  --wj-edge-active: color-mix(in srgb, var(--wj-accent) 82%, var(--wj-text) 18%);
+  --wj-edge-energy: color-mix(in srgb, var(--wj-text) 88%, var(--wj-accent) 12%);
+  --wj-edge-spark: color-mix(in srgb, var(--wj-accent-2) 68%, var(--wj-accent) 32%);
+  --wj-loading-node-border: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-border) 22%);
+  --wj-loading-node-shadow:
+    0 0 0 1px color-mix(in srgb, var(--wj-accent) 74%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--wj-accent) 16%, transparent),
+    0 18px 42px color-mix(in srgb, var(--wj-accent) 18%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--wj-text) 14%, transparent);
   --wj-danger-bg: #dc2626;
   --wj-danger-border: #f87171;
   --wj-danger-text: #ffffff;
@@ -1835,34 +1860,40 @@ html.theme-dark :is(button, a, [role="button"]):is(
 
 html:is(.theme-dark, .theme-graphite) .react-flow__controls,
 html:is(.theme-dark, .theme-graphite) .react-flow__minimap {
-  background: color-mix(in srgb, var(--wanjuan-theme-surface) 94%, #0f1325 6%) !important;
-  border: 1px solid color-mix(in srgb, var(--wanjuan-theme-border) 88%, #ffffff 12%) !important;
-  box-shadow:
-    0 20px 36px rgba(4, 8, 24, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  background: var(--wj-canvas-control-bg) !important;
+  background-color: var(--wj-canvas-control-bg) !important;
+  border: 1px solid var(--wj-canvas-control-border) !important;
+  box-shadow: var(--wj-canvas-control-shadow) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__controls-button {
-  color: var(--wanjuan-theme-text) !important;
-  background: var(--wanjuan-theme-surface) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--wanjuan-theme-border) 78%, transparent) !important;
+  color: var(--wj-canvas-control-text) !important;
+  -webkit-text-fill-color: var(--wj-canvas-control-text) !important;
+  background: var(--wj-canvas-control-button-bg, transparent) !important;
+  background-color: var(--wj-canvas-control-button-bg, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--wj-canvas-control-border) 72%, transparent) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__controls-button:hover {
-  background: var(--wanjuan-theme-hover) !important;
+  background: var(--wj-canvas-control-hover-bg) !important;
+  background-color: var(--wj-canvas-control-hover-bg) !important;
+  color: var(--wj-canvas-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-canvas-control-hover-text) !important;
+  box-shadow: var(--wj-canvas-control-hover-shadow) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__controls-button svg {
-  fill: var(--wanjuan-theme-text) !important;
+  fill: currentColor !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__minimap-mask {
-  fill: color-mix(in srgb, var(--wanjuan-theme-bg) 92%, #000000 8%) !important;
+  fill: color-mix(in srgb, var(--wj-bg) 86%, var(--wj-accent) 14%) !important;
   opacity: 0.78 !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__minimap-node {
-  fill: color-mix(in srgb, var(--wanjuan-theme-accent) 38%, var(--wanjuan-theme-surface-3) 62%) !important;
+  fill: color-mix(in srgb, var(--wj-accent) 38%, var(--wj-surface-3) 62%) !important;
+  stroke: color-mix(in srgb, var(--wj-accent) 44%, var(--wj-border) 56%) !important;
 }
 
 html:is(.theme-dark, .theme-graphite)
@@ -1979,15 +2010,18 @@ html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, 
 
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite) .react-flow__controls,
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite) .react-flow__minimap {
-  background: color-mix(in srgb, var(--wanjuan-theme-surface) 94%, #ffffff 6%) !important;
-  border: 1px solid color-mix(in srgb, var(--wanjuan-theme-border) 90%, #ffffff 10%) !important;
-  box-shadow:
-    0 12px 28px rgba(79, 109, 255, 0.08),
-    0 4px 12px rgba(15, 23, 42, 0.06) !important;
+  background: var(--wj-canvas-control-bg) !important;
+  background-color: var(--wj-canvas-control-bg) !important;
+  border: 1px solid var(--wj-canvas-control-border) !important;
+  box-shadow: var(--wj-canvas-control-shadow) !important;
 }
 
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite) .react-flow__controls-button:hover {
-  background: color-mix(in srgb, var(--wanjuan-theme-accent) 10%, #ffffff 90%) !important;
+  background: var(--wj-canvas-control-hover-bg) !important;
+  background-color: var(--wj-canvas-control-hover-bg) !important;
+  color: var(--wj-canvas-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-canvas-control-hover-text) !important;
+  box-shadow: var(--wj-canvas-control-hover-shadow) !important;
 }
 
 /* Agent page polish for Graphite: remove leftover emerald utility classes that
@@ -3748,7 +3782,7 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 html:not(.theme-dark):not(.theme-graphite) .react-flow__controls {
   overflow: hidden !important;
   background-clip: padding-box !important;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(79, 109, 255, 0.18)) 42%, transparent) !important;
+  box-shadow: var(--wj-canvas-control-shadow) !important;
 }
 
 html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:first-child {
@@ -3760,23 +3794,11 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:first-ch
 /* Match the in-progress drag connection line to the app's custom edge style. */
 .react-flow__connection path,
 .react-flow__connection .react-flow__connection-path {
-  stroke: color-mix(in srgb, var(--wanjuan-theme-accent, #38bdf8) 46%, var(--wanjuan-theme-muted, #64748b) 54%) !important;
+  stroke: var(--wj-edge-main, color-mix(in srgb, var(--wanjuan-theme-accent, #38bdf8) 46%, var(--wanjuan-theme-muted, #64748b) 54%)) !important;
   stroke-width: 2.1px !important;
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--wanjuan-theme-accent, #38bdf8) 24%, transparent)) !important;
-}
-
-html:is(.theme-warm-light, .theme-chrome-sand) .react-flow__connection path,
-html:is(.theme-warm-light, .theme-chrome-sand) .react-flow__connection .react-flow__connection-path {
-  stroke: rgba(104, 80, 49, 0.62) !important;
-  filter: drop-shadow(0 0 4px rgba(180, 124, 52, 0.18)) !important;
-}
-
-html:is(.theme-sage-green, .theme-chrome-teal) .react-flow__connection path,
-html:is(.theme-sage-green, .theme-chrome-teal) .react-flow__connection .react-flow__connection-path {
-  stroke: rgba(39, 90, 71, 0.62) !important;
-  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.2)) !important;
+  filter: var(--wj-edge-main-filter, drop-shadow(0 0 4px color-mix(in srgb, var(--wj-accent, #38bdf8) 24%, transparent))) !important;
 }
 
 /* Keep dark-theme controls from leaking into the lighter color themes. */
@@ -3793,23 +3815,26 @@ html:not(.theme-dark):not(.theme-graphite) .wanjuan-auto-download-switch:has(inp
 
 html:not(.theme-dark):not(.theme-graphite) .react-flow__controls {
   overflow: hidden !important;
-  background: color-mix(in srgb, var(--wj-surface, #ffffff) 92%, var(--wj-bg, #f8fafc) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-border, #cbd5e1) 82%, var(--wj-accent, #3b82f6) 18%) !important;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(79, 109, 255, 0.18)) 34%, transparent) !important;
+  background: var(--wj-canvas-control-bg) !important;
+  background-color: var(--wj-canvas-control-bg) !important;
+  border-color: var(--wj-canvas-control-border) !important;
+  box-shadow: var(--wj-canvas-control-shadow) !important;
 }
 
 html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button {
-  background: color-mix(in srgb, var(--wj-surface, #ffffff) 94%, transparent) !important;
-  color: color-mix(in srgb, var(--wj-text, #1f2937) 88%, var(--wj-accent, #3b82f6) 12%) !important;
-  -webkit-text-fill-color: color-mix(in srgb, var(--wj-text, #1f2937) 88%, var(--wj-accent, #3b82f6) 12%) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wj-border, #cbd5e1) 54%, transparent) !important;
+  background: var(--wj-canvas-control-button-bg, color-mix(in srgb, var(--wj-surface, #ffffff) 94%, transparent)) !important;
+  background-color: var(--wj-canvas-control-button-bg, color-mix(in srgb, var(--wj-surface, #ffffff) 94%, transparent)) !important;
+  color: var(--wj-canvas-control-text) !important;
+  -webkit-text-fill-color: var(--wj-canvas-control-text) !important;
+  box-shadow: var(--wj-canvas-control-button-shadow, inset 0 0 0 1px color-mix(in srgb, var(--wj-canvas-control-border) 54%, transparent)) !important;
 }
 
 html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
-  background: color-mix(in srgb, var(--wj-accent, #3b82f6) 14%, var(--wj-surface, #ffffff) 86%) !important;
-  color: color-mix(in srgb, var(--wj-accent, #3b82f6) 62%, var(--wj-text, #1f2937) 38%) !important;
-  -webkit-text-fill-color: color-mix(in srgb, var(--wj-accent, #3b82f6) 62%, var(--wj-text, #1f2937) 38%) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wj-accent, #3b82f6) 32%, var(--wj-border, #cbd5e1) 68%) !important;
+  background: var(--wj-canvas-control-hover-bg) !important;
+  background-color: var(--wj-canvas-control-hover-bg) !important;
+  color: var(--wj-canvas-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-canvas-control-hover-text) !important;
+  box-shadow: var(--wj-canvas-control-hover-shadow) !important;
 }
 
 /* Resource workspace polish, borrowing the denser resource view from the 1.2.6 build. */
@@ -4718,6 +4743,31 @@ html.theme-graphite {
     inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
+  --wj-canvas-control-bg: #303030;
+  --wj-canvas-control-border: #676767;
+  --wj-canvas-control-text: #e9ecef;
+  --wj-canvas-control-hover-bg: #414141;
+  --wj-canvas-control-hover-border: #969696;
+  --wj-canvas-control-hover-text: #ffffff;
+  --wj-canvas-control-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.065);
+  --wj-canvas-control-hover-shadow:
+    inset 0 0 0 1px var(--wj-canvas-control-hover-border),
+    0 4px 12px rgba(0, 0, 0, 0.24);
+  --wj-edge-glow: rgba(166, 166, 166, 0.2);
+  --wj-edge-main: rgba(222, 226, 230, 0.58);
+  --wj-edge-selected: #38bdf8;
+  --wj-edge-active-glow: rgba(56, 189, 248, 0.24);
+  --wj-edge-active: #0ea5e9;
+  --wj-edge-energy: #ecfeff;
+  --wj-edge-spark: #7dd3fc;
+  --wj-loading-node-border: #38bdf8;
+  --wj-loading-node-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.76),
+    0 0 0 4px rgba(14, 165, 233, 0.14),
+    0 18px 42px rgba(14, 165, 233, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   --wanjuan-theme-shadow: rgba(0, 0, 0, 0.46);
 }
 
