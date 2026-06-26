@@ -614,28 +614,28 @@ html.theme-dark {
 }
 
 html.theme-graphite {
-  --wanjuan-theme-bg: #171717;
-  --wanjuan-theme-surface: #242424;
-  --wanjuan-theme-surface-2: #303030;
-  --wanjuan-theme-surface-3: #3d3d3d;
-  --wanjuan-theme-border: #5f5f5f;
+  --wanjuan-theme-bg: #191919;
+  --wanjuan-theme-surface: #292929;
+  --wanjuan-theme-surface-2: #333333;
+  --wanjuan-theme-surface-3: #3f3f3f;
+  --wanjuan-theme-border: #626262;
   --wanjuan-theme-text: #f8fafc;
-  --wanjuan-theme-muted: #d4d4d4;
-  --wanjuan-theme-accent: #38bdf8;
+  --wanjuan-theme-muted: #d0d0d0;
+  --wanjuan-theme-accent: #0ea5e9;
   --wanjuan-theme-accent-2: #7dd3fc;
-  --wanjuan-theme-glow: rgba(56, 189, 248, 0.14);
+  --wanjuan-theme-glow: rgba(14, 165, 233, 0.14);
   --wanjuan-theme-shadow: rgba(9, 12, 16, 0.58);
-  --wj-control-selected-bg: #0284c7;
-  --wj-control-selected-hover-bg: #0284c7;
+  --wj-control-selected-bg: #0ea5e9;
+  --wj-control-selected-hover-bg: #0ea5e9;
   --wj-control-selected-border: #7dd3fc;
-  --wj-control-primary-bg: #0284c7;
-  --wj-control-primary-hover-bg: #0369a1;
+  --wj-control-primary-bg: #0ea5e9;
+  --wj-control-primary-hover-bg: #0284c7;
   --wj-control-primary-border: #7dd3fc;
-  --wj-card-bg: #303030;
-  --wj-card-hover-bg: #3a3a3a;
-  --wj-card-selected-bg: #30383c;
-  --wj-card-selected-border: #38bdf8;
-  --wj-card-selected-rail: #38bdf8;
+  --wj-card-bg: #333333;
+  --wj-card-hover-bg: #3f3f3f;
+  --wj-card-selected-bg: #383838;
+  --wj-card-selected-border: #0ea5e9;
+  --wj-card-selected-rail: #0ea5e9;
   --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --wj-card-selected-shadow:
     inset 4px 0 0 var(--wj-card-selected-rail),
@@ -1783,11 +1783,12 @@ html.theme-dark :is(button, a, [role="button"]):is(
   [class*="bg-blue-500"],
   [class*="bg-blue-600"]
 ) {
-  background: linear-gradient(135deg, var(--wanjuan-theme-accent) 0%, var(--wanjuan-theme-accent-2) 100%) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent-2) 44%, var(--wanjuan-theme-border) 56%) !important;
-  box-shadow:
-    0 10px 26px color-mix(in srgb, var(--wanjuan-theme-accent) 24%, transparent),
-    0 4px 10px rgba(4, 8, 24, 0.28) !important;
+  background: var(--wj-control-primary-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
 html.theme-dark :is(button, a, [role="button"]):is(
@@ -1796,10 +1797,13 @@ html.theme-dark :is(button, a, [role="button"]):is(
   [class*="hover:bg-blue-500"],
   [class*="hover:bg-blue-600"]
 ):hover {
-  filter: saturate(1.08) brightness(1.06);
-  box-shadow:
-    0 14px 30px color-mix(in srgb, var(--wanjuan-theme-accent-2) 26%, transparent),
-    0 6px 14px rgba(4, 8, 24, 0.34) !important;
+  background: var(--wj-control-primary-hover-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  filter: none !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .react-flow__controls,
@@ -1923,11 +1927,12 @@ html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, 
   [class*="bg-blue-500"],
   [class*="bg-blue-600"]
 ) {
-  background: linear-gradient(135deg, var(--wanjuan-theme-accent) 0%, var(--wanjuan-theme-accent-2, #ff8a5b) 100%) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent-2, #ff8a5b) 42%, var(--wanjuan-theme-border) 58%) !important;
-  box-shadow:
-    0 12px 28px rgba(79, 109, 255, 0.18),
-    0 4px 12px rgba(255, 138, 91, 0.12) !important;
+  background: var(--wj-control-primary-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) :is(button, a, [role="button"]):is(
@@ -1936,10 +1941,13 @@ html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, 
   [class*="hover:bg-blue-500"],
   [class*="hover:bg-blue-600"]
 ):hover {
-  filter: saturate(1.05) brightness(1.03);
-  box-shadow:
-    0 16px 34px rgba(79, 109, 255, 0.22),
-    0 8px 16px rgba(255, 138, 91, 0.14) !important;
+  background: var(--wj-control-primary-hover-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-primary-border) !important;
+  color: var(--wj-control-primary-text) !important;
+  -webkit-text-fill-color: var(--wj-control-primary-text) !important;
+  filter: none !important;
+  box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-graphite) .react-flow__controls,
@@ -1958,26 +1966,26 @@ html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, 
 /* Agent page polish for Graphite: remove leftover emerald utility classes that
    were baked into the bundled page outside the theme palette. */
 html:is(.theme-dark, .theme-graphite) {
-  --wanjuan-agent-accent: #8ab4f8;
-  --wanjuan-agent-accent-soft: rgba(138, 180, 248, 0.12);
-  --wanjuan-agent-accent-border: rgba(138, 180, 248, 0.24);
+  --wanjuan-agent-accent: var(--wj-accent);
+  --wanjuan-agent-accent-soft: color-mix(in srgb, var(--wj-accent) 14%, transparent);
+  --wanjuan-agent-accent-border: color-mix(in srgb, var(--wj-accent) 34%, var(--wj-border) 66%);
   --wanjuan-agent-accent-text: #c9dcff;
   --wanjuan-agent-hover: #202938;
 }
 
 html.theme-graphite {
-  --wanjuan-agent-accent: #38bdf8;
-  --wanjuan-agent-accent-soft: rgba(56, 189, 248, 0.16);
-  --wanjuan-agent-accent-border: #7dd3fc;
+  --wanjuan-agent-accent: var(--wj-accent);
+  --wanjuan-agent-accent-soft: color-mix(in srgb, var(--wj-accent) 14%, transparent);
+  --wanjuan-agent-accent-border: var(--wj-card-selected-border);
   --wanjuan-agent-accent-text: #7dd3fc;
-  --wanjuan-agent-hover: #3d3d3d;
-  --wanjuan-agent-card-bg: #303030;
-  --wanjuan-agent-card-hover-bg: #3d3d3d;
-  --wanjuan-agent-card-selected-bg: #30383c;
-  --wanjuan-agent-card-border: #5f5f5f;
-  --wanjuan-agent-card-selected-border: #38bdf8;
+  --wanjuan-agent-hover: var(--wj-card-hover-bg);
+  --wanjuan-agent-card-bg: var(--wj-card-bg);
+  --wanjuan-agent-card-hover-bg: var(--wj-card-hover-bg);
+  --wanjuan-agent-card-selected-bg: var(--wj-card-selected-bg);
+  --wanjuan-agent-card-border: var(--wj-border);
+  --wanjuan-agent-card-selected-border: var(--wj-card-selected-border);
   --wanjuan-agent-card-selected-shadow:
-    inset 4px 0 0 #38bdf8,
+    inset 4px 0 0 var(--wj-card-selected-rail),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
 }
@@ -4632,25 +4640,25 @@ html :is(
 
 /* Graphite theme: provide a palette; shared state bridge renders controls. */
 html.theme-graphite {
-  --wj-bg: #181818;
-  --wj-bg-elevated: #202020;
-  --wj-surface: #262626;
-  --wj-surface-2: #303030;
-  --wj-surface-3: #3a3a3a;
-  --wj-border: #666666;
-  --wj-border-strong: #8a8a8a;
-  --wj-text: #f5f5f5;
-  --wj-muted: #cfcfcf;
-  --wj-muted-2: #9f9f9f;
-  --wj-accent: #38bdf8;
+  --wj-bg: #191919;
+  --wj-bg-elevated: #222222;
+  --wj-surface: #292929;
+  --wj-surface-2: #333333;
+  --wj-surface-3: #3f3f3f;
+  --wj-border: #626262;
+  --wj-border-strong: #858585;
+  --wj-text: #f8fafc;
+  --wj-muted: #d0d0d0;
+  --wj-muted-2: #a6a6a6;
+  --wj-accent: #0ea5e9;
   --wj-accent-2: #7dd3fc;
-  --wj-control-bg: #343434;
-  --wj-control-border: #6f6f6f;
-  --wj-control-text: #f5f5f5;
-  --wj-control-muted-text: #d2d2d2;
-  --wj-panel-border: #747474;
-  --wj-panel-border-soft: #555555;
-  --wj-panel-divider: #494949;
+  --wj-control-bg: #393939;
+  --wj-control-border: #707070;
+  --wj-control-text: #f8fafc;
+  --wj-control-muted-text: #d0d0d0;
+  --wj-panel-border: #707070;
+  --wj-panel-border-soft: #575757;
+  --wj-panel-divider: #4a4a4a;
   --wj-panel-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
@@ -4666,12 +4674,12 @@ html.theme-graphite {
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
-  --wj-control-selected-bg: #0284c7;
-  --wj-control-selected-hover-bg: #0284c7;
+  --wj-control-selected-bg: #0ea5e9;
+  --wj-control-selected-hover-bg: #0ea5e9;
   --wj-control-selected-border: #7dd3fc;
   --wj-control-selected-text: #ffffff;
   --wj-control-primary-bg: var(--wj-control-selected-bg);
-  --wj-control-primary-hover-bg: #0369a1;
+  --wj-control-primary-hover-bg: #0284c7;
   --wj-control-primary-border: var(--wj-control-selected-border);
   --wj-control-primary-text: var(--wj-control-selected-text);
   --wj-control-primary-shadow:
@@ -4680,11 +4688,11 @@ html.theme-graphite {
   --wj-control-selected-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
     0 3px 0 rgba(0, 0, 0, 0.32);
-  --wj-card-bg: #303030;
-  --wj-card-hover-bg: #3a3a3a;
-  --wj-card-selected-bg: #30383c;
-  --wj-card-selected-border: #38bdf8;
-  --wj-card-selected-rail: #38bdf8;
+  --wj-card-bg: #333333;
+  --wj-card-hover-bg: #3f3f3f;
+  --wj-card-selected-bg: #383838;
+  --wj-card-selected-border: #0ea5e9;
+  --wj-card-selected-rail: #0ea5e9;
   --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --wj-card-selected-shadow:
     inset 4px 0 0 var(--wj-card-selected-rail),

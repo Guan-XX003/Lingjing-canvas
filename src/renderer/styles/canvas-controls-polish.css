@@ -508,20 +508,20 @@ html.theme-chrome-teal .wanjuan-loading-node-frame {
 .wanjuan-app-nav-tab-active > svg,
 .wanjuan-app-nav-tab-active > span:first-child {
   transform: translateY(-1px);
-  filter: drop-shadow(0 0 7px var(--wanjuan-nav-active-shadow, color-mix(in srgb, var(--wj-accent, #38bdf8) 20%, transparent)));
+  filter: none;
 }
 
 html.theme-graphite,
 html.theme-graphite body,
 html.theme-graphite #root {
-  background: #1f2227 !important;
+  background: var(--wj-bg, #191919) !important;
 }
 
 html.theme-graphite .wanjuan-app-top-nav {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
-    #1f2227 !important;
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    var(--wj-bg-elevated, #222222) !important;
+  border-bottom-color: var(--wj-panel-divider, #4a4a4a) !important;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 8px 22px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -529,7 +529,7 @@ html.theme-dark .wanjuan-app-top-nav {
   background:
     linear-gradient(180deg, rgba(32, 42, 72, 0.52), rgba(8, 11, 22, 0.98)),
     #080b16 !important;
-  border-bottom-color: rgba(138, 180, 248, 0.16) !important;
+  border-bottom-color: color-mix(in srgb, var(--wj-border, #2d3a70) 72%, transparent) !important;
   box-shadow:
     0 1px 0 rgba(214, 228, 255, 0.055) inset,
     0 12px 28px rgba(0, 0, 0, 0.32) !important;
@@ -662,10 +662,10 @@ html.wanjuan-theme-transitioning *:not(#wanjuan-theme-transition-capture):not(#w
 }
 
 #wanjuan-theme-transition-capture .wanjuan-theme-transition-ring {
-  border: 1px solid color-mix(in srgb, var(--wanjuan-theme-transition-accent, rgba(138, 180, 248, 0.34)) 58%, white 18%);
+  border: 1px solid color-mix(in srgb, var(--wanjuan-theme-transition-accent, var(--wj-accent, #38bdf8)) 48%, white 18%);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--wanjuan-theme-transition-accent, rgba(138, 180, 248, 0.34)) 28%, transparent),
-    0 0 18px color-mix(in srgb, var(--wanjuan-theme-transition-accent, rgba(138, 180, 248, 0.34)) 26%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--wanjuan-theme-transition-accent, var(--wj-accent, #38bdf8)) 18%, transparent),
+    0 0 12px color-mix(in srgb, var(--wanjuan-theme-transition-accent, var(--wj-accent, #38bdf8)) 18%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
