@@ -344,11 +344,12 @@ html.theme-chrome-teal .wanjuan-flow-edge-energy-spark {
 .wanjuan-material-picker .wanjuan-resource-filter-tab-active,
 .wanjuan-material-picker .wanjuan-resource-filter-tab[aria-pressed="true"],
 .wanjuan-material-picker .wanjuan-resource-filter-tab[data-active="true"] {
-  background: #8ab4f8 !important;
-  background-color: #8ab4f8 !important;
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-  box-shadow: inset 0 0 0 1px rgba(219, 234, 254, 0.72), 0 6px 14px rgba(96, 165, 250, 0.24) !important;
+  background: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  background-color: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  border-color: var(--wj-control-selected-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 72%, #ffffff 28%)) !important;
+  color: var(--wj-control-selected-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text, #ffffff) !important;
+  box-shadow: var(--wj-control-selected-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 rgba(0, 0, 0, 0.22)) !important;
 }
 
 .wanjuan-mention-picker .wanjuan-resource-filter-tab-active:hover,
@@ -357,10 +358,12 @@ html.theme-chrome-teal .wanjuan-flow-edge-energy-spark {
 .wanjuan-material-picker .wanjuan-resource-filter-tab-active:hover,
 .wanjuan-material-picker .wanjuan-resource-filter-tab[aria-pressed="true"]:hover,
 .wanjuan-material-picker .wanjuan-resource-filter-tab[data-active="true"]:hover {
-  background: #9bc5ff !important;
-  background-color: #9bc5ff !important;
-  color: #0b1220 !important;
-  -webkit-text-fill-color: #0b1220 !important;
+  background: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  background-color: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  border-color: var(--wj-control-selected-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 72%, #ffffff 28%)) !important;
+  color: var(--wj-control-selected-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text, #ffffff) !important;
+  box-shadow: var(--wj-control-selected-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 rgba(0, 0, 0, 0.22)) !important;
 }
 
 .wanjuan-loading-node-frame {

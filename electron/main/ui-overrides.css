@@ -1998,15 +1998,27 @@ html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="hover:text-[#
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="bg-[linear-gradient(180deg,rgba(138,180,248,0.16)"] {
-  background: linear-gradient(180deg, rgba(138, 180, 248, 0.16), rgba(24, 32, 51, 0.95)) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wanjuan-agent-accent) 16%, transparent),
+    color-mix(in srgb, var(--wj-surface-2, #182033) 95%, transparent)
+  ) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="bg-[linear-gradient(180deg,rgba(138,180,248,0.07)"] {
-  background: linear-gradient(180deg, rgba(138, 180, 248, 0.07), rgba(24, 34, 53, 0.78)) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wanjuan-agent-accent) 7%, transparent),
+    color-mix(in srgb, var(--wj-surface-2, #182235) 78%, transparent)
+  ) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="bg-[linear-gradient(180deg,rgba(138,180,248,0.15)"] {
-  background: linear-gradient(180deg, rgba(138, 180, 248, 0.15), rgba(20, 28, 44, 0.96)) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wanjuan-agent-accent) 15%, transparent),
+    color-mix(in srgb, var(--wj-surface, #141c2c) 96%, transparent)
+  ) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="border-[#8ab4f8]/14"],
@@ -2023,7 +2035,7 @@ html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="bg-[#8ab4f8]/
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="bg-[#8ab4f8]/80"] {
-  background-color: rgba(138, 180, 248, 0.8) !important;
+  background-color: color-mix(in srgb, var(--wanjuan-agent-accent) 80%, transparent) !important;
 }
 
 html:is(.theme-dark, .theme-graphite) .wanjuan-agent-page [class*="hover:bg-[#202938]"]:hover {
@@ -4327,7 +4339,7 @@ html :is(button, [role="button"]):not(:disabled):not(.react-flow__node *):active
 }
 /* 一致的焦点可见环(无障碍 + 精致) */
 html :is(button, [role="button"], input, textarea, select):focus-visible {
-  outline: 2px solid var(--wanjuan-accent, #8ab4f8) !important;
+  outline: 2px solid color-mix(in srgb, var(--wj-accent, var(--wanjuan-theme-accent, #38bdf8)) 72%, #ffffff 28%) !important;
   outline-offset: 2px !important;
 }
 html :is(button, [role="button"]):disabled {
@@ -4342,21 +4354,26 @@ html :is(button, [role="button"]):disabled {
  * 影响: 全部/图片/视频/音频/文本 + AI生成/外部素材 两组筛选。
  * ============================================================ */
 html:is(.theme-light,.theme-warm-light,.theme-mist-blue,.theme-chrome-blue,.theme-chrome-rose,.theme-chrome-sand,.theme-chrome-teal,.theme-sage-green,.theme-graphite,.theme-dark) .wanjuan-resource-toolbar button.wanjuan-resource-filter-button.wanjuan-resource-filter-button-active {
-  background: var(--wanjuan-accent, #8ab4f8) !important;
-  color: #0b0f15 !important;
+  background: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  background-color: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-selected-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 72%, #ffffff 28%)) !important;
+  color: var(--wj-control-selected-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text, #ffffff) !important;
   font-weight: 700 !important;
-  box-shadow: none !important;
-  border: 0 !important;
+  box-shadow: var(--wj-control-selected-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 rgba(0, 0, 0, 0.22)) !important;
 }
 /* 未选中态: 更清晰的可点击感 */
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active) {
   background: transparent !important;
-  border: 0 !important;
+  border: 1px solid transparent !important;
   box-shadow: none !important;
 }
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active):hover {
-  background: color-mix(in srgb, var(--wanjuan-accent, #8ab4f8) 14%, transparent) !important;
-  border: 0 !important;
+  background: var(--wj-control-hover-bg, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 14%, transparent)) !important;
+  color: var(--wj-control-hover-text, var(--wanjuan-theme-text, currentColor)) !important;
+  -webkit-text-fill-color: var(--wj-control-hover-text, var(--wanjuan-theme-text, currentColor)) !important;
+  border-color: var(--wj-control-hover-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 34%, transparent)) !important;
   box-shadow: none !important;
 }
 
@@ -4373,7 +4390,7 @@ html .wanjuan-resource-toolbar .wanjuan-resource-filter-group {
 }
 
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button {
-  border: 0 !important;
+  border: 1px solid transparent !important;
   border-radius: 8px !important;
   min-height: 30px !important;
   box-shadow: none !important;
@@ -4421,10 +4438,12 @@ html .wanjuan-resource-favorite-filter-active {
  * 统一为同一主题强调色选中态。
  * ============================================================ */
 html:is(.theme-light,.theme-warm-light,.theme-mist-blue,.theme-chrome-blue,.theme-chrome-rose,.theme-chrome-sand,.theme-chrome-teal,.theme-sage-green,.theme-graphite,.theme-dark) button.wj-mode-tab.wj-mode-tab-active[class][class] {
-  background: var(--wanjuan-accent, #8ab4f8) !important;
+  background: var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #3b82f6)) !important;
   background-image: none !important;
-  color: #0b0f15 !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.18) !important;
+  border-color: var(--wj-control-selected-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 72%, #ffffff 28%)) !important;
+  color: var(--wj-control-selected-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text, #ffffff) !important;
+  box-shadow: var(--wj-control-selected-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 rgba(0, 0, 0, 0.22)) !important;
 }
 html:is(.theme-light,.theme-warm-light,.theme-mist-blue,.theme-chrome-blue,.theme-chrome-rose,.theme-chrome-sand,.theme-chrome-teal,.theme-sage-green,.theme-graphite,.theme-dark) button.wj-mode-tab:not(.wj-mode-tab-active)[class][class] {
   background: transparent !important;
@@ -4619,8 +4638,8 @@ html.theme-graphite {
   --wj-text: #f5f5f5;
   --wj-muted: #cfcfcf;
   --wj-muted-2: #9f9f9f;
-  --wj-accent: #22b8ff;
-  --wj-accent-2: #00d4ff;
+  --wj-accent: #38bdf8;
+  --wj-accent-2: #7dd3fc;
   --wj-control-bg: #343434;
   --wj-control-border: #6f6f6f;
   --wj-control-text: #f5f5f5;
@@ -4915,9 +4934,9 @@ html .wanjuan-workspace-sidebar .wanjuan-workspace-sections button {
 html.theme-graphite
   .react-flow__node
   :is(.wanjuan-node-model-option, .wanjuan-theme-option, .wanjuan-node-popover-option, .wanjuan-tts-node-mode-button) {
-  background: color-mix(in srgb, var(--wanjuan-theme-surface-2) 88%, var(--wanjuan-theme-bg) 12%) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-border) 68%, transparent) !important;
-  color: color-mix(in srgb, var(--wanjuan-theme-text) 72%, var(--wanjuan-theme-muted) 28%) !important;
+  background: color-mix(in srgb, var(--wj-surface-2) 88%, var(--wj-bg) 12%) !important;
+  border-color: color-mix(in srgb, var(--wj-border) 68%, transparent) !important;
+  color: color-mix(in srgb, var(--wj-text) 72%, var(--wj-muted) 28%) !important;
   -webkit-text-fill-color: currentColor !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
 }
@@ -4925,9 +4944,10 @@ html.theme-graphite
 html.theme-graphite
   .react-flow__node
   :is(.wanjuan-node-model-option, .wanjuan-theme-option, .wanjuan-node-popover-option, .wanjuan-tts-node-mode-button):hover {
-  background: color-mix(in srgb, var(--wanjuan-theme-accent) 10%, var(--wanjuan-theme-surface-3) 90%) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent) 34%, var(--wanjuan-theme-border) 66%) !important;
-  color: var(--wanjuan-theme-text) !important;
+  background: var(--wj-control-hover-bg) !important;
+  border-color: var(--wj-control-hover-border) !important;
+  color: var(--wj-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-control-hover-text) !important;
 }
 
 html.theme-graphite
