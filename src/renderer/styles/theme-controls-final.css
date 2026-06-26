@@ -47,6 +47,26 @@
   --wj-control-disabled-border: color-mix(in srgb, var(--wj-border) 50%, transparent);
   --wj-control-disabled-text: color-mix(in srgb, var(--wj-muted) 62%, var(--wj-bg) 38%);
   --wj-shadow-popover: 0 18px 42px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.38)) 78%, transparent);
+  --wj-chrome-bg:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wj-surface-2) 84%, transparent),
+      color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%)
+    );
+  --wj-chrome-border: color-mix(in srgb, var(--wj-border) 76%, transparent);
+  --wj-chrome-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 8%, transparent);
+  --wj-nav-text: color-mix(in srgb, var(--wj-muted) 82%, var(--wj-text) 18%);
+  --wj-nav-text-active: var(--wj-text);
+  --wj-nav-hover-bg: color-mix(in srgb, var(--wj-accent) 6%, transparent);
+  --wj-nav-active-line: color-mix(in srgb, var(--wj-accent) 70%, var(--wj-text) 30%);
+  --wj-nav-active-shadow: color-mix(in srgb, var(--wj-accent) 18%, transparent);
+  --wanjuan-nav-bg: var(--wj-chrome-bg);
+  --wanjuan-nav-border: var(--wj-chrome-border);
+  --wanjuan-nav-text: var(--wj-nav-text);
+  --wanjuan-nav-text-active: var(--wj-nav-text-active);
+  --wanjuan-nav-hover-bg: var(--wj-nav-hover-bg);
+  --wanjuan-nav-active-line: var(--wj-nav-active-line);
+  --wanjuan-nav-active-shadow: var(--wj-nav-active-shadow);
   --wj-panel-bg: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%);
   --wj-panel-bg-raised: color-mix(in srgb, var(--wj-surface-2) 78%, var(--wj-surface) 22%);
   --wj-panel-bg-subtle: color-mix(in srgb, var(--wj-bg) 78%, var(--wj-surface) 22%);
@@ -1142,6 +1162,25 @@ html.theme-graphite {
   --wj-control-disabled-bg: #242424;
   --wj-control-disabled-border: #464646;
   --wj-control-disabled-text: #8a8a8a;
+  --wj-chrome-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    #222222;
+  --wj-chrome-border: #4a4a4a;
+  --wj-chrome-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 10px 26px rgba(0, 0, 0, 0.24);
+  --wj-nav-text: #d7dce3;
+  --wj-nav-text-active: #ffffff;
+  --wj-nav-hover-bg: rgba(255, 255, 255, 0.045);
+  --wj-nav-active-line: #38bdf8;
+  --wj-nav-active-shadow: rgba(56, 189, 248, 0.22);
+  --wanjuan-nav-bg: var(--wj-chrome-bg);
+  --wanjuan-nav-border: var(--wj-chrome-border);
+  --wanjuan-nav-text: var(--wj-nav-text);
+  --wanjuan-nav-text-active: var(--wj-nav-text-active);
+  --wanjuan-nav-hover-bg: var(--wj-nav-hover-bg);
+  --wanjuan-nav-active-line: var(--wj-nav-active-line);
+  --wanjuan-nav-active-shadow: var(--wj-nav-active-shadow);
   --wj-panel-bg: #2c2c2c;
   --wj-panel-bg-raised: #333333;
   --wj-panel-bg-subtle: #202020;
@@ -1234,13 +1273,17 @@ html.theme-graphite #root {
 html.theme-graphite .wanjuan-app-top-nav,
 html.theme-graphite .wanjuan-resource-toolbar,
 html.theme-graphite .wanjuan-settings-sidebar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
-    var(--wj-bg-elevated) !important;
-  border-color: var(--wj-border) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 10px 26px rgba(0, 0, 0, 0.24) !important;
+  background: var(--wj-chrome-bg) !important;
+  border-color: var(--wj-chrome-border) !important;
+  box-shadow: var(--wj-chrome-shadow) !important;
+}
+
+.wanjuan-app-top-nav,
+.wanjuan-resource-toolbar,
+.wanjuan-settings-sidebar {
+  background: var(--wj-chrome-bg) !important;
+  border-color: var(--wj-chrome-border) !important;
+  box-shadow: var(--wj-chrome-shadow) !important;
 }
 
 html.theme-graphite .wanjuan-settings-page,
