@@ -19,6 +19,7 @@
   --wj-danger-border: #f87171;
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
+  --wj-danger-hover-border: #fecaca;
   --wj-danger-soft: rgba(220, 38, 38, 0.16);
   --wj-control-bg: color-mix(in srgb, var(--wj-surface-2) 88%, var(--wj-bg) 12%);
   --wj-control-border: color-mix(in srgb, var(--wj-border) 88%, transparent);
@@ -43,6 +44,13 @@
   --wj-panel-border: color-mix(in srgb, var(--wj-border) 90%, var(--wj-text) 10%);
   --wj-panel-border-soft: color-mix(in srgb, var(--wj-border) 72%, transparent);
   --wj-panel-divider: color-mix(in srgb, var(--wj-border) 64%, transparent);
+  --wj-card-bg: color-mix(in srgb, var(--wj-surface) 88%, var(--wj-bg) 12%);
+  --wj-card-hover-bg: color-mix(in srgb, var(--wj-surface-2) 86%, var(--wj-accent) 14%);
+  --wj-card-selected-bg: color-mix(in srgb, var(--wj-surface-2) 88%, var(--wj-accent) 12%);
+  --wj-card-selected-border: color-mix(in srgb, var(--wj-accent) 56%, var(--wj-border) 44%);
+  --wj-card-selected-rail: var(--wj-accent);
+  --wj-card-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent), 0 8px 18px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 28%, transparent);
+  --wj-card-selected-shadow: inset 4px 0 0 var(--wj-card-selected-rail), inset 0 1px 0 color-mix(in srgb, var(--wj-text) 9%, transparent), 0 10px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 32%, transparent);
 }
 
 html.theme-light,
@@ -69,8 +77,8 @@ html.theme-graphite {
   --wj-text: #f5f5f5;
   --wj-muted: #cfcfcf;
   --wj-muted-2: #9f9f9f;
-  --wj-accent: #22b8ff;
-  --wj-accent-2: #00d4ff;
+  --wj-accent: #38bdf8;
+  --wj-accent-2: #7dd3fc;
   --wj-panel-border: #747474;
   --wj-panel-border-soft: #555555;
   --wj-panel-divider: #494949;
@@ -81,14 +89,14 @@ html.theme-graphite {
   --wj-control-hover-bg: #414141;
   --wj-control-hover-border: #969696;
   --wj-control-hover-text: #ffffff;
-  --wj-control-selected-bg: #22b8ff;
-  --wj-control-selected-hover-bg: #22b8ff;
-  --wj-control-selected-border: #8be0ff;
+  --wj-control-selected-bg: #0284c7;
+  --wj-control-selected-hover-bg: #0284c7;
+  --wj-control-selected-border: #7dd3fc;
   --wj-control-selected-text: #ffffff;
   --wj-control-selected-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 3px 0 rgba(0, 0, 0, 0.32);
-  --wj-control-primary-bg: #22b8ff;
-  --wj-control-primary-hover-bg: #009ee0;
-  --wj-control-primary-border: #8be0ff;
+  --wj-control-primary-bg: #0284c7;
+  --wj-control-primary-hover-bg: #0369a1;
+  --wj-control-primary-border: #7dd3fc;
   --wj-control-primary-text: #ffffff;
   --wj-control-primary-shadow: var(--wj-control-selected-shadow);
   --wj-control-disabled-bg: #252525;
@@ -98,8 +106,16 @@ html.theme-graphite {
   --wj-danger-bg: #dc2626;
   --wj-danger-border: #f87171;
   --wj-danger-hover-bg: #b91c1c;
+  --wj-danger-hover-border: #fecaca;
   --wj-danger-soft: rgba(239, 68, 68, 0.18);
   --wanjuan-theme-shadow: rgba(0, 0, 0, 0.46);
+  --wj-card-bg: #303030;
+  --wj-card-hover-bg: #3a3a3a;
+  --wj-card-selected-bg: #30383c;
+  --wj-card-selected-border: #38bdf8;
+  --wj-card-selected-rail: #38bdf8;
+  --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --wj-card-selected-shadow: inset 4px 0 0 var(--wj-card-selected-rail), inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 html :is(
@@ -114,7 +130,6 @@ html :is(
   .wanjuan-workspace-sections button.is-active,
   .wanjuan-workspace-segment button.is-active,
   .wanjuan-workspace-group.is-active,
-  .wanjuan-agent-role-card-active,
   .wanjuan-tianji-mode-switch button.is-active,
   .wanjuan-tianji-mode-switch button[aria-pressed="true"],
   .wanjuan-tianji-points-presets button.is-active,
@@ -149,7 +164,6 @@ html :is(
   .wanjuan-workspace-sections button.is-active,
   .wanjuan-workspace-segment button.is-active,
   .wanjuan-workspace-group.is-active,
-  .wanjuan-agent-role-card-active,
   .wanjuan-tianji-mode-switch button.is-active,
   .wanjuan-tianji-mode-switch button[aria-pressed="true"],
   .wanjuan-tianji-points-presets button.is-active,
@@ -200,7 +214,6 @@ html :is(
   .wanjuan-node-popover-option-active,
   .wanjuan-tts-node-mode-button-active,
   .wj-mode-tab-active,
-  .wanjuan-agent-role-card-active,
   .is-active,
   .primary,
   [aria-pressed="true"],
@@ -211,6 +224,46 @@ html :is(
   border-color: var(--wj-control-hover-border) !important;
   color: var(--wj-control-hover-text) !important;
   -webkit-text-fill-color: var(--wj-control-hover-text) !important;
+}
+
+html .wanjuan-agent-page .wanjuan-agent-role-card[class][class] {
+  background: var(--wj-card-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-panel-border-soft) !important;
+  color: var(--wj-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: var(--wj-card-shadow) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html .wanjuan-agent-page .wanjuan-agent-role-card:not(.wanjuan-agent-role-card-active):hover[class][class] {
+  background: var(--wj-card-hover-bg) !important;
+  border-color: var(--wj-control-hover-border) !important;
+  color: var(--wj-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: var(--wj-card-shadow) !important;
+  transform: none !important;
+}
+
+html .wanjuan-agent-page .wanjuan-agent-role-card-active[class][class],
+html .wanjuan-agent-page .wanjuan-agent-role-card-active:hover[class][class],
+html .wanjuan-agent-page .wanjuan-agent-role-card-active:focus-visible[class][class],
+html .wanjuan-agent-page .wanjuan-agent-role-card-active:active[class][class] {
+  background: var(--wj-card-selected-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-card-selected-border) !important;
+  color: var(--wj-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: var(--wj-card-selected-shadow) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html .wanjuan-agent-page .wanjuan-agent-role-card-active > div:first-child,
+html .wanjuan-agent-page .wanjuan-agent-role-card-active:hover > div:first-child {
+  background: var(--wj-card-selected-rail) !important;
+  box-shadow: none !important;
 }
 
 html :is(
@@ -992,20 +1045,30 @@ html.theme-graphite {
   --wj-control-disabled-bg: #242424;
   --wj-control-disabled-border: #464646;
   --wj-control-disabled-text: #8a8a8a;
-  --wj-control-selected-bg: #0ea5e9;
-  --wj-control-selected-hover-bg: #0ea5e9;
+  --wj-control-selected-bg: #0284c7;
+  --wj-control-selected-hover-bg: #0284c7;
   --wj-control-selected-border: #7dd3fc;
   --wj-control-selected-text: #ffffff;
   --wj-control-selected-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 6px 0 rgba(0, 0, 0, 0.28);
   --wj-control-primary-bg: var(--wj-control-selected-bg);
-  --wj-control-primary-hover-bg: #0284c7;
+  --wj-control-primary-hover-bg: #0369a1;
   --wj-control-primary-border: var(--wj-control-selected-border);
   --wj-control-primary-text: var(--wj-control-selected-text);
   --wj-control-primary-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 6px 0 rgba(0, 0, 0, 0.28);
+  --wj-card-bg: #303030;
+  --wj-card-hover-bg: #3a3a3a;
+  --wj-card-selected-bg: #30383c;
+  --wj-card-selected-border: #38bdf8;
+  --wj-card-selected-rail: #38bdf8;
+  --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --wj-card-selected-shadow:
+    inset 4px 0 0 var(--wj-card-selected-rail),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 18px rgba(0, 0, 0, 0.22);
   color-scheme: dark;
 }
 
