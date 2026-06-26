@@ -764,12 +764,12 @@ html.theme-graphite {
   --wanjuan-theme-border: #626262;
   --wanjuan-theme-text: #f8fafc;
   --wanjuan-theme-muted: #d0d0d0;
-  --wanjuan-theme-accent: #0ea5e9;
+  --wanjuan-theme-accent: #38bdf8;
   --wanjuan-theme-accent-2: #7dd3fc;
-  --wanjuan-theme-glow: rgba(14, 165, 233, 0.14);
+  --wanjuan-theme-glow: rgba(56, 189, 248, 0.1);
   --wanjuan-theme-shadow: rgba(9, 12, 16, 0.58);
-  --wj-action-bg: #0369a1;
-  --wj-action-hover-bg: #075985;
+  --wj-action-bg: #454545;
+  --wj-action-hover-bg: #505050;
   --wj-action-border: #38bdf8;
   --wj-chrome-bg:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
@@ -782,7 +782,7 @@ html.theme-graphite {
   --wj-nav-text-active: #ffffff;
   --wj-nav-hover-bg: rgba(255, 255, 255, 0.045);
   --wj-nav-active-line: #38bdf8;
-  --wj-nav-active-shadow: rgba(56, 189, 248, 0.22);
+  --wj-nav-active-shadow: rgba(56, 189, 248, 0.18);
   --wanjuan-nav-bg: var(--wj-chrome-bg);
   --wanjuan-nav-border: var(--wj-chrome-border);
   --wanjuan-nav-text: var(--wj-nav-text);
@@ -808,7 +808,7 @@ html.theme-graphite {
   --wj-field-text: #f8fafc;
   --wj-field-placeholder: #9f9f9f;
   --wj-field-focus-border: #38bdf8;
-  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.14);
   --wj-disclosure-bg: #3a3a3a;
   --wj-disclosure-border: #747474;
   --wj-disclosure-text: #f2f4f6;
@@ -853,11 +853,26 @@ html.theme-graphite {
   --wj-menu-danger-text: #ff6b6b;
   --wj-menu-danger-hover-bg: rgba(239, 68, 68, 0.14);
   --wj-menu-danger-hover-text: #ff8a8a;
+  --wj-control-selected-bg: var(--wj-action-bg);
+  --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
+  --wj-control-selected-border: var(--wj-action-border);
+  --wj-control-selected-text: #ffffff;
+  --wj-control-selected-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.54),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 2px 0 rgba(0, 0, 0, 0.3);
+  --wj-control-primary-bg: #424242;
+  --wj-control-primary-hover-bg: #4d4d4d;
+  --wj-control-primary-border: #38bdf8;
+  --wj-control-primary-text: #ffffff;
+  --wj-control-primary-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 2px 0 rgba(0, 0, 0, 0.32);
   --wj-card-bg: #333333;
   --wj-card-hover-bg: #3f3f3f;
   --wj-card-selected-bg: #383838;
-  --wj-card-selected-border: #0ea5e9;
-  --wj-card-selected-rail: #0ea5e9;
+  --wj-card-selected-border: #38bdf8;
+  --wj-card-selected-rail: #38bdf8;
   --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --wj-card-selected-shadow:
     inset 4px 0 0 var(--wj-card-selected-rail),
@@ -5003,7 +5018,7 @@ html.theme-graphite {
   --wj-text: #f8fafc;
   --wj-muted: #d0d0d0;
   --wj-muted-2: #a6a6a6;
-  --wj-accent: #0ea5e9;
+  --wj-accent: #38bdf8;
   --wj-accent-2: #7dd3fc;
   --wj-control-bg: #393939;
   --wj-control-border: #707070;
@@ -5033,7 +5048,7 @@ html.theme-graphite {
   --wj-field-text: #f8fafc;
   --wj-field-placeholder: #9f9f9f;
   --wj-field-focus-border: #38bdf8;
-  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.14);
   --wj-disclosure-bg: #3a3a3a;
   --wj-disclosure-border: #747474;
   --wj-disclosure-text: #f2f4f6;
@@ -5064,18 +5079,31 @@ html.theme-graphite {
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
-  --wj-action-bg: #0369a1;
-  --wj-action-hover-bg: #075985;
+  --wj-action-bg: #454545;
+  --wj-action-hover-bg: #505050;
   --wj-action-border: #38bdf8;
   --wj-action-text: #ffffff;
   --wj-action-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 3px 0 rgba(0, 0, 0, 0.32);
+    0 2px 0 rgba(0, 0, 0, 0.32);
+  --wj-control-selected-bg: var(--wj-action-bg);
+  --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
+  --wj-control-selected-border: var(--wj-action-border);
+  --wj-control-selected-text: #ffffff;
+  --wj-control-selected-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.54),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 2px 0 rgba(0, 0, 0, 0.3);
+  --wj-control-primary-bg: #424242;
+  --wj-control-primary-hover-bg: #4d4d4d;
+  --wj-control-primary-border: #38bdf8;
+  --wj-control-primary-text: #ffffff;
+  --wj-control-primary-shadow: var(--wj-action-shadow);
   --wj-card-bg: #333333;
   --wj-card-hover-bg: #3f3f3f;
   --wj-card-selected-bg: #383838;
-  --wj-card-selected-border: #0ea5e9;
-  --wj-card-selected-rail: #0ea5e9;
+  --wj-card-selected-border: #38bdf8;
+  --wj-card-selected-rail: #38bdf8;
   --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --wj-card-selected-shadow:
     inset 4px 0 0 var(--wj-card-selected-rail),
@@ -5096,15 +5124,15 @@ html.theme-graphite {
   --wj-edge-glow: rgba(166, 166, 166, 0.2);
   --wj-edge-main: rgba(222, 226, 230, 0.58);
   --wj-edge-selected: #38bdf8;
-  --wj-edge-active-glow: rgba(56, 189, 248, 0.24);
-  --wj-edge-active: #0ea5e9;
+  --wj-edge-active-glow: rgba(56, 189, 248, 0.18);
+  --wj-edge-active: #38bdf8;
   --wj-edge-energy: #ecfeff;
   --wj-edge-spark: #7dd3fc;
   --wj-loading-node-border: #38bdf8;
   --wj-loading-node-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.76),
-    0 0 0 4px rgba(14, 165, 233, 0.14),
-    0 18px 42px rgba(14, 165, 233, 0.16),
+    0 0 0 1px rgba(56, 189, 248, 0.68),
+    0 0 0 4px rgba(56, 189, 248, 0.1),
+    0 18px 42px rgba(0, 0, 0, 0.24),
     inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   --wanjuan-theme-shadow: rgba(0, 0, 0, 0.46);
 }
