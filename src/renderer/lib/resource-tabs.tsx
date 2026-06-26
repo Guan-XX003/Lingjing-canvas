@@ -61,14 +61,6 @@ export function wanjuanRenderResourceFilterTabs(
         "aria-pressed": isActive,
         "data-active": isActive ? "true" : undefined,
         className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${isActive ? "wanjuan-resource-filter-tab-active" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"}`,
-        style: isActive
-          ? {
-              backgroundColor: "#8ab4f8",
-              color: "#0f172a",
-              WebkitTextFillColor: "#0f172a",
-              boxShadow: "inset 0 0 0 1px rgba(219,234,254,0.72), 0 6px 14px rgba(96,165,250,0.24)",
-            }
-          : undefined,
         onClick: () => {
           onSelectKind(kind);
           setPage(1);
@@ -103,7 +95,7 @@ export function wanjuanRenderResourceSourceTabs(
     className: `${withTopMargin ? "mt-2 " : ""}flex items-center gap-2 wanjuan-resource-source-filter`,
     children: [
       jsxs("div", {
-        className: "flex flex-1 min-w-0 bg-[#151a22] border border-[#343b46] rounded-lg p-0.5",
+        className: "flex flex-1 min-w-0 bg-[#151a22] border border-[#343b46] rounded-lg p-0.5 wanjuan-resource-filter-group",
         children: (
           [
             ["all", "全部来源"],
@@ -118,14 +110,6 @@ export function wanjuanRenderResourceSourceTabs(
               "aria-pressed": isActive,
               "data-active": isActive ? "true" : undefined,
               className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${isActive ? "wanjuan-resource-filter-tab-active" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"}`,
-              style: isActive
-                ? {
-                    backgroundColor: "#8ab4f8",
-                    color: "#0f172a",
-                    WebkitTextFillColor: "#0f172a",
-                    boxShadow: "inset 0 0 0 1px rgba(219,234,254,0.72), 0 6px 14px rgba(96,165,250,0.24)",
-                  }
-                : undefined,
               onClick: () => {
                 onSelectSource(source);
                 setPage(1);
@@ -137,7 +121,9 @@ export function wanjuanRenderResourceSourceTabs(
         }),
       }),
       jsx("button", {
-        className: `w-8 h-8 inline-flex items-center justify-center rounded-lg border transition-colors ${favoriteOnly ? "border-yellow-400/60 text-yellow-300 bg-yellow-400/10" : "border-[#343b46] text-gray-500 hover:text-yellow-300 hover:border-yellow-400/40 hover:bg-yellow-400/5"}`,
+        "aria-pressed": favoriteOnly,
+        "data-active": favoriteOnly ? "true" : undefined,
+        className: `wanjuan-resource-favorite-filter w-8 h-8 inline-flex items-center justify-center rounded-lg border transition-colors ${favoriteOnly ? "wanjuan-resource-favorite-filter-active" : ""}`,
         title: favoriteOnly ? "显示全部收藏筛选" : "只看收藏",
         onClick: () => {
           setFavoriteOnly(!favoriteOnly);

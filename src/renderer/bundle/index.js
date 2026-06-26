@@ -14904,12 +14904,6 @@ function wanjuanRenderResourceFilterTabs(selectedValue, onSelect, setPage) {
       "aria-pressed": activeValue === optionValue,
       "data-active": activeValue === optionValue ? `true` : void 0,
       className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${activeValue === optionValue ? `wanjuan-resource-filter-tab-active` : `text-gray-400 hover:text-gray-200 hover:bg-white/5`}`,
-      style: activeValue === optionValue ? {
-        backgroundColor: `#8ab4f8`,
-        color: `#0f172a`,
-        WebkitTextFillColor: `#0f172a`,
-        boxShadow: `inset 0 0 0 1px rgba(219,234,254,0.72), 0 6px 14px rgba(96,165,250,0.24)`
-      } : void 0,
       onClick: () => {
         (onSelect(optionValue), setPage(1));
       },
@@ -14923,7 +14917,7 @@ function wanjuanRenderResourceSourceTabs(selectedValue, onSelect, favoriteActive
     className: `${a ? `mt-2 ` : ``}flex items-center gap-2 wanjuan-resource-source-filter`,
     children: [
       jsxs(`div`, {
-        className: `flex flex-1 min-w-0 bg-[#151a22] border border-[#343b46] rounded-lg p-0.5`,
+        className: `flex flex-1 min-w-0 bg-[#151a22] border border-[#343b46] rounded-lg p-0.5 wanjuan-resource-filter-group`,
         children: [
           [`all`, `全部来源`],
           [`generated`, `AI生成`],
@@ -14933,12 +14927,6 @@ function wanjuanRenderResourceSourceTabs(selectedValue, onSelect, favoriteActive
             "aria-pressed": activeValue === optionValue,
             "data-active": activeValue === optionValue ? `true` : void 0,
             className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${activeValue === optionValue ? `wanjuan-resource-filter-tab-active` : `text-gray-400 hover:text-gray-200 hover:bg-white/5`}`,
-            style: activeValue === optionValue ? {
-              backgroundColor: `#8ab4f8`,
-              color: `#0f172a`,
-              WebkitTextFillColor: `#0f172a`,
-              boxShadow: `inset 0 0 0 1px rgba(219,234,254,0.72), 0 6px 14px rgba(96,165,250,0.24)`
-            } : void 0,
             onClick: () => {
               (onSelect(optionValue), setPage(1));
             },
@@ -14947,7 +14935,9 @@ function wanjuanRenderResourceSourceTabs(selectedValue, onSelect, favoriteActive
         ),
       }),
       jsx(`button`, {
-        className: `w-8 h-8 inline-flex items-center justify-center rounded-lg border transition-colors ${favoriteActive ? `border-yellow-400/60 text-yellow-300 bg-yellow-400/10` : `border-[#343b46] text-gray-500 hover:text-yellow-300 hover:border-yellow-400/40 hover:bg-yellow-400/5`}`,
+        "aria-pressed": favoriteActive,
+        "data-active": favoriteActive ? `true` : void 0,
+        className: `wanjuan-resource-favorite-filter w-8 h-8 inline-flex items-center justify-center rounded-lg border transition-colors ${favoriteActive ? `wanjuan-resource-favorite-filter-active` : ``}`,
         title: favoriteActive ? `显示全部收藏筛选` : `只看收藏`,
         onClick: () => {
           (onToggle(!favoriteActive), setPage(1));
@@ -44004,7 +43994,9 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                          ],
 	                        }),
 	                        jsx(`button`, {
-	                          className: `wanjuan-resource-favorite-filter w-8 h-8 rounded-lg transition-colors inline-flex items-center justify-center text-sm ${resourceFavoriteOnly ? `wanjuan-resource-favorite-filter-active text-yellow-300` : `text-gray-500 hover:text-yellow-300`}`,
+	                          "aria-pressed": resourceFavoriteOnly,
+	                          "data-active": resourceFavoriteOnly ? `true` : void 0,
+	                          className: `wanjuan-resource-favorite-filter w-8 h-8 rounded-lg transition-colors inline-flex items-center justify-center text-sm ${resourceFavoriteOnly ? `wanjuan-resource-favorite-filter-active` : ``}`,
 	                          title: resourceFavoriteOnly ? wanjuanT(`显示全部收藏筛选`) : wanjuanT(`只看收藏`),
 	                          onClick: () => {
 	                            (setResourceFavoriteOnly((prev) => !prev), setCurrentPage(1));

@@ -103,6 +103,15 @@
   --wj-filter-button-hover-border: var(--wj-control-hover-border);
   --wj-filter-button-hover-text: var(--wj-control-hover-text);
   --wj-filter-button-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 5%, transparent);
+  --wj-favorite-bg: color-mix(in srgb, var(--wj-warning, #f59e0b) 12%, var(--wj-control-bg) 88%);
+  --wj-favorite-border: color-mix(in srgb, var(--wj-warning, #f59e0b) 46%, var(--wj-border) 54%);
+  --wj-favorite-text: color-mix(in srgb, var(--wj-warning, #f59e0b) 86%, var(--wj-text) 14%);
+  --wj-favorite-hover-bg: color-mix(in srgb, var(--wj-warning, #f59e0b) 18%, var(--wj-control-hover-bg) 82%);
+  --wj-favorite-hover-border: color-mix(in srgb, var(--wj-warning, #f59e0b) 62%, var(--wj-border-strong) 38%);
+  --wj-favorite-active-bg: color-mix(in srgb, var(--wj-warning, #f59e0b) 88%, #ffffff 12%);
+  --wj-favorite-active-border: color-mix(in srgb, var(--wj-warning, #f59e0b) 82%, #ffffff 18%);
+  --wj-favorite-active-text: #111827;
+  --wj-favorite-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent), 0 2px 0 color-mix(in srgb, #000000 20%, transparent);
   --wj-menu-bg: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-bg) 8%);
   --wj-menu-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
   --wj-menu-hover-bg: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface-3) 86%);
@@ -235,8 +244,8 @@ html :is(
   .wanjuan-material-picker .wanjuan-resource-filter-tab-active,
   .wanjuan-material-picker .wanjuan-resource-filter-tab[aria-pressed="true"],
   .wanjuan-material-picker .wanjuan-resource-filter-tab[data-active="true"],
-  button[aria-pressed="true"],
-  button[data-active="true"]
+  button[aria-pressed="true"]:not(.wanjuan-resource-favorite-filter),
+  button[data-active="true"]:not(.wanjuan-resource-favorite-filter)
 )[class][class] {
   background: var(--wj-control-selected-bg) !important;
   background-color: var(--wj-control-selected-bg) !important;
@@ -269,8 +278,8 @@ html :is(
   .wanjuan-material-picker .wanjuan-resource-filter-tab-active,
   .wanjuan-material-picker .wanjuan-resource-filter-tab[aria-pressed="true"],
   .wanjuan-material-picker .wanjuan-resource-filter-tab[data-active="true"],
-  button[aria-pressed="true"],
-  button[data-active="true"]
+  button[aria-pressed="true"]:not(.wanjuan-resource-favorite-filter),
+  button[data-active="true"]:not(.wanjuan-resource-favorite-filter)
 ):is(:hover, :focus-visible, :active)[class][class] {
   background: var(--wj-control-selected-bg) !important;
   background-color: var(--wj-control-selected-bg) !important;
@@ -742,25 +751,35 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 .wanjuan-resource-filter-group {
   background: var(--wj-filter-group-bg) !important;
   border: 1px solid var(--wj-filter-group-border) !important;
+  border-radius: var(--wj-radius-md, 8px) !important;
   box-shadow: var(--wj-filter-group-shadow) !important;
 }
 
-.wanjuan-resource-filter-button {
+.wanjuan-resource-filter-button,
+.wanjuan-resource-filter-tab {
   color: var(--wj-filter-button-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-text) !important;
   background: var(--wj-filter-button-bg) !important;
+  background-image: none !important;
   border: 1px solid var(--wj-filter-button-border) !important;
   font-weight: 600 !important;
   box-shadow: var(--wj-filter-button-shadow) !important;
   cursor: pointer !important;
 }
 
-.wanjuan-resource-filter-button:hover {
+.wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active):hover,
+.wanjuan-resource-filter-tab:not(.wanjuan-resource-filter-tab-active):not([aria-pressed="true"]):not([data-active="true"]):hover {
   color: var(--wj-filter-button-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-hover-text) !important;
   background: var(--wj-filter-button-hover-bg) !important;
+  background-image: none !important;
   border-color: var(--wj-filter-button-hover-border) !important;
 }
 
-.wanjuan-resource-filter-button-active {
+.wanjuan-resource-filter-button-active,
+.wanjuan-resource-filter-tab-active,
+.wanjuan-resource-filter-tab[aria-pressed="true"],
+.wanjuan-resource-filter-tab[data-active="true"] {
   color: var(--wj-control-selected-text) !important;
   -webkit-text-fill-color: var(--wj-control-selected-text) !important;
   background: var(--wj-control-selected-bg) !important;
@@ -770,13 +789,83 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
-html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) .wanjuan-resource-filter-button {
+html :is(
+  .wanjuan-resource-filter-button-active,
+  .wanjuan-resource-filter-tab-active,
+  .wanjuan-resource-filter-tab[aria-pressed="true"],
+  .wanjuan-resource-filter-tab[data-active="true"]
+):is(:hover, :focus-visible, :active) {
+  color: var(--wj-control-selected-text) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text) !important;
+  background: var(--wj-control-selected-bg) !important;
+  background-color: var(--wj-control-selected-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-control-selected-border) !important;
+  box-shadow: var(--wj-control-selected-shadow) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.wanjuan-resource-favorite-filter {
+  background: var(--wj-favorite-bg) !important;
+  background-color: var(--wj-favorite-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-favorite-border) !important;
+  color: var(--wj-favorite-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-text) !important;
+  box-shadow: var(--wj-filter-button-shadow) !important;
+  font-weight: 700 !important;
+}
+
+.wanjuan-resource-favorite-filter:not(.wanjuan-resource-favorite-filter-active):not([aria-pressed="true"]):hover {
+  background: var(--wj-favorite-hover-bg) !important;
+  background-color: var(--wj-favorite-hover-bg) !important;
+  border-color: var(--wj-favorite-hover-border) !important;
+  color: var(--wj-favorite-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-text) !important;
+}
+
+.wanjuan-resource-favorite-filter-active,
+.wanjuan-resource-favorite-filter[aria-pressed="true"],
+.wanjuan-resource-favorite-filter[data-active="true"] {
+  background: var(--wj-favorite-active-bg) !important;
+  background-color: var(--wj-favorite-active-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-favorite-active-border) !important;
+  color: var(--wj-favorite-active-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-active-text) !important;
+  box-shadow: var(--wj-favorite-shadow) !important;
+  filter: none !important;
+}
+
+.wanjuan-resource-favorite-filter-active:is(:hover, :focus-visible, :active),
+.wanjuan-resource-favorite-filter[aria-pressed="true"]:is(:hover, :focus-visible, :active),
+.wanjuan-resource-favorite-filter[data-active="true"]:is(:hover, :focus-visible, :active) {
+  background: var(--wj-favorite-active-bg) !important;
+  background-color: var(--wj-favorite-active-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-favorite-active-border) !important;
+  color: var(--wj-favorite-active-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-active-text) !important;
+  box-shadow: var(--wj-favorite-shadow) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) :is(.wanjuan-resource-filter-button, .wanjuan-resource-filter-tab) {
   color: var(--wj-filter-button-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-text) !important;
   background: var(--wj-filter-button-bg) !important;
+  background-image: none !important;
   box-shadow: var(--wj-filter-button-shadow) !important;
 }
 
-html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) .wanjuan-resource-filter-button-active {
+html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) :is(
+  .wanjuan-resource-filter-button-active,
+  .wanjuan-resource-filter-tab-active,
+  .wanjuan-resource-filter-tab[aria-pressed="true"],
+  .wanjuan-resource-filter-tab[data-active="true"]
+) {
   color: var(--wj-control-selected-text) !important;
   -webkit-text-fill-color: var(--wj-control-selected-text) !important;
   background: var(--wj-control-selected-bg) !important;
@@ -1211,6 +1300,15 @@ html.theme-graphite {
   --wj-filter-button-hover-bg: #454545;
   --wj-filter-button-hover-border: #8a8a8a;
   --wj-filter-button-hover-text: #ffffff;
+  --wj-favorite-bg: #363636;
+  --wj-favorite-border: #6f6f6f;
+  --wj-favorite-text: #fbbf24;
+  --wj-favorite-hover-bg: #45403a;
+  --wj-favorite-hover-border: #f59e0b;
+  --wj-favorite-active-bg: #f59e0b;
+  --wj-favorite-active-border: #fcd34d;
+  --wj-favorite-active-text: #111827;
+  --wj-favorite-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 0 rgba(0, 0, 0, 0.28);
   --wj-menu-bg: #303030;
   --wj-menu-border: #676767;
   --wj-menu-hover-bg: #404040;
@@ -1380,22 +1478,32 @@ html.theme-graphite .wanjuan-resource-filter-group {
   box-shadow: var(--wj-filter-group-shadow) !important;
 }
 
-html.theme-graphite .wanjuan-resource-filter-button {
+html.theme-graphite :is(.wanjuan-resource-filter-button, .wanjuan-resource-filter-tab) {
   background: var(--wj-filter-button-bg) !important;
   color: var(--wj-filter-button-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-text) !important;
   border-color: var(--wj-filter-button-border) !important;
   box-shadow: var(--wj-filter-button-shadow) !important;
 }
 
-html.theme-graphite .wanjuan-resource-filter-button:hover {
+html.theme-graphite :is(
+  .wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active),
+  .wanjuan-resource-filter-tab:not(.wanjuan-resource-filter-tab-active):not([aria-pressed="true"]):not([data-active="true"])
+):hover {
   background: var(--wj-filter-button-hover-bg) !important;
   color: var(--wj-filter-button-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-hover-text) !important;
   border-color: var(--wj-filter-button-hover-border) !important;
 }
 
-html.theme-graphite .wanjuan-resource-filter-button-active {
+html.theme-graphite :is(
+  .wanjuan-resource-filter-button-active,
+  .wanjuan-resource-filter-tab-active,
+  .wanjuan-resource-filter-tab[aria-pressed="true"],
+  .wanjuan-resource-filter-tab[data-active="true"]
+) {
   background: var(--wj-control-selected-bg) !important;
-  background-image: var(--wj-control-selected-bg) !important;
+  background-image: none !important;
   color: var(--wj-control-selected-text) !important;
   -webkit-text-fill-color: var(--wj-control-selected-text) !important;
   border-color: var(--wj-control-selected-border) !important;
@@ -1403,16 +1511,29 @@ html.theme-graphite .wanjuan-resource-filter-button-active {
 }
 
 html.theme-graphite .wanjuan-resource-favorite-filter {
-  background: color-mix(in srgb, var(--wj-surface-2) 80%, var(--wj-bg) 20%) !important;
-  border: 1px solid var(--wj-border) !important;
-  color: var(--wj-muted) !important;
+  background: var(--wj-favorite-bg) !important;
+  border: 1px solid var(--wj-favorite-border) !important;
+  color: var(--wj-favorite-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-text) !important;
 }
 
-html.theme-graphite .wanjuan-resource-favorite-filter:hover,
-html.theme-graphite .wanjuan-resource-favorite-filter-active {
-  background: var(--wj-warning) !important;
-  border-color: #fde68a !important;
-  color: #111827 !important;
+html.theme-graphite .wanjuan-resource-favorite-filter:not(.wanjuan-resource-favorite-filter-active):not([aria-pressed="true"]):hover {
+  background: var(--wj-favorite-hover-bg) !important;
+  border-color: var(--wj-favorite-hover-border) !important;
+  color: var(--wj-favorite-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-text) !important;
+}
+
+html.theme-graphite :is(
+  .wanjuan-resource-favorite-filter-active,
+  .wanjuan-resource-favorite-filter[aria-pressed="true"],
+  .wanjuan-resource-favorite-filter[data-active="true"]
+) {
+  background: var(--wj-favorite-active-bg) !important;
+  border-color: var(--wj-favorite-active-border) !important;
+  color: var(--wj-favorite-active-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-active-text) !important;
+  box-shadow: var(--wj-favorite-shadow) !important;
 }
 
 html.theme-graphite :is(input, textarea, select, .wanjuan-settings-control) {
