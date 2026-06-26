@@ -2071,12 +2071,7 @@ var TongyiWanxiangLogo = ({
                                       className: `flex-1 min-w-0 break-words`,
                                       children: model
                                     }), jsx(`span`, {
-                                      className: `flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : `text-gray-600 hover:text-yellow-300`}`,
-                                      style: favoriteModels.isFavorite(model) ? {
-                                        color: `#facc15`,
-                                        WebkitTextFillColor: `#facc15`,
-                                        textShadow: `0 0 5px rgba(250, 204, 21, 0.48)`,
-                                      } : void 0,
+                                      className: `wanjuan-model-favorite-star flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : ``}`,
                                       onClick: (event) => {
                                         (event.stopPropagation(),
                                           applyPreferredImageModel(favoriteModels.toggleFavorite(model)));
@@ -2940,12 +2935,7 @@ var TongyiWanxiangLogo = ({
                                       className: `flex-1 min-w-0 break-words`,
                                       children: model
                                     }), jsx(`span`, {
-                                      className: `flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : `text-gray-600 hover:text-yellow-300`}`,
-                                      style: favoriteModels.isFavorite(model) ? {
-                                        color: `#facc15`,
-                                        WebkitTextFillColor: `#facc15`,
-                                        textShadow: `0 0 5px rgba(250, 204, 21, 0.48)`,
-                                      } : void 0,
+                                      className: `wanjuan-model-favorite-star flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : ``}`,
                                       onClick: (event) => {
                                         (event.stopPropagation(),
                                           applyPreferredTextModel(favoriteModels.toggleFavorite(model)));
@@ -6144,12 +6134,7 @@ var Le = reactMemo(({
                                       className: `flex-1 min-w-0 break-words`,
                                       children: model
                                     }), jsx(`span`, {
-                                      className: `flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : `text-gray-600 hover:text-yellow-300`}`,
-                                      style: favoriteModels.isFavorite(model) ? {
-                                        color: `#facc15`,
-                                        WebkitTextFillColor: `#facc15`,
-                                        textShadow: `0 0 5px rgba(250, 204, 21, 0.48)`,
-                                      } : void 0,
+                                      className: `wanjuan-model-favorite-star flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : ``}`,
                                       onClick: (event) => {
                                         (event.stopPropagation(),
                                           applyPreferredVideoModel(favoriteModels.toggleFavorite(model)));
@@ -7749,12 +7734,7 @@ ${data.audioModel || ``}`)
                         className: `flex-1 min-w-0 break-words`,
                         children: model
                       }), jsx(`span`, {
-                        className: `flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : `text-gray-600 hover:text-yellow-300`}`,
-                        style: favoriteModels.isFavorite(model) ? {
-                          color: `#facc15`,
-                          WebkitTextFillColor: `#facc15`,
-                          textShadow: `0 0 5px rgba(250, 204, 21, 0.48)`,
-                        } : void 0,
+                        className: `wanjuan-model-favorite-star flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : ``}`,
                         onClick: (event) => {
                           (event.stopPropagation(),
                             wanJuanApplyPreferredTtsModel(favoriteModels.toggleFavorite(model)));
@@ -7897,12 +7877,7 @@ ${data.audioModel || ``}`)
                         className: `flex-1 min-w-0 break-words`,
                         children: model
                       }), jsx(`span`, {
-                        className: `flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : `text-gray-600 hover:text-yellow-300`}`,
-                        style: favoriteModels.isFavorite(model) ? {
-                          color: `#facc15`,
-                          WebkitTextFillColor: `#facc15`,
-                          textShadow: `0 0 5px rgba(250, 204, 21, 0.48)`,
-                        } : void 0,
+                        className: `wanjuan-model-favorite-star flex-shrink-0 text-base leading-none ${favoriteModels.isFavorite(model) ? `wanjuan-model-favorite-star-active` : ``}`,
                         onClick: (event) => {
                           (event.stopPropagation(),
                             wanJuanApplyPreferredMusicModel(favoriteModels.toggleFavorite(model)));
@@ -29028,11 +29003,7 @@ ${combinedPrompt}`,
                   children: [
                     jsx(_e, {
                       size: 14,
-                      className: membership.type === `VIP` ?
-                        `text-purple-500` :
-                        membership.type === `PRO` ?
-                        `text-yellow-500` :
-                        `text-blue-500`,
+                      className: `wanjuan-tier-icon ${membership.type === `VIP` ? `wanjuan-tier-icon-vip` : membership.type === `PRO` ? `wanjuan-tier-icon-pro` : `wanjuan-tier-icon-free`}`,
                     }),
                     jsxs(`span`, {
                       className: `text-xs text-gray-300 font-medium`,
@@ -44221,7 +44192,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           onClick: (event) => {
                                             (event.stopPropagation(), toggleFavorite(resource.id));
                                           },
-                                          className: `p-1.5 rounded transition-colors ${resource.isFavorite ? `text-yellow-500 hover:bg-yellow-50` : `text-gray-400 hover:text-yellow-500 hover:bg-yellow-50`}`,
+                                          className: `wanjuan-resource-card-favorite p-1.5 rounded transition-colors ${resource.isFavorite ? `wanjuan-resource-card-favorite-active` : ``}`,
                                           title: resource.isFavorite ?
                                             `取消收藏` :
                                             `收藏`,
@@ -47585,7 +47556,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                     className: `flex items-center gap-3 mb-6`,
                                     children: [
                                       jsx(`span`, {
-                                        className: `px-3 py-1 rounded-full text-xs font-bold shadow-sm ${$e.type === `VIP` ? `bg-purple-500/20 text-purple-400 border border-purple-500/30` : $e.type === `PRO` ? `bg-yellow-500/20 text-yellow-400 border border-yellow-500/30` : `bg-[#222] text-gray-400 border border-[#333]`}`,
+                                        className: `wanjuan-tier-badge px-3 py-1 rounded-full text-xs font-bold shadow-sm ${$e.type === `VIP` ? `wanjuan-tier-badge-vip` : $e.type === `PRO` ? `wanjuan-tier-badge-pro` : `wanjuan-tier-badge-free`}`,
                                         children: currentLimits.name,
                                       }),
                                       $e.type !== `FREE` &&

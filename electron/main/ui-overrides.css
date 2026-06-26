@@ -123,6 +123,15 @@
   --wj-favorite-shadow:
     inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent),
     0 2px 0 color-mix(in srgb, #000000 20%, transparent);
+  --wj-tier-free-bg: color-mix(in srgb, var(--wj-surface-2) 84%, var(--wj-bg) 16%);
+  --wj-tier-free-border: color-mix(in srgb, var(--wj-border) 74%, transparent);
+  --wj-tier-free-text: color-mix(in srgb, var(--wj-muted) 82%, var(--wj-text) 18%);
+  --wj-tier-pro-bg: color-mix(in srgb, var(--wj-warning, #f59e0b) 16%, var(--wj-surface-2) 84%);
+  --wj-tier-pro-border: color-mix(in srgb, var(--wj-warning, #f59e0b) 48%, var(--wj-border) 52%);
+  --wj-tier-pro-text: color-mix(in srgb, var(--wj-warning, #f59e0b) 86%, var(--wj-text) 14%);
+  --wj-tier-vip-bg: color-mix(in srgb, #8b5cf6 16%, var(--wj-surface-2) 84%);
+  --wj-tier-vip-border: color-mix(in srgb, #8b5cf6 48%, var(--wj-border) 52%);
+  --wj-tier-vip-text: color-mix(in srgb, #a78bfa 88%, var(--wj-text) 12%);
   --wj-menu-bg: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-bg) 8%);
   --wj-menu-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
   --wj-menu-hover-bg: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface-3) 86%);
@@ -828,6 +837,15 @@ html.theme-graphite {
   --wj-favorite-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     0 2px 0 rgba(0, 0, 0, 0.28);
+  --wj-tier-free-bg: #303030;
+  --wj-tier-free-border: #676767;
+  --wj-tier-free-text: #d0d0d0;
+  --wj-tier-pro-bg: #3a352a;
+  --wj-tier-pro-border: #a7791f;
+  --wj-tier-pro-text: #fbbf24;
+  --wj-tier-vip-bg: #383142;
+  --wj-tier-vip-border: #8b5cf6;
+  --wj-tier-vip-text: #c4b5fd;
   --wj-menu-bg: #303030;
   --wj-menu-border: #676767;
   --wj-menu-hover-bg: #404040;
@@ -4706,6 +4724,77 @@ html :is(
   box-shadow: var(--wj-favorite-shadow) !important;
   filter: none !important;
   transform: none !important;
+}
+
+html :is(.wanjuan-model-favorite-star, .wanjuan-resource-card-favorite)[class][class] {
+  color: var(--wj-control-muted-text) !important;
+  -webkit-text-fill-color: var(--wj-control-muted-text) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+html :is(
+  .wanjuan-model-favorite-star:not(.wanjuan-model-favorite-star-active),
+  .wanjuan-resource-card-favorite:not(.wanjuan-resource-card-favorite-active)
+):hover[class][class] {
+  color: var(--wj-favorite-text) !important;
+  -webkit-text-fill-color: var(--wj-favorite-text) !important;
+  background: var(--wj-favorite-hover-bg) !important;
+  border-color: var(--wj-favorite-hover-border) !important;
+}
+
+html :is(
+  .wanjuan-model-favorite-star-active,
+  .wanjuan-model-favorite-star-active:is(:hover, :focus-visible, :active),
+  .wanjuan-resource-card-favorite-active,
+  .wanjuan-resource-card-favorite-active:is(:hover, :focus-visible, :active)
+)[class][class] {
+  color: var(--wj-favorite-active-bg) !important;
+  -webkit-text-fill-color: var(--wj-favorite-active-bg) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  text-shadow: 0 0 5px color-mix(in srgb, var(--wj-favorite-active-bg) 42%, transparent) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html .wanjuan-tier-badge[class][class] {
+  background: var(--wj-tier-free-bg) !important;
+  border: 1px solid var(--wj-tier-free-border) !important;
+  color: var(--wj-tier-free-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-free-text) !important;
+}
+
+html .wanjuan-tier-icon[class][class] {
+  color: var(--wj-tier-free-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-free-text) !important;
+}
+
+html .wanjuan-tier-badge-pro[class][class] {
+  background: var(--wj-tier-pro-bg) !important;
+  border-color: var(--wj-tier-pro-border) !important;
+  color: var(--wj-tier-pro-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-pro-text) !important;
+}
+
+html .wanjuan-tier-icon-pro[class][class] {
+  color: var(--wj-tier-pro-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-pro-text) !important;
+}
+
+html .wanjuan-tier-badge-vip[class][class] {
+  background: var(--wj-tier-vip-bg) !important;
+  border-color: var(--wj-tier-vip-border) !important;
+  color: var(--wj-tier-vip-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-vip-text) !important;
+}
+
+html .wanjuan-tier-icon-vip[class][class] {
+  color: var(--wj-tier-vip-text) !important;
+  -webkit-text-fill-color: var(--wj-tier-vip-text) !important;
 }
 
 /* ============================================================

@@ -38,6 +38,7 @@
 - 面板、输入框、折叠按钮、筛选组、收藏按钮和菜单分别使用 `--wj-panel-*`、`--wj-field-*`、`--wj-disclosure-*`、`--wj-filter-*`、`--wj-favorite-*`、`--wj-menu-*`；不要在项目分组弹窗、设置卡片、资源筛选、右键菜单里继续硬写局部背景、边框和阴影。
 - 顶部导航、资源工具栏、设置侧栏等全局框架层使用 `--wj-chrome-*`；主导航文字、选中线和兼容旧入口使用 `--wj-nav-*` / `--wanjuan-nav-*`，不要再分别给这些区域硬写灰蓝渐变。
 - 画布控件和连线使用 `--wj-canvas-control-*`、`--wj-edge-*`、`--wj-loading-node-*`；不要再在 React Flow 控件、运行连线、加载节点里按主题硬写颜色。
+- 收藏星标、资源卡收藏和会员等级徽章/图标使用 `--wj-favorite-*`、`--wj-tier-*`；不要在模型列表、资源管理或会员设置中继续硬写黄、紫、蓝。
 - 减少 `nth-child`、硬编码 hex、只针对某张截图的选择器。
 - 对已有类名做语义化桥接，例如 active、aria-pressed、data-active、danger。
 - Electron 注入层只做最终桌面一致性兜底，核心规则放在 renderer 样式文件。
