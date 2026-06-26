@@ -2349,24 +2349,26 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
    Cover hard-coded Tailwind black/gray/blue/red/green buttons across nodes,
    dialogs and canvas overlays instead of patching one popup at a time. */
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-dark, .theme-graphite) {
-  --wanjuan-control-bg: color-mix(in srgb, var(--wanjuan-theme-surface) 86%, var(--wanjuan-theme-surface-2) 14%);
-  --wanjuan-control-bg-hover: color-mix(in srgb, var(--wanjuan-theme-accent) 12%, var(--wanjuan-control-bg) 88%);
-  --wanjuan-control-border: color-mix(in srgb, var(--wanjuan-theme-border) 78%, var(--wanjuan-theme-accent) 22%);
-  --wanjuan-control-text: var(--wanjuan-theme-text-strong, var(--wanjuan-theme-text));
-  --wanjuan-control-muted: color-mix(in srgb, var(--wanjuan-theme-muted) 86%, var(--wanjuan-theme-text) 14%);
-  --wanjuan-control-active-bg: linear-gradient(135deg, var(--wanjuan-theme-accent) 0%, var(--wanjuan-theme-accent-2, var(--wanjuan-theme-accent)) 100%);
-  --wanjuan-control-active-text: #ffffff;
-  --wanjuan-control-danger: color-mix(in srgb, var(--wanjuan-theme-accent-2, #ef4444) 70%, #ef4444 30%);
-  --wanjuan-control-danger-bg: color-mix(in srgb, var(--wanjuan-control-danger) 13%, var(--wanjuan-theme-surface) 87%);
-  --wanjuan-control-success: color-mix(in srgb, var(--wanjuan-theme-accent) 72%, #16a34a 28%);
-  --wanjuan-control-success-bg: color-mix(in srgb, var(--wanjuan-control-success) 15%, var(--wanjuan-theme-surface) 85%);
-  --wanjuan-picker-bg: color-mix(in srgb, var(--wanjuan-theme-surface) 94%, var(--wanjuan-theme-bg) 6%);
+  --wanjuan-control-bg: var(--wj-control-bg);
+  --wanjuan-control-bg-hover: var(--wj-control-hover-bg);
+  --wanjuan-control-border: var(--wj-control-border);
+  --wanjuan-control-text: var(--wj-control-text);
+  --wanjuan-control-muted: var(--wj-control-muted-text);
+  --wanjuan-control-active-bg: var(--wj-control-selected-bg);
+  --wanjuan-control-active-border: var(--wj-control-selected-border);
+  --wanjuan-control-active-text: var(--wj-control-selected-text);
+  --wanjuan-control-danger: var(--wj-danger);
+  --wanjuan-control-danger-bg: var(--wj-danger-soft);
+  --wanjuan-control-danger-border: var(--wj-danger-border);
+  --wanjuan-control-success: #16a34a;
+  --wanjuan-control-success-bg: color-mix(in srgb, var(--wanjuan-control-success) 15%, var(--wj-surface) 85%);
+  --wanjuan-picker-bg: color-mix(in srgb, var(--wj-surface) 94%, var(--wj-bg) 6%);
 }
 
 html:is(.theme-dark, .theme-graphite) {
-  --wanjuan-control-bg: color-mix(in srgb, var(--wanjuan-theme-surface) 74%, var(--wanjuan-theme-surface-2) 26%);
-  --wanjuan-control-bg-hover: color-mix(in srgb, var(--wanjuan-theme-accent) 18%, var(--wanjuan-control-bg) 82%);
-  --wanjuan-picker-bg: color-mix(in srgb, var(--wanjuan-theme-surface) 88%, #000000 12%);
+  --wanjuan-control-bg: var(--wj-control-bg);
+  --wanjuan-control-bg-hover: var(--wj-control-hover-bg);
+  --wanjuan-picker-bg: color-mix(in srgb, var(--wj-surface) 88%, #000000 12%);
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-dark, .theme-graphite)
@@ -2389,23 +2391,25 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   :is(.react-flow__node, .react-flow__panel, [role="dialog"], [class*="fixed"], [class*="absolute"])
   :is(button, [role="button"]):is([class*="bg-black"], [class*="bg-gray-"], [class*="bg-[#121212]"], [class*="bg-[#222]"], [class*="bg-[#333]"]):hover {
   background: var(--wanjuan-control-bg-hover) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent) 58%, var(--wanjuan-theme-border) 42%) !important;
+  border-color: var(--wj-control-hover-border) !important;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-dark, .theme-graphite)
   :is(.react-flow__node, .react-flow__panel, [role="dialog"], [class*="fixed"], [class*="absolute"])
   :is(button, [role="button"]):is([class*="bg-blue-"], [class*="bg-indigo-"], [class*="bg-purple-"]) {
   background: var(--wanjuan-control-active-bg) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-theme-accent) 56%, var(--wanjuan-theme-border) 44%) !important;
+  background-image: none !important;
+  border-color: var(--wanjuan-control-active-border) !important;
   color: var(--wanjuan-control-active-text) !important;
   -webkit-text-fill-color: currentColor !important;
+  box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
 html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green, .theme-dark, .theme-graphite)
   :is(.react-flow__node, .react-flow__panel, [role="dialog"], [class*="fixed"], [class*="absolute"])
   :is(button, [role="button"]):is([class*="bg-red-"], [class*="text-red-"]) {
   background: var(--wanjuan-control-danger-bg) !important;
-  border-color: color-mix(in srgb, var(--wanjuan-control-danger) 58%, var(--wanjuan-theme-border) 42%) !important;
+  border-color: var(--wanjuan-control-danger-border) !important;
   color: var(--wanjuan-control-danger) !important;
   -webkit-text-fill-color: currentColor !important;
 }

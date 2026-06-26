@@ -453,7 +453,11 @@ html.theme-chrome-teal .wanjuan-loading-node-frame {
   height: 24px;
   border-radius: 999px 999px 0 0;
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(138, 180, 248, 0.22), rgba(138, 180, 248, 0) 68%);
+    radial-gradient(
+      ellipse at 50% 100%,
+      color-mix(in srgb, var(--wanjuan-nav-active-line, var(--wj-accent, #38bdf8)) 18%, transparent),
+      transparent 68%
+    );
   transform: translateY(8px) scaleX(0.72);
 }
 
@@ -463,8 +467,8 @@ html.theme-chrome-teal .wanjuan-loading-node-frame {
   bottom: 0;
   height: 3px;
   border-radius: 999px 999px 0 0;
-  background: linear-gradient(90deg, transparent, rgba(138, 180, 248, 0.95), transparent);
-  box-shadow: 0 0 16px rgba(96, 165, 250, 0.48);
+  background: linear-gradient(90deg, transparent, var(--wanjuan-nav-active-line, var(--wj-accent, #38bdf8)), transparent);
+  box-shadow: 0 0 12px var(--wanjuan-nav-active-shadow, color-mix(in srgb, var(--wj-accent, #38bdf8) 18%, transparent));
   transform: translateY(6px) scaleX(0.55);
 }
 
@@ -504,7 +508,7 @@ html.theme-chrome-teal .wanjuan-loading-node-frame {
 .wanjuan-app-nav-tab-active > svg,
 .wanjuan-app-nav-tab-active > span:first-child {
   transform: translateY(-1px);
-  filter: drop-shadow(0 0 8px rgba(138, 180, 248, 0.34));
+  filter: drop-shadow(0 0 7px var(--wanjuan-nav-active-shadow, color-mix(in srgb, var(--wj-accent, #38bdf8) 20%, transparent)));
 }
 
 html.theme-graphite,
