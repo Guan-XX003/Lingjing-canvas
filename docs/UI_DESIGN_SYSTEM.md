@@ -34,6 +34,7 @@
 
 - 优先补齐统一 CSS 变量，再让现有组件类接入变量；保留必要的旧类名匹配器，但输出颜色应走语义变量。
 - 新增或调整主题时，先改 `--wj-action-bg`、`--wj-action-hover-bg`、`--wj-action-border`、`--wj-action-text`、`--wj-action-shadow`，再让选中态和主按钮自然继承，避免直接在各组件里硬写 selected/primary 颜色。
+- 面板、输入框、折叠按钮、筛选组和菜单分别使用 `--wj-panel-*`、`--wj-field-*`、`--wj-disclosure-*`、`--wj-filter-*`、`--wj-menu-*`；不要在项目分组弹窗、设置卡片、资源筛选、右键菜单里继续硬写局部背景、边框和阴影。
 - 画布控件和连线使用 `--wj-canvas-control-*`、`--wj-edge-*`、`--wj-loading-node-*`；不要再在 React Flow 控件、运行连线、加载节点里按主题硬写颜色。
 - 减少 `nth-child`、硬编码 hex、只针对某张截图的选择器。
 - 对已有类名做语义化桥接，例如 active、aria-pressed、data-active、danger。

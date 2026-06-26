@@ -47,6 +47,58 @@
   --wj-control-primary-border: var(--wj-action-border);
   --wj-control-primary-text: var(--wj-action-text);
   --wj-control-primary-shadow: var(--wj-action-shadow);
+  --wj-control-disabled-bg: color-mix(in srgb, var(--wj-surface) 78%, var(--wj-bg) 22%);
+  --wj-control-disabled-border: color-mix(in srgb, var(--wj-border) 50%, transparent);
+  --wj-control-disabled-text: color-mix(in srgb, var(--wj-muted) 62%, var(--wj-bg) 38%);
+  --wj-panel-bg: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%);
+  --wj-panel-bg-raised: color-mix(in srgb, var(--wj-surface-2) 78%, var(--wj-surface) 22%);
+  --wj-panel-bg-subtle: color-mix(in srgb, var(--wj-bg) 78%, var(--wj-surface) 22%);
+  --wj-panel-border: color-mix(in srgb, var(--wj-border) 90%, var(--wj-text) 10%);
+  --wj-panel-border-soft: color-mix(in srgb, var(--wj-border) 72%, transparent);
+  --wj-panel-divider: color-mix(in srgb, var(--wj-border) 64%, transparent);
+  --wj-panel-section-bg: color-mix(in srgb, var(--wj-surface) 86%, var(--wj-bg) 14%);
+  --wj-panel-section-header-bg: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-accent) 8%);
+  --wj-panel-row-bg: color-mix(in srgb, var(--wj-surface) 88%, var(--wj-bg) 12%);
+  --wj-panel-row-hover-bg: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface) 90%);
+  --wj-panel-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
+    0 8px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 30%, transparent);
+  --wj-field-bg: color-mix(in srgb, var(--wj-surface-2) 82%, var(--wj-bg) 18%);
+  --wj-field-border: color-mix(in srgb, var(--wj-border) 82%, transparent);
+  --wj-field-text: var(--wj-text);
+  --wj-field-placeholder: color-mix(in srgb, var(--wj-muted) 72%, transparent);
+  --wj-field-focus-border: color-mix(in srgb, var(--wj-accent) 64%, var(--wj-border) 36%);
+  --wj-field-focus-shadow: 0 0 0 2px color-mix(in srgb, var(--wj-accent) 18%, transparent);
+  --wj-field-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 5%, transparent);
+  --wj-disclosure-bg: var(--wj-control-bg);
+  --wj-disclosure-border: color-mix(in srgb, var(--wj-border) 72%, var(--wj-accent) 28%);
+  --wj-disclosure-text: color-mix(in srgb, var(--wj-text) 88%, var(--wj-muted) 12%);
+  --wj-disclosure-hover-bg: var(--wj-control-hover-bg);
+  --wj-disclosure-hover-border: var(--wj-control-hover-border);
+  --wj-disclosure-hover-text: var(--wj-control-hover-text);
+  --wj-disclosure-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
+    0 6px 14px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 28%, transparent);
+  --wj-disclosure-hover-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 9%, transparent);
+  --wj-filter-group-bg: color-mix(in srgb, var(--wj-surface) 88%, var(--wj-bg) 12%);
+  --wj-filter-group-border: color-mix(in srgb, var(--wj-border) 78%, var(--wj-accent) 22%);
+  --wj-filter-group-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 8%, transparent),
+    0 8px 18px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.42)) 44%, transparent);
+  --wj-filter-button-bg: color-mix(in srgb, var(--wj-surface-2) 72%, var(--wj-bg) 28%);
+  --wj-filter-button-border: transparent;
+  --wj-filter-button-text: color-mix(in srgb, var(--wj-text) 76%, var(--wj-muted) 24%);
+  --wj-filter-button-hover-bg: var(--wj-control-hover-bg);
+  --wj-filter-button-hover-border: var(--wj-control-hover-border);
+  --wj-filter-button-hover-text: var(--wj-control-hover-text);
+  --wj-filter-button-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 5%, transparent);
+  --wj-menu-bg: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-bg) 8%);
+  --wj-menu-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
+  --wj-menu-hover-bg: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface-3) 86%);
+  --wj-menu-shadow: var(--wj-shadow-popover), inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent);
+  --wj-menu-danger-text: color-mix(in srgb, var(--wj-danger) 88%, var(--wj-text) 12%);
+  --wj-menu-danger-hover-bg: color-mix(in srgb, var(--wj-danger) 15%, var(--wj-surface-3) 85%);
+  --wj-menu-danger-hover-text: color-mix(in srgb, var(--wj-danger) 82%, var(--wj-text) 18%);
   --wj-card-bg: color-mix(in srgb, var(--wj-surface) 88%, var(--wj-bg) 12%);
   --wj-card-hover-bg: color-mix(in srgb, var(--wj-surface-2) 86%, var(--wj-accent) 14%);
   --wj-card-selected-bg: color-mix(in srgb, var(--wj-surface-2) 88%, var(--wj-accent) 12%);
@@ -683,6 +735,49 @@ html.theme-graphite {
   --wj-action-bg: #0369a1;
   --wj-action-hover-bg: #075985;
   --wj-action-border: #38bdf8;
+  --wj-panel-bg: #2c2c2c;
+  --wj-panel-bg-raised: #333333;
+  --wj-panel-bg-subtle: #202020;
+  --wj-panel-border: #707070;
+  --wj-panel-border-soft: #575757;
+  --wj-panel-divider: #4a4a4a;
+  --wj-panel-section-bg: #303030;
+  --wj-panel-section-header-bg: #373737;
+  --wj-panel-row-bg: #2d2d2d;
+  --wj-panel-row-hover-bg: #383838;
+  --wj-panel-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 18px rgba(0, 0, 0, 0.22);
+  --wj-field-bg: #252525;
+  --wj-field-border: #696969;
+  --wj-field-text: #f8fafc;
+  --wj-field-placeholder: #9f9f9f;
+  --wj-field-focus-border: #38bdf8;
+  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+  --wj-disclosure-bg: #3a3a3a;
+  --wj-disclosure-border: #747474;
+  --wj-disclosure-text: #f2f4f6;
+  --wj-disclosure-hover-bg: #464646;
+  --wj-disclosure-hover-border: #a0a0a0;
+  --wj-disclosure-hover-text: #ffffff;
+  --wj-disclosure-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065);
+  --wj-disclosure-hover-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --wj-filter-group-bg: #2b2b2b;
+  --wj-filter-group-border: #676767;
+  --wj-filter-group-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 8px 18px rgba(0, 0, 0, 0.2);
+  --wj-filter-button-bg: #343434;
+  --wj-filter-button-border: transparent;
+  --wj-filter-button-text: #e2e2e2;
+  --wj-filter-button-hover-bg: #454545;
+  --wj-filter-button-hover-border: #8a8a8a;
+  --wj-filter-button-hover-text: #ffffff;
+  --wj-menu-bg: #303030;
+  --wj-menu-border: #676767;
+  --wj-menu-hover-bg: #404040;
+  --wj-menu-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --wj-menu-danger-text: #ff6b6b;
+  --wj-menu-danger-hover-bg: rgba(239, 68, 68, 0.14);
+  --wj-menu-danger-hover-text: #ff8a8a;
   --wj-card-bg: #333333;
   --wj-card-hover-bg: #3f3f3f;
   --wj-card-selected-bg: #383838;
@@ -848,10 +943,10 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .wanjuan-settings-card,
 .wanjuan-settings-subcard {
-  background: color-mix(in srgb, var(--wj-surface) 92%, var(--wj-bg) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, transparent) !important;
+  background: var(--wj-panel-bg) !important;
+  border-color: var(--wj-panel-border-soft) !important;
   color: var(--wj-text) !important;
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.22)) 28%, transparent) !important;
+  box-shadow: var(--wj-panel-shadow) !important;
 }
 
 .wanjuan-storage-optimization-card {
@@ -861,8 +956,8 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 }
 
 .wanjuan-settings-card-header {
-  background: color-mix(in srgb, var(--wj-surface-2) 78%, var(--wj-surface) 22%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 76%, transparent) !important;
+  background: var(--wj-panel-bg-raised) !important;
+  border-color: var(--wj-panel-divider) !important;
 }
 
 .wanjuan-settings-card-title,
@@ -883,24 +978,24 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .wanjuan-settings-readonly-row,
 .wanjuan-settings-control {
-  background: color-mix(in srgb, var(--wj-surface-2) 76%, var(--wj-bg) 24%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, transparent) !important;
-  color: var(--wj-text) !important;
+  background: var(--wj-field-bg) !important;
+  border-color: var(--wj-field-border) !important;
+  color: var(--wj-field-text) !important;
 }
 
 .wanjuan-settings-control:focus {
-  border-color: color-mix(in srgb, var(--wj-accent) 64%, var(--wj-border) 36%) !important;
-  box-shadow: var(--wj-focus-ring) !important;
+  border-color: var(--wj-field-focus-border) !important;
+  box-shadow: var(--wj-field-focus-shadow) !important;
 }
 
 .wanjuan-settings-select:hover,
 .wanjuan-settings-control:hover {
-  border-color: color-mix(in srgb, var(--wj-accent) 34%, var(--wj-border) 66%) !important;
+  border-color: var(--wj-control-hover-border) !important;
 }
 
 .wanjuan-settings-list-card {
-  background: color-mix(in srgb, var(--wj-surface-2) 78%, var(--wj-bg) 22%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, transparent) !important;
+  background: var(--wj-panel-section-bg) !important;
+  border-color: var(--wj-panel-border-soft) !important;
   color: var(--wj-text) !important;
 }
 
@@ -3503,13 +3598,10 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 
 [data-wanjuan-context-menu="true"] {
   overflow: visible !important;
-  background: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-bg) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%) !important;
+  background: var(--wj-menu-bg) !important;
+  border-color: var(--wj-menu-border) !important;
   color: var(--wj-text) !important;
-  box-shadow:
-    var(--wj-shadow-popover),
-    0 8px 20px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.34)) 58%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent) !important;
+  box-shadow: var(--wj-menu-shadow) !important;
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
 }
@@ -3521,10 +3613,10 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 
 .wanjuan-context-submenu {
   overflow: visible !important;
-  background: color-mix(in srgb, var(--wj-surface-2) 92%, var(--wj-bg) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%) !important;
+  background: var(--wj-menu-bg) !important;
+  border-color: var(--wj-menu-border) !important;
   color: var(--wj-text) !important;
-  box-shadow: var(--wj-shadow-popover) !important;
+  box-shadow: var(--wj-menu-shadow) !important;
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
 }
@@ -3552,7 +3644,7 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 
 .wanjuan-context-menu-item:hover,
 .wanjuan-context-menu-row:hover {
-  background: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface-3) 86%) !important;
+  background: var(--wj-menu-hover-bg) !important;
   color: var(--wj-text) !important;
 }
 
@@ -3570,12 +3662,12 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 }
 
 .wanjuan-context-menu-item-danger {
-  color: color-mix(in srgb, var(--wj-danger) 88%, var(--wj-text) 12%) !important;
+  color: var(--wj-menu-danger-text) !important;
 }
 
 .wanjuan-context-menu-item-danger:hover {
-  background: color-mix(in srgb, var(--wj-danger) 15%, var(--wj-surface-3) 85%) !important;
-  color: color-mix(in srgb, var(--wj-danger) 82%, var(--wj-text) 18%) !important;
+  background: var(--wj-menu-danger-hover-bg) !important;
+  color: var(--wj-menu-danger-hover-text) !important;
 }
 
 .wanjuan-resource-submenu {
@@ -3587,18 +3679,18 @@ html.wanjuan-canvas-lite .react-flow__edge-textbg {
 }
 
 [data-wanjuan-context-menu="true"] :is(button, [role="button"]):hover {
-  background: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface-3) 86%) !important;
+  background: var(--wj-menu-hover-bg) !important;
   color: var(--wj-text) !important;
 }
 
 [data-wanjuan-context-menu="true"] :is(button, [role="button"]).wanjuan-context-menu-item-danger,
 [data-wanjuan-context-menu="true"] .wanjuan-context-menu-item-danger :is(svg, span) {
-  color: color-mix(in srgb, var(--wj-danger) 88%, var(--wj-text) 12%) !important;
+  color: var(--wj-menu-danger-text) !important;
 }
 
 [data-wanjuan-context-menu="true"] :is(button, [role="button"]).wanjuan-context-menu-item-danger:hover {
-  background: color-mix(in srgb, var(--wj-danger) 15%, var(--wj-surface-3) 85%) !important;
-  color: color-mix(in srgb, var(--wj-danger) 82%, #ffffff 18%) !important;
+  background: var(--wj-menu-danger-hover-bg) !important;
+  color: var(--wj-menu-danger-hover-text) !important;
 }
 
 [data-wanjuan-context-menu="true"] .wanjuan-context-menu-separator {
@@ -3856,12 +3948,10 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
   min-height: 36px !important;
   padding: 4px !important;
   gap: 3px !important;
-  background: color-mix(in srgb, var(--wj-bg) 58%, var(--wj-surface-2) 42%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 82%, var(--wj-text) 6%) !important;
+  background: var(--wj-filter-group-bg) !important;
+  border-color: var(--wj-filter-group-border) !important;
   border-radius: 8px !important;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
-    0 1px 0 color-mix(in srgb, #000 32%, transparent) !important;
+  box-shadow: var(--wj-filter-group-shadow) !important;
 }
 
 .wanjuan-resource-filter-button {
@@ -3870,24 +3960,26 @@ html:not(.theme-dark):not(.theme-graphite) .react-flow__controls-button:hover {
   padding: 0 12px !important;
   border: 1px solid transparent !important;
   border-radius: 6px !important;
-  color: color-mix(in srgb, var(--wj-muted) 92%, var(--wj-text) 8%) !important;
+  background: var(--wj-filter-button-bg) !important;
+  border-color: var(--wj-filter-button-border) !important;
+  color: var(--wj-filter-button-text) !important;
+  box-shadow: var(--wj-filter-button-shadow) !important;
   font-weight: 600 !important;
   line-height: 26px !important;
 }
 
 .wanjuan-resource-filter-button:hover {
-  background: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-3) 90%) !important;
-  border-color: color-mix(in srgb, var(--wj-accent) 22%, var(--wj-border) 78%) !important;
-  color: var(--wj-text) !important;
+  background: var(--wj-filter-button-hover-bg) !important;
+  border-color: var(--wj-filter-button-hover-border) !important;
+  color: var(--wj-filter-button-hover-text) !important;
 }
 
 .wanjuan-resource-filter-button-active {
-  background: color-mix(in srgb, var(--wj-text) 92%, var(--wj-accent) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-text) 70%, var(--wj-accent) 30%) !important;
-  color: color-mix(in srgb, var(--wj-bg) 88%, #000 12%) !important;
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--wj-text) 18%, transparent) inset,
-    0 8px 16px color-mix(in srgb, #000 20%, transparent) !important;
+  background: var(--wj-control-selected-bg) !important;
+  border-color: var(--wj-control-selected-border) !important;
+  color: var(--wj-control-selected-text) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text) !important;
+  box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
 .wanjuan-resource-toolbar input[type="range"] {
@@ -4429,35 +4521,35 @@ html:is(.theme-light,.theme-warm-light,.theme-mist-blue,.theme-chrome-blue,.them
 }
 /* 未选中态: 更清晰的可点击感 */
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active) {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  box-shadow: none !important;
+  background: var(--wj-filter-button-bg) !important;
+  border: 1px solid var(--wj-filter-button-border) !important;
+  color: var(--wj-filter-button-text) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-text) !important;
+  box-shadow: var(--wj-filter-button-shadow) !important;
 }
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button:not(.wanjuan-resource-filter-button-active):hover {
-  background: var(--wj-control-hover-bg, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 14%, transparent)) !important;
-  color: var(--wj-control-hover-text, var(--wanjuan-theme-text, currentColor)) !important;
-  -webkit-text-fill-color: var(--wj-control-hover-text, var(--wanjuan-theme-text, currentColor)) !important;
-  border-color: var(--wj-control-hover-border, color-mix(in srgb, var(--wanjuan-theme-accent, #3b82f6) 34%, transparent)) !important;
-  box-shadow: none !important;
+  background: var(--wj-filter-button-hover-bg, var(--wj-control-hover-bg)) !important;
+  color: var(--wj-filter-button-hover-text, var(--wj-control-hover-text)) !important;
+  -webkit-text-fill-color: var(--wj-filter-button-hover-text, var(--wj-control-hover-text)) !important;
+  border-color: var(--wj-filter-button-hover-border, var(--wj-control-hover-border)) !important;
+  box-shadow: var(--wj-filter-button-shadow, none) !important;
 }
 
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-group {
   min-height: 36px !important;
   padding: 4px !important;
   gap: 3px !important;
-  background: color-mix(in srgb, var(--wj-bg) 58%, var(--wj-surface-2) 42%) !important;
-  border: 1px solid color-mix(in srgb, var(--wj-border) 82%, var(--wj-text) 6%) !important;
+  background: var(--wj-filter-group-bg) !important;
+  border: 1px solid var(--wj-filter-group-border) !important;
   border-radius: 8px !important;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
-    0 1px 0 color-mix(in srgb, #000 32%, transparent) !important;
+  box-shadow: var(--wj-filter-group-shadow) !important;
 }
 
 html .wanjuan-resource-toolbar .wanjuan-resource-filter-button {
-  border: 1px solid transparent !important;
+  border: 1px solid var(--wj-filter-button-border) !important;
   border-radius: 8px !important;
   min-height: 30px !important;
-  box-shadow: none !important;
+  box-shadow: var(--wj-filter-button-shadow) !important;
 }
 
 /* ============================================================
@@ -4720,6 +4812,43 @@ html.theme-graphite {
   --wj-control-disabled-bg: #252525;
   --wj-control-disabled-border: #474747;
   --wj-control-disabled-text: #8d8d8d;
+  --wj-panel-bg: #2c2c2c;
+  --wj-panel-bg-raised: #333333;
+  --wj-panel-bg-subtle: #202020;
+  --wj-panel-section-bg: #303030;
+  --wj-panel-section-header-bg: #373737;
+  --wj-panel-row-bg: #2d2d2d;
+  --wj-panel-row-hover-bg: #383838;
+  --wj-field-bg: #252525;
+  --wj-field-border: #696969;
+  --wj-field-text: #f8fafc;
+  --wj-field-placeholder: #9f9f9f;
+  --wj-field-focus-border: #38bdf8;
+  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+  --wj-disclosure-bg: #3a3a3a;
+  --wj-disclosure-border: #747474;
+  --wj-disclosure-text: #f2f4f6;
+  --wj-disclosure-hover-bg: #464646;
+  --wj-disclosure-hover-border: #a0a0a0;
+  --wj-disclosure-hover-text: #ffffff;
+  --wj-disclosure-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065);
+  --wj-disclosure-hover-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --wj-filter-group-bg: #2b2b2b;
+  --wj-filter-group-border: #676767;
+  --wj-filter-group-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 8px 18px rgba(0, 0, 0, 0.2);
+  --wj-filter-button-bg: #343434;
+  --wj-filter-button-border: transparent;
+  --wj-filter-button-text: #e2e2e2;
+  --wj-filter-button-hover-bg: #454545;
+  --wj-filter-button-hover-border: #8a8a8a;
+  --wj-filter-button-hover-text: #ffffff;
+  --wj-menu-bg: #303030;
+  --wj-menu-border: #676767;
+  --wj-menu-hover-bg: #404040;
+  --wj-menu-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --wj-menu-danger-text: #ff6b6b;
+  --wj-menu-danger-hover-bg: rgba(239, 68, 68, 0.14);
+  --wj-menu-danger-hover-text: #ff8a8a;
   --wj-danger: #ef4444;
   --wj-danger-bg: #dc2626;
   --wj-danger-border: #f87171;
