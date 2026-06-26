@@ -4788,7 +4788,7 @@ html.theme-graphite :is(
   .wanjuan-workspace-tabs button,
   .wanjuan-workspace-sections button,
   .wanjuan-workspace-segment button
-):not(.wanjuan-agent-role-card):not(.is-active):not(.primary):not(.wanjuan-tianji-primary):not(.wanjuan-tianji-points-refresh):not(.wanjuan-settings-save-button):not(.wanjuan-project-group-primary):not([aria-pressed="true"]):not([disabled]):not([class*="bg-blue-"]):not([class*="bg-emerald-"])[class][class] {
+):not(.wanjuan-agent-role-card):not(.wanjuan-settings-nav-item-active):not(.wanjuan-resource-filter-button-active):not(.wanjuan-node-model-option-active):not(.wanjuan-theme-option-active):not(.wanjuan-node-popover-option-active):not(.wanjuan-tts-node-mode-button-active):not(.wj-mode-tab-active):not(.is-active):not(.primary):not(.wanjuan-tianji-primary):not(.wanjuan-tianji-points-refresh):not(.wanjuan-settings-save-button):not(.wanjuan-project-group-primary):not([aria-pressed="true"]):not([data-active="true"]):not([disabled]):not([class*="bg-blue-"]):not([class*="bg-emerald-"])[class][class] {
   background: var(--wj-control-bg) !important;
   background-image: none !important;
   border-color: var(--wj-control-border) !important;
@@ -4806,7 +4806,7 @@ html.theme-graphite :is(
   .wanjuan-workspace-tabs button,
   .wanjuan-workspace-sections button,
   .wanjuan-workspace-segment button
-):not(.wanjuan-agent-role-card):not(.is-active):not(.primary):not(.wanjuan-tianji-primary):not(.wanjuan-tianji-points-refresh):not(.wanjuan-settings-save-button):not(.wanjuan-project-group-primary):not([aria-pressed="true"]):not([disabled]):hover[class][class] {
+):not(.wanjuan-agent-role-card):not(.wanjuan-settings-nav-item-active):not(.wanjuan-resource-filter-button-active):not(.wanjuan-node-model-option-active):not(.wanjuan-theme-option-active):not(.wanjuan-node-popover-option-active):not(.wanjuan-tts-node-mode-button-active):not(.wj-mode-tab-active):not(.is-active):not(.primary):not(.wanjuan-tianji-primary):not(.wanjuan-tianji-points-refresh):not(.wanjuan-settings-save-button):not(.wanjuan-project-group-primary):not([aria-pressed="true"]):not([data-active="true"]):not([disabled]):hover[class][class] {
   background: var(--wj-control-hover-bg) !important;
   background-image: none !important;
   border-color: var(--wj-control-hover-border) !important;
