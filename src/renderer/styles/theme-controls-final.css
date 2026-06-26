@@ -656,25 +656,25 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 }
 
 html.theme-graphite {
-  --wj-bg: #111827;
-  --wj-bg-elevated: #161f2e;
-  --wj-surface: #1f2937;
-  --wj-surface-2: #273244;
-  --wj-surface-3: #334155;
-  --wj-border: #475569;
-  --wj-border-strong: #64748b;
-  --wj-panel-border: #64748b;
-  --wj-panel-border-soft: #4b5d73;
-  --wj-panel-divider: #475569;
+  --wj-bg: #171717;
+  --wj-bg-elevated: #1f1f1f;
+  --wj-surface: #242424;
+  --wj-surface-2: #303030;
+  --wj-surface-3: #3d3d3d;
+  --wj-border: #5f5f5f;
+  --wj-border-strong: #7a7a7a;
+  --wj-panel-border: #707070;
+  --wj-panel-border-soft: #525252;
+  --wj-panel-divider: #464646;
   --wj-panel-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.22);
   --wj-text: #f8fafc;
-  --wj-muted: #cbd5e1;
-  --wj-muted-2: #94a3b8;
-  --wj-accent: #0ea5e9;
+  --wj-muted: #d4d4d4;
+  --wj-muted-2: #a3a3a3;
+  --wj-accent: #38bdf8;
   --wj-accent-strong: #7dd3fc;
-  --wj-accent-soft: rgba(14, 165, 233, 0.2);
+  --wj-accent-soft: rgba(56, 189, 248, 0.16);
   --wj-success: #16a34a;
   --wj-warning: #f59e0b;
   --wj-danger: #dc2626;
@@ -685,28 +685,30 @@ html.theme-graphite {
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
   --wanjuan-theme-shadow: rgba(0, 0, 0, 0.48);
-  --wj-control-bg: #334155;
-  --wj-control-border: #64748b;
+  --wj-control-bg: #3d3d3d;
+  --wj-control-border: #707070;
   --wj-control-text: #f8fafc;
-  --wj-control-muted-text: #cbd5e1;
-  --wj-control-hover-bg: #475569;
-  --wj-control-hover-border: #7dd3fc;
+  --wj-control-muted-text: #d4d4d4;
+  --wj-control-hover-bg: #464646;
+  --wj-control-hover-border: #9a9a9a;
   --wj-control-hover-text: #ffffff;
-  --wj-control-disabled-bg: #1f2937;
-  --wj-control-disabled-border: #475569;
-  --wj-control-disabled-text: #94a3b8;
+  --wj-control-disabled-bg: #242424;
+  --wj-control-disabled-border: #464646;
+  --wj-control-disabled-text: #8a8a8a;
   --wj-control-selected-bg: #0ea5e9;
   --wj-control-selected-hover-bg: #0ea5e9;
   --wj-control-selected-border: #7dd3fc;
   --wj-control-selected-text: #ffffff;
   --wj-control-selected-shadow:
-    inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 6px 0 rgba(0, 0, 0, 0.28);
   --wj-control-primary-bg: var(--wj-control-selected-bg);
   --wj-control-primary-hover-bg: #0284c7;
   --wj-control-primary-border: var(--wj-control-selected-border);
   --wj-control-primary-text: var(--wj-control-selected-text);
   --wj-control-primary-shadow:
-    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 6px 0 rgba(0, 0, 0, 0.28);
   color-scheme: dark;
 }
 
@@ -914,10 +916,6 @@ html.theme-graphite :is(.bg-blue-600, .hover\:bg-blue-500:hover) {
   box-shadow: var(--wj-control-primary-shadow) !important;
 }
 
-html.theme-graphite :is(.text-blue-400, .text-cyan-300, .text-cyan-400, .text-purple-400, .text-green-400, .text-orange-400, .text-rose-300) {
-  color: var(--wj-accent-strong) !important;
-}
-
 html.theme-graphite .wanjuan-storage-optimization-card > div:nth-child(2) > div {
   background: var(--wj-surface-2) !important;
   border-color: var(--wj-panel-border-soft) !important;
@@ -1006,8 +1004,8 @@ html.theme-graphite .wanjuan-node-picker-trigger {
 }
 
 html.theme-graphite .wanjuan-node-picker-trigger:hover {
-  background: color-mix(in srgb, var(--wj-surface-3) 82%, var(--wj-accent) 8%) !important;
-  border-color: color-mix(in srgb, var(--wj-border) 78%, var(--wj-accent) 22%) !important;
+  background: var(--wj-control-hover-bg) !important;
+  border-color: var(--wj-control-hover-border) !important;
   color: var(--wj-text) !important;
 }
 
@@ -1055,7 +1053,7 @@ html.theme-graphite .wj-mode-tab-active:hover {
 }
 
 html.theme-graphite :is(.border-blue-400, .border-blue-500, .hover\:border-blue-500:hover, .focus\:border-blue-500:focus) {
-  border-color: color-mix(in srgb, var(--wj-accent) 52%, var(--wj-border) 48%) !important;
+  border-color: color-mix(in srgb, var(--wj-accent) 42%, var(--wj-border) 58%) !important;
 }
 
 html.theme-graphite :is(.shadow-blue-500\/20, .shadow-blue-900\/20) {

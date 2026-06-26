@@ -1602,7 +1602,7 @@ var TongyiWanxiangLogo = ({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((edges) =>
@@ -1616,7 +1616,7 @@ var TongyiWanxiangLogo = ({
                                     ));
                                 },
                                 children: jsx(`span`, {
-                                  className: `text-white text-[10px] leading-none px-0.5`,
+                                  className: `text-red-50 text-[10px] leading-none px-0.5`,
                                   children: `×`,
                                 }),
                               }),
@@ -1653,7 +1653,7 @@ var TongyiWanxiangLogo = ({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -1663,7 +1663,7 @@ var TongyiWanxiangLogo = ({
                                     }));
                                 },
                                 children: jsx(`span`, {
-                                  className: `text-white text-[10px] leading-none px-0.5`,
+                                  className: `text-red-50 text-[10px] leading-none px-0.5`,
                                   children: `×`,
                                 }),
                               }),
@@ -2610,7 +2610,7 @@ var TongyiWanxiangLogo = ({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((prev) =>
@@ -2624,7 +2624,7 @@ var TongyiWanxiangLogo = ({
                                     ));
                                 },
                                 children: jsx(`span`, {
-                                  className: `text-white text-[8px]`,
+                                  className: `text-red-50 text-[8px]`,
                                   children: `×`,
                                 }),
                               }),
@@ -2661,7 +2661,7 @@ var TongyiWanxiangLogo = ({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -2671,7 +2671,7 @@ var TongyiWanxiangLogo = ({
                                     }));
                                 },
                                 children: jsx(`span`, {
-                                  className: `text-white text-[8px]`,
+                                  className: `text-red-50 text-[8px]`,
                                   children: `×`,
                                 }),
                               }),
@@ -5009,7 +5009,7 @@ var Le = reactMemo(({
                         }),
                         data.onDelete &&
                         jsx(`button`, {
-                          className: `p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors`,
+                          className: `p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors`,
                           title: `删除`,
                           onClick: (event) => {
                             (event.stopPropagation(), data.onDelete?.());
@@ -5158,7 +5158,7 @@ var Le = reactMemo(({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((prevEdges) =>
@@ -5173,7 +5173,7 @@ var Le = reactMemo(({
                                 },
                                 children: jsx(F, {
                                   size: 10,
-                                  className: `text-white`,
+                                  className: `text-red-50`,
                                 }),
                               }),
                             ],
@@ -5244,7 +5244,7 @@ var Le = reactMemo(({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-black/50 hover:bg-red-500/80 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -5255,7 +5255,7 @@ var Le = reactMemo(({
                                 },
                                 children: jsx(F, {
                                   size: 10,
-                                  className: `text-white`,
+                                  className: `text-red-50`,
                                 }),
                               }),
                             ],
@@ -8516,7 +8516,7 @@ ${data.audioModel || ``}`)
                             ],
                           }),
                           jsx(`button`, {
-                            className: `text-[10px] text-gray-500 hover:text-red-400 whitespace-nowrap ml-2`,
+                            className: `text-[10px] text-red-400 hover:text-red-300 whitespace-nowrap ml-2`,
                             onClick: () => {
                               (setAudioFile(null),
                                 updateNodeData(nodeId, {
@@ -11403,7 +11403,7 @@ ${data.audioModel || ``}`)
           },
           className: `nodrag nopan group/edge hover:opacity-100`,
           children: jsx(`button`, {
-            className: `bg-white hover:bg-gray-100 text-gray-600 hover:text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-gray-300 cursor-pointer transition-colors`,
+            className: `bg-white hover:bg-red-50 text-red-600 hover:text-red-700 rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-red-200 cursor-pointer transition-colors`,
             onClick: (event) => {
               (event.stopPropagation(), setEdges((items) => items.filter((item) => item.id !== id)));
             },
@@ -11782,7 +11782,7 @@ function nt({
                   }),
                 }),
                 jsx(`button`, {
-                  className: `p-2 rounded text-gray-400 hover:text-red-400 hover:bg-[#333]`,
+                  className: `p-2 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10`,
                   onClick: () => {
                     let canvas = canvasRef.current,
                       ctx = canvas?.getContext(`2d`);
@@ -14097,7 +14097,7 @@ function buildProjectMediaFileUrl(filePath) {
 function wanjuanThemeTransitionPalette(themeName) {
   return ({
     dark: [`#0b1020`, `rgba(138,180,248,0.34)`],
-    graphite: [`#20252c`, `rgba(138,180,248,0.34)`],
+    graphite: [`#171717`, `rgba(56,189,248,0.24)`],
     light: [`#f5fafb`, `rgba(108,140,163,0.32)`],
     "warm-light": [`#fbf7f1`, `rgba(186,141,90,0.30)`],
     "mist-blue": [`#f5f9fd`, `rgba(97,128,168,0.30)`],
@@ -29561,7 +29561,7 @@ ${combinedPrompt}`,
                           height: `16`,
                           viewBox: `0 0 24 24`,
                           fill: `currentColor`,
-                          className: `text-blue-400 flex-shrink-0`,
+                          className: `text-blue-500 flex-shrink-0`,
                           children: jsx(`path`, {
                             d: `M12 2.8l2.75 6.45L21.2 12l-6.45 2.75L12 21.2l-2.75-6.45L2.8 12l6.45-2.75L12 2.8z`,
                           }),
@@ -29595,7 +29595,7 @@ ${combinedPrompt}`,
                       children: [
                         jsx(TongyiWanxiangLogo, {
                           size: 16,
-                          className: `text-purple-400 flex-shrink-0`,
+                          className: `text-purple-500 flex-shrink-0`,
                         }),
 	                        jsx(`span`, {
 	                          children: `通义万相`,
@@ -29652,7 +29652,7 @@ ${combinedPrompt}`,
                         ),
                       children: [
 	                        jsx(`span`, {
-	                          className: `text-amber-400 text-base leading-none flex items-center justify-center`,
+	                          className: `text-orange-400 text-base leading-none flex items-center justify-center`,
 	                          style: {
 	                            width: 16,
 	                            height: 16,
@@ -29703,7 +29703,7 @@ ${combinedPrompt}`,
                             children: [
                               jsx(Te, {
                                 size: 16,
-                                className: `text-gray-400`,
+                                className: `text-pink-400`,
                               }),
                               jsx(`span`, {
                                 children: `自定义 >`,
@@ -29746,7 +29746,7 @@ ${combinedPrompt}`,
                                     children: e.name,
                                   }),
                                   jsx(`button`, {
-                                    className: `p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity wanjuan-context-menu-icon-action wanjuan-context-menu-item-danger`,
+                                    className: `p-1.5 text-red-400 hover:text-red-300 opacity-0 group-hover/item:opacity-100 transition-opacity wanjuan-context-menu-icon-action wanjuan-context-menu-item-danger`,
                                     onClick: (event) => {
                                       (event.stopPropagation(),
                                         window.confirm(
@@ -29795,7 +29795,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(d, {
 	                                  size: 16,
-	                                  className: `text-cyan-300`,
+	                                  className: `text-orange-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `格式转换`,
@@ -29832,7 +29832,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(d, {
 	                                  size: 16,
-	                                  className: `text-gray-400`,
+	                                  className: `text-green-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `文本拼接`
@@ -29857,7 +29857,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(b, {
 	                                  size: 16,
-	                                  className: `text-gray-400`,
+	                                  className: `text-blue-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `网址转图片`
@@ -29890,7 +29890,7 @@ ${combinedPrompt}`,
 		                                  strokeWidth: `2`,
 		                                  strokeLinecap: `round`,
 		                                  strokeLinejoin: `round`,
-		                                  className: `text-gray-400`,
+		                                  className: `text-orange-400`,
 		                                  children: [
 		                                    jsx(`rect`, {
 		                                      x: `3`,
@@ -29958,7 +29958,7 @@ ${combinedPrompt}`,
 		                                  strokeWidth: `2`,
 		                                  strokeLinecap: `round`,
 		                                  strokeLinejoin: `round`,
-		                                  className: `text-emerald-300`,
+		                                  className: `text-green-400`,
 		                                  children: [
 		                                    jsx(`rect`, {
 		                                      x: `4`,
@@ -30013,7 +30013,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(Te, {
 	                                  size: 16,
-	                                  className: `text-gray-400`,
+	                                  className: `text-green-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `九宫格拼图`
@@ -30038,7 +30038,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(Ae, {
 	                                  size: 16,
-	                                  className: `text-gray-400`,
+	                                  className: `text-orange-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `九宫格切分`
@@ -30063,7 +30063,7 @@ ${combinedPrompt}`,
 	                              children: [
 	                                jsx(h, {
 	                                  size: 16,
-	                                  className: `text-gray-400`,
+	                                  className: `text-purple-400`,
 	                                }),
 	                                jsx(`span`, {
 	                                  children: `视频抽帧`
@@ -30108,7 +30108,7 @@ ${combinedPrompt}`,
 		                                  strokeWidth: `2`,
 		                                  strokeLinecap: `round`,
 		                                  strokeLinejoin: `round`,
-		                                  className: `text-rose-300`,
+		                                  className: `text-pink-400`,
 		                                  children: [
 		                                    jsx(`path`, {
 		                                      d: `M12 2v4`,
@@ -30184,7 +30184,7 @@ ${combinedPrompt}`,
 	                                  strokeWidth: `2`,
 	                                  strokeLinecap: `round`,
 	                                  strokeLinejoin: `round`,
-	                                  className: `text-rose-400`,
+	                                  className: `text-red-400`,
 	                                  children: [
 	                                    jsx(`rect`, {
 	                                      x: `3`,
@@ -30239,7 +30239,7 @@ ${combinedPrompt}`,
 	                                  strokeWidth: `2`,
 	                                  strokeLinecap: `round`,
 	                                  strokeLinejoin: `round`,
-	                                  className: `text-amber-300`,
+	                                  className: `text-yellow-400`,
 	                                  children: [
 	                                    jsx(`path`, {
 	                                      d: `M12 3v18`,
@@ -30291,7 +30291,7 @@ ${combinedPrompt}`,
 	                                  strokeWidth: `2`,
 	                                  strokeLinecap: `round`,
 	                                  strokeLinejoin: `round`,
-	                                  className: `text-sky-300`,
+	                                  className: `text-blue-400`,
 	                                  children: [
 	                                    jsx(`path`, {
 	                                      d: `M4 17h16`,
@@ -30329,7 +30329,7 @@ ${combinedPrompt}`,
                       children: [
                         jsx(se, {
                           size: 16,
-                          className: `text-gray-400`,
+                          className: `text-green-400`,
                         }),
                         jsx(`span`, {
                           children: `上传文件`
@@ -30352,7 +30352,7 @@ ${combinedPrompt}`,
                               children: [
                                 jsx(T, {
                                   size: 16,
-                                  className: `text-gray-400`,
+                                  className: `text-blue-400`,
                                 }),
                                 jsx(`span`, {
                                   children: `选择素材`,
@@ -30439,7 +30439,7 @@ ${combinedPrompt}`,
                       children: [
                         jsx(f, {
                           size: 16,
-                          className: `text-gray-400`,
+                          className: `text-purple-400`,
                         }),
                         jsx(`span`, {
                           children: `复制画布`
@@ -30708,7 +30708,7 @@ ${combinedPrompt}`,
                               children: [
                                 jsx(h, {
                                   size: 16,
-                                  className: `text-rose-400`,
+                                  className: `text-red-400`,
                                 }),
                                 jsx(`span`, {
 	                                  children: `视频人脸打码`,
@@ -30776,7 +30776,7 @@ ${combinedPrompt}`,
 	                                  strokeWidth: `2`,
 	                                  strokeLinecap: `round`,
 	                                  strokeLinejoin: `round`,
-	                                  className: `text-cyan-400`,
+	                                  className: `text-blue-400`,
 	                                  children: [
 	                                    jsx(`path`, {
 	                                      d: `M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71`,
@@ -38151,39 +38151,39 @@ ${docText}`;
           },
           graphite: {
             mode: `dark`,
-            pageBg: `#111827`,
-            pageBgSecondary: `#162033`,
-            panelBg: `#1f2937`,
-            panelBorder: `#475569`,
-            panelMutedBorder: `#334155`,
-            cardBg: `#273244`,
-            cardBgHover: `#334155`,
+            pageBg: `#171717`,
+            pageBgSecondary: `#1f1f1f`,
+            panelBg: `#242424`,
+            panelBorder: `#5f5f5f`,
+            panelMutedBorder: `#3d3d3d`,
+            cardBg: `#303030`,
+            cardBgHover: `#3d3d3d`,
             cardBgActive: `#0ea5e9`,
             cardBorderActive: `#7dd3fc`,
-            mainBg: `#111827`,
-            headerBg: `#1f2937`,
-            headerBorder: `#475569`,
+            mainBg: `#171717`,
+            headerBg: `#242424`,
+            headerBorder: `#5f5f5f`,
             textPrimary: `#f8fafc`,
-            textSecondary: `#cbd5e1`,
-            textMuted: `#94a3b8`,
-            chipBg: `#334155`,
-            chipBorder: `#64748b`,
+            textSecondary: `#d4d4d4`,
+            textMuted: `#a3a3a3`,
+            chipBg: `#3d3d3d`,
+            chipBorder: `#737373`,
             chipText: `#f8fafc`,
-            accentBg: `rgba(14,165,233,0.20)`,
+            accentBg: `rgba(14,165,233,0.16)`,
             accentBorder: `#7dd3fc`,
             accentText: `#7dd3fc`,
-            bubbleBg: `#1f2937`,
-            bubbleBorder: `#64748b`,
-            composerBg: `#1f2937`,
+            bubbleBg: `#242424`,
+            bubbleBorder: `#5f5f5f`,
+            composerBg: `#242424`,
             composerBorder: `#7dd3fc`,
-            composerToolbarBg: `#273244`,
-            overlayBg: `rgba(17,24,39,0.18)`,
-            modalBg: `#1f2937`,
-            modalBorder: `#64748b`,
-            modalHeaderBg: `#273244`,
-            modalSectionBg: `#273244`,
-            inputBg: `#111827`,
-            inputBorder: `#64748b`,
+            composerToolbarBg: `#303030`,
+            overlayBg: `rgba(23,23,23,0.18)`,
+            modalBg: `#242424`,
+            modalBorder: `#5f5f5f`,
+            modalHeaderBg: `#303030`,
+            modalSectionBg: `#303030`,
+            inputBg: `#171717`,
+            inputBorder: `#737373`,
             inputText: `#f8fafc`,
           },
           light: {
@@ -38971,9 +38971,9 @@ ${docText}`;
 	                    width: `16px`,
 	                    height: `16px`,
 	                    borderRadius: `999px`,
-	                    borderColor: `rgba(202,183,154,0.78)`,
-	                    background: `rgba(255,250,240,0.96)`,
-	                    color: `#776855`,
+	                    borderColor: `rgba(248,113,113,0.72)`,
+	                    background: `rgba(127,29,29,0.92)`,
+	                    color: `#fecaca`,
 	                    fontSize: `10px`,
 	                    lineHeight: `16px`,
 	                  },
@@ -44219,7 +44219,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         }),
                                         jsx(`button`, {
                                           onClick: () => Ht(resource.id),
-                                          className: `p-1.5 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded`,
+                                          className: `p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded`,
                                           title: `删除`,
                                           children: jsx(fe, {
                                             size: 14,
@@ -44318,7 +44318,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             jsxs(`button`, {
                               onClick: handleCleanInvalidResources,
                               disabled: resourceCleanupBusy,
-                              className: `text-xs text-amber-300 hover:text-amber-200 px-3 py-1.5 rounded hover:bg-[#333] transition-colors border border-transparent hover:border-amber-500/40 whitespace-nowrap flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait`,
+                              className: `text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/40 whitespace-nowrap flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait`,
                               children: [
                                 jsx(fe, {
                                   size: 12
@@ -44424,7 +44424,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                         projects.length > 1 &&
                         jsx(`button`, {
                           onClick: () => handleDeleteProject(activeProjectId),
-                          className: `text-gray-400 hover:text-red-400 p-1`,
+                          className: `wanjuan-canvas-model-toolbar-icon is-delete text-red-400 hover:text-red-300 p-1`,
                           title: `删除当前项目`,
                           children: jsx(ce, {
                             size: 16
@@ -44547,7 +44547,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         task.status !== `failed`,
                                       ),
                                     ),
-                                  className: `text-[10px] text-gray-400 hover:text-white wanjuan-task-drawer-action`,
+                                  className: `text-[10px] text-red-400 hover:text-red-300 wanjuan-task-drawer-action`,
                                   title: `清除已完成和失败的任务`,
                                   children: `清空已结束`,
                                 }),
@@ -44620,7 +44620,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                     task2.id !== task.id,
                                                   ),
                                                 ),
-                                              className: `text-gray-500 hover:text-red-400 wanjuan-task-card-icon-action is-delete`,
+                                              className: `text-red-400 hover:text-red-300 wanjuan-task-card-icon-action is-delete`,
                                               title: `删除记录`,
                                               children: jsx(
                                                 fe, {
@@ -45432,7 +45432,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                     }),
                                     jsx(`button`, {
                                       onClick: () => deleteProjectGroup(group.id),
-                                      className: `text-[10px] text-gray-500 hover:text-red-300`,
+                                      className: `text-[10px] text-red-400 hover:text-red-300`,
                                       children: `删除`,
                                     }),
                                   ],
@@ -45843,7 +45843,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             0,
                                           ));
                                       },
-                                      className: `p-1.5 text-gray-500 hover:text-red-300 rounded-md hover:bg-[#202734] transition-colors`,
+                                      className: `p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 transition-colors`,
                                       title: `删除智能体`,
                                       children: jsx(ce, {
                                         size: 14,
@@ -45957,7 +45957,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             }),
                             jsx(`button`, {
                               onClick: clearSelectedAgentConversation,
-                              className: `inline-flex items-center gap-2 rounded-full border border-[#54565a] bg-[linear-gradient(180deg,rgba(72,74,78,0.82),rgba(56,58,61,0.92))] px-3 py-1.5 text-[11px] text-[#d7dadd] hover:border-red-400/38 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
+                              className: `inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-200 hover:border-red-300/60 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
                               title: `清空当前智能体聊天记录`,
                               children: `清空`,
                             }),
@@ -45969,7 +45969,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             }),
                             jsx(`button`, {
                               onClick: deleteSelectedAgent,
-                              className: `p-2 text-gray-500 hover:text-red-300 transition-colors rounded-xl hover:bg-[#19202f] border border-transparent hover:border-red-400/18`,
+                              className: `p-2 text-red-400 hover:text-red-300 transition-colors rounded-xl hover:bg-red-500/10 border border-transparent hover:border-red-400/30`,
                               title: `删除智能体`,
                               children: jsx(ce, {
                                 size: 16
@@ -46597,9 +46597,9 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                                    width: `16px`,
 	                                                    height: `16px`,
 	                                                    borderRadius: `999px`,
-	                                                    borderColor: `rgba(202,183,154,0.78)`,
-	                                                    background: `rgba(255,250,240,0.96)`,
-	                                                    color: `#776855`,
+	                                                    borderColor: `rgba(248,113,113,0.72)`,
+	                                                    background: `rgba(127,29,29,0.92)`,
+	                                                    color: `#fecaca`,
 	                                                    fontSize: `10px`,
 	                                                  },
 	                                                  title: `移除`,
@@ -46635,7 +46635,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                 []
                                               ));
                                           },
-                                          className: `px-4 py-2 rounded-2xl border border-[#46484c] bg-[linear-gradient(180deg,rgba(56,58,62,0.9),rgba(43,45,48,0.96))] text-xs text-[#d7dadd] hover:border-[#6a6c70] hover:text-white transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]`,
+                                          className: `px-4 py-2 rounded-2xl border border-red-400/35 bg-red-500/10 text-xs text-red-200 hover:border-red-300/55 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]`,
                                           children: `清空`,
                                         }),
                                         jsxs(`button`, {
@@ -47382,7 +47382,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                   type: `button`,
                                                   onClick: () =>
                                                     removeAgentKnowledgeFile(file.id),
-                                                  className: `flex-shrink-0 rounded-lg border border-transparent px-2 py-1 text-[10px] text-gray-500 hover:text-red-300 hover:border-red-400/16 hover:bg-red-400/6 transition-colors`,
+                                                  className: `flex-shrink-0 rounded-lg border border-transparent px-2 py-1 text-[10px] text-red-400 hover:text-red-300 hover:border-red-400/24 hover:bg-red-400/10 transition-colors`,
                                                   children: `移除`,
                                                 }),
                                               ],
@@ -48016,7 +48016,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             }),
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(t),
-                                              className: `text-gray-600 hover:text-red-500 p-1.5 hover:bg-[#222] rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
+                                              className: `text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
                                               children: jsx(ce, {
                                                 size: 14,
                                               }),
@@ -48954,7 +48954,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             }),
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(index),
-                                              className: `text-gray-600 hover:text-red-500 p-1.5 hover:bg-[#222] rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
+                                              className: `text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
                                               children: jsx(ce, {
                                                 size: 14,
                                               }),
@@ -49440,7 +49440,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                               let next = [...apiConfigs];
                                               (next.splice(index, 1), setApiConfigs(next));
                                             },
-                                            className: `text-gray-600 hover:text-red-500 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity`,
+                                            className: `text-red-400 hover:text-red-300 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity`,
                                             title: `删除配置`,
                                             children: jsx(ce, {
                                               size: 14,
