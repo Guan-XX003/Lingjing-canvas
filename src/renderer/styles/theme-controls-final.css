@@ -66,6 +66,87 @@ html.theme-warm-light {
   --wj-control-primary-shadow: var(--wj-control-selected-shadow);
 }
 
+html.theme-light {
+  --wj-control-selected-bg: #3657e5;
+  --wj-control-selected-hover-bg: #3657e5;
+  --wj-control-selected-border: #8fb1ff;
+  --wj-control-primary-bg: #3657e5;
+  --wj-control-primary-hover-bg: #2f49c8;
+  --wj-control-primary-border: #8fb1ff;
+}
+
+html.theme-warm-light {
+  --wj-control-selected-bg: #9a4f16;
+  --wj-control-selected-hover-bg: #9a4f16;
+  --wj-control-selected-border: #d18a42;
+  --wj-control-primary-bg: #9a4f16;
+  --wj-control-primary-hover-bg: #7f3f10;
+  --wj-control-primary-border: #d18a42;
+}
+
+html.theme-mist-blue {
+  --wj-control-selected-bg: #365fdb;
+  --wj-control-selected-hover-bg: #365fdb;
+  --wj-control-selected-border: #87a8ff;
+  --wj-control-primary-bg: #365fdb;
+  --wj-control-primary-hover-bg: #2f52c0;
+  --wj-control-primary-border: #87a8ff;
+}
+
+html.theme-chrome-blue {
+  --wj-control-selected-bg: #3559d4;
+  --wj-control-selected-hover-bg: #3559d4;
+  --wj-control-selected-border: #8fa8ff;
+  --wj-control-primary-bg: #3559d4;
+  --wj-control-primary-hover-bg: #2f4db8;
+  --wj-control-primary-border: #8fa8ff;
+}
+
+html.theme-chrome-rose {
+  --wj-control-selected-bg: #b4235a;
+  --wj-control-selected-hover-bg: #b4235a;
+  --wj-control-selected-border: #f18aac;
+  --wj-control-primary-bg: #b4235a;
+  --wj-control-primary-hover-bg: #991f4f;
+  --wj-control-primary-border: #f18aac;
+}
+
+html.theme-chrome-sand {
+  --wj-control-selected-bg: #8a580f;
+  --wj-control-selected-hover-bg: #8a580f;
+  --wj-control-selected-border: #d7a652;
+  --wj-control-primary-bg: #8a580f;
+  --wj-control-primary-hover-bg: #70470c;
+  --wj-control-primary-border: #d7a652;
+}
+
+html.theme-chrome-teal {
+  --wj-control-selected-bg: #00796b;
+  --wj-control-selected-hover-bg: #00796b;
+  --wj-control-selected-border: #64d8c5;
+  --wj-control-primary-bg: #00796b;
+  --wj-control-primary-hover-bg: #00675b;
+  --wj-control-primary-border: #64d8c5;
+}
+
+html.theme-sage-green {
+  --wj-control-selected-bg: #0b6b2f;
+  --wj-control-selected-hover-bg: #0b6b2f;
+  --wj-control-selected-border: #68c285;
+  --wj-control-primary-bg: #0b6b2f;
+  --wj-control-primary-hover-bg: #095826;
+  --wj-control-primary-border: #68c285;
+}
+
+html.theme-dark {
+  --wj-control-selected-bg: #4f46e5;
+  --wj-control-selected-hover-bg: #4f46e5;
+  --wj-control-selected-border: #a5b4fc;
+  --wj-control-primary-bg: #4f46e5;
+  --wj-control-primary-hover-bg: #4338ca;
+  --wj-control-primary-border: #a5b4fc;
+}
+
 html :is(
   .wanjuan-settings-nav-item-active,
   .wanjuan-resource-filter-button-active,
@@ -1032,15 +1113,15 @@ html.theme-graphite {
   --wj-control-disabled-bg: #242424;
   --wj-control-disabled-border: #464646;
   --wj-control-disabled-text: #8a8a8a;
-  --wj-control-selected-bg: #0ea5e9;
-  --wj-control-selected-hover-bg: #0ea5e9;
-  --wj-control-selected-border: #7dd3fc;
+  --wj-control-selected-bg: #0369a1;
+  --wj-control-selected-hover-bg: #0369a1;
+  --wj-control-selected-border: #38bdf8;
   --wj-control-selected-text: #ffffff;
   --wj-control-selected-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
     0 3px 0 rgba(0, 0, 0, 0.32);
   --wj-control-primary-bg: var(--wj-control-selected-bg);
-  --wj-control-primary-hover-bg: #0284c7;
+  --wj-control-primary-hover-bg: #075985;
   --wj-control-primary-border: var(--wj-control-selected-border);
   --wj-control-primary-text: var(--wj-control-selected-text);
   --wj-control-primary-shadow:
