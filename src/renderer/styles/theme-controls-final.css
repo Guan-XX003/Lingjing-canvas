@@ -227,15 +227,15 @@ html.theme-chrome-sand {
 }
 
 html.theme-chrome-teal {
-  --wj-action-bg: #00796b;
-  --wj-action-hover-bg: #00675b;
-  --wj-action-border: #64d8c5;
+  --wj-action-bg: #006f63;
+  --wj-action-hover-bg: #005b52;
+  --wj-action-border: #4fc9b8;
 }
 
 html.theme-sage-green {
-  --wj-action-bg: #0b6b2f;
-  --wj-action-hover-bg: #095826;
-  --wj-action-border: #68c285;
+  --wj-action-bg: #08702f;
+  --wj-action-hover-bg: #065a27;
+  --wj-action-border: #48ba72;
 }
 
 html.theme-dark {
@@ -252,6 +252,40 @@ html.theme-chrome-sand {
 
 html.theme-sage-green,
 html.theme-chrome-teal {
+  --wj-border-strong: color-mix(in srgb, var(--wj-border) 74%, var(--wj-text) 26%);
+  --wj-control-bg: color-mix(in srgb, var(--wj-surface) 76%, var(--wj-bg) 24%);
+  --wj-control-border: color-mix(in srgb, var(--wj-border) 84%, var(--wj-text) 16%);
+  --wj-control-muted-text: color-mix(in srgb, var(--wj-muted) 78%, var(--wj-text) 22%);
+  --wj-control-hover-bg: color-mix(in srgb, var(--wj-accent) 12%, var(--wj-surface-3) 88%);
+  --wj-control-hover-border: color-mix(in srgb, var(--wj-accent) 42%, var(--wj-border-strong) 58%);
+  --wj-panel-bg: color-mix(in srgb, var(--wj-surface) 82%, var(--wj-bg) 18%);
+  --wj-panel-bg-raised: color-mix(in srgb, var(--wj-surface) 66%, var(--wj-surface-2) 34%);
+  --wj-panel-bg-subtle: color-mix(in srgb, var(--wj-bg) 70%, var(--wj-surface) 30%);
+  --wj-panel-border: color-mix(in srgb, var(--wj-border) 78%, var(--wj-text) 22%);
+  --wj-panel-border-soft: color-mix(in srgb, var(--wj-border) 84%, transparent);
+  --wj-panel-divider: color-mix(in srgb, var(--wj-border) 76%, transparent);
+  --wj-panel-section-bg: color-mix(in srgb, var(--wj-surface) 74%, var(--wj-bg) 26%);
+  --wj-field-bg: color-mix(in srgb, var(--wj-surface) 80%, var(--wj-bg) 20%);
+  --wj-field-border: color-mix(in srgb, var(--wj-border) 86%, var(--wj-text) 14%);
+  --wj-filter-group-bg: color-mix(in srgb, var(--wj-surface) 82%, var(--wj-bg) 18%);
+  --wj-filter-group-border: color-mix(in srgb, var(--wj-border) 70%, var(--wj-accent) 30%);
+  --wj-filter-group-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 78%, transparent), 0 8px 18px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(30, 80, 36, 0.18)) 38%, transparent);
+  --wj-filter-button-bg: color-mix(in srgb, var(--wj-surface) 74%, var(--wj-bg) 26%);
+  --wj-filter-button-border: color-mix(in srgb, var(--wj-border) 64%, transparent);
+  --wj-filter-button-text: color-mix(in srgb, var(--wj-text) 84%, var(--wj-muted) 16%);
+  --wj-filter-button-hover-bg: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-3) 90%);
+  --wj-filter-button-hover-border: color-mix(in srgb, var(--wj-accent) 48%, var(--wj-border) 52%);
+  --wj-filter-button-hover-text: var(--wj-text);
+  --wj-chrome-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
+    color-mix(in srgb, var(--wj-surface) 76%, var(--wj-surface-2) 24%);
+  --wj-chrome-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
+  --wj-chrome-shadow: 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 24px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(30, 80, 36, 0.18)) 30%, transparent);
+  --wj-nav-text: color-mix(in srgb, var(--wj-text) 70%, var(--wj-muted) 30%);
+  --wj-nav-text-active: var(--wj-text);
+  --wj-nav-hover-bg: color-mix(in srgb, var(--wj-accent) 8%, var(--wj-surface-2) 92%);
+  --wj-nav-active-line: color-mix(in srgb, var(--wj-accent) 86%, var(--wj-text) 14%);
+  --wj-nav-active-shadow: color-mix(in srgb, var(--wj-accent) 22%, transparent);
   --wj-edge-main: color-mix(in srgb, #255c48 64%, var(--wj-muted) 36%);
   --wj-edge-spark: color-mix(in srgb, var(--wj-accent) 76%, #176247 24%);
 }

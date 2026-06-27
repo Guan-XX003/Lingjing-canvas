@@ -245,6 +245,48 @@ html.theme-graphite {
   --wj-accent-2: var(--wanjuan-theme-accent-2, var(--wanjuan-theme-accent));
 }
 
+html.theme-sage-green,
+html.theme-chrome-teal {
+  --wj-border-strong: color-mix(in srgb, var(--wj-border) 74%, var(--wj-text) 26%);
+  --wj-control-bg: color-mix(in srgb, var(--wj-surface) 76%, var(--wj-bg) 24%);
+  --wj-control-border: color-mix(in srgb, var(--wj-border) 84%, var(--wj-text) 16%);
+  --wj-control-muted-text: color-mix(in srgb, var(--wj-muted) 78%, var(--wj-text) 22%);
+  --wj-control-hover-bg: color-mix(in srgb, var(--wj-accent) 12%, var(--wj-surface-3) 88%);
+  --wj-control-hover-border: color-mix(in srgb, var(--wj-accent) 42%, var(--wj-border-strong) 58%);
+  --wj-panel-bg: color-mix(in srgb, var(--wj-surface) 82%, var(--wj-bg) 18%);
+  --wj-panel-bg-raised: color-mix(in srgb, var(--wj-surface) 66%, var(--wj-surface-2) 34%);
+  --wj-panel-bg-subtle: color-mix(in srgb, var(--wj-bg) 70%, var(--wj-surface) 30%);
+  --wj-panel-border: color-mix(in srgb, var(--wj-border) 78%, var(--wj-text) 22%);
+  --wj-panel-border-soft: color-mix(in srgb, var(--wj-border) 84%, transparent);
+  --wj-panel-divider: color-mix(in srgb, var(--wj-border) 76%, transparent);
+  --wj-panel-section-bg: color-mix(in srgb, var(--wj-surface) 74%, var(--wj-bg) 26%);
+  --wj-field-bg: color-mix(in srgb, var(--wj-surface) 80%, var(--wj-bg) 20%);
+  --wj-field-border: color-mix(in srgb, var(--wj-border) 86%, var(--wj-text) 14%);
+  --wj-filter-group-bg: color-mix(in srgb, var(--wj-surface) 82%, var(--wj-bg) 18%);
+  --wj-filter-group-border: color-mix(in srgb, var(--wj-border) 70%, var(--wj-accent) 30%);
+  --wj-filter-group-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 78%, transparent),
+    0 8px 18px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(30, 80, 36, 0.18)) 38%, transparent);
+  --wj-filter-button-bg: color-mix(in srgb, var(--wj-surface) 74%, var(--wj-bg) 26%);
+  --wj-filter-button-border: color-mix(in srgb, var(--wj-border) 64%, transparent);
+  --wj-filter-button-text: color-mix(in srgb, var(--wj-text) 84%, var(--wj-muted) 16%);
+  --wj-filter-button-hover-bg: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-3) 90%);
+  --wj-filter-button-hover-border: color-mix(in srgb, var(--wj-accent) 48%, var(--wj-border) 52%);
+  --wj-filter-button-hover-text: var(--wj-text);
+  --wj-chrome-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
+    color-mix(in srgb, var(--wj-surface) 76%, var(--wj-surface-2) 24%);
+  --wj-chrome-border: color-mix(in srgb, var(--wj-border) 82%, var(--wj-accent) 18%);
+  --wj-chrome-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75),
+    0 10px 24px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(30, 80, 36, 0.18)) 30%, transparent);
+  --wj-nav-text: color-mix(in srgb, var(--wj-text) 70%, var(--wj-muted) 30%);
+  --wj-nav-text-active: var(--wj-text);
+  --wj-nav-hover-bg: color-mix(in srgb, var(--wj-accent) 8%, var(--wj-surface-2) 92%);
+  --wj-nav-active-line: color-mix(in srgb, var(--wj-accent) 86%, var(--wj-text) 14%);
+  --wj-nav-active-shadow: color-mix(in srgb, var(--wj-accent) 22%, transparent);
+}
+
 html,
 body {
   background:
@@ -742,32 +784,35 @@ html.theme-chrome-sand {
 }
 
 html.theme-chrome-teal {
-  --wanjuan-theme-bg: #eef8f8;
-  --wanjuan-theme-surface: #fbffff;
-  --wanjuan-theme-surface-2: #e3f2f1;
-  --wanjuan-theme-surface-3: #cce5e3;
-  --wanjuan-theme-border: #b8d6d3;
-  --wanjuan-theme-text: #173033;
-  --wanjuan-theme-muted: #5f7a7c;
-  --wanjuan-theme-accent: #0f9d8a;
-  --wanjuan-theme-accent-2: #5b8cff;
-  --wj-action-bg: #00796b;
-  --wj-action-hover-bg: #00675b;
-  --wj-action-border: #64d8c5;
+  --wanjuan-theme-bg: #eaf5f2;
+  --wanjuan-theme-surface: #fbfefd;
+  --wanjuan-theme-surface-2: #dff0ed;
+  --wanjuan-theme-surface-3: #c8e2dd;
+  --wanjuan-theme-border: #aaccc5;
+  --wanjuan-theme-text: #102f2e;
+  --wanjuan-theme-muted: #486b68;
+  --wanjuan-theme-accent: #008577;
+  --wanjuan-theme-accent-2: #2563eb;
+  --wanjuan-theme-shadow: rgba(20, 80, 72, 0.18);
+  --wj-action-bg: #006f63;
+  --wj-action-hover-bg: #005b52;
+  --wj-action-border: #4fc9b8;
 }
 
 html.theme-sage-green {
-  --wanjuan-theme-bg: #f0f5ef;
+  --wanjuan-theme-bg: #eaf3e7;
   --wanjuan-theme-surface: #fbfdf8;
-  --wanjuan-theme-surface-2: #edf6eb;
-  --wanjuan-theme-surface-3: #dcebd7;
-  --wanjuan-theme-border: #c9d9c1;
-  --wanjuan-theme-text: #20291f;
-  --wanjuan-theme-muted: #64735f;
-  --wanjuan-theme-accent: #188038;
-  --wj-action-bg: #0b6b2f;
-  --wj-action-hover-bg: #095826;
-  --wj-action-border: #68c285;
+  --wanjuan-theme-surface-2: #e0eedb;
+  --wanjuan-theme-surface-3: #c9dfc0;
+  --wanjuan-theme-border: #abc59d;
+  --wanjuan-theme-text: #172716;
+  --wanjuan-theme-muted: #52684b;
+  --wanjuan-theme-accent: #0f7a35;
+  --wanjuan-theme-accent-2: #2f6fda;
+  --wanjuan-theme-shadow: rgba(35, 80, 34, 0.18);
+  --wj-action-bg: #08702f;
+  --wj-action-hover-bg: #065a27;
+  --wj-action-border: #48ba72;
 }
 
 html.theme-dark {
@@ -2219,14 +2264,21 @@ html:is(.theme-dark, .theme-graphite)
   z-index: 160 !important;
 }
 
-/* Light themes: keep the UI airy but add stronger blue-coral identity so the
-   active controls and panels feel more contemporary instead of plain neutral. */
-html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green),
-html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) body {
+/* Light themes: keep the UI airy while each palette owns its background tint. */
+html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand),
+html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand) body {
   background:
     radial-gradient(circle at 12% 0%, rgba(79, 109, 255, 0.08), transparent 26%),
     radial-gradient(circle at 92% 4%, rgba(255, 138, 91, 0.1), transparent 22%),
     linear-gradient(180deg, #f8fbff 0%, var(--wanjuan-theme-bg) 38%, #f3f7ff 100%) !important;
+}
+
+html:is(.theme-chrome-teal, .theme-sage-green),
+html:is(.theme-chrome-teal, .theme-sage-green) body {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--wj-accent) 10%, transparent), transparent 26%),
+    radial-gradient(circle at 88% 2%, color-mix(in srgb, var(--wj-accent-2, var(--wj-accent)) 8%, transparent), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--wj-surface) 82%, #ffffff 18%) 0%, var(--wanjuan-theme-bg) 42%, color-mix(in srgb, var(--wanjuan-theme-bg) 88%, var(--wj-surface-2) 12%) 100%) !important;
 }
 
 html:is(.theme-light, .theme-mist-blue, .theme-chrome-blue, .theme-chrome-rose, .theme-chrome-sand, .theme-chrome-teal, .theme-sage-green) :is(button, a, [role="button"]):is(

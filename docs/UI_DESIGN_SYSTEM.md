@@ -29,7 +29,7 @@
 - light / mist-blue / chrome-blue：保留浅色清爽感，避免低对比灰字。
 - chrome-rose：粉色只作为主题主色，不让大面积控件发粉发糊。
 - chrome-sand / warm-light：暖色主题保留暖感，但危险色仍为红。
-- chrome-teal / sage-green：绿色主题保留正绿色点缀，不把全部按钮染绿。
+- chrome-teal / sage-green：绿色主题使用独立绿系背景和边界层级，不继承浅色主题的蓝/珊瑚氛围；正绿色只用于选中态、主动作和关键反馈。
 
 ## 实现原则
 

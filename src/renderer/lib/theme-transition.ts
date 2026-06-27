@@ -36,8 +36,8 @@ export function wanjuanThemeTransitionPalette(theme: string): [string, string] {
       "chrome-blue": [`#f5f9ff`, `rgba(71,128,221,0.30)`],
       "chrome-rose": [`#fff8fa`, `rgba(210,109,145,0.30)`],
       "chrome-sand": [`#fbf8f2`, `rgba(188,153,106,0.30)`],
-      "chrome-teal": [`#f4fbf8`, `rgba(70,165,142,0.30)`],
-      "sage-green": [`#f7fbf7`, `rgba(99,149,112,0.30)`],
+      "chrome-teal": [`#eaf5f2`, `rgba(0,133,119,0.28)`],
+      "sage-green": [`#eaf3e7`, `rgba(15,122,53,0.28)`],
     } as Record<string, [string, string]>
   )[theme] || [`#20252c`, `rgba(138,180,248,0.34)`];
 }
