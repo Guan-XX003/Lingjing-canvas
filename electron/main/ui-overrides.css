@@ -31,6 +31,12 @@
   --wj-control-hover-bg: color-mix(in srgb, var(--wj-surface-3) 86%, var(--wj-accent) 14%);
   --wj-control-hover-border: color-mix(in srgb, var(--wj-accent) 38%, var(--wj-border) 62%);
   --wj-control-hover-text: var(--wj-text);
+  --wj-danger-control-bg: color-mix(in srgb, var(--wj-danger) 10%, var(--wj-control-bg) 90%);
+  --wj-danger-control-border: color-mix(in srgb, var(--wj-danger) 42%, var(--wj-control-border) 58%);
+  --wj-danger-control-text: color-mix(in srgb, var(--wj-danger) 86%, var(--wj-text) 14%);
+  --wj-danger-control-hover-bg: color-mix(in srgb, var(--wj-danger) 16%, var(--wj-control-hover-bg) 84%);
+  --wj-danger-control-hover-border: color-mix(in srgb, var(--wj-danger) 62%, var(--wj-control-hover-border) 38%);
+  --wj-danger-control-hover-text: color-mix(in srgb, var(--wj-danger) 92%, var(--wj-text) 8%);
   --wj-action-bg: var(--wj-accent);
   --wj-action-hover-bg: color-mix(in srgb, var(--wj-action-bg) 86%, #000000 14%);
   --wj-action-border: color-mix(in srgb, var(--wj-action-bg) 72%, #ffffff 28%);
@@ -200,6 +206,12 @@
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
+  --wj-danger-control-bg: color-mix(in srgb, var(--wj-danger) 10%, var(--wj-control-bg) 90%);
+  --wj-danger-control-border: color-mix(in srgb, var(--wj-danger) 42%, var(--wj-control-border) 58%);
+  --wj-danger-control-text: color-mix(in srgb, var(--wj-danger) 86%, var(--wj-text) 14%);
+  --wj-danger-control-hover-bg: color-mix(in srgb, var(--wj-danger) 16%, var(--wj-control-hover-bg) 84%);
+  --wj-danger-control-hover-border: color-mix(in srgb, var(--wj-danger) 62%, var(--wj-control-hover-border) 38%);
+  --wj-danger-control-hover-text: color-mix(in srgb, var(--wj-danger) 92%, var(--wj-text) 8%);
   --wj-control-shadow-soft:
     inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
     0 6px 14px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.34)) 32%, transparent);
@@ -872,6 +884,12 @@ html.theme-graphite {
   --wj-menu-danger-text: #ff6b6b;
   --wj-menu-danger-hover-bg: rgba(239, 68, 68, 0.14);
   --wj-menu-danger-hover-text: #ff8a8a;
+  --wj-danger-control-bg: #3a2b2b;
+  --wj-danger-control-border: #8f4444;
+  --wj-danger-control-text: #ff8a8a;
+  --wj-danger-control-hover-bg: #4a3030;
+  --wj-danger-control-hover-border: #c85a5a;
+  --wj-danger-control-hover-text: #ffb3b3;
   --wj-control-selected-bg: var(--wj-action-bg);
   --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
   --wj-control-selected-border: var(--wj-action-border);
@@ -2665,9 +2683,9 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   --wanjuan-control-active-bg: var(--wj-control-selected-bg);
   --wanjuan-control-active-border: var(--wj-control-selected-border);
   --wanjuan-control-active-text: var(--wj-control-selected-text);
-  --wanjuan-control-danger: var(--wj-danger);
-  --wanjuan-control-danger-bg: var(--wj-danger-soft);
-  --wanjuan-control-danger-border: var(--wj-danger-border);
+  --wanjuan-control-danger: var(--wj-danger-control-text);
+  --wanjuan-control-danger-bg: var(--wj-danger-control-bg);
+  --wanjuan-control-danger-border: var(--wj-danger-control-border);
   --wanjuan-control-success: #16a34a;
   --wanjuan-control-success-bg: color-mix(in srgb, var(--wanjuan-control-success) 15%, var(--wj-surface) 85%);
   --wanjuan-picker-bg: color-mix(in srgb, var(--wj-surface) 94%, var(--wj-bg) 6%);
@@ -5132,6 +5150,12 @@ html.theme-graphite {
   --wj-danger-text: #ffffff;
   --wj-danger-hover-bg: #b91c1c;
   --wj-danger-hover-border: #fecaca;
+  --wj-danger-control-bg: #3a2b2b;
+  --wj-danger-control-border: #8f4444;
+  --wj-danger-control-text: #ff8a8a;
+  --wj-danger-control-hover-bg: #4a3030;
+  --wj-danger-control-hover-border: #c85a5a;
+  --wj-danger-control-hover-text: #ffb3b3;
   --wj-action-bg: #454545;
   --wj-action-hover-bg: #505050;
   --wj-action-border: #38bdf8;
@@ -5369,17 +5393,17 @@ html.theme-graphite .wanjuan-storage-optimization-card button:first-of-type[clas
 }
 
 html.theme-graphite .wanjuan-storage-optimization-card button:nth-of-type(6)[class][class] {
-  background: var(--wj-danger-bg) !important;
-  border-color: var(--wj-danger-border) !important;
-  color: var(--wj-danger-text) !important;
-  -webkit-text-fill-color: var(--wj-danger-text) !important;
+  background: var(--wj-danger-control-bg) !important;
+  border-color: var(--wj-danger-control-border) !important;
+  color: var(--wj-danger-control-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-text) !important;
 }
 
 html.theme-graphite .wanjuan-storage-optimization-card button:nth-of-type(6):hover[class][class] {
-  background: var(--wj-danger-hover-bg) !important;
-  border-color: var(--wj-danger-hover-border) !important;
-  color: #ffe4e1 !important;
-  -webkit-text-fill-color: #ffe4e1 !important;
+  background: var(--wj-danger-control-hover-bg) !important;
+  border-color: var(--wj-danger-control-hover-border) !important;
+  color: var(--wj-danger-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
 }
 
 html.theme-graphite .wanjuan-storage-optimization-card button:disabled[class][class],
@@ -5575,15 +5599,14 @@ html :is(button, [role="button"], a):is(
   [aria-label*="重置"]
 )[class][class],
 html :is(.is-delete, .is-danger, .danger, .wanjuan-danger-action, [data-danger="true"], [data-action="delete"])[class][class] {
-  background: var(--wj-danger-bg) !important;
-  background-color: var(--wj-danger-bg) !important;
+  background: var(--wj-danger-control-bg) !important;
+  background-color: var(--wj-danger-control-bg) !important;
   background-image: none !important;
-  border-color: var(--wj-danger-border) !important;
-  color: var(--wj-danger-text) !important;
-  -webkit-text-fill-color: var(--wj-danger-text) !important;
+  border-color: var(--wj-danger-control-border) !important;
+  color: var(--wj-danger-control-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-text) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 3px 0 rgba(0, 0, 0, 0.24) !important;
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 8%, transparent) !important;
 }
 
 html :is(button, [role="button"], a):is(
@@ -5597,9 +5620,9 @@ html :is(button, [role="button"], a):is(
   [aria-label*="重置"]
 ):is(:hover, :focus-visible)[class][class],
 html :is(.is-delete, .is-danger, .danger, .wanjuan-danger-action, [data-danger="true"], [data-action="delete"]):is(:hover, :focus-visible)[class][class] {
-  background: var(--wj-danger-hover-bg) !important;
-  background-color: var(--wj-danger-hover-bg) !important;
-  border-color: var(--wj-danger-hover-border) !important;
-  color: var(--wj-danger-text) !important;
-  -webkit-text-fill-color: var(--wj-danger-text) !important;
+  background: var(--wj-danger-control-hover-bg) !important;
+  background-color: var(--wj-danger-control-hover-bg) !important;
+  border-color: var(--wj-danger-control-hover-border) !important;
+  color: var(--wj-danger-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
 }

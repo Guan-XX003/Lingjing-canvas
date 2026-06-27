@@ -87,41 +87,41 @@ function installDesktopPatches() {
       .wanjuan-node-popover-option-active:hover,
       .wanjuan-node-popover-option-active:focus-visible{
         background:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;
-        background-image:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;
+        background-image:none!important;
         color:var(--wj-control-selected-text,var(--wj-on-accent,#fff))!important;
         border-color:var(--wj-control-selected-border,color-mix(in srgb,var(--wj-accent,#60a5fa) 78%,#fff 22%))!important;
         box-shadow:var(--wj-control-selected-shadow,none)!important;
       }
       .wanjuan-node-preset-save-button{
-        background:color-mix(in srgb,var(--wj-accent,#2563eb) 14%,var(--wj-surface-3,#27303a))!important;
-        background-color:color-mix(in srgb,var(--wj-accent,#2563eb) 14%,var(--wj-surface-3,#27303a))!important;
+        background:var(--wj-node-soft-action-bg,var(--wj-control-bg,color-mix(in srgb,var(--wj-surface-3,#27303a) 92%,var(--wj-bg,#101214) 8%)))!important;
+        background-color:var(--wj-node-soft-action-bg,var(--wj-control-bg,color-mix(in srgb,var(--wj-surface-3,#27303a) 92%,var(--wj-bg,#101214) 8%)))!important;
         background-image:none!important;
-        border:1px solid color-mix(in srgb,var(--wj-accent,#60a5fa) 32%,var(--wj-border,#3a414c))!important;
-        color:color-mix(in srgb,var(--wj-accent,#93c5fd) 62%,var(--wj-text,#f3f4f6))!important;
-        box-shadow:none!important;
+        border:1px solid var(--wj-node-soft-action-border,var(--wj-control-border,color-mix(in srgb,var(--wj-border,#3a414c) 82%,transparent)))!important;
+        color:var(--wj-node-soft-action-text,var(--wj-control-text,var(--wj-text,#f3f4f6)))!important;
+        box-shadow:inset 0 1px 0 color-mix(in srgb,var(--wj-text,#fff) 7%,transparent)!important;
         outline:none!important;
       }
       .wanjuan-node-preset-save-button:hover,
       .wanjuan-node-preset-save-button:focus,
       .wanjuan-node-preset-save-button:focus-visible{
-        background:color-mix(in srgb,var(--wj-accent,#2563eb) 24%,var(--wj-surface-3,#2d3540))!important;
-        background-color:color-mix(in srgb,var(--wj-accent,#2563eb) 24%,var(--wj-surface-3,#2d3540))!important;
+        background:var(--wj-node-soft-action-hover-bg,var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#2d3540) 88%,var(--wj-accent,#60a5fa) 12%)))!important;
+        background-color:var(--wj-node-soft-action-hover-bg,var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#2d3540) 88%,var(--wj-accent,#60a5fa) 12%)))!important;
         background-image:none!important;
-        border-color:color-mix(in srgb,var(--wj-accent,#60a5fa) 58%,var(--wj-border,#3a414c))!important;
-        color:var(--wj-text,#fff)!important;
-        box-shadow:0 0 0 1px color-mix(in srgb,var(--wj-accent,#60a5fa) 24%,transparent)!important;
+        border-color:var(--wj-node-soft-action-border,var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#60a5fa) 42%,var(--wj-border,#3a414c) 58%)))!important;
+        color:var(--wj-node-soft-action-text,var(--wj-control-hover-text,var(--wj-text,#fff)))!important;
+        box-shadow:inset 0 1px 0 color-mix(in srgb,var(--wj-text,#fff) 9%,transparent)!important;
         outline:none!important;
       }
       .wanjuan-settings-save-button{
         background:var(--wj-control-primary-bg,var(--wj-accent,#2563eb))!important;
-        background-image:var(--wj-control-primary-bg,var(--wj-accent,#2563eb))!important;
+        background-image:none!important;
         color:var(--wj-control-primary-text,var(--wj-on-accent,#fff))!important;
         box-shadow:var(--wj-control-primary-shadow,0 10px 28px color-mix(in srgb,var(--wj-accent,#2563eb) 24%,transparent))!important;
       }
       .wanjuan-settings-save-button:hover,
       .wanjuan-settings-save-button:focus-visible{
         background:var(--wj-control-primary-hover-bg,color-mix(in srgb,var(--wj-accent,#2563eb) 86%,#fff 14%))!important;
-        background-image:var(--wj-control-primary-hover-bg,color-mix(in srgb,var(--wj-accent,#2563eb) 86%,#fff 14%))!important;
+        background-image:none!important;
         color:var(--wj-control-primary-text,var(--wj-on-accent,#fff))!important;
         box-shadow:var(--wj-control-primary-shadow,0 10px 28px color-mix(in srgb,var(--wj-accent,#2563eb) 30%,transparent))!important;
       }
@@ -2237,7 +2237,7 @@ function installDesktopPatches() {
               ${isLocalPending ? `<div class="wanjuan-tianji-asset-badge">待刷新</div>` : ``}
               <div class="wanjuan-tianji-asset-name">${tianjiEscapeHtml(name)}</div>
               <div class="wanjuan-tianji-asset-status">${tianjiEscapeHtml(status || id).slice(0, 24)}</div>
-              ${id && !isLocalPending ? `<div class="wanjuan-tianji-asset-actions"><button data-tianji-info="${tianjiEscapeHtml(id)}">详情</button><button data-tianji-delete="${tianjiEscapeHtml(id)}">删除</button></div>` : ``}
+              ${id && !isLocalPending ? `<div class="wanjuan-tianji-asset-actions"><button data-tianji-info="${tianjiEscapeHtml(id)}">详情</button><button class="danger" data-tianji-delete="${tianjiEscapeHtml(id)}" title="删除" aria-label="删除素材">删除</button></div>` : ``}
             </div>`;
           }).join("")
         : `<div class="wanjuan-tianji-empty">暂无素材，刷新列表或上传人像后查看。</div>`;
@@ -2469,6 +2469,8 @@ function installDesktopPatches() {
       .wanjuan-tianji-asset-status{font-size:9px;color:var(--wj-muted,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .wanjuan-tianji-asset-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}
       .wanjuan-tianji-asset-actions button{padding:4px 2px!important;font-size:9px!important;border-radius:5px!important}
+      .wanjuan-tianji-asset-actions button.danger{background:var(--wj-danger-control-bg,var(--wj-danger-soft,rgba(220,38,38,.14)))!important;background-image:none!important;border-color:var(--wj-danger-control-border,var(--wj-danger-border,#f87171))!important;color:var(--wj-danger-control-text,var(--wj-danger,#dc2626))!important}
+      .wanjuan-tianji-asset-actions button.danger:hover,.wanjuan-tianji-asset-actions button.danger:focus-visible{background:var(--wj-danger-control-hover-bg,var(--wj-danger-soft,rgba(220,38,38,.2)))!important;border-color:var(--wj-danger-control-hover-border,var(--wj-danger-hover-border,#fecaca))!important;color:var(--wj-danger-control-hover-text,var(--wj-danger,#b91c1c))!important}
       .wanjuan-tianji-empty{font-size:12px;color:var(--wj-muted,#6b7280);text-align:center;border:1px dashed color-mix(in srgb,var(--wj-border,#333) 72%,transparent);border-radius:8px;padding:16px}
       .wanjuan-tianji-points-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:28px;background:color-mix(in srgb,var(--wj-surface,#111827) 46%,transparent);backdrop-filter:blur(10px)}
       .wanjuan-tianji-points-dialog{width:min(920px,calc(100vw - 36px));max-height:min(720px,calc(100vh - 36px));display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;gap:12px;background:var(--wj-surface-2,var(--wj-surface,#171717));border:1px solid color-mix(in srgb,var(--wj-border,#333) 78%,transparent);border-radius:10px;color:var(--wj-text,#e5e7eb);box-shadow:0 24px 80px color-mix(in srgb,var(--wj-surface,#000) 62%,transparent);padding:14px;overflow:hidden}
@@ -2730,9 +2732,10 @@ function installDesktopPatches() {
       .wanjuan-workspace-search:focus{border-color:var(--wj-accent,#3b82f6)}
       .wanjuan-workspace-button{height:32px;min-width:0;border:1px solid var(--wj-border,#303640);border-radius:8px;background:var(--wj-surface-3,#1d222a);color:var(--wj-text,#d1d5db);padding:0 11px;font-size:12px;font-weight:700;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .wanjuan-workspace-button:hover{border-color:var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#3b82f6) 40%,var(--wj-border,#4b5563)));background:var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#252b35) 84%,var(--wj-accent,#3b82f6) 16%));color:var(--wj-control-hover-text,var(--wj-text,#fff))}
-      .wanjuan-workspace-button.primary{background:var(--wj-control-primary-bg,var(--wj-accent,#2563eb))!important;background-image:var(--wj-control-primary-bg,var(--wj-accent,#2563eb))!important;border-color:var(--wj-control-primary-border,var(--wj-accent,#3b82f6))!important;color:var(--wj-control-primary-text,var(--wj-on-accent,var(--wanjuan-theme-on-primary,#fff)))!important;box-shadow:var(--wj-control-primary-shadow,none)!important}
+      .wanjuan-workspace-button.primary{background:var(--wj-control-primary-bg,var(--wj-accent,#2563eb))!important;background-image:none!important;border-color:var(--wj-control-primary-border,var(--wj-accent,#3b82f6))!important;color:var(--wj-control-primary-text,var(--wj-on-accent,var(--wanjuan-theme-on-primary,#fff)))!important;box-shadow:var(--wj-control-primary-shadow,none)!important}
       .wanjuan-workspace-button:disabled{background:color-mix(in srgb,var(--wj-surface-2,#14171c) 82%,var(--wj-bg,#101214) 18%)!important;background-image:none!important;border-color:color-mix(in srgb,var(--wj-border,#303640) 72%,transparent)!important;color:color-mix(in srgb,var(--wj-muted,#9ca3af) 66%,var(--wj-bg,#101214) 34%)!important;box-shadow:none!important;opacity:.72!important;cursor:not-allowed!important}
-      .wanjuan-workspace-button.danger:hover{border-color:#ef4444;color:#fecaca}
+      .wanjuan-workspace-button.danger{background:var(--wj-danger-control-bg,var(--wj-danger-soft,rgba(220,38,38,.14)))!important;background-image:none!important;border-color:var(--wj-danger-control-border,var(--wj-danger-border,#f87171))!important;color:var(--wj-danger-control-text,var(--wj-danger,#dc2626))!important;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--wj-text,#fff) 8%,transparent)!important}
+      .wanjuan-workspace-button.danger:hover,.wanjuan-workspace-button.danger:focus-visible{background:var(--wj-danger-control-hover-bg,var(--wj-danger-soft,rgba(220,38,38,.2)))!important;border-color:var(--wj-danger-control-hover-border,var(--wj-danger-hover-border,#fecaca))!important;color:var(--wj-danger-control-hover-text,var(--wj-danger,#b91c1c))!important}
       .wanjuan-workspace-list{min-height:0;flex:1;overflow:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));align-content:start;gap:12px}
       .wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:max-content;align-content:start;align-items:start;gap:10px;overflow-y:auto;padding:12px;padding-bottom:24px}
       .wanjuan-workspace-card{border:1px solid var(--wj-border,#2c323b);border-radius:10px;background:var(--wj-surface,#171a1f);overflow:hidden;display:grid;grid-template-columns:minmax(112px,32%) minmax(0,1fr);min-width:0}
@@ -2764,7 +2767,8 @@ function installDesktopPatches() {
       .wanjuan-workspace-group-action{width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--wj-border,#303640);border-radius:6px;background:var(--wj-surface-2,#111419);color:var(--wj-muted,#cbd5e1);cursor:pointer;padding:0}
       .wanjuan-workspace-group-action svg{width:13px;height:13px;display:block;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
       .wanjuan-workspace-group-action:hover{border-color:var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#3b82f6) 42%,var(--wj-border,#4b5563)));background:var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#252b35) 84%,var(--wj-accent,#3b82f6) 16%));color:var(--wj-control-hover-text,var(--wj-text,#fff))}
-      .wanjuan-workspace-group-action.danger:hover{border-color:#ef4444;color:#fecaca;background:color-mix(in srgb,#ef4444 13%,var(--wj-surface-3,#252b35))}
+      .wanjuan-workspace-group-action.danger{border-color:var(--wj-danger-control-border,var(--wj-danger-border,#f87171))!important;background:var(--wj-danger-control-bg,var(--wj-danger-soft,rgba(220,38,38,.14)))!important;color:var(--wj-danger-control-text,var(--wj-danger,#dc2626))!important}
+      .wanjuan-workspace-group-action.danger:hover,.wanjuan-workspace-group-action.danger:focus-visible{border-color:var(--wj-danger-control-hover-border,var(--wj-danger-hover-border,#fecaca))!important;color:var(--wj-danger-control-hover-text,var(--wj-danger,#b91c1c))!important;background:var(--wj-danger-control-hover-bg,var(--wj-danger-soft,rgba(220,38,38,.2)))!important}
       .wanjuan-workspace-group.is-active{border-color:var(--wj-control-selected-border,var(--wj-accent,#3b82f6));background:var(--wj-control-selected-bg,color-mix(in srgb,var(--wj-accent,#3b82f6) 18%,var(--wj-surface,#171a1f)));background-image:var(--wj-control-selected-bg,color-mix(in srgb,var(--wj-accent,#3b82f6) 18%,var(--wj-surface,#171a1f)));color:var(--wj-control-selected-text,var(--wj-text,#dbeafe));box-shadow:var(--wj-control-selected-shadow,none)}
       .wanjuan-workspace-group.is-online{border-color:color-mix(in srgb,#22c55e 48%,var(--wj-border,#2b3038));background:color-mix(in srgb,#22c55e 10%,var(--wj-surface,#171a1f))}
       .wanjuan-workspace-group.is-error{border-color:color-mix(in srgb,#ef4444 44%,var(--wj-border,#2b3038));background:color-mix(in srgb,#ef4444 9%,var(--wj-surface,#171a1f))}
@@ -2772,7 +2776,7 @@ function installDesktopPatches() {
       .wanjuan-workspace-group.is-error small{color:#fecaca}
       .wanjuan-workspace-member{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;border:1px solid var(--wj-border,#2b3038);border-radius:8px;background:var(--wj-surface,#171a1f);padding:8px 9px;font-size:12px;color:var(--wj-text,#d1d5db);cursor:pointer;text-align:left}
       .wanjuan-workspace-member strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:750;color:inherit}
-      .wanjuan-workspace-member .wanjuan-workspace-member-remove{grid-column:2;grid-row:1;align-self:start;font-size:11px;color:var(--wj-muted,#9ca3af)}
+      .wanjuan-workspace-member .wanjuan-workspace-member-remove{grid-column:2;grid-row:1;align-self:start;font-size:11px;font-weight:750;color:var(--wj-danger,#ef4444)}
       .wanjuan-workspace-member .wanjuan-workspace-member-status{grid-column:1/-1;font-size:10px;line-height:1.45;color:var(--wj-muted,#8b95a3);overflow-wrap:anywhere}
       .wanjuan-workspace-member .wanjuan-workspace-member-detail{grid-column:1/-1;display:grid;gap:2px;margin-top:2px;font-size:10px;line-height:1.45;color:color-mix(in srgb,var(--wj-muted,#9ca3af) 88%,var(--wj-text,#e5e7eb));overflow-wrap:anywhere}
       .wanjuan-workspace-member.is-online{border-color:color-mix(in srgb,#22c55e 48%,var(--wj-border,#2b3038));background:color-mix(in srgb,#22c55e 10%,var(--wj-surface,#171a1f))}
