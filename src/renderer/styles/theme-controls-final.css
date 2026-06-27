@@ -34,6 +34,12 @@
   --wj-danger-control-hover-bg: color-mix(in srgb, var(--wj-danger) 16%, var(--wj-control-hover-bg) 84%);
   --wj-danger-control-hover-border: color-mix(in srgb, var(--wj-danger) 62%, var(--wj-control-hover-border) 38%);
   --wj-danger-control-hover-text: color-mix(in srgb, var(--wj-danger) 92%, var(--wj-text) 8%);
+  --wj-danger-icon-bg: color-mix(in srgb, var(--wj-danger) 7%, transparent);
+  --wj-danger-icon-border: color-mix(in srgb, var(--wj-danger) 22%, transparent);
+  --wj-danger-icon-text: color-mix(in srgb, var(--wj-danger) 88%, var(--wj-text) 12%);
+  --wj-danger-icon-hover-bg: color-mix(in srgb, var(--wj-danger) 12%, var(--wj-control-hover-bg) 88%);
+  --wj-danger-icon-hover-border: color-mix(in srgb, var(--wj-danger) 40%, var(--wj-control-hover-border) 60%);
+  --wj-danger-icon-hover-text: color-mix(in srgb, var(--wj-danger) 94%, var(--wj-text) 6%);
   --wj-action-bg: var(--wj-accent);
   --wj-action-hover-bg: color-mix(in srgb, var(--wj-action-bg) 86%, #000000 14%);
   --wj-action-border: color-mix(in srgb, var(--wj-action-bg) 72%, #ffffff 28%);
@@ -276,6 +282,12 @@ html.theme-chrome-teal {
   --wj-filter-button-hover-bg: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-3) 90%);
   --wj-filter-button-hover-border: color-mix(in srgb, var(--wj-accent) 48%, var(--wj-border) 52%);
   --wj-filter-button-hover-text: var(--wj-text);
+  --wj-danger-icon-bg: color-mix(in srgb, var(--wj-danger) 5%, transparent);
+  --wj-danger-icon-border: color-mix(in srgb, var(--wj-danger) 18%, transparent);
+  --wj-danger-icon-text: #c81e1e;
+  --wj-danger-icon-hover-bg: color-mix(in srgb, var(--wj-danger) 9%, var(--wj-surface) 91%);
+  --wj-danger-icon-hover-border: color-mix(in srgb, var(--wj-danger) 34%, var(--wj-border) 66%);
+  --wj-danger-icon-hover-text: #b91c1c;
   --wj-chrome-bg:
     linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
     color-mix(in srgb, var(--wj-surface) 76%, var(--wj-surface-2) 24%);
@@ -531,6 +543,75 @@ html :is(
   border-color: var(--wj-danger-control-hover-border) !important;
   color: var(--wj-danger-control-hover-text) !important;
   -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
+}
+
+html :is(
+  .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-custom-node-danger-button,
+  .wanjuan-task-card-icon-action.is-delete,
+  .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
+  .wanjuan-resource-card-actions button[title*="删除"],
+  .wanjuan-workspace-group-action.danger,
+  button[title="删除配置"],
+  button[title="删除当前项目"],
+  button[title="删除记录"],
+  button[title="删除智能体"],
+  button[title="删除连线"],
+  button[title="清空涂鸦"],
+  button[aria-label*="删除"][class*="icon"],
+  button[aria-label*="删除"].wanjuan-workspace-group-action
+)[class][class] {
+  background: var(--wj-danger-icon-bg) !important;
+  background-color: var(--wj-danger-icon-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-danger-icon-border) !important;
+  color: var(--wj-danger-icon-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-icon-text) !important;
+  box-shadow: none !important;
+}
+
+html :is(
+  .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-custom-node-danger-button,
+  .wanjuan-task-card-icon-action.is-delete,
+  .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
+  .wanjuan-resource-card-actions button[title*="删除"],
+  .wanjuan-workspace-group-action.danger,
+  button[title="删除配置"],
+  button[title="删除当前项目"],
+  button[title="删除记录"],
+  button[title="删除智能体"],
+  button[title="删除连线"],
+  button[title="清空涂鸦"],
+  button[aria-label*="删除"][class*="icon"],
+  button[aria-label*="删除"].wanjuan-workspace-group-action
+):is(:hover, :focus-visible)[class][class] {
+  background: var(--wj-danger-icon-hover-bg) !important;
+  background-color: var(--wj-danger-icon-hover-bg) !important;
+  border-color: var(--wj-danger-icon-hover-border) !important;
+  color: var(--wj-danger-icon-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-icon-hover-text) !important;
+}
+
+html :is(
+  .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-custom-node-danger-button,
+  .wanjuan-task-card-icon-action.is-delete,
+  .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
+  .wanjuan-resource-card-actions button[title*="删除"],
+  .wanjuan-workspace-group-action.danger,
+  button[title="删除配置"],
+  button[title="删除当前项目"],
+  button[title="删除记录"],
+  button[title="删除智能体"],
+  button[title="删除连线"],
+  button[title="清空涂鸦"],
+  button[aria-label*="删除"][class*="icon"],
+  button[aria-label*="删除"].wanjuan-workspace-group-action
+) :is(svg, path, span) {
+  color: currentColor !important;
+  -webkit-text-fill-color: currentColor !important;
+  stroke: currentColor !important;
 }
 
 html .wanjuan-skeuo-icon-canvas { color: var(--wj-accent, #0ea5e9) !important; }
@@ -1069,6 +1150,24 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   box-shadow: var(--wj-control-selected-shadow) !important;
 }
 
+.wanjuan-resource-footer button:is([class*="text-red-"], [class*="bg-red-"]) {
+  background: var(--wj-danger-control-bg) !important;
+  background-color: var(--wj-danger-control-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-danger-control-border) !important;
+  color: var(--wj-danger-control-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-text) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 8%, transparent) !important;
+}
+
+.wanjuan-resource-footer button:is([class*="text-red-"], [class*="bg-red-"]):is(:hover, :focus-visible) {
+  background: var(--wj-danger-control-hover-bg) !important;
+  background-color: var(--wj-danger-control-hover-bg) !important;
+  border-color: var(--wj-danger-control-hover-border) !important;
+  color: var(--wj-danger-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
+}
+
 .wanjuan-settings-card-header {
   min-height: 58px !important;
   gap: 16px !important;
@@ -1440,6 +1539,12 @@ html.theme-graphite {
   --wj-danger-control-hover-bg: #4a3030;
   --wj-danger-control-hover-border: #c85a5a;
   --wj-danger-control-hover-text: #ffb3b3;
+  --wj-danger-icon-bg: transparent;
+  --wj-danger-icon-border: rgba(239, 68, 68, 0.28);
+  --wj-danger-icon-text: #ff7b7b;
+  --wj-danger-icon-hover-bg: rgba(239, 68, 68, 0.16);
+  --wj-danger-icon-hover-border: rgba(248, 113, 113, 0.48);
+  --wj-danger-icon-hover-text: #ff9f9f;
   --wanjuan-theme-shadow: rgba(0, 0, 0, 0.48);
   --wj-control-bg: #393939;
   --wj-control-border: #707070;
@@ -1880,6 +1985,32 @@ html.theme-graphite .wanjuan-storage-optimization-card button:nth-of-type(6) {
 
 html.theme-graphite .wanjuan-storage-optimization-card button:nth-of-type(6):hover {
   background: var(--wj-danger-control-hover-bg) !important;
+  border-color: var(--wj-danger-control-hover-border) !important;
+  color: var(--wj-danger-control-hover-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
+}
+
+html.theme-graphite :is(
+  .wanjuan-workspace-button.danger,
+  .wanjuan-tianji-asset-actions button.danger,
+  .wanjuan-danger-action
+) {
+  background: var(--wj-danger-control-bg) !important;
+  background-color: var(--wj-danger-control-bg) !important;
+  background-image: none !important;
+  border-color: var(--wj-danger-control-border) !important;
+  color: var(--wj-danger-control-text) !important;
+  -webkit-text-fill-color: var(--wj-danger-control-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+html.theme-graphite :is(
+  .wanjuan-workspace-button.danger,
+  .wanjuan-tianji-asset-actions button.danger,
+  .wanjuan-danger-action
+):is(:hover, :focus-visible) {
+  background: var(--wj-danger-control-hover-bg) !important;
+  background-color: var(--wj-danger-control-hover-bg) !important;
   border-color: var(--wj-danger-control-hover-border) !important;
   color: var(--wj-danger-control-hover-text) !important;
   -webkit-text-fill-color: var(--wj-danger-control-hover-text) !important;
