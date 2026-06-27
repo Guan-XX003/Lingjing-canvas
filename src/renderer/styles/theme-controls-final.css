@@ -194,6 +194,18 @@ html.theme-sage-green,
 html.theme-warm-light {
   --wj-action-text: #ffffff;
   --wj-action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 3px 0 color-mix(in srgb, var(--wj-accent) 42%, #233044 18%, transparent);
+  --wj-danger-control-bg: color-mix(in srgb, var(--wj-danger) 4%, var(--wj-control-bg) 96%);
+  --wj-danger-control-border: color-mix(in srgb, var(--wj-danger) 26%, var(--wj-control-border) 74%);
+  --wj-danger-control-text: color-mix(in srgb, var(--wj-danger) 86%, var(--wj-text) 14%);
+  --wj-danger-control-hover-bg: color-mix(in srgb, var(--wj-danger) 7%, var(--wj-control-hover-bg) 93%);
+  --wj-danger-control-hover-border: color-mix(in srgb, var(--wj-danger) 38%, var(--wj-control-hover-border) 62%);
+  --wj-danger-control-hover-text: color-mix(in srgb, var(--wj-danger) 92%, var(--wj-text) 8%);
+  --wj-danger-icon-bg: color-mix(in srgb, var(--wj-danger) 2%, transparent);
+  --wj-danger-icon-border: color-mix(in srgb, var(--wj-danger) 12%, transparent);
+  --wj-danger-icon-text: color-mix(in srgb, var(--wj-danger) 90%, var(--wj-text) 10%);
+  --wj-danger-icon-hover-bg: color-mix(in srgb, var(--wj-danger) 5%, var(--wj-surface) 95%);
+  --wj-danger-icon-hover-border: color-mix(in srgb, var(--wj-danger) 24%, var(--wj-border) 76%);
+  --wj-danger-icon-hover-text: color-mix(in srgb, var(--wj-danger) 96%, var(--wj-text) 4%);
 }
 
 html.theme-light {
@@ -282,11 +294,15 @@ html.theme-chrome-teal {
   --wj-filter-button-hover-bg: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-3) 90%);
   --wj-filter-button-hover-border: color-mix(in srgb, var(--wj-accent) 48%, var(--wj-border) 52%);
   --wj-filter-button-hover-text: var(--wj-text);
-  --wj-danger-icon-bg: color-mix(in srgb, var(--wj-danger) 5%, transparent);
-  --wj-danger-icon-border: color-mix(in srgb, var(--wj-danger) 18%, transparent);
+  --wj-danger-control-bg: color-mix(in srgb, var(--wj-danger) 4%, var(--wj-surface) 96%);
+  --wj-danger-control-border: color-mix(in srgb, var(--wj-danger) 24%, var(--wj-surface) 76%);
+  --wj-danger-control-hover-bg: color-mix(in srgb, var(--wj-danger) 7%, var(--wj-surface-2) 93%);
+  --wj-danger-control-hover-border: color-mix(in srgb, var(--wj-danger) 36%, var(--wj-surface) 64%);
+  --wj-danger-icon-bg: color-mix(in srgb, var(--wj-danger) 1.5%, transparent);
+  --wj-danger-icon-border: color-mix(in srgb, var(--wj-danger) 10%, transparent);
   --wj-danger-icon-text: #c81e1e;
-  --wj-danger-icon-hover-bg: color-mix(in srgb, var(--wj-danger) 9%, var(--wj-surface) 91%);
-  --wj-danger-icon-hover-border: color-mix(in srgb, var(--wj-danger) 34%, var(--wj-border) 66%);
+  --wj-danger-icon-hover-bg: color-mix(in srgb, var(--wj-danger) 4%, var(--wj-surface) 96%);
+  --wj-danger-icon-hover-border: color-mix(in srgb, var(--wj-danger) 20%, var(--wj-border) 80%);
   --wj-danger-icon-hover-text: #b91c1c;
   --wj-chrome-bg:
     linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
@@ -392,6 +408,8 @@ html :is(
   .wanjuan-tianji-points-presets button
 ):not(
   .wanjuan-settings-nav-item-active,
+  .wanjuan-app-nav-tab,
+  .wanjuan-workspace-nav-tab,
   .wanjuan-resource-filter-button-active,
   .wanjuan-node-model-option-active,
   .wanjuan-theme-option-active,
@@ -469,6 +487,7 @@ html :is(
   .is-danger,
   .danger,
   .wanjuan-danger-action,
+  .wanjuan-danger-text-action,
   [data-danger="true"],
   [data-action="delete"]
 )[class][class] {
@@ -500,6 +519,7 @@ html :is(
   .is-danger,
   .danger,
   .wanjuan-danger-action,
+  .wanjuan-danger-text-action,
   [data-danger="true"],
   [data-action="delete"],
   .wanjuan-context-menu-item-danger,
@@ -535,6 +555,7 @@ html :is(
   .is-danger,
   .danger,
   .wanjuan-danger-action,
+  .wanjuan-danger-text-action,
   [data-danger="true"],
   [data-action="delete"]
 ):is(:hover, :focus-visible)[class][class] {
@@ -547,6 +568,7 @@ html :is(
 
 html :is(
   .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-danger-icon-action,
   .wanjuan-custom-node-danger-button,
   .wanjuan-task-card-icon-action.is-delete,
   .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
@@ -564,6 +586,7 @@ html :is(
   background: var(--wj-danger-icon-bg) !important;
   background-color: var(--wj-danger-icon-bg) !important;
   background-image: none !important;
+  border: 1px solid var(--wj-danger-icon-border) !important;
   border-color: var(--wj-danger-icon-border) !important;
   color: var(--wj-danger-icon-text) !important;
   -webkit-text-fill-color: var(--wj-danger-icon-text) !important;
@@ -572,6 +595,7 @@ html :is(
 
 html :is(
   .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-danger-icon-action,
   .wanjuan-custom-node-danger-button,
   .wanjuan-task-card-icon-action.is-delete,
   .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
@@ -595,6 +619,7 @@ html :is(
 
 html :is(
   .wanjuan-canvas-model-toolbar-icon.is-delete,
+  .wanjuan-danger-icon-action,
   .wanjuan-custom-node-danger-button,
   .wanjuan-task-card-icon-action.is-delete,
   .wanjuan-context-menu-icon-action.wanjuan-context-menu-item-danger,
@@ -1521,9 +1546,9 @@ html.theme-graphite {
   --wj-text: #f8fafc;
   --wj-muted: #d0d0d0;
   --wj-muted-2: #a6a6a6;
-  --wj-accent: #38bdf8;
-  --wj-accent-strong: #7dd3fc;
-  --wj-accent-soft: rgba(56, 189, 248, 0.1);
+  --wj-accent: #d8dde3;
+  --wj-accent-strong: #f2f4f6;
+  --wj-accent-soft: rgba(226, 232, 240, 0.1);
   --wj-success: #16a34a;
   --wj-warning: #f59e0b;
   --wj-danger: #ef4444;
@@ -1565,9 +1590,9 @@ html.theme-graphite {
     0 10px 26px rgba(0, 0, 0, 0.24);
   --wj-nav-text: #d7dce3;
   --wj-nav-text-active: #ffffff;
-  --wj-nav-hover-bg: rgba(255, 255, 255, 0.045);
-  --wj-nav-active-line: #38bdf8;
-  --wj-nav-active-shadow: rgba(56, 189, 248, 0.18);
+  --wj-nav-hover-bg: transparent;
+  --wj-nav-active-line: #d8dde3;
+  --wj-nav-active-shadow: rgba(226, 232, 240, 0.16);
   --wanjuan-nav-bg: var(--wj-chrome-bg);
   --wanjuan-nav-border: var(--wj-chrome-border);
   --wanjuan-nav-text: var(--wj-nav-text);
@@ -1586,8 +1611,8 @@ html.theme-graphite {
   --wj-field-border: #696969;
   --wj-field-text: #f8fafc;
   --wj-field-placeholder: #9f9f9f;
-  --wj-field-focus-border: #38bdf8;
-  --wj-field-focus-shadow: 0 0 0 2px rgba(56, 189, 248, 0.14);
+  --wj-field-focus-border: #d8dde3;
+  --wj-field-focus-shadow: 0 0 0 2px rgba(226, 232, 240, 0.14);
   --wj-disclosure-bg: #3a3a3a;
   --wj-disclosure-border: #747474;
   --wj-disclosure-text: #f2f4f6;
@@ -1632,29 +1657,29 @@ html.theme-graphite {
   --wj-menu-danger-hover-text: #ff8a8a;
   --wj-action-bg: #454545;
   --wj-action-hover-bg: #505050;
-  --wj-action-border: #38bdf8;
+  --wj-action-border: #e4e7eb;
   --wj-action-text: #ffffff;
   --wj-action-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
     0 2px 0 rgba(0, 0, 0, 0.32);
-  --wj-control-selected-bg: var(--wj-action-bg);
+  --wj-control-selected-bg: #d8dde3;
   --wj-control-selected-hover-bg: var(--wj-control-selected-bg);
   --wj-control-selected-border: var(--wj-action-border);
-  --wj-control-selected-text: var(--wj-action-text);
+  --wj-control-selected-text: #151515;
   --wj-control-selected-shadow:
-    inset 0 0 0 1px rgba(56, 189, 248, 0.54),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
     0 2px 0 rgba(0, 0, 0, 0.3);
   --wj-control-primary-bg: #424242;
   --wj-control-primary-hover-bg: #4d4d4d;
-  --wj-control-primary-border: #38bdf8;
+  --wj-control-primary-border: #e4e7eb;
   --wj-control-primary-text: #ffffff;
   --wj-control-primary-shadow: var(--wj-action-shadow);
   --wj-card-bg: #333333;
   --wj-card-hover-bg: #3f3f3f;
   --wj-card-selected-bg: #383838;
-  --wj-card-selected-border: #38bdf8;
-  --wj-card-selected-rail: #38bdf8;
+  --wj-card-selected-border: #e4e7eb;
+  --wj-card-selected-rail: #d8dde3;
   --wj-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --wj-card-selected-shadow:
     inset 4px 0 0 var(--wj-card-selected-rail),
@@ -1692,15 +1717,15 @@ html.theme-graphite {
     0 4px 12px rgba(0, 0, 0, 0.24);
   --wj-edge-glow: rgba(166, 166, 166, 0.2);
   --wj-edge-main: rgba(222, 226, 230, 0.58);
-  --wj-edge-selected: #38bdf8;
-  --wj-edge-active-glow: rgba(56, 189, 248, 0.18);
-  --wj-edge-active: #38bdf8;
+  --wj-edge-selected: #d8dde3;
+  --wj-edge-active-glow: rgba(226, 232, 240, 0.18);
+  --wj-edge-active: #d8dde3;
   --wj-edge-energy: #ecfeff;
-  --wj-edge-spark: #7dd3fc;
-  --wj-loading-node-border: #38bdf8;
+  --wj-edge-spark: #f2f4f6;
+  --wj-loading-node-border: #d8dde3;
   --wj-loading-node-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.68),
-    0 0 0 4px rgba(56, 189, 248, 0.1),
+    0 0 0 1px rgba(226, 232, 240, 0.54),
+    0 0 0 4px rgba(226, 232, 240, 0.1),
     0 18px 42px rgba(0, 0, 0, 0.24),
     inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   color-scheme: dark;
@@ -1727,6 +1752,42 @@ html.theme-graphite .wanjuan-settings-sidebar {
   background: var(--wj-chrome-bg) !important;
   border-color: var(--wj-chrome-border) !important;
   box-shadow: var(--wj-chrome-shadow) !important;
+}
+
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab:hover,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab:focus-visible,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab:active,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab-active,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-click-zone,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-click-zone:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab::before,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab:hover::before,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab-active::before {
+  display: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab:hover:not(.wanjuan-app-nav-tab-active) {
+  color: var(--wj-nav-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab-active,
+html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab-active:hover {
+  color: var(--wj-nav-text-active) !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 html.theme-graphite .wanjuan-settings-page,

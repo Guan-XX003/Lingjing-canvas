@@ -1602,7 +1602,7 @@ var TongyiWanxiangLogo = ({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((edges) =>
@@ -1653,7 +1653,7 @@ var TongyiWanxiangLogo = ({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -2605,7 +2605,7 @@ var TongyiWanxiangLogo = ({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((prev) =>
@@ -2656,7 +2656,7 @@ var TongyiWanxiangLogo = ({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -5148,7 +5148,7 @@ var Le = reactMemo(({
 	                                onError: wanjuanUseBrokenResourceImage,
 	                              }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   (event.stopPropagation(),
                                     setEdges((prevEdges) =>
@@ -5234,7 +5234,7 @@ var Le = reactMemo(({
                                 className: `absolute inset-0 bg-blue-500/10 pointer-events-none`,
                               }),
                               jsx(`div`, {
-                                className: `absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
+                                className: `wanjuan-danger-icon-action absolute top-0 right-0 p-0.5 bg-red-600/90 hover:bg-red-500 rounded-bl-md cursor-pointer opacity-0 group-hover:opacity-100 transition-all`,
                                 onClick: (event) => {
                                   event.stopPropagation();
                                   let updatedResources = selectedContextResources.filter((e, index2) => index2 !== index);
@@ -9719,7 +9719,7 @@ ${data.audioModel || ``}`)
                                                     updatedFormats
                                                   );
                                                 }),
-                                              className: `absolute top-0 right-0 bg-red-500/80 text-white p-0.5 rounded-bl z-10 wanjuan-custom-node-danger-button`,
+                                              className: `absolute top-0 right-0 bg-red-500/80 text-white p-0.5 rounded-bl z-10 wanjuan-custom-node-danger-button wanjuan-danger-icon-action`,
                                               children: (0,
                                                 jsx)(re, {
                                                 size: 8,
@@ -11378,7 +11378,7 @@ ${data.audioModel || ``}`)
           },
           className: `nodrag nopan group/edge hover:opacity-100`,
           children: jsx(`button`, {
-            className: `bg-white hover:bg-red-50 text-red-600 hover:text-red-700 rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-red-200 cursor-pointer transition-colors`,
+            className: `wanjuan-danger-icon-action bg-white hover:bg-red-50 text-red-600 hover:text-red-700 rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-red-200 cursor-pointer transition-colors`,
             onClick: (event) => {
               (event.stopPropagation(), setEdges((items) => items.filter((item) => item.id !== id)));
             },
@@ -37661,7 +37661,7 @@ ${docText}`;
                 }),
                 jsx(`button`, {
                   onClick: purgeStorageOptimizationTrash,
-                  className: `rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10`,
+                  className: `wanjuan-danger-text-action rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10`,
                   children: `永久删除过期文件`,
                 }),
                 jsx(`button`, {
@@ -44182,7 +44182,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         }),
                                         jsx(`button`, {
                                           onClick: () => Ht(resource.id),
-                                          className: `p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded`,
+                                          className: `wanjuan-danger-icon-action p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded`,
                                           title: `删除`,
                                           children: jsx(fe, {
                                             size: 14,
@@ -44281,7 +44281,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             jsxs(`button`, {
                               onClick: handleCleanInvalidResources,
                               disabled: resourceCleanupBusy,
-                              className: `text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/40 whitespace-nowrap flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait`,
+                              className: `wanjuan-danger-text-action text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/40 whitespace-nowrap flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait`,
                               children: [
                                 jsx(fe, {
                                   size: 12
@@ -44291,7 +44291,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             }),
                             jsxs(`button`, {
                               onClick: handleClearUnfavorited,
-                              className: `text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-[#333] transition-colors border border-transparent hover:border-red-900/50 whitespace-nowrap flex items-center gap-1`,
+                              className: `wanjuan-danger-text-action text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-[#333] transition-colors border border-transparent hover:border-red-900/50 whitespace-nowrap flex items-center gap-1`,
                               children: [
                                 jsx(fe, {
                                   size: 12
@@ -45806,7 +45806,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             0,
                                           ));
                                       },
-                                      className: `p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 transition-colors`,
+                                      className: `wanjuan-danger-icon-action p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 transition-colors`,
                                       title: `删除智能体`,
                                       children: jsx(ce, {
                                         size: 14,
@@ -45920,7 +45920,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             }),
                             jsx(`button`, {
                               onClick: clearSelectedAgentConversation,
-                              className: `inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-200 hover:border-red-300/60 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
+                              className: `wanjuan-danger-text-action inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-200 hover:border-red-300/60 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
                               title: `清空当前智能体聊天记录`,
                               children: `清空`,
                             }),
@@ -45932,7 +45932,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             }),
                             jsx(`button`, {
                               onClick: deleteSelectedAgent,
-                              className: `p-2 text-red-400 hover:text-red-300 transition-colors rounded-xl hover:bg-red-500/10 border border-transparent hover:border-red-400/30`,
+                              className: `wanjuan-danger-icon-action p-2 text-red-400 hover:text-red-300 transition-colors rounded-xl hover:bg-red-500/10 border border-transparent hover:border-red-400/30`,
                               title: `删除智能体`,
                               children: jsx(ce, {
                                 size: 16
@@ -46598,7 +46598,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                 []
                                               ));
                                           },
-                                          className: `px-4 py-2 rounded-2xl border border-red-400/35 bg-red-500/10 text-xs text-red-200 hover:border-red-300/55 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]`,
+                                          className: `wanjuan-danger-text-action px-4 py-2 rounded-2xl border border-red-400/35 bg-red-500/10 text-xs text-red-200 hover:border-red-300/55 hover:text-red-100 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]`,
                                           children: `清空`,
                                         }),
                                         jsxs(`button`, {
@@ -47345,7 +47345,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                   type: `button`,
                                                   onClick: () =>
                                                     removeAgentKnowledgeFile(file.id),
-                                                  className: `flex-shrink-0 rounded-lg border border-transparent px-2 py-1 text-[10px] text-red-400 hover:text-red-300 hover:border-red-400/24 hover:bg-red-400/10 transition-colors`,
+                                                  className: `wanjuan-danger-text-action flex-shrink-0 rounded-lg border border-transparent px-2 py-1 text-[10px] text-red-400 hover:text-red-300 hover:border-red-400/24 hover:bg-red-400/10 transition-colors`,
                                                   children: `移除`,
                                                 }),
                                               ],
@@ -47979,7 +47979,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             }),
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(t),
-                                              className: `text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
+                                              className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
                                               children: jsx(ce, {
                                                 size: 14,
                                               }),
@@ -48917,7 +48917,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             }),
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(index),
-                                              className: `text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
+                                              className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
                                               children: jsx(ce, {
                                                 size: 14,
                                               }),
@@ -49403,7 +49403,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                               let next = [...apiConfigs];
                                               (next.splice(index, 1), setApiConfigs(next));
                                             },
-                                            className: `text-red-400 hover:text-red-300 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity`,
+                                            className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity`,
                                             title: `删除配置`,
                                             children: jsx(ce, {
                                               size: 14,
