@@ -6,6 +6,7 @@ const RELEASES_API_URL = "https://api.github.com/repos/Guan-XX003/Lingjing-canva
 const RELEASES_PAGE_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest";
 const LATEST_MAC_YML_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/latest-mac.yml";
 const LATEST_WIN_YML_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/latest.yml";
+const DOWNLOAD_PAGE_URL = "https://lingjing.guancn.uk";
 const AUTO_CHECK_DELAY_MS = 6000;
 
 let activeCheck = null;
@@ -123,7 +124,7 @@ function normalizeRelease(release, arch = process.arch, platform = process.platf
     notes: String(release?.body || "").trim(),
     publishedAt: String(release?.published_at || ""),
     releaseUrl: String(release?.html_url || RELEASES_PAGE_URL),
-    downloadUrl: String(asset?.browser_download_url || ""),
+    downloadUrl: DOWNLOAD_PAGE_URL,
     assetName: String(asset?.name || "")
   };
 }
@@ -160,7 +161,7 @@ function normalizeLatestYaml(text, arch = process.arch, platform = process.platf
     notes: "",
     publishedAt: String(metadata?.releaseDate || ""),
     releaseUrl: RELEASES_PAGE_URL,
-    downloadUrl: String(asset?.browser_download_url || ""),
+    downloadUrl: DOWNLOAD_PAGE_URL,
     assetName: String(asset?.name || ""),
     source: source || (normalizePlatform(platform) === "win32" ? "latest.yml" : "latest-mac.yml")
   };
@@ -213,13 +214,13 @@ async function showUpdateAvailable(release) {
     title: "发现万卷灵境新版本",
     message: `${release.name} 已发布`,
     detail,
-    buttons: ["下载更新", "查看发布说明", "稍后"],
+    buttons: ["前往下载页", "查看发布说明", "稍后"],
     defaultId: 0,
     cancelId: 2,
     noLink: true
   });
   if (result.response === 0) {
-    await shell.openExternal(release.downloadUrl || release.releaseUrl);
+    await shell.openExternal(DOWNLOAD_PAGE_URL);
   } else if (result.response === 1) {
     await shell.openExternal(release.releaseUrl);
   }
@@ -327,6 +328,7 @@ module.exports = {
   RELEASES_PAGE_URL,
   LATEST_MAC_YML_URL,
   LATEST_WIN_YML_URL,
+  DOWNLOAD_PAGE_URL,
   parseVersion,
   parseVersionParts,
   compareVersions,

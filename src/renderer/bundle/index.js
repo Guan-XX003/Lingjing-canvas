@@ -30880,7 +30880,8 @@ var ft = `MUTIWINDOW_SECRET_SALT_2024`,
                 latestPart = latestParts[index] || 0;
               if (latestPart > currentPart) return {
                 hasUpdate: !0,
-                ...data
+                ...data,
+                downloadUrl: `https://lingjing.guancn.uk`
               };
               if (currentPart > latestPart) return {
                 hasUpdate: !1

@@ -7,7 +7,8 @@ const {
   normalizeRelease,
   normalizeLatestYaml,
   normalizeLatestMacYaml,
-  latestYamlUrlForPlatform
+  latestYamlUrlForPlatform,
+  DOWNLOAD_PAGE_URL
 } = require("../electron/main/update-checker.cjs");
 
 assert.deepEqual(parseVersion("v1.2.9-release"), [1, 2, 9]);
@@ -53,7 +54,7 @@ const windowsRelease = normalizeRelease({
   assets
 }, "x64", "win32");
 assert.equal(windowsRelease.assetName, "wanjuan-lingjing-setup-1.3.0-x64.exe");
-assert.equal(windowsRelease.downloadUrl, "https://example.com/setup-x64.exe");
+assert.equal(windowsRelease.downloadUrl, DOWNLOAD_PAGE_URL);
 
 const fallbackRelease = normalizeLatestMacYaml(`
 version: 1.3.0
@@ -64,7 +65,7 @@ releaseDate: '2026-06-07T00:00:00.000Z'
 `, "arm64");
 assert.equal(fallbackRelease.version, "1.3.0");
 assert.equal(fallbackRelease.assetName, "wanjuan-lingjing-1.3.0.dmg");
-assert.match(fallbackRelease.downloadUrl, /releases\/latest\/download\/wanjuan-lingjing-1.3.0.dmg$/);
+assert.equal(fallbackRelease.downloadUrl, DOWNLOAD_PAGE_URL);
 
 const windowsFallbackRelease = normalizeLatestYaml(`
 version: 1.3.0
@@ -75,7 +76,7 @@ releaseDate: '2026-06-07T00:00:00.000Z'
 `, "x64", "win32", "latest.yml");
 assert.equal(windowsFallbackRelease.version, "1.3.0");
 assert.equal(windowsFallbackRelease.assetName, "wanjuan-lingjing-setup-1.3.0-x64.exe");
-assert.match(windowsFallbackRelease.downloadUrl, /releases\/latest\/download\/wanjuan-lingjing-setup-1.3.0-x64\.exe$/);
+assert.equal(windowsFallbackRelease.downloadUrl, DOWNLOAD_PAGE_URL);
 assert.equal(windowsFallbackRelease.source, "latest.yml");
 
 console.log("update checker tests passed");

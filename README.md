@@ -6,9 +6,9 @@
 
 **面向 AI 创作流程的桌面画布应用**
 
-[![版本](https://img.shields.io/badge/版本-1.3.3-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![版本](https://img.shields.io/badge/版本-1.3.5-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
 [![平台](https://img.shields.io/badge/平台-macOS%20|%20Windows-lightgrey.svg)](#安装)
-[![许可](https://img.shields.io/badge/许可-Private-red.svg)](LICENSE)
+[![许可](https://img.shields.io/badge/许可-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 
 [下载最新版](../../releases/latest) · [功能介绍](#代表功能) · [快速开始](#从源码运行) · [更新记录](CHANGELOG.md)
 
@@ -103,8 +103,8 @@
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [万卷灵境-1.3.3-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [万卷灵境-1.3.3-x64.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [万卷灵境-1.3.5-arm64.dmg](../../releases/latest) |
+| Windows | x64 | [万卷灵境-1.3.5-x64.exe](../../releases/latest) |
 
 ### 安装说明
 
@@ -183,8 +183,17 @@ npm run build:win:x86
 
 ## 📋 更新记录
 
-### 最新版本：v1.3.3（2026-06-26）
+### 最新版本：v1.3.5（2026-06-29）
 
+- 🌐 在更新设置旁新增“前往官网”入口
+- 🛡️ 正式版忽略开发数据目录变量，避免误读临时开发数据
+
+### v1.3.4（2026-06-27）
+
+- 📦 发布 macOS 与 Windows 正式安装包
+- 📜 明确项目非商业使用许可
+
+### v1.3.3（2026-06-26）
 - 🎨 优化石墨灰主题控件配色、边界和选中态
 - 🌐 新增内置语言包运行时，覆盖更多后渲染界面
 - 🛠️ 完善 Deface 官方离线运行时打包与校验流程
@@ -243,14 +252,16 @@ npm run build:win:x86
 
 ## 📜 许可与声明
 
-此项目基于 [一毛画布](https://test-cyfyd24zfbua.feishu.cn/wiki/JrwVweiryijlX3kZKx5cGvgnnCE) 浏览器插件二次开发。原插件的付费功能在本项目中保持不变。
+本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE) 授权。
+
+允许个人学习、研究、非商业使用和非商业二次开发。未经作者书面授权，禁止将本项目或其衍生版本用于商业销售、商业部署、SaaS 服务、付费分发、商业集成或其他营利性用途。
+
+本项目在创作工作流理念上曾参考一毛画布等同类工具的使用体验，但软件源码、桌面端架构、界面组织和当前功能实现均由本项目独立开发完成。
 
 **本项目主要目的：**
-- 提供桌面版本的更好使用体验
+- 提供独立桌面应用的创作体验
 - 支持自定义中转站和模型配置
 - 方便本地化和扩展功能
-
-需要官方稳定版本和商业支持的用户，请访问 [一毛画布官网](https://test-cyfyd24zfbua.feishu.cn/wiki/JrwVweiryijlX3kZKx5cGvgnnCE)。
 
 ---
 

@@ -6,9 +6,9 @@
 
 **Desktop Canvas Application for AI Creation Workflow**
 
-[![Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-lightgrey.svg)](#installation)
-[![License](https://img.shields.io/badge/license-Private-red.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange.svg)](../LICENSE)
 
 [Download Latest](../../releases/latest) · [Features](#key-features) · [Quick Start](#development) · [Changelog](../CHANGELOG.md)
 
@@ -88,9 +88,8 @@ Project switching, group management, import/export, backup center, and cross-dev
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
-| macOS | Apple Silicon (arm64) | [Wanjuan-Lingjing-1.3.2-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [Wanjuan-Lingjing-1.3.2-x64.exe](../../releases/latest) |
-| Windows | x86 / ia32 | [Wanjuan-Lingjing-1.3.2-ia32.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [Wanjuan-Lingjing-1.3.5-arm64.dmg](../../releases/latest) |
+| Windows | x64 | [Wanjuan-Lingjing-1.3.5-x64.exe](../../releases/latest) |
 
 ---
 
@@ -152,6 +151,19 @@ Build artifacts output to `release/` directory.
 
 ## 📋 Latest Updates
 
+### v1.3.5 (2026-06-29)
+- 🌐 Added an official website button next to update checking
+- 🛡️ Packaged builds now ignore development user-data overrides
+
+### v1.3.4 (2026-06-27)
+- 📦 Released official macOS and Windows installers
+- 📜 Clarified the project license for noncommercial use
+
+### v1.3.3 (2026-06-26)
+- 🎨 Optimized graphite theme controls, boundaries, and selected states
+- 🌐 Added built-in language pack runtime coverage for more deferred UI
+- 🛠️ Improved bundled Deface offline runtime packaging and verification
+
 ### v1.3.2 (2026-06-24)
 - 🎨 Enhanced canvas rendering performance
 - 🔧 Improved Tianji configuration sync
@@ -195,14 +207,16 @@ Lingjing Canvas saves all project data, configurations, task records, and media 
 
 ## 📜 License & Attribution
 
-This project is a desktop adaptation of [YiMao Canvas](https://test-cyfyd24zfbua.feishu.cn/wiki/JrwVweiryijlX3kZKx5cGvgnnCE) browser extension. Original paid features remain unchanged.
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](../LICENSE).
+
+Personal learning, research, noncommercial use, and noncommercial derivative development are allowed. Commercial sale, commercial deployment, SaaS hosting, paid redistribution, commercial integration, or other for-profit use of this project or derivative versions requires prior written permission from the author.
+
+This project took inspiration from YiMao Canvas and similar AI creation workflow tools, while its source code, desktop architecture, UI organization, and current feature implementation are independently developed in this repository.
 
 **Project Goals:**
-- Provide better desktop experience
+- Provide an independent desktop creation experience
 - Support custom relay stations and model configs
 - Facilitate localization and feature extensions
-
-For official stable versions and commercial support, visit [YiMao Canvas Official](https://test-cyfyd24zfbua.feishu.cn/wiki/JrwVweiryijlX3kZKx5cGvgnnCE).
 
 ---
 

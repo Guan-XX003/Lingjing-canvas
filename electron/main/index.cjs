@@ -23,7 +23,9 @@ const { installApplicationMenu, scheduleAutomaticUpdateCheck } = require("./upda
 // 应用标识与用户数据目录（保持与原 app 一致，沿用同一 userData，迁移用户无感）。
 try {
   app.setName(TEST_BUILD_NAME);
-  app.setPath("userData", TEST_USER_DATA_PATH || path.join(app.getPath("appData"), TEST_USER_DATA_DIR));
+  const stableUserDataPath = path.join(app.getPath("appData"), TEST_USER_DATA_DIR);
+  const devUserDataPath = app.isPackaged ? "" : TEST_USER_DATA_PATH;
+  app.setPath("userData", devUserDataPath || stableUserDataPath);
 } catch {}
 
 // stdout/stderr 的 EPIPE 容错：管道提前关闭不应导致进程崩溃。

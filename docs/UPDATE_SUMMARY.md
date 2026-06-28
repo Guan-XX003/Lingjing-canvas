@@ -169,7 +169,7 @@
 
 ### 短期（可选）：
 
-- [ ] **添加 LICENSE 文件** - 明确开源协议
+- [x] **添加 LICENSE 文件** - 明确非商业源码许可
 - [ ] **添加 CONTRIBUTING.md** - 贡献指南
 - [ ] **添加 .gitattributes** - Git 文件属性配置
 - [ ] **添加 GitHub Actions** - 自动化构建和发布

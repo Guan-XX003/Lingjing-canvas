@@ -2,6 +2,8 @@
 const { ipcRenderer } = require("./runtime.cjs");
 const { PERFORMANCE_PROFILE_STORAGE_KEY, PERFORMANCE_PROFILE_PRESETS } = require("./constants.cjs");
 
+const WANJUAN_OFFICIAL_SITE_URL = "https://lingjing.guancn.uk";
+
 function installDesktopPatches() {
   if (typeof window !== "undefined") {
     installChromeShim();
@@ -166,7 +168,7 @@ function installDesktopPatches() {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = "检查更新";
-    button.className = "wanjuan-settings-button wanjuan-check-updates-button";
+    button.className = "wanjuan-settings-button wanjuan-update-action-button wanjuan-check-updates-button";
     button.setAttribute("data-wanjuan-check-updates", "true");
     button.style.cssText = [
       "appearance:none",
@@ -190,6 +192,20 @@ function installDesktopPatches() {
       }
     });
     actions.appendChild(button);
+
+    const officialSiteButton = document.createElement("button");
+    officialSiteButton.type = "button";
+    officialSiteButton.textContent = "前往官网";
+    officialSiteButton.className = "wanjuan-settings-button wanjuan-update-action-button wanjuan-official-site-button";
+    officialSiteButton.setAttribute("data-wanjuan-official-site", "true");
+    officialSiteButton.style.cssText = [
+      "appearance:none",
+      "cursor:pointer"
+    ].join(";");
+    officialSiteButton.addEventListener("click", () => {
+      window.open(WANJUAN_OFFICIAL_SITE_URL, "_blank", "noopener,noreferrer");
+    });
+    actions.appendChild(officialSiteButton);
     row.appendChild(actions);
     return true;
   };

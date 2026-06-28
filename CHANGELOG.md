@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.5 - 2026-06-29
+
+- Added an official website button next to the in-app update checker.
+- Redirected update downloads to the official website.
+- Prevented packaged builds from using development-only user data path overrides.
+
+## 1.3.4 - 2026-06-27
+
+- Released official macOS and Windows installers.
+- Clarified the project license for noncommercial use.
+
+## 1.3.3 - 2026-06-26
+
+- Optimized graphite theme controls, boundaries, selected states, and hover behavior.
+- Added built-in language pack runtime coverage for deferred UI surfaces.
+- Improved bundled Deface offline runtime packaging and verification.
+- Refined workspace and prompt-template layouts.
+
 ## 1.3.2 - 2026-06-24
 
 - Enhanced canvas rendering performance and interaction responsiveness.
