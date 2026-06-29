@@ -7,6 +7,74 @@ const { sha256Buffer } = require("../utils/crypto.cjs");
 const { localPathFromFileUrl } = require("../utils/paths.cjs");
 const { assertPublicHttpUrl } = require("../net/security.cjs");
 
+function normalizedMime(mime) {
+  return String(mime || "").split(";")[0].trim().toLowerCase();
+}
+
+function hasMediaHint(payload = {}, mime = "") {
+  const hintedMime = normalizedMime(mime || payload?.mime);
+  if (/^(video|audio)\//i.test(hintedMime)) return true;
+  const kind = String(payload?.kind || "").toLowerCase();
+  if (kind === "video" || kind === "audio") return true;
+  const field = String(payload?.field || "").toLowerCase();
+  if (field === "videourl" || field === "audiourl") return true;
+  return /\.(mp4|webm|mov|m4v|avi|mkv|flv|mpeg|mpg|3gp|3g2|ts|mts|m2ts|wmv|mp3|wav|ogg|oga|m4a|aac|flac|opus|weba|amr|aiff?|caf)($|\?)/i.test(
+    String(payload?.filename || payload?.url || payload?.localPath || payload?.path || "")
+  );
+}
+
+function looksLikeHtml(buffer) {
+  if (!Buffer.isBuffer(buffer) || !buffer.length) return false;
+  const head = buffer.slice(0, 1024).toString("utf8").replace(/^\uFEFF/, "").trimStart().toLowerCase();
+  return (
+    head.startsWith("<!doctype html") ||
+    head.startsWith("<html") ||
+    /^<head[\s>]/.test(head) ||
+    /<title[\s>]/.test(head) ||
+    /<body[\s>]/.test(head)
+  );
+}
+
+function sniffMediaMime(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 4) return "";
+  if (buffer.length >= 12 && buffer.slice(4, 8).toString("ascii") === "ftyp") return "video/mp4";
+  if (buffer.slice(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))) return "video/webm";
+  if (
+    buffer.length >= 12 &&
+    buffer.slice(0, 4).toString("ascii") === "RIFF" &&
+    buffer.slice(8, 12).toString("ascii") === "AVI "
+  ) return "video/x-msvideo";
+  if (buffer.length >= 4 && buffer[0] === 0x00 && buffer[1] === 0x00 && buffer[2] === 0x01 && [0xba, 0xb3].includes(buffer[3])) return "video/mpeg";
+  if (buffer.slice(0, 3).toString("ascii") === "ID3") return "audio/mpeg";
+  if (buffer.length >= 2 && buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) return "audio/mpeg";
+  if (
+    buffer.length >= 12 &&
+    buffer.slice(0, 4).toString("ascii") === "RIFF" &&
+    buffer.slice(8, 12).toString("ascii") === "WAVE"
+  ) return "audio/wav";
+  if (buffer.slice(0, 4).toString("ascii") === "OggS") return "audio/ogg";
+  if (buffer.slice(0, 4).toString("ascii") === "fLaC") return "audio/flac";
+  return "";
+}
+
+function validateMediaPayload(result, payload = {}) {
+  const buffer = result?.buffer;
+  const declaredMime = normalizedMime(result?.mime || payload?.mime);
+  if (!hasMediaHint(payload, declaredMime)) return result;
+  if (!Buffer.isBuffer(buffer)) return result;
+  if (buffer.length < 1024) throw new Error("Media asset is empty or too small to save");
+  if (looksLikeHtml(buffer) || declaredMime === "text/html" || declaredMime === "application/xhtml+xml") {
+    throw new Error("媒体地址返回的是网页或登录页，不是可播放的媒体文件");
+  }
+  if (/^text\//i.test(declaredMime) || declaredMime === "application/json") {
+    throw new Error(`媒体地址返回了 ${declaredMime} 内容，不是可播放的媒体文件`);
+  }
+  const sniffedMime = sniffMediaMime(buffer);
+  return sniffedMime && (!declaredMime || /^(video|audio)\//i.test(declaredMime))
+    ? { ...result, mime: sniffedMime }
+    : result;
+}
+
 function normalizeImagePayload(buffer, mime) {
   if (!Buffer.isBuffer(buffer) || buffer.length < 16) {
     return { buffer, mime };
@@ -77,36 +145,36 @@ async function bufferFromDownloadPayload(payload) {
   if (payload?.arrayBuffer) {
     const buffer = Buffer.from(payload.arrayBuffer);
     emitProgress({ percent: 100, receivedBytes: buffer.length, totalBytes: buffer.length });
-    return {
+    return validateMediaPayload({
       buffer,
       mime: payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   if (payload?.bytes) {
     const buffer = Buffer.from(payload.bytes);
     emitProgress({ percent: 100, receivedBytes: buffer.length, totalBytes: buffer.length });
-    return {
+    return validateMediaPayload({
       buffer,
       mime: payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   if (text !== undefined && text !== null) {
     const body = Buffer.from(String(text), "utf8");
     emitProgress({ percent: 100, receivedBytes: body.length, totalBytes: body.length });
-    return {
+    return validateMediaPayload({
       buffer: body,
       mime: payload?.mime || "application/json"
-    };
+    }, payload);
   }
   if (payload?.localPath && fs.existsSync(payload.localPath)) {
     const file = readLocalFilePayload(payload.localPath);
     emitProgress({ percent: 100, receivedBytes: file.buffer.length, totalBytes: file.buffer.length });
-    return file;
+    return validateMediaPayload(file, payload);
   }
   if (payload?.path && fs.existsSync(payload.path)) {
     const file = readLocalFilePayload(payload.path);
     emitProgress({ percent: 100, receivedBytes: file.buffer.length, totalBytes: file.buffer.length });
-    return file;
+    return validateMediaPayload(file, payload);
   }
   if (!url) throw new Error("Missing download URL");
 
@@ -116,23 +184,23 @@ async function bufferFromDownloadPayload(payload) {
     const isBase64 = Boolean(match[2]);
     const body = match[3] || "";
     emitProgress({ percent: 100, receivedBytes: body.length, totalBytes: body.length });
-    return {
+    return validateMediaPayload({
       buffer: isBase64 ? Buffer.from(body, "base64") : Buffer.from(decodeURIComponent(body)),
       mime: match[1] || payload.mime || ""
-    };
+    }, payload);
   }
 
   if (payload?.base64) {
     emitProgress({ percent: 100, receivedBytes: String(payload.base64).length, totalBytes: String(payload.base64).length });
-    return {
+    return validateMediaPayload({
       buffer: Buffer.from(String(payload.base64), "base64"),
       mime: payload.mime || ""
-    };
+    }, payload);
   }
   if (/^file:\/\//i.test(url)) {
     const file = readLocalFilePayload(localPathFromFileUrl(url) || decodeURIComponent(new URL(url).pathname));
     emitProgress({ percent: 100, receivedBytes: file.buffer.length, totalBytes: file.buffer.length });
-    return file;
+    return validateMediaPayload(file, payload);
   }
 
   if (!/^https?:\/\//i.test(url)) throw new Error("Unsupported download URL");
@@ -142,10 +210,10 @@ async function bufferFromDownloadPayload(payload) {
   if (!response.body || typeof response.body.getReader !== "function") {
     const arrayBuffer = await response.arrayBuffer();
     emitProgress({ percent: 100, receivedBytes: arrayBuffer.byteLength, totalBytes: arrayBuffer.byteLength });
-    return {
+    return validateMediaPayload({
       buffer: Buffer.from(arrayBuffer),
       mime: response.headers.get("content-type") || payload.mime || ""
-    };
+    }, payload);
   }
 
   const reader = response.body.getReader();
@@ -166,10 +234,10 @@ async function bufferFromDownloadPayload(payload) {
     });
   }
   emitProgress({ percent: 100, receivedBytes, totalBytes: totalBytes || receivedBytes });
-  return {
+  return validateMediaPayload({
     buffer: Buffer.concat(chunks),
     mime: response.headers.get("content-type") || payload.mime || ""
-  };
+  }, payload);
 }
 
 async function bufferFromMediaPayload(payload) {
@@ -179,41 +247,41 @@ async function bufferFromMediaPayload(payload) {
     (typeof payload?.path === "string" && payload.path) ||
     (/^file:\/\//i.test(url) ? localPathFromFileUrl(url) : "");
   if (localPath) {
-    return readLocalFilePayload(localPath);
+    return validateMediaPayload(readLocalFilePayload(localPath), payload);
   }
   if (payload?.arrayBuffer) {
-    return {
+    return validateMediaPayload({
       buffer: Buffer.from(payload.arrayBuffer),
       mime: payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   if (payload?.bytes) {
-    return {
+    return validateMediaPayload({
       buffer: Buffer.from(payload.bytes),
       mime: payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   if (url.startsWith("data:")) {
     const match = url.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
     if (!match) throw new Error("Unsupported data URL");
-    return {
+    return validateMediaPayload({
       buffer: match[2] ? Buffer.from(match[3] || "", "base64") : Buffer.from(decodeURIComponent(match[3] || "")),
       mime: match[1] || payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   if (payload?.base64) {
-    return {
+    return validateMediaPayload({
       buffer: Buffer.from(String(payload.base64), "base64"),
       mime: payload?.mime || "application/octet-stream"
-    };
+    }, payload);
   }
   assertPublicHttpUrl(url, "Media URL");
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Fetch media failed: ${response.status}`);
-  return {
+  return validateMediaPayload({
     buffer: Buffer.from(await response.arrayBuffer()),
     mime: response.headers.get("content-type") || payload?.mime || guessMimeFromFilename(new URL(url).pathname) || "application/octet-stream"
-  };
+  }, payload);
 }
 
 module.exports = {

@@ -4102,10 +4102,11 @@ var Le = reactMemo(({
         ``,
       ),
       [seedanceApiMenuOpen, setSeedanceApiMenuOpen] = useState(!1),
-      seedanceApiMenuRef = useRef(null),
-      [isFullscreen, setIsFullscreen] = useState(!1),
-      [isHovered, setIsHovered] = useState(!1),
-      fileInputRef = useRef(null),
+	      seedanceApiMenuRef = useRef(null),
+	      [isFullscreen, setIsFullscreen] = useState(!1),
+	      [isHovered, setIsHovered] = useState(!1),
+	      [videoPlaybackError, setVideoPlaybackError] = useState(``),
+	      fileInputRef = useRef(null),
       [w, T] = useState(!1),
       O = useRef(null),
       favoriteModels = WanJuanUseFavoriteModels(),
@@ -4669,9 +4670,12 @@ var Le = reactMemo(({
         seedanceResolutionOptions,
         seedanceResolution,
       ]),
-      useEffect(() => {
-        data.videoUrl && !data.loading && setIsExpanded(!1);
-      }, [data.videoUrl, data.loading]));
+	      useEffect(() => {
+	        setVideoPlaybackError(``);
+	      }, [data.videoUrl]),
+	      useEffect(() => {
+	        data.videoUrl && !data.loading && setIsExpanded(!1);
+	      }, [data.videoUrl, data.loading]));
     let handleGenerate = () => {
       if (!prompt.trim() && contextResources.images.length === 0 && contextResources.texts.length === 0) {
         data.onShowToast?.(`请输入提示词或连接参考节点`);
@@ -4889,10 +4893,11 @@ var Le = reactMemo(({
                       preload: `metadata`,
                       className: `max-w-full w-full h-full object-cover object-bottom block ${data.loading ? `opacity-50 blur-sm` : ``}`,
                       controls: isHovered,
-                      autoPlay: !1,
-                      muted: !1,
-                      onLoadedMetadata: (event) => {
-                        let videoWidth = event.currentTarget.videoWidth,
+	                      autoPlay: !1,
+	                      muted: !1,
+	                      onLoadedMetadata: (event) => {
+	                        setVideoPlaybackError(``);
+	                        let videoWidth = event.currentTarget.videoWidth,
                           videoHeight = event.currentTarget.videoHeight;
                         if (isSeedanceOrWanxiang && videoWidth > 0 && videoHeight > 0) {
                           let aspectRatio = videoWidth / videoHeight,
@@ -4929,14 +4934,33 @@ var Le = reactMemo(({
                               ),
                             ));
                         }
-                      },
-                      onMouseEnter: () => setIsHovered(!0),
+	                      },
+	                      onError: () => {
+	                        setVideoPlaybackError(`视频文件不可播放，可能是本地文件丢失、下载未完成，或接口返回了网页登录页。`);
+	                      },
+	                      onMouseEnter: () => setIsHovered(!0),
                       onMouseLeave: () => setIsHovered(!1),
                       onClick: (event) => event.stopPropagation(),
-                    }),
-                    !isHovered &&
-                    !data.loading &&
-                    jsx(`div`, {
+	                    }),
+	                    videoPlaybackError &&
+	                    !data.loading &&
+	                    jsxs(`div`, {
+	                      className: `absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/72 px-6 text-center pointer-events-none`,
+	                      children: [
+	                        jsx(`div`, {
+	                          className: `text-xs font-semibold text-red-200`,
+	                          children: `视频结果失效`
+	                        }),
+	                        jsx(`div`, {
+	                          className: `max-w-[260px] text-[11px] leading-relaxed text-red-100/80`,
+	                          children: videoPlaybackError
+	                        }),
+	                      ],
+	                    }),
+	                    !isHovered &&
+	                    !data.loading &&
+	                    !videoPlaybackError &&
+	                    jsx(`div`, {
                       className: `absolute inset-0 flex items-center justify-center pointer-events-none`,
                       children: jsx(`div`, {
                         className: `w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center`,
@@ -16272,7 +16296,7 @@ const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://newapi.guancn.uk`;
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-06-26-v1`;
+const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-06-29-v1`;
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // OpenAI GPT 系列
   `gpt-5.5`,
@@ -16369,7 +16393,6 @@ const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_MODELS = [
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_EDIT_MODELS,
 ];
 const WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS = [
-  `seedance-2.0`,
   `doubao-seedance-2-0-260128`,
   `doubao-seedance-2-0-fast-260128`,
 ];
@@ -18371,25 +18394,32 @@ function dt({
 	                  (typeof currentValue == `string` ? wanjuanResourceLocalUrlMap.get(currentValue) : null) ||
 	                  (binding?.assetId ? wanjuanResourceLocalUrlMap.get(`asset:${binding.assetId}`) : null) ||
 	                  (binding?.sha256 ? wanjuanResourceLocalUrlMap.get(`sha256:${binding.sha256}`) : null);
-	              if (!replacement || replacement.url === currentValue) return;
-	              nextData ||
-	                (nextData = {
-	                  ...node.data,
+		              if (!replacement) return;
+		              let resourceBinding = replacement.resource?.projectAssetBinding,
+		                shouldUpdateValue = replacement.url !== currentValue,
+		                shouldRefreshBinding =
+		                  !!resourceBinding?.localPath &&
+		                  (binding?.missing || binding?.localPath !== resourceBinding.localPath);
+		              if (!shouldUpdateValue && !shouldRefreshBinding) return;
+		              nextData ||
+		                (nextData = {
+		                  ...node.data,
 	                  projectAssetBindings: {
 	                    ...(node.data.projectAssetBindings || {}),
-	                  },
-	                });
-	              nextData[field] = replacement.url;
-	              let resourceBinding = replacement.resource?.projectAssetBinding;
-	              if (resourceBinding?.localPath)
-	                nextData.projectAssetBindings[field] = {
-	                  ...(nextData.projectAssetBindings[field] || {}),
-	                  ...resourceBinding,
-	                  field,
-	                  kind: field === `videoUrl` ? `video` : field === `audioUrl` ? `audio` : `image`,
-	                  valueFormat: `file-url`,
-	                  sourceSignature: currentValue,
-	                };
+		                  },
+		                });
+		              shouldUpdateValue && (nextData[field] = replacement.url);
+		              if (resourceBinding?.localPath)
+		                nextData.projectAssetBindings[field] = {
+		                  ...(nextData.projectAssetBindings[field] || {}),
+		                  ...resourceBinding,
+		                  field,
+		                  kind: field === `videoUrl` ? `video` : field === `audioUrl` ? `audio` : `image`,
+		                  valueFormat: `file-url`,
+		                  sourceSignature: currentValue,
+		                  missing: !1,
+		                  lastCheckedAt: new Date().toISOString(),
+		                };
 	              changed = !0;
 	            });
 	            return nextData ? {
@@ -42047,10 +42077,16 @@ ${String(l || ``).slice(0, 5e4)}`;
                     /^audio\//i.test(mime) ||
                     t === `imageUrl` ||
                     t === `videoUrl` ||
-                    t === `audioUrl`
-                  );
-                },
-                stripLargeProjectMediaPortablePayload = (binding, bindingKey, data) => {
+	                    t === `audioUrl`
+	                  );
+	                },
+	                shouldPromptProjectMediaRelink = (binding, bindingKey, data = {}) =>
+	                  !!(
+	                    binding?.missing &&
+	                    isProjectMediaFileBackedBinding(binding, bindingKey, binding?.kind) &&
+	                    isExternalUploadedProjectAssetBinding(binding, bindingKey, data)
+	                  ),
+	                stripLargeProjectMediaPortablePayload = (binding, bindingKey, data) => {
                   if (!binding || typeof binding != `object`) return binding;
                   if (!binding.localPath || !isProjectMediaFileBackedBinding(binding, bindingKey, data)) return binding;
                   let {
@@ -42175,10 +42211,9 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                          missing: strippedBinding?.localPath ? !fileExists : !1,
 	                          lastCheckedAt: new Date().toISOString(),
 	                        };
-                      (nextBindings[bindingKey] = resolvedBinding),
-                        resolvedBinding.missing &&
-                        isProjectMediaFileBackedBinding(resolvedBinding, bindingKey, resolvedBinding.kind) &&
-                        missingAssets.push(bindingKey);
+	                      (nextBindings[bindingKey] = resolvedBinding),
+	                        shouldPromptProjectMediaRelink(resolvedBinding, bindingKey, data) &&
+	                        missingAssets.push(bindingKey);
                       let revivedValue = reviveProjectMediaBindingValue(resolvedBinding);
                       if (resolvedBinding.localPath && isProjectMediaFileBackedBinding(resolvedBinding, bindingKey, resolvedBinding.kind)) {
                         let fileUrl = buildProjectMediaFileUrl(resolvedBinding.localPath);
@@ -42209,11 +42244,10 @@ ${String(l || ``).slice(0, 5e4)}`;
                     return (
                       Array.isArray(nodes) &&
                       nodes.forEach((node) => {
-                        let bindings = node?.data?.projectAssetBindings || {};
-                        Object.entries(bindings).forEach(([bindingKey, binding]) => {
-                          binding?.missing &&
-                            isProjectMediaFileBackedBinding(binding, bindingKey, binding?.kind) &&
-                            missingEntries.push({
+	                        let bindings = node?.data?.projectAssetBindings || {};
+	                        Object.entries(bindings).forEach(([bindingKey, binding]) => {
+	                          shouldPromptProjectMediaRelink(binding, bindingKey, node?.data || {}) &&
+	                            missingEntries.push({
                               nodeId: node.id,
                               nodeType: node.type,
                               nodeLabel: node?.data?.label ||

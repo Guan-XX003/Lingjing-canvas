@@ -1377,6 +1377,7 @@ function installDesktopPatches() {
     activeSpace: "personal",
     query: "",
     selectedGroupId: "",
+    networkWarningExpanded: false,
     teamMemberAddress: "",
     teamResults: [],
     teamRefreshing: false,
@@ -2728,8 +2729,11 @@ function installDesktopPatches() {
       .wanjuan-workspace-page{position:absolute;inset:0;z-index:18;display:none;flex-direction:column;background:var(--wj-bg,#101214);color:var(--wj-text,#e5e7eb)}
       .wanjuan-workspace-header{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 16px;border-bottom:1px solid var(--wj-panel-divider,var(--wj-border,#2b2f36));background:var(--wj-surface,#171a1f)}
       .wanjuan-workspace-title{font-size:16px;font-weight:800;color:var(--wj-text,#f8fafc)}
-      .wanjuan-workspace-subtitle{font-size:11px;color:var(--wj-muted,#8b949e);margin:0}
-      .wanjuan-workspace-network-warning{margin-top:2px;font-size:10px;line-height:1.25;color:#f87171;max-width:min(820px,70vw)}
+      .wanjuan-workspace-heading{display:flex;align-items:center;gap:6px;min-width:0}
+      .wanjuan-workspace-subtitle{font-size:11px;color:var(--wj-muted,#8b949e);margin:0;min-width:0}
+      .wanjuan-workspace-network-warning{width:15px;height:15px;display:inline-grid;place-items:center;flex:0 0 auto;border:1px solid color-mix(in srgb,#f87171 54%,transparent);border-radius:999px;background:color-mix(in srgb,#ef4444 18%,transparent);color:#fca5a5;font-size:10px;font-weight:900;line-height:1;cursor:pointer;padding:0}
+      .wanjuan-workspace-network-warning:hover,.wanjuan-workspace-network-warning.is-active{border-color:color-mix(in srgb,#fca5a5 70%,transparent);background:color-mix(in srgb,#ef4444 26%,transparent);color:#fecaca}
+      .wanjuan-workspace-network-warning-text{margin-top:4px;font-size:10px;line-height:1.35;color:#f87171;max-width:min(820px,70vw)}
       .wanjuan-workspace-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
       .wanjuan-workspace-close-button{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--wj-border,#303640);border-radius:8px;background:var(--wj-surface-2,#111419);color:var(--wj-muted,#cbd5e1);font-size:18px;line-height:1;cursor:pointer}
       .wanjuan-workspace-close-button:hover{border-color:var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#3b82f6) 44%,var(--wj-border,#4b5563)));background:var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#252b35) 84%,var(--wj-accent,#3b82f6) 16%));color:var(--wj-control-hover-text,var(--wj-text,#fff))}
@@ -2835,7 +2839,7 @@ function installDesktopPatches() {
       @media(max-width:1180px){.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:900px){.wanjuan-workspace-body{grid-template-columns:1fr}.wanjuan-workspace-sidebar{display:none}.wanjuan-workspace-toolbar{flex-wrap:wrap}.wanjuan-workspace-search{max-width:none}.wanjuan-workspace-toolbar-actions{width:100%;justify-content:flex-start}.wanjuan-workspace-toolbar-actions .wanjuan-workspace-button{flex:0 0 auto}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:720px){.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:560px){.wanjuan-workspace-header{padding:6px 12px}.wanjuan-workspace-subtitle{display:none}.wanjuan-workspace-network-warning{max-width:calc(100vw - 132px)}.wanjuan-workspace-list{grid-template-columns:1fr}.wanjuan-workspace-card{grid-template-columns:104px minmax(0,1fr)}.wanjuan-workspace-card-media{min-height:184px}.wanjuan-workspace-card-actions{grid-template-columns:1fr}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:1fr}.wanjuan-workspace-function-card .wanjuan-workspace-segment{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:560px){.wanjuan-workspace-header{padding:6px 12px}.wanjuan-workspace-subtitle{display:none}.wanjuan-workspace-network-warning-text{max-width:calc(100vw - 132px)}.wanjuan-workspace-list{grid-template-columns:1fr}.wanjuan-workspace-card{grid-template-columns:104px minmax(0,1fr)}.wanjuan-workspace-card-media{min-height:184px}.wanjuan-workspace-card-actions{grid-template-columns:1fr}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:1fr}.wanjuan-workspace-function-card .wanjuan-workspace-segment{grid-template-columns:repeat(2,minmax(0,1fr))}}
     `;
     document.head.appendChild(style);
   };
@@ -3000,8 +3004,11 @@ function installDesktopPatches() {
     page.innerHTML = `
       <div class="wanjuan-workspace-header">
         <div>
-          <div class="wanjuan-workspace-subtitle">${workspaceEscapedT("个人提示词资产和局域网团队模板共享")}</div>
-          <div class="wanjuan-workspace-network-warning">${workspaceEscapedT("更换网络环境（如更换Wi-Fi频段，更换有线网，开启VPN等情况）需要关闭团队空间后关闭软件再重新开启软件与团队空间，重新复制更换后的局域网端口。")}</div>
+          <div class="wanjuan-workspace-heading">
+            <div class="wanjuan-workspace-subtitle">${workspaceEscapedT("个人提示词资产和局域网团队模板共享")}</div>
+            <button type="button" class="wanjuan-workspace-network-warning ${workspaceState.networkWarningExpanded ? "is-active" : ""}" data-workspace-action="toggle-network-warning" title="${workspaceEscapedT("点击展开网络环境提示")}" aria-expanded="${workspaceState.networkWarningExpanded ? "true" : "false"}" aria-label="${workspaceEscapedT("展开或收起网络环境提示")}">!</button>
+          </div>
+          ${workspaceState.networkWarningExpanded ? `<div class="wanjuan-workspace-network-warning-text">${workspaceEscapedT("更换网络环境（如更换Wi-Fi频段，更换有线网，开启VPN等情况）需要关闭团队空间后关闭软件再重新开启软件与团队空间，重新复制更换后的局域网端口。")}</div>` : ""}
         </div>
         <div class="wanjuan-workspace-header-actions">
           <div class="wanjuan-workspace-tabs">
@@ -3219,6 +3226,11 @@ function installDesktopPatches() {
 
       if (action === "close") {
         workspaceOpenCanvas();
+        return;
+      }
+      if (action === "toggle-network-warning") {
+        workspaceState.networkWarningExpanded = !workspaceState.networkWarningExpanded;
+        await renderWorkspacePanel();
         return;
       }
       if (action === "save-selected-node") {
