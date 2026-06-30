@@ -6264,3 +6264,50 @@ html.theme-graphite.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-work
   color: #111111 !important;
   -webkit-text-fill-color: #111111 !important;
 }
+
+html.theme-graphite .wanjuan-performance-dialog-actions button[class],
+html.theme-graphite .wanjuan-performance-dialog-actions button {
+  min-width: 76px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  border-color: color-mix(in srgb, var(--wj-border, #5f6368) 82%, transparent) !important;
+  background: color-mix(in srgb, var(--wj-surface-2, #2b2b2b) 88%, var(--wj-bg, #1f1f1f) 12%) !important;
+  background-image: none !important;
+  color: var(--wj-text, #e5e7eb) !important;
+  -webkit-text-fill-color: var(--wj-text, #e5e7eb) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text, #fff) 8%, transparent) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+html.theme-graphite .wanjuan-performance-dialog-actions button:not([data-action="downgrade"]):hover {
+  border-color: color-mix(in srgb, var(--wj-accent, #9ca3af) 32%, var(--wj-border, #5f6368) 68%) !important;
+  background: color-mix(in srgb, var(--wj-surface-3, #343434) 90%, var(--wj-accent, #9ca3af) 10%) !important;
+  background-image: none !important;
+  color: var(--wj-control-hover-text, #fff) !important;
+  -webkit-text-fill-color: var(--wj-control-hover-text, #fff) !important;
+}
+
+html.theme-graphite .wanjuan-performance-dialog-actions button[data-action="downgrade"] {
+  min-width: 126px !important;
+  border-color: color-mix(in srgb, var(--wj-accent, #d8dde3) 72%, var(--wj-border, #5f6368) 28%) !important;
+  background: color-mix(in srgb, var(--wj-accent, #d8dde3) 18%, var(--wj-surface-2, #2b2b2b) 82%) !important;
+  background-image: none !important;
+  color: color-mix(in srgb, var(--wj-accent, #d8dde3) 82%, var(--wj-text, #fff) 18%) !important;
+  -webkit-text-fill-color: color-mix(in srgb, var(--wj-accent, #d8dde3) 82%, var(--wj-text, #fff) 18%) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text, #fff) 10%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--wj-accent, #d8dde3) 18%, transparent) !important;
+}
+
+html.theme-graphite .wanjuan-performance-dialog-actions button[data-action="downgrade"]:hover {
+  border-color: color-mix(in srgb, var(--wj-accent, #d8dde3) 86%, var(--wj-border, #5f6368) 14%) !important;
+  background: color-mix(in srgb, var(--wj-accent, #d8dde3) 24%, var(--wj-surface-2, #2b2b2b) 76%) !important;
+  background-image: none !important;
+  color: var(--wj-text, #fff) !important;
+  -webkit-text-fill-color: var(--wj-text, #fff) !important;
+}
