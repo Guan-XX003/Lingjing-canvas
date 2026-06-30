@@ -144,71 +144,7 @@ function installDesktopPatches() {
     }
   };
 
-  const installSettingsUpdateButton = () => {
-    if (document.querySelector("[data-wanjuan-check-updates]")) return true;
-    const labels = Array.from(document.querySelectorAll("label"));
-    const versionLabel = labels.find((label) => (label.textContent || "").replace(/\s+/g, " ").trim() === "当前版本");
-    const field = versionLabel?.parentElement;
-    const row = field?.querySelector(".wanjuan-settings-readonly-row");
-    if (!(row instanceof HTMLElement)) return false;
-
-    const trailing = row.lastElementChild;
-    const actions = document.createElement("div");
-    actions.setAttribute("data-wanjuan-update-actions", "true");
-    actions.style.display = "flex";
-    actions.style.alignItems = "center";
-    actions.style.gap = "12px";
-    actions.style.marginLeft = "auto";
-
-    if (trailing instanceof HTMLElement) {
-      trailing.style.whiteSpace = "nowrap";
-      actions.appendChild(trailing);
-    }
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "检查更新";
-    button.className = "wanjuan-settings-button wanjuan-update-action-button wanjuan-check-updates-button";
-    button.setAttribute("data-wanjuan-check-updates", "true");
-    button.style.cssText = [
-      "appearance:none",
-      "cursor:pointer"
-    ].join(";");
-    button.addEventListener("click", async () => {
-      if (button.disabled) return;
-      button.disabled = true;
-      button.style.opacity = ".65";
-      button.style.cursor = "wait";
-      button.textContent = "检查中…";
-      try {
-        await ipcRenderer.invoke("wanjuan:check-for-updates");
-      } catch (error) {
-        console.warn("check for updates failed", error);
-      } finally {
-        button.disabled = false;
-        button.style.opacity = "1";
-        button.style.cursor = "pointer";
-        button.textContent = "检查更新";
-      }
-    });
-    actions.appendChild(button);
-
-    const officialSiteButton = document.createElement("button");
-    officialSiteButton.type = "button";
-    officialSiteButton.textContent = "前往官网";
-    officialSiteButton.className = "wanjuan-settings-button wanjuan-update-action-button wanjuan-official-site-button";
-    officialSiteButton.setAttribute("data-wanjuan-official-site", "true");
-    officialSiteButton.style.cssText = [
-      "appearance:none",
-      "cursor:pointer"
-    ].join(";");
-    officialSiteButton.addEventListener("click", () => {
-      window.open(WANJUAN_OFFICIAL_SITE_URL, "_blank", "noopener,noreferrer");
-    });
-    actions.appendChild(officialSiteButton);
-    row.appendChild(actions);
-    return true;
-  };
+  const installSettingsUpdateButton = () => true;
 
   const getProjectControls = () => {
     const nameButton = document.querySelector("button[title='双击重命名项目'], button[title='点击重命名项目']");
@@ -857,18 +793,6 @@ function installDesktopPatches() {
 
   const installPerformanceSettingsPanel = () => {
     syncPerformanceProfileClass();
-    const card = findGenerationSettingsCard();
-    if (!(card instanceof HTMLElement)) return;
-    const body = card.querySelector(".wanjuan-settings-card-body") || card.querySelector(".px-4.pt-4") || card;
-    if (!(body instanceof HTMLElement)) return;
-    let panel = body.querySelector("[data-wanjuan-performance-panel='true']");
-    if (!(panel instanceof HTMLElement)) {
-      panel = document.createElement("div");
-      panel.dataset.wanjuanPerformancePanel = "true";
-      panel.className = "wanjuan-performance-panel";
-      body.insertBefore(panel, body.firstChild);
-    }
-    renderPerformanceSettingsPanel(panel);
     performanceSettingsInstalled = true;
   };
 
@@ -1125,7 +1049,19 @@ function installDesktopPatches() {
     }
   };
 
+  window.addEventListener("wanjuan:auto-download-setting-changed", (event) => {
+    autoDownloadEnabled = isAutoDownloadEnabledValue(event?.detail?.enabled);
+    updateAutoDownloadControls();
+    if (autoDownloadEnabled) {
+      autoDownloadSeenResults.clear();
+      seedAutoDownloadBaseline();
+      installAutoDownloadObserver();
+      queueAutoDownloadScan();
+    }
+  });
+
   const updateAutoDownloadControls = () => {
+    if (document.querySelector("[data-wanjuan-auto-download-row='true'][data-wanjuan-native='true']")) return;
     const checkbox = document.querySelector("[data-wanjuan-auto-download-toggle='true']");
     const label = document.querySelector("[data-wanjuan-auto-download-state='true']");
     const button = document.querySelector(".wanjuan-auto-download-switch");
@@ -1134,7 +1070,7 @@ function installDesktopPatches() {
     if (button instanceof HTMLElement) button.setAttribute("aria-checked", autoDownloadEnabled ? "true" : "false");
   };
 
-  const installAutoDownloadSettingRow = async () => {
+  const hydrateAutoDownloadState = async () => {
     const store = await getDesktopStorageItems([AUTO_DOWNLOAD_KEY]);
     autoDownloadEnabled = isAutoDownloadEnabledValue(store[AUTO_DOWNLOAD_KEY]);
     if (autoDownloadEnabled && !autoDownloadObserverInstalled) {
@@ -1142,46 +1078,11 @@ function installDesktopPatches() {
       installAutoDownloadObserver();
       queueAutoDownloadScan();
     }
-
-    const labels = Array.from(document.querySelectorAll("label, div, span"))
-      .filter((item) => (item.textContent || "").trim() === "文件下载地址");
-    const title = labels[0];
-    if (!(title instanceof HTMLElement)) return;
-
-    const section = title.parentElement;
-    if (!(section instanceof HTMLElement)) return;
-    if (section.querySelector("[data-wanjuan-auto-download-row='true']")) {
-      updateAutoDownloadControls();
-      return;
-    }
-
-    const row = document.createElement("div");
-    row.dataset.wanjuanAutoDownloadRow = "true";
-    row.className = "wanjuan-auto-download-row";
-    row.innerHTML = `
-      <div class="wanjuan-auto-download-copy">
-        <div class="wanjuan-auto-download-title">生成结果自动下载</div>
-        <div class="wanjuan-auto-download-desc">开启后，图片、视频、音频生成完成会自动保存到上面的文件夹。</div>
-      </div>
-      <button type="button" class="wanjuan-auto-download-switch" role="switch" aria-label="生成结果自动下载">
-        <span class="wanjuan-auto-download-knob"></span>
-        <span class="wanjuan-auto-download-state" data-wanjuan-auto-download-state="true"></span>
-        <input type="checkbox" data-wanjuan-auto-download-toggle="true" />
-      </button>
-    `;
-    const hint = Array.from(section.querySelectorAll("p, div, span"))
-      .find((item) => (item.textContent || "").includes("节点下载按钮会直接保存"));
-    if (hint?.parentElement === section) hint.insertAdjacentElement("afterend", row);
-    else section.appendChild(row);
-
-    const button = row.querySelector(".wanjuan-auto-download-switch");
-    button?.addEventListener("click", (event) => {
-      event.preventDefault();
-      setAutoDownloadEnabled(!autoDownloadEnabled).catch((error) => {
-        console.warn("auto download setting update failed", error);
-      });
-    });
     updateAutoDownloadControls();
+  };
+
+  const installAutoDownloadSettingRow = () => {
+    hydrateAutoDownloadState().catch((error) => console.warn("auto download state hydrate failed", error));
   };
 
   document.addEventListener("dblclick", (event) => {
@@ -1348,6 +1249,7 @@ function installDesktopPatches() {
   const TIANJI_DEFAULT_BASE_URL = "https://newapi.guancn.uk";
   const TIANJI_SYNC_SOURCE_JIXIN = "jixin-default";
   const TIANJI_SYNC_SOURCE_MANUAL = "manual";
+  const TIANJI_CONFIG_MIRROR_KEY = "wanjuan.tianjiSeedanceConfig.v1";
 
   const TIANJI_DEFAULT_CONFIG = {
     baseUrl: TIANJI_DEFAULT_BASE_URL,
@@ -1650,15 +1552,47 @@ function installDesktopPatches() {
   const tianjiStorageGet = (keys) =>
     new Promise((resolve) => {
       try {
-        window.chrome?.storage?.local?.get(keys, (value) => resolve(value || {}));
+        window.chrome?.storage?.local?.get(keys, (value) => {
+          const result = value || {};
+          const keyList = Array.isArray(keys) ? keys : [keys];
+          if (keyList.includes("tianjiSeedanceConfig") && !String(result.tianjiSeedanceConfig?.token || "").trim()) {
+            try {
+              const mirrored = JSON.parse(window.localStorage?.getItem(TIANJI_CONFIG_MIRROR_KEY) || "null");
+              if (mirrored && typeof mirrored === "object" && String(mirrored.token || "").trim()) {
+                result.tianjiSeedanceConfig = {
+                  ...(result.tianjiSeedanceConfig && typeof result.tianjiSeedanceConfig === "object" ? result.tianjiSeedanceConfig : {}),
+                  ...mirrored
+                };
+              }
+            } catch {}
+          }
+          resolve(result);
+        });
       } catch {
-        resolve({});
+        const result = {};
+        try {
+          const keyList = Array.isArray(keys) ? keys : [keys];
+          const mirrored = JSON.parse(window.localStorage?.getItem(TIANJI_CONFIG_MIRROR_KEY) || "null");
+          if (keyList.includes("tianjiSeedanceConfig") && mirrored && typeof mirrored === "object") result.tianjiSeedanceConfig = mirrored;
+        } catch {}
+        resolve(result);
       }
     });
 
   const tianjiStorageSet = (items) =>
     new Promise((resolve) => {
       try {
+        if (items?.tianjiSeedanceConfig) {
+          try {
+            const mirroredConfig = tianjiNormalizeConfig(items.tianjiSeedanceConfig);
+            window.localStorage?.setItem(TIANJI_CONFIG_MIRROR_KEY, JSON.stringify(mirroredConfig));
+            window.dispatchEvent(new CustomEvent("wanjuan:tianji-config-updated", {
+              detail: {
+                config: mirroredConfig
+              }
+            }));
+          } catch {}
+        }
         window.chrome?.storage?.local?.set(items || {}, resolve);
       } catch {
         resolve();
@@ -1680,6 +1614,7 @@ function installDesktopPatches() {
     ...TIANJI_DEFAULT_CONFIG,
     ...(value && typeof value === "object" ? value : {}),
     baseUrl: String(Object.prototype.hasOwnProperty.call(value || {}, "baseUrl") ? value?.baseUrl : TIANJI_DEFAULT_BASE_URL).replace(/\s+/g, "").replace(/\/+$/, ""),
+    token: String(value?.token || "").trim(),
     syncSource: value?.syncSource === TIANJI_SYNC_SOURCE_MANUAL ? TIANJI_SYNC_SOURCE_MANUAL : TIANJI_SYNC_SOURCE_JIXIN,
     sassId: String(value?.sassId || "1").trim() || "1",
     platform: String(value?.platform || "web").trim() || "web",
@@ -1694,8 +1629,32 @@ function installDesktopPatches() {
     config?.id === "jixin-default" ||
     tianjiNormalizeApiBaseUrl(config?.url) === tianjiNormalizeApiBaseUrl(TIANJI_DEFAULT_BASE_URL);
 
+  const tianjiFindLegacyJixinApiKey = (storage = {}) =>
+    ["apiKey", "textApiKey", "imageApiKey", "videoApiKey", "audioApiKey"]
+      .map((key) => String(storage?.[key] || "").trim())
+      .find(Boolean) || "";
+
+  const tianjiResolveJixinApiConfig = (candidateConfig = null, storage = {}) => {
+    const storedApiConfigs = Array.isArray(storage.apiConfigs) ? storage.apiConfigs : [];
+    const storedJixinConfig = storedApiConfigs.find(tianjiIsJixinApiConfig) || null;
+    const sourceConfig = candidateConfig || storedJixinConfig;
+    const legacyKey = tianjiFindLegacyJixinApiKey(storage);
+    if (!sourceConfig && !legacyKey) return null;
+    const sourceBaseUrl = tianjiNormalizeApiBaseUrl(sourceConfig?.url || storedJixinConfig?.url || TIANJI_DEFAULT_BASE_URL) || TIANJI_DEFAULT_BASE_URL;
+    const sourceKey = String(sourceConfig?.key || "").trim() || String(storedJixinConfig?.key || "").trim() || legacyKey;
+    return {
+      ...(storedJixinConfig && typeof storedJixinConfig === "object" ? storedJixinConfig : {}),
+      ...(sourceConfig && typeof sourceConfig === "object" ? sourceConfig : {}),
+      id: sourceConfig?.id || storedJixinConfig?.id || "jixin-default",
+      name: sourceConfig?.name || storedJixinConfig?.name || "极鑫",
+      url: sourceBaseUrl,
+      key: sourceKey
+    };
+  };
+
   const tianjiBuildSyncedConfigFromJixin = (currentConfig = {}, jixinConfig = null, { force = false } = {}) => {
     const jixinBaseUrl = tianjiNormalizeApiBaseUrl(jixinConfig?.url || TIANJI_DEFAULT_BASE_URL) || TIANJI_DEFAULT_BASE_URL;
+    const jixinToken = String(jixinConfig?.key || "").trim();
     const rawCurrentBaseUrl = tianjiNormalizeApiBaseUrl(currentConfig?.baseUrl || "");
     const hasExplicitSyncSource = Object.prototype.hasOwnProperty.call(currentConfig || {}, "syncSource");
     if (!force && !hasExplicitSyncSource && rawCurrentBaseUrl && rawCurrentBaseUrl !== TIANJI_DEFAULT_BASE_URL && rawCurrentBaseUrl !== jixinBaseUrl) {
@@ -1706,7 +1665,7 @@ function installDesktopPatches() {
     return tianjiNormalizeConfig({
       ...current,
       baseUrl: jixinBaseUrl,
-      token: String(jixinConfig?.key || "").trim(),
+      token: jixinToken,
       syncSource: TIANJI_SYNC_SOURCE_JIXIN
     });
   };
@@ -1718,9 +1677,21 @@ function installDesktopPatches() {
     });
 
   const tianjiGetSyncedConfigFromJixin = async (options = {}) => {
-    const stored = await tianjiStorageGet(["tianjiSeedanceConfig", "apiConfigs", "advancedSettingsUnlocked"]);
+    const stored = await tianjiStorageGet([
+      "tianjiSeedanceConfig",
+      "apiConfigs",
+      "advancedSettingsUnlocked",
+      "apiKey",
+      "textApiKey",
+      "imageApiKey",
+      "videoApiKey",
+      "audioApiKey"
+    ]);
     const currentConfig = tianjiNormalizeConfig(stored.tianjiSeedanceConfig || {});
-    const jixinConfig = (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(tianjiIsJixinApiConfig);
+    const jixinConfig = tianjiResolveJixinApiConfig(
+      (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(tianjiIsJixinApiConfig),
+      stored
+    );
     if (!jixinConfig) return currentConfig;
     const nextConfig = tianjiBuildSyncedConfigFromJixin(currentConfig, jixinConfig, {
       ...options,
@@ -3464,7 +3435,7 @@ function installDesktopPatches() {
           projectNameSynced = false;
         });
     }
-    installAutoDownloadSettingRow().catch(() => {});
+    installAutoDownloadSettingRow();
     if (autoDownloadEnabled) installAutoDownloadObserver();
     installCanvasMediaPerformancePatches();
     markCanvasLockControl();
@@ -3490,10 +3461,15 @@ function installDesktopPatches() {
   const queueDesktopPatchRefresh = () => {
     if (patchQueued) return;
     patchQueued = true;
-    window.setTimeout(() => {
+    const refresh = () => {
       patchQueued = false;
       runOnce();
-    }, 1200);
+    };
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
+    } else {
+      window.setTimeout(refresh, 32);
+    }
   };
   const mo = new MutationObserver((mutations) => {
     const onlyWorkspaceMutation = mutations.length > 0 && mutations.every((mutation) => {

@@ -655,19 +655,7 @@ function isProjectSafetyCenterAlreadyPlaced(panel, insertion) {
 function installProjectSafetyBackupCenter() {
   const nativePlaceholder = document.getElementById("wanjuan-project-safety-center");
   let panel = nativePlaceholder instanceof HTMLElement ? nativePlaceholder : null;
-
-  if (!panel) {
-    const dataCard = findDataManagementSettingsCard();
-    if (!(dataCard instanceof HTMLElement)) return;
-
-    const existing = document.getElementById("wanjuan-project-safety-center");
-    panel = existing instanceof HTMLElement ? existing : document.createElement("div");
-    panel.id = "wanjuan-project-safety-center";
-
-    if (panel.parentElement !== dataCard.parentElement || panel.previousElementSibling !== dataCard) {
-      dataCard.insertAdjacentElement("afterend", panel);
-    }
-  }
+  if (!panel) return;
 
   panel.classList.add("wanjuan-project-safety-center-module");
   panel.dataset.nativeHost = "true";

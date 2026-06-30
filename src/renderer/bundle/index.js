@@ -525,6 +525,76 @@ const WanJuanRenderRuntime = (() => {
   apply();
   try { window.setInterval(apply, 1500); } catch {}
 })();
+var WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY = `wanjuanPerformanceProfile`,
+  WANJUAN_PERFORMANCE_PROFILE_CUSTOM_KEY = `wanjuanPerformanceCustomSettings`,
+  WANJUAN_PERFORMANCE_PROFILE_PRESETS = {
+    performance: {
+      key: `performance`,
+      label: `极速性能`,
+      description: `低渲染负载，推荐低配电脑或大项目批量生成。`,
+      layeredRunConcurrencyOptions: `1
+2
+3`,
+      layeredRunMaxConcurrency: 2,
+      aiGenerateLimit: 2,
+      aiChatLimit: 1,
+      aiSubmitLimit: 1,
+      aiPollLimit: 1,
+      renderMode: `low`,
+    },
+    balanced: {
+      key: `balanced`,
+      label: `均衡`,
+      description: `默认档位，兼顾稳定和体验。`,
+      layeredRunConcurrencyOptions: `2
+3
+5`,
+      layeredRunMaxConcurrency: 3,
+      aiGenerateLimit: 3,
+      aiChatLimit: 2,
+      aiSubmitLimit: 1,
+      aiPollLimit: 2,
+      renderMode: `balanced`,
+    },
+    quality: {
+      key: `quality`,
+      label: `高画质`,
+      description: `更完整的预览和动画，适合高性能电脑。`,
+      layeredRunConcurrencyOptions: `3
+5
+8`,
+      layeredRunMaxConcurrency: 5,
+      aiGenerateLimit: 5,
+      aiChatLimit: 3,
+      aiSubmitLimit: 2,
+      aiPollLimit: 2,
+      renderMode: `quality`,
+    },
+    custom: {
+      key: `custom`,
+      label: `自定义`,
+      description: `保留手动设置的并发和渲染策略。`,
+      layeredRunConcurrencyOptions: `2
+3
+5`,
+      layeredRunMaxConcurrency: 3,
+      aiGenerateLimit: 3,
+      aiChatLimit: 2,
+      aiSubmitLimit: 1,
+      aiPollLimit: 2,
+      renderMode: `custom`,
+    },
+  },
+  WanJuanNormalizePerformanceProfile = (value) =>
+  WANJUAN_PERFORMANCE_PROFILE_PRESETS[String(value || ``).trim()] ? String(value || ``).trim() : `balanced`,
+  WanJuanReadPerformanceProfile = () => {
+    try {
+      return WanJuanNormalizePerformanceProfile(window.localStorage?.getItem(WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY));
+    } catch {
+      return `balanced`;
+    }
+  },
+  WanJuanPerformanceProfileList = [`performance`, `balanced`, `quality`, `custom`];
 var TongyiWanxiangLogo = ({
     size: size = 16,
     className: className = ``
@@ -16293,6 +16363,7 @@ var at = {
 const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://newapi.guancn.uk`;
 const WANJUAN_TIANJI_SYNC_SOURCE_JIXIN = `jixin-default`;
 const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
+const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://newapi.guancn.uk`;
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
@@ -16612,6 +16683,37 @@ const wanjuanGetJixinDefaultApiConfigId = (settings = {}) => {
       apiConfigs[0];
   return jixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID;
 };
+const wanjuanFindLegacyJixinApiKey = (settings = {}) =>
+  [`apiKey`, `textApiKey`, `imageApiKey`, `videoApiKey`, `audioApiKey`]
+    .map((key) => String(settings?.[key] || ``).trim())
+    .find(Boolean) || ``;
+const wanjuanEnsureJixinApiConfigKey = (settings = {}) => {
+  let legacyKey = wanjuanFindLegacyJixinApiKey(settings);
+  if (!legacyKey) return settings;
+  let apiConfigs = Array.isArray(settings.apiConfigs) && settings.apiConfigs.length ?
+      settings.apiConfigs :
+      [{
+        id: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+        name: `极鑫`,
+        url: WANJUAN_JIXIN_DEFAULT_API_URL,
+        key: ``,
+        protocolFormat: `auto`,
+      }],
+    jixinIndex = apiConfigs.findIndex((config) =>
+      config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
+      String(config?.url || ``).replace(/\s+/g, ``).replace(/\/+$/, ``) === WANJUAN_JIXIN_DEFAULT_API_URL
+    );
+  if (jixinIndex < 0 || String(apiConfigs[jixinIndex]?.key || ``).trim()) return settings;
+  return {
+    ...settings,
+    apiConfigs: apiConfigs.map((config, index) =>
+      index === jixinIndex ? {
+        ...config,
+        key: legacyKey,
+      } : config
+    ),
+  };
+};
 const wanjuanBuildJixinVideoModelBindings = (apiConfigId = WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) =>
   wanjuanBuildJixinModelBindings(
     [
@@ -16679,6 +16781,7 @@ const wanjuanHasUserModelConfiguration = (settings = {}) => {
   return hasModelText || hasModelBinding || hasStoredGlobalConfig || hasNonDefaultApiConfig;
 };
 const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
+  source = wanjuanEnsureJixinApiConfigKey(source);
   let apiConfigs = Array.isArray(source.apiConfigs) && source.apiConfigs.length ?
       source.apiConfigs :
       [{
@@ -16871,16 +16974,50 @@ const wanjuanTianjiStorageGet = (keys) =>
   new Promise((resolve) => {
     try {
       typeof chrome < `u` && chrome.storage?.local ?
-        chrome.storage.local.get(keys, (items) => resolve(items || {})) :
-        resolve({});
+        chrome.storage.local.get(keys, (items) => {
+          let result = items || {};
+          let keyList = Array.isArray(keys) ? keys : [keys];
+          if (keyList.includes(`tianjiSeedanceConfig`) && !String(result.tianjiSeedanceConfig?.token || ``).trim()) {
+            try {
+              let mirrored = JSON.parse(window.localStorage?.getItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY) || `null`);
+              if (mirrored && typeof mirrored == `object` && String(mirrored.token || ``).trim()) {
+                result.tianjiSeedanceConfig = {
+                  ...(result.tianjiSeedanceConfig && typeof result.tianjiSeedanceConfig == `object` ? result.tianjiSeedanceConfig : {}),
+                  ...mirrored,
+                };
+              }
+            } catch {}
+          }
+          resolve(result);
+        }) :
+        (() => {
+          let result = {};
+          try {
+            let keyList = Array.isArray(keys) ? keys : [keys],
+              mirrored = JSON.parse(window.localStorage?.getItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY) || `null`);
+            if (keyList.includes(`tianjiSeedanceConfig`) && mirrored && typeof mirrored == `object`) result.tianjiSeedanceConfig = mirrored;
+          } catch {}
+          resolve(result);
+        })();
     } catch {
-      resolve({});
+      let result = {};
+      try {
+        let keyList = Array.isArray(keys) ? keys : [keys],
+          mirrored = JSON.parse(window.localStorage?.getItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY) || `null`);
+        if (keyList.includes(`tianjiSeedanceConfig`) && mirrored && typeof mirrored == `object`) result.tianjiSeedanceConfig = mirrored;
+      } catch {}
+      resolve(result);
     }
   });
 
 const wanjuanTianjiStorageSet = (items) =>
   new Promise((resolve) => {
     try {
+      if (items?.tianjiSeedanceConfig) {
+        try {
+          window.localStorage?.setItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY, JSON.stringify(wanjuanNormalizeTianjiSeedanceConfig(items.tianjiSeedanceConfig)));
+        } catch {}
+      }
       typeof chrome < `u` && chrome.storage?.local ?
         chrome.storage.local.set(items || {}, () => resolve(!0)) :
         resolve(!1);
@@ -16916,10 +17053,33 @@ const wanjuanIsJixinApiConfig = (config) =>
   config?.id === `jixin-default` ||
   wanjuanNormalizeTianjiApiBaseUrl(config?.url) === wanjuanNormalizeTianjiApiBaseUrl(WANJUAN_TIANJI_DEFAULT_BASE_URL);
 
+const wanjuanResolveJixinApiConfigForTianji = (candidateConfig = null, stored = {}) => {
+  let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],
+    storedJixinConfig = storedApiConfigs.find(wanjuanIsJixinApiConfig) || null,
+    sourceConfig = candidateConfig || storedJixinConfig;
+  if (!sourceConfig && !wanjuanFindLegacyJixinApiKey(stored)) return null;
+  let sourceBaseUrl = wanjuanNormalizeTianjiApiBaseUrl(
+      sourceConfig?.url || storedJixinConfig?.url || WANJUAN_TIANJI_DEFAULT_BASE_URL,
+    ) || WANJUAN_TIANJI_DEFAULT_BASE_URL,
+    sourceKey =
+      String(sourceConfig?.key || ``).trim() ||
+      String(storedJixinConfig?.key || ``).trim() ||
+      wanjuanFindLegacyJixinApiKey(stored);
+  return {
+    ...(storedJixinConfig && typeof storedJixinConfig == `object` ? storedJixinConfig : {}),
+    ...(sourceConfig && typeof sourceConfig == `object` ? sourceConfig : {}),
+    id: sourceConfig?.id || storedJixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+    name: sourceConfig?.name || storedJixinConfig?.name || `极鑫`,
+    url: sourceBaseUrl,
+    key: sourceKey,
+  };
+};
+
 const wanjuanBuildSyncedTianjiConfigFromJixin = (currentConfig = {}, jixinConfig = null, {
   force: force = !1
 } = {}) => {
   let jixinBaseUrl = wanjuanNormalizeTianjiApiBaseUrl(jixinConfig?.url || WANJUAN_TIANJI_DEFAULT_BASE_URL) || WANJUAN_TIANJI_DEFAULT_BASE_URL,
+    jixinToken = String(jixinConfig?.key || ``).trim(),
     rawCurrentBaseUrl = wanjuanNormalizeTianjiApiBaseUrl(currentConfig?.baseUrl || ``),
     hasExplicitSyncSource = Object.prototype.hasOwnProperty.call(currentConfig || {}, `syncSource`);
   if (!force && !hasExplicitSyncSource && rawCurrentBaseUrl && rawCurrentBaseUrl !== WANJUAN_TIANJI_DEFAULT_BASE_URL && rawCurrentBaseUrl !== jixinBaseUrl)
@@ -16932,15 +17092,27 @@ const wanjuanBuildSyncedTianjiConfigFromJixin = (currentConfig = {}, jixinConfig
   return wanjuanNormalizeTianjiSeedanceConfig({
     ...current,
     baseUrl: jixinBaseUrl,
-    token: String(jixinConfig?.key || ``).trim(),
+    token: jixinToken,
     syncSource: WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
   });
 };
 
 const wanjuanGetSyncedTianjiSeedanceConfig = async (options = {}) => {
-  let stored = await wanjuanTianjiStorageGet([`tianjiSeedanceConfig`, `apiConfigs`, `advancedSettingsUnlocked`]),
+  let stored = await wanjuanTianjiStorageGet([
+      `tianjiSeedanceConfig`,
+      `apiConfigs`,
+      `advancedSettingsUnlocked`,
+      `apiKey`,
+      `textApiKey`,
+      `imageApiKey`,
+      `videoApiKey`,
+      `audioApiKey`,
+    ]),
     currentConfig = wanjuanNormalizeTianjiSeedanceConfig(stored.tianjiSeedanceConfig || {}),
-    jixinConfig = (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(wanjuanIsJixinApiConfig);
+    jixinConfig = wanjuanResolveJixinApiConfigForTianji(
+      (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(wanjuanIsJixinApiConfig),
+      stored,
+    );
   if (!jixinConfig) return currentConfig;
   let nextConfig = wanjuanBuildSyncedTianjiConfigFromJixin(currentConfig, jixinConfig, {
     ...options,
@@ -31259,6 +31431,7 @@ Suno 音乐生成`,
   [themeMode, setThemeMode] = useState(`graphite`),
   [appLanguage, setAppLanguage] = useState(`zh-CN`),
   [downloadDirectory, setDownloadDirectory] = useState(``),
+  [autoDownloadGeneratedResults, setAutoDownloadGeneratedResults] = useState(!1),
   [storageOptimizationEnabled, setStorageOptimizationEnabled] = useState(!1),
   [storageOptimizationPaused, setStorageOptimizationPaused] = useState(!1),
   [storageOptimizationStatus, setStorageOptimizationStatus] = useState(null),
@@ -31343,6 +31516,7 @@ time=1h`,
   [showQiniuSecretKey, setShowQiniuSecretKey] = useState(!1),
   [extensionToolStatus, setExtensionToolStatus] = useState({}),
   [extensionToolInstalling, setExtensionToolInstalling] = useState({}),
+  [performanceProfile, setPerformanceProfile] = useState(() => WanJuanReadPerformanceProfile()),
   [pollingInterval, setPollingInterval] = useState(3e3),
   [maxPollingDuration, setMaxPollingDuration] = useState(600),
   [layeredRunConcurrencyOptions, setLayeredRunConcurrencyOptions] =
@@ -31395,6 +31569,51 @@ time=1h`,
     let audioConfig = apiConfigs.find((config) => config.id === audioApiConfigId) || apiConfigs[0];
     audioConfig && (setAudioApiUrl(audioConfig.url), setAudioApiKey(audioConfig.key));
   }, [apiConfigs, textApiConfigId, imageApiConfigId, videoApiConfigId, audioApiConfigId]);
+  const applyPerformanceProfile = useCallback((profileKey) => {
+    let normalizedKey = WanJuanNormalizePerformanceProfile(profileKey),
+      preset = WANJUAN_PERFORMANCE_PROFILE_PRESETS[normalizedKey] || WANJUAN_PERFORMANCE_PROFILE_PRESETS.balanced,
+      customSettings = normalizedKey === `custom` ? {
+        ...WANJUAN_PERFORMANCE_PROFILE_PRESETS.custom,
+        layeredRunConcurrencyOptions: layeredRunConcurrencyOptions || WANJUAN_PERFORMANCE_PROFILE_PRESETS.custom.layeredRunConcurrencyOptions,
+        layeredRunMaxConcurrency: Math.max(1, Math.min(20, Number(layeredRunMaxConcurrency) || WANJUAN_PERFORMANCE_PROFILE_PRESETS.custom.layeredRunMaxConcurrency)),
+      } : null,
+      nextSettings = customSettings || preset;
+    setPerformanceProfile(normalizedKey);
+    if (normalizedKey !== `custom`) {
+      setLayeredRunConcurrencyOptions(preset.layeredRunConcurrencyOptions);
+      setLayeredRunMaxConcurrency(preset.layeredRunMaxConcurrency);
+    }
+    try {
+      window.localStorage?.setItem(WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY, normalizedKey);
+      customSettings && window.localStorage?.setItem(WANJUAN_PERFORMANCE_PROFILE_CUSTOM_KEY, JSON.stringify(customSettings));
+      document.documentElement.classList.remove(`wj-perf-performance`, `wj-perf-balanced`, `wj-perf-quality`, `wj-perf-custom`);
+      document.documentElement.classList.add(`wj-perf-${normalizedKey}`);
+      document.documentElement.dataset.wanjuanPerformanceProfile = normalizedKey;
+      document.documentElement.dataset.wanjuanRenderMode = nextSettings.renderMode || normalizedKey;
+      window.dispatchEvent(new CustomEvent(`wanjuan:performance-profile-changed`, {
+        detail: {
+          key: normalizedKey,
+          settings: {
+            ...nextSettings,
+            key: normalizedKey,
+          },
+        },
+      }));
+    } catch {}
+    try {
+      typeof chrome < `u` && chrome.storage?.local?.set?.({
+        [WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY]: normalizedKey,
+        ...(normalizedKey === `custom` ? {} : {
+          layeredRunConcurrencyOptions: preset.layeredRunConcurrencyOptions,
+          layeredRunMaxConcurrency: preset.layeredRunMaxConcurrency,
+        }),
+      });
+    } catch {}
+    try {
+      let performancePromise = window.wanjuanDesktop?.setPerformanceProfile?.(normalizedKey, customSettings);
+      performancePromise?.catch?.((error) => console.warn(`set performance profile failed`, error));
+    } catch {}
+  }, [layeredRunConcurrencyOptions, layeredRunMaxConcurrency]);
   useEffect(() => {
 	    let parseModelList = (text) => String(text || ``).split(/[\n,，、]+/).map((model) => model.trim()).filter(Boolean),
 	      dedupe = (list) => list.filter((item, index, array) => array.indexOf(item) === index),
@@ -31804,7 +32023,7 @@ time=1h`,
         "当前已启用全局统一API配置": "目前已啟用全域統一 API 配置",
         "切换石墨灰、曜石黑、晴空蓝、暖砂白、樱雾粉、薄荷绿或跟随系统外观，不改变现有布局结构": "切換石墨灰、曜石黑、晴空藍、暖砂白、櫻霧粉、薄荷綠或跟隨系統外觀，不改變現有布局結構",
         "选择界面语言偏好，后续多语言文案将按此设置展示": "選擇介面語言偏好，介面文案會依此設定顯示",
-        "1.3.4：优化石墨灰主题导航悬停和选中态，调整删除按钮语义颜色，并发布新的 Mac/Windows 安装包。": "1.3.4：優化石墨灰主題導覽懸停和選中態，調整刪除按鈕語義顏色，並發布新的 Mac/Windows 安裝包。",
+        "1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。": "1.3.5：修復即夢天璣模式配置傳遞，確保同步極鑫配置後畫布生成可正確讀取授權資訊，並發布新的 Mac/Windows 安裝包。",
         "1.3.3：优化石墨灰主题控件选中态、内置语言包和离线工具包打包流程。": "1.3.3：優化石墨灰主題控制項選中態、內建語言包和離線工具包打包流程。",
         "1.3.2：优化即梦天玑人像审核后的自动刷新绑定，提高素材库最终 ID 回填成功率。": "1.3.2：優化即夢天璣人像審核後的自動刷新綁定，提高素材庫最終 ID 回填成功率。",
         "1.3.1：优化工作空间团队连接诊断、分组管理、网络环境提示与即梦天玑任务失败识别；支持天玑人像审核后直接绑定图片节点。": "1.3.1：優化工作空間團隊連線診斷、分組管理、網路環境提示與即夢天璣任務失敗識別；支援天璣人像審核後直接綁定圖片節點。",
@@ -31867,7 +32086,7 @@ time=1h`,
         "当前已启用全局统一API配置": "Global unified API config is enabled",
         "切换石墨灰、曜石黑、晴空蓝、暖砂白、樱雾粉、薄荷绿或跟随系统外观，不改变现有布局结构": "Switch the visual theme without changing the current layout.",
         "选择界面语言偏好，后续多语言文案将按此设置展示": "Choose the interface language. Supported interface text follows this setting.",
-        "1.3.4：优化石墨灰主题导航悬停和选中态，调整删除按钮语义颜色，并发布新的 Mac/Windows 安装包。": "1.3.4: Refined Graphite theme navigation hover and selected states, adjusted semantic delete-button colors, and shipped new Mac/Windows installers.",
+        "1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。": "1.3.5: Fixed Jimeng Tianji config delivery so canvas generation can correctly read synced Jixin authorization, and shipped new Mac/Windows installers.",
         "1.3.3：优化石墨灰主题控件选中态、内置语言包和离线工具包打包流程。": "1.3.3: Improved Graphite theme selected states, the built-in language pack, and offline tool packaging workflow.",
         "1.3.2：优化即梦天玑人像审核后的自动刷新绑定，提高素材库最终 ID 回填成功率。": "1.3.2: Improved automatic refresh binding after Jimeng Tianji portrait review, increasing the success rate of final asset ID backfill.",
         "1.3.1：优化工作空间团队连接诊断、分组管理、网络环境提示与即梦天玑任务失败识别；支持天玑人像审核后直接绑定图片节点。": "1.3.1: Improved Workspace team connection diagnostics, group management, network-change guidance, and Tianji task failure detection; Tianji portrait review can now bind directly to the image node.",
@@ -31934,6 +32153,28 @@ time=1h`,
     isJixinDefaultApiConfig = (config) =>
     config?.id === `jixin-default` ||
     normalizeButlerBaseUrl(config?.url) === normalizeButlerBaseUrl(WANJUAN_JIXIN_API_URL),
+    resolveJixinApiConfigForTianjiSettings = (candidateConfig = null, stored = {}) => {
+      let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],
+        storedJixinConfig = storedApiConfigs.find(isJixinDefaultApiConfig) || null,
+        sourceConfig = candidateConfig || storedJixinConfig;
+      if (!sourceConfig && !wanjuanFindLegacyJixinApiKey(stored)) return null;
+      let sourceBaseUrl =
+          String(sourceConfig?.url || storedJixinConfig?.url || WANJUAN_JIXIN_API_URL)
+          .replace(/\s+/g, ``)
+          .replace(/\/+$/, ``) || WANJUAN_JIXIN_API_URL,
+        sourceKey =
+          String(sourceConfig?.key || ``).trim() ||
+          String(storedJixinConfig?.key || ``).trim() ||
+          wanjuanFindLegacyJixinApiKey(stored);
+      return {
+        ...(storedJixinConfig && typeof storedJixinConfig == `object` ? storedJixinConfig : {}),
+        ...(sourceConfig && typeof sourceConfig == `object` ? sourceConfig : {}),
+        id: sourceConfig?.id || storedJixinConfig?.id || `jixin-default`,
+        name: sourceConfig?.name || storedJixinConfig?.name || `极鑫`,
+        url: sourceBaseUrl,
+        key: sourceKey,
+      };
+    },
     normalizeTianjiSettingsSyncSource = (source) =>
     source === WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL ?
     WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL :
@@ -31942,6 +32183,7 @@ time=1h`,
       let current = currentConfig && typeof currentConfig == `object` ? currentConfig : {},
         currentSource = normalizeTianjiSettingsSyncSource(current.syncSource),
         jixinBaseUrl = String(jixinConfig?.url || WANJUAN_JIXIN_API_URL).replace(/\s+/g, ``).replace(/\/+$/, ``) || WANJUAN_JIXIN_API_URL,
+        jixinToken = String(jixinConfig?.key || ``).trim(),
         currentBaseUrl = String(current.baseUrl || ``).replace(/\s+/g, ``).replace(/\/+$/, ``),
         hasExplicitSyncSource = Object.prototype.hasOwnProperty.call(current, `syncSource`);
       if (!options.force && !hasExplicitSyncSource && currentBaseUrl && currentBaseUrl !== WANJUAN_JIXIN_API_URL && currentBaseUrl !== jixinBaseUrl) return {
@@ -31955,16 +32197,28 @@ time=1h`,
       return {
         ...current,
         baseUrl: jixinBaseUrl,
-        token: String(jixinConfig?.key || ``).trim(),
+        token: jixinToken,
         syncSource: WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN,
       };
     },
     syncTianjiConfigFromJixinApi = async (configs = apiConfigs, options = {}) => {
       if (typeof chrome > `u` || !chrome.storage?.local) return null;
-      let jixinConfig = (Array.isArray(configs) ? configs : []).find(isJixinDefaultApiConfig) || null;
+      let stored = await readChromeStorage([
+          `tianjiSeedanceConfig`,
+          `advancedSettingsUnlocked`,
+          `apiConfigs`,
+          `apiKey`,
+          `textApiKey`,
+          `imageApiKey`,
+          `videoApiKey`,
+          `audioApiKey`,
+        ]),
+        jixinConfig = resolveJixinApiConfigForTianjiSettings(
+          (Array.isArray(configs) ? configs : []).find(isJixinDefaultApiConfig) || null,
+          stored,
+        );
       if (!jixinConfig) return null;
-      let stored = await readChromeStorage([`tianjiSeedanceConfig`, `advancedSettingsUnlocked`]),
-        currentConfig = stored.tianjiSeedanceConfig && typeof stored.tianjiSeedanceConfig == `object` ?
+      let currentConfig = stored.tianjiSeedanceConfig && typeof stored.tianjiSeedanceConfig == `object` ?
         stored.tianjiSeedanceConfig :
         {},
         nextConfig = buildSyncedTianjiConfigFromJixinApi(currentConfig, jixinConfig, {
@@ -31972,9 +32226,9 @@ time=1h`,
           force: options.force === !0 || stored.advancedSettingsUnlocked !== !0,
         });
       JSON.stringify(currentConfig) !== JSON.stringify(nextConfig) &&
-        writeChromeStorage({
+        (await wanjuanTianjiStorageSet({
           tianjiSeedanceConfig: nextConfig,
-        });
+        }));
       return nextConfig;
     },
     getCustomApiConfigCount = (configs = apiConfigs) =>
@@ -32041,17 +32295,161 @@ time=1h`,
             appLanguage: appLanguage,
             uiLanguage: appLanguage,
             downloadDirectory: downloadDirectory,
+            autoDownloadGeneratedResults: autoDownloadGeneratedResults,
             storageOptimizationEnabled: storageOptimizationEnabled,
             storageOptimizationPaused: storageOptimizationPaused,
             presetPrompts: presetPrompts,
             layeredRunConcurrencyOptions: layeredRunConcurrencyOptions,
             layeredRunMaxConcurrency: layeredRunMaxConcurrency,
+            wanjuanPerformanceProfile: performanceProfile,
             backupExportSelection: backupExportSelection,
             agents: agentItems,
             selectedAgentId: selectedAgentId,
             agentConversations: agentConversations,
           });
         }, 250));
+    },
+    applyLitterboxUploadPreset = (ttl = `1h`) => {
+      let normalizedTtl = [`1h`, `12h`, `24h`, `72h`].includes(String(ttl || ``)) ? String(ttl) : `1h`,
+        nextConfig = {
+          endpoint: `https://litterbox.catbox.moe/resources/internals/api.php`,
+          fileField: `fileToUpload`,
+          fields: `reqtype=fileupload
+time=${normalizedTtl}`,
+          headers: ``,
+          resultPath: ``,
+        };
+      (setCustomPublicUploadConfig(nextConfig),
+        setSeedanceUploadMode(`custom`),
+        setCustomUploadConfigExpanded(!0),
+        typeof chrome < `u` &&
+        chrome.storage?.local?.set?.({
+          customPublicUploadConfig: nextConfig,
+          seedanceUploadMode: `custom`,
+        }),
+        showToast2(`已应用 Litterbox 临时直链 ${normalizedTtl} 预设`));
+    },
+    buildJixinDefaultResetPatch = () => {
+      let baseConfig = wanjuanBuildJixinBuiltinBasePatch({
+          apiConfigs: [{
+            id: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+            name: `极鑫`,
+            url: WANJUAN_JIXIN_DEFAULT_API_URL,
+            key: ``,
+            protocolFormat: `auto`,
+          }],
+        }),
+        builtinStoredConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(baseConfig);
+      return {
+        ...baseConfig,
+        apiKey: ``,
+        apiUrl: WANJUAN_JIXIN_DEFAULT_API_URL,
+        textApiKey: ``,
+        imageApiKey: ``,
+        videoApiKey: ``,
+        audioApiKey: ``,
+        configButlerApiUrl: ``,
+        configButlerApiKey: ``,
+        configButlerProtocol: `openai`,
+        configButlerModel: ``,
+        configButlerDocUrl: WANJUAN_JIXIN_DOC_URL,
+        configButlerMode: `batch`,
+        configButlerTargetCategory: `text`,
+        configButlerTargetApiConfigId: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+        configButlerRepairHistory: [],
+        storedGlobalConfigs: [builtinStoredConfig],
+        activeStoredGlobalConfigId: builtinStoredConfig.id,
+        tianjiSeedanceConfig: wanjuanTianjiSeedanceDefaults,
+        tianjiSeedanceSettingsMode: `official`,
+        jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,
+        jixinGatewayModelScanSnapshot: null,
+        jixinGatewayModelScanLastAt: 0,
+      };
+    },
+    applyJixinDefaultResetPatch = (patch) => {
+      let normalizedApiConfigs = normalizeUnifiedApiConfigs(patch.apiConfigs);
+      (setApiConfigs(normalizedApiConfigs),
+        setTextApiConfigId(patch.textApiConfigId),
+        setImageApiConfigId(patch.imageApiConfigId),
+        setVideoApiConfigId(patch.videoApiConfigId),
+        setAudioApiConfigId(patch.audioApiConfigId),
+        setTextApiUrl(patch.textApiUrl),
+        setTextApiKey(``),
+        setImageApiUrl(patch.imageApiUrl),
+        setImageApiKey(``),
+        setVideoApiUrl(patch.videoApiUrl),
+        setVideoApiKey(``),
+        setAudioApiUrl(patch.audioApiUrl),
+        setAudioApiKey(``),
+        _e(patch.textModel),
+        setImageModels(patch.drawingModel),
+        setImageCompatResolutions(patch.imageCompatResolutions),
+        setVideoModels(patch.videoModel),
+        setAudioModels(patch.audioModel),
+        setTtsMusicModel(patch.ttsMusicModel),
+        setVideoDurations(patch.videoDurations),
+        setVideoResolutions(patch.videoResolutions),
+        setVideoAspectRatios(patch.videoAspectRatios),
+        setVideoModelRequestProfilesText(`{}`),
+        setSeedanceModel(patch.seedanceModel),
+        setSeedanceDurations(patch.seedanceDurations),
+        setSeedanceResolutions(patch.seedanceResolutions),
+        setSeedanceRatios(patch.seedanceRatios),
+        setSeedanceGenerateAudio(!0),
+        setSeedanceWatermark(!1),
+        setSeedanceEnableWebSearch(!1),
+        setTongyiWanxiangTextModels(patch.tongyiWanxiangTextModels),
+        setTongyiWanxiangReferenceImageModels(patch.tongyiWanxiangReferenceImageModels),
+        setTongyiWanxiangImageModels(patch.tongyiWanxiangImageModels),
+        setTongyiWanxiangEditModels(patch.tongyiWanxiangEditModels),
+        setTongyiWanxiangDurations(patch.tongyiWanxiangDurations),
+        setTongyiWanxiangResolutions(patch.tongyiWanxiangResolutions),
+        setTongyiWanxiangRatios(patch.tongyiWanxiangRatios),
+        setModelProtocolRegistry(cloneBackupValue(patch.modelProtocolRegistry)),
+        setTextModelApiBindings(cloneBackupValue(patch.textModelApiBindings)),
+        setTextModelProtocolBindings(cloneBackupValue(patch.textModelProtocolBindings)),
+        setImageModelApiBindings(cloneBackupValue(patch.imageModelApiBindings)),
+        setImageModelProtocolBindings(cloneBackupValue(patch.imageModelProtocolBindings)),
+        setVideoModelApiBindings(cloneBackupValue(patch.videoModelApiBindings)),
+        setVideoModelProtocolBindings(cloneBackupValue(patch.videoModelProtocolBindings)),
+        setAudioModelApiBindings(cloneBackupValue(patch.audioModelApiBindings)),
+        setAudioModelProtocolBindings(cloneBackupValue(patch.audioModelProtocolBindings)),
+        setConfigButlerApiUrl(``),
+        setConfigButlerApiKey(``),
+        setConfigButlerProtocol(`openai`),
+        setConfigButlerModel(``),
+        setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL),
+        setConfigButlerMode(`batch`),
+        setConfigButlerTargetCategory(`text`),
+        setConfigButlerTargetApiConfigId(WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID),
+        setConfigButlerRepairHistory([]),
+        setConfigButlerBatchItems([]),
+        setConfigButlerResultText(``),
+        setJixinModelScanNotice(null),
+        setStoredGlobalConfigs(patch.storedGlobalConfigs),
+        setActiveStoredGlobalConfigId(patch.activeStoredGlobalConfigId),
+        setProtocolNamesText(Object.keys(patch.modelProtocolRegistry || {}).join(`
+`)),
+        setActiveProtocolName(Object.keys(patch.modelProtocolRegistry || {})[0] || ``),
+        setActiveProtocolConfigText(JSON.stringify(Object.values(patch.modelProtocolRegistry || {})[0] || {}, null, 2)),
+        setTianjiSeedanceSettingsMode(`official`));
+    },
+    resetJixinDefaultConfiguration = () => {
+      let confirmed = window.confirm(
+        `恢复极鑫默认配置会清空当前统一 API、模型列表、模型绑定、协议配置、配置管家和即梦天玑授权信息，需要重新填写 Key。\n\n不会删除画布项目、资源库、智能体、工作空间、下载目录和人像素材库。\n\n确定继续吗？`,
+      );
+      if (!confirmed) return;
+      let resetPatch = buildJixinDefaultResetPatch();
+      apiModelCloudSettingsSaveTimerRef.current &&
+        clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
+      applyJixinDefaultResetPatch(resetPatch);
+      try {
+        window.localStorage?.removeItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY);
+      } catch {}
+      typeof chrome < `u` &&
+        chrome.storage?.local?.set?.(resetPatch, () => {
+          showToast2(`已恢复极鑫默认配置，请重新填写 Key`);
+        });
     },
     saveApiModelCloudSettings = () => {
       if (
@@ -35691,6 +36089,22 @@ ${docText}`;
     syncTianjiConfigFromJixinApi(apiConfigs).catch((error) => console.warn(`Sync Tianji config from Jixin API failed`, error));
   }, [$, apiConfigs]);
   useEffect(() => {
+    if (!$) return;
+    let handleTianjiConfigUpdated = (event) => {
+      try {
+        let config = wanjuanNormalizeTianjiSeedanceConfig(event?.detail?.config || {});
+        if (!config.token) return;
+        wanjuanTianjiStorageSet({
+          tianjiSeedanceConfig: config
+        }).catch((error) => console.warn(`Mirror Tianji config update failed`, error));
+      } catch (error) {
+        console.warn(`Handle Tianji config update failed`, error);
+      }
+    };
+    window.addEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
+    return () => window.removeEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
+  }, [$]);
+  useEffect(() => {
     if (!$ || !settingsHydratedRef.current) return;
     if (!configButlerDocUrl) setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
     let cancelled = !1;
@@ -35921,6 +36335,7 @@ ${docText}`;
                   `appLanguage`,
                   `uiLanguage`,
                   `downloadDirectory`,
+                  `autoDownloadGeneratedResults`,
                   `storageOptimizationEnabled`,
                   `storageOptimizationPaused`,
                   `backupExportSelection`,
@@ -35960,6 +36375,7 @@ ${docText}`;
                   `globalMaxPollingDuration`,
                   `layeredRunConcurrencyOptions`,
                   `layeredRunMaxConcurrency`,
+                  `wanjuanPerformanceProfile`,
                   `agents`,
                   `selectedAgentId`,
                   `agentConversations`,
@@ -36070,6 +36486,8 @@ ${docText}`;
                     setLayeredRunMaxConcurrency(
                       Number(settings.layeredRunMaxConcurrency) || 1,
                     ),
+                    settings.wanjuanPerformanceProfile &&
+                    setPerformanceProfile(WanJuanNormalizePerformanceProfile(settings.wanjuanPerformanceProfile)),
                     settings.textApiUrl ? setTextApiUrl(settings.textApiUrl) : settings.apiUrl && setTextApiUrl(settings.apiUrl),
                     settings.textApiKey ? setTextApiKey(settings.textApiKey) : settings.apiKey && setTextApiKey(settings.apiKey),
                     settings.imageApiUrl ?
@@ -36224,6 +36642,8 @@ ${docText}`;
                       globalThis.wanjuanI18nRuntime?.setLanguage?.(settings.appLanguage || settings.uiLanguage)),
                     settings.downloadDirectory &&
                     setDownloadDirectory(settings.downloadDirectory),
+                    settings.autoDownloadGeneratedResults !== void 0 &&
+                    setAutoDownloadGeneratedResults(settings.autoDownloadGeneratedResults === !0 || settings.autoDownloadGeneratedResults === `true` || settings.autoDownloadGeneratedResults === 1),
                     settings.storageOptimizationEnabled === !0 &&
                     setStorageOptimizationEnabled(!0),
                     settings.storageOptimizationPaused === !0 &&
@@ -36335,11 +36755,13 @@ ${docText}`;
       themeMode,
       appLanguage,
       downloadDirectory,
+      autoDownloadGeneratedResults,
       storageOptimizationEnabled,
       storageOptimizationPaused,
       presetPrompts,
       layeredRunConcurrencyOptions,
       layeredRunMaxConcurrency,
+      performanceProfile,
       backupExportSelection,
       agentItems,
       selectedAgentId,
@@ -43309,7 +43731,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           [],
                         ),
                         buildBackupPayload = async (e, t, n, r = {}) => ({
-				                            version: `1.3.4`,
+				                            version: `1.3.5`,
                             backupFormat: `4`,
                             exportedAt: new Date().toISOString(),
                             modules: await buildBackupModules(e, t, n, r),
@@ -43909,7 +44331,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-					                  children: `v1.3.4`,
+					                  children: `v1.3.5`,
                 }),
                 updateInfo?.hasUpdate &&
                 jsx(`span`, {
@@ -47852,7 +48274,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.3.4：优化石墨灰主题导航悬停和选中态，调整删除按钮语义颜色，并发布新的 Mac/Windows 安装包。`),
+				                                          children: wanjuanT(`1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -47869,12 +48291,46 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-					                                          children: `1.3.4`,
+					                                          children: `1.3.5`,
 	                                        }),
-	                                        jsx(`span`, {
-	                                          className: `text-[10px] text-gray-500`,
-	                                          children: wanjuanT(`当前已启用全局统一API配置`),
-                                        }),
+	                                        jsxs(`div`, {
+	                                          className: `flex items-center gap-2 ml-auto`,
+	                                          "data-wanjuan-update-actions": `true`,
+	                                          children: [
+	                                            jsx(`span`, {
+	                                              className: `text-[10px] text-gray-500 whitespace-nowrap`,
+	                                              children: wanjuanT(`当前已启用全局统一API配置`),
+	                                            }),
+	                                            jsx(`button`, {
+	                                              type: `button`,
+	                                              className: `wanjuan-settings-button wanjuan-update-action-button wanjuan-check-updates-button`,
+	                                              "data-wanjuan-check-updates": `true`,
+	                                              onClick: async (event) => {
+	                                                let button = event.currentTarget;
+	                                                if (button.disabled) return;
+	                                                button.disabled = !0;
+	                                                let oldText = button.textContent;
+	                                                button.textContent = `检查中…`;
+	                                                try {
+	                                                  await window.wanjuanDesktop?.checkForUpdates?.();
+	                                                } catch (error) {
+	                                                  console.warn(`check for updates failed`, error);
+	                                                } finally {
+	                                                  button.disabled = !1;
+	                                                  button.textContent = oldText || `检查更新`;
+	                                                }
+	                                              },
+	                                              children: `检查更新`,
+	                                            }),
+	                                            jsx(`button`, {
+	                                              type: `button`,
+	                                              className: `wanjuan-settings-button wanjuan-update-action-button wanjuan-official-site-button`,
+	                                              "data-wanjuan-official-site": `true`,
+	                                              onClick: () => window.open(`https://lingjing.guancn.uk`, `_blank`, `noopener,noreferrer`),
+	                                              children: `前往官网`,
+	                                            }),
+	                                          ],
+	                                        }),
                                       ],
                                     }),
                                   ],
@@ -48496,6 +48952,41 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         jsxs(`div`, {
                                           className: `border-t border-[#2a2a2a] p-3 space-y-3`,
                                           children: [
+                                            jsxs(`div`, {
+                                              className: `rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-3 space-y-2`,
+                                              children: [
+                                                jsxs(`div`, {
+                                                  className: `flex flex-wrap items-center justify-between gap-2`,
+                                                  children: [
+                                                    jsxs(`div`, {
+                                                      className: `min-w-0`,
+                                                      children: [
+                                                        jsx(`div`, {
+                                                          className: `text-xs font-semibold text-cyan-100`,
+                                                          children: `内置临时直链预设`,
+                                                        }),
+                                                        jsx(`div`, {
+                                                          className: `mt-1 text-[10px] text-gray-500 leading-4`,
+                                                          children: `用于临时把参考素材转成公网 URL；公益服务不适合隐私、客户或长期素材。`,
+                                                        }),
+                                                      ],
+                                                    }),
+                                                    jsx(`div`, {
+                                                      className: `flex flex-wrap items-center gap-1.5 shrink-0`,
+                                                      children: [`1h`, `12h`, `24h`, `72h`].map((ttl) =>
+                                                        jsx(`button`, {
+                                                          type: `button`,
+                                                          onClick: () => applyLitterboxUploadPreset(ttl),
+                                                          className: `rounded-md border border-cyan-500/25 bg-[#161d1f] px-2.5 py-1.5 text-[11px] font-semibold text-cyan-200 hover:bg-cyan-500/12 hover:border-cyan-400/45 transition-colors`,
+                                                          title: `应用 Litterbox ${ttl} 临时直链预设`,
+                                                          children: `Litterbox ${ttl}`,
+                                                        }, ttl),
+                                                      ),
+                                                    }),
+                                                  ],
+                                                }),
+                                              ],
+                                            }),
                                             jsxs(`label`, {
                                               className: `flex items-center gap-2 text-xs text-gray-300`,
                                               children: [
@@ -48636,6 +49127,69 @@ ${String(l || ``).slice(0, 5e4)}`;
                               jsxs(`div`, {
                                 className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body`,
 	                                children: [
+	                                  jsx(`div`, {
+	                                    className: `wanjuan-performance-panel`,
+	                                    "data-wanjuan-performance-panel": `true`,
+	                                    children: jsxs(`div`, {
+	                                      children: [
+	                                        jsxs(`div`, {
+	                                          className: `wanjuan-performance-header`,
+	                                          children: [
+	                                            jsxs(`div`, {
+	                                              children: [
+	                                                jsx(`div`, {
+	                                                  className: `wanjuan-performance-title`,
+	                                                  children: `性能 / 渲染档位`,
+	                                                }),
+	                                                jsx(`div`, {
+	                                                  className: `wanjuan-performance-subtitle`,
+	                                                  children: `全局默认设置；会同步到下面的并发设置，不做隐藏保护。`,
+	                                                }),
+	                                              ],
+	                                            }),
+	                                            jsx(`div`, {
+	                                              className: `wanjuan-performance-current`,
+	                                              children: WANJUAN_PERFORMANCE_PROFILE_PRESETS[performanceProfile]?.label || `均衡`,
+	                                            }),
+	                                          ],
+	                                        }),
+	                                        jsx(`div`, {
+	                                          className: `wanjuan-performance-options`,
+	                                          children: WanJuanPerformanceProfileList.map((profileKey) => {
+	                                            let preset = WANJUAN_PERFORMANCE_PROFILE_PRESETS[profileKey];
+	                                            return jsxs(`button`, {
+	                                              type: `button`,
+	                                              className: performanceProfile === profileKey ? `active` : ``,
+	                                              "data-profile": profileKey,
+	                                              "aria-pressed": performanceProfile === profileKey ? `true` : `false`,
+	                                              onClick: () => applyPerformanceProfile(profileKey),
+	                                              children: [
+	                                                jsx(`strong`, {
+	                                                  children: preset.label,
+	                                                }),
+	                                                jsx(`span`, {
+	                                                  children: preset.description,
+	                                                }),
+	                                              ],
+	                                            }, profileKey);
+	                                          }),
+	                                        }),
+	                                        jsxs(`div`, {
+	                                          className: `wanjuan-performance-details`,
+	                                          children: [
+	                                            `层级并发 `,
+	                                            performanceProfile === `custom` ? layeredRunMaxConcurrency : WANJUAN_PERFORMANCE_PROFILE_PRESETS[performanceProfile]?.layeredRunMaxConcurrency || layeredRunMaxConcurrency,
+	                                            ` · AI生成队列 `,
+	                                            WANJUAN_PERFORMANCE_PROFILE_PRESETS[performanceProfile]?.aiGenerateLimit || 3,
+	                                            ` · 聊天队列 `,
+	                                            WANJUAN_PERFORMANCE_PROFILE_PRESETS[performanceProfile]?.aiChatLimit || 2,
+	                                            ` · 轮询 `,
+	                                            WANJUAN_PERFORMANCE_PROFILE_PRESETS[performanceProfile]?.aiPollLimit || 2,
+	                                          ],
+	                                        }),
+	                                      ],
+	                                    }),
+	                                  }),
 	                                  jsxs(`div`, {
 	                                    children: [
 	                                      jsxs(`label`, {
@@ -48745,6 +49299,60 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      jsx(`p`, {
 	                                        className: `text-[10px] text-gray-500 mt-1 wanjuan-settings-help`,
 	                                        children: `节点下载按钮会直接保存到此文件夹，不再跳转浏览器。留空时使用系统下载目录下的“万卷灵境”文件夹。`,
+	                                      }),
+	                                      jsxs(`div`, {
+	                                        className: `wanjuan-auto-download-row`,
+	                                        "data-wanjuan-auto-download-row": `true`,
+	                                        "data-wanjuan-native": `true`,
+	                                        children: [
+	                                          jsxs(`div`, {
+	                                            className: `wanjuan-auto-download-copy`,
+	                                            children: [
+	                                              jsx(`div`, {
+	                                                className: `wanjuan-auto-download-title`,
+	                                                children: `生成结果自动下载`,
+	                                              }),
+	                                              jsx(`div`, {
+	                                                className: `wanjuan-auto-download-desc`,
+	                                                children: `开启后，图片、视频、音频生成完成会自动保存到上面的文件夹。`,
+	                                              }),
+	                                            ],
+	                                          }),
+	                                          jsxs(`button`, {
+	                                            type: `button`,
+	                                            className: `wanjuan-auto-download-switch`,
+	                                            role: `switch`,
+	                                            "aria-label": `生成结果自动下载`,
+	                                            "aria-checked": autoDownloadGeneratedResults ? `true` : `false`,
+	                                            onClick: () => {
+	                                              let nextEnabled = !autoDownloadGeneratedResults;
+	                                              setAutoDownloadGeneratedResults(nextEnabled);
+	                                              try {
+	                                                window.dispatchEvent(new CustomEvent(`wanjuan:auto-download-setting-changed`, {
+	                                                  detail: {
+	                                                    enabled: nextEnabled,
+	                                                  },
+	                                                }));
+	                                              } catch {}
+	                                            },
+	                                            children: [
+	                                              jsx(`span`, {
+	                                                className: `wanjuan-auto-download-knob`,
+	                                              }),
+	                                              jsx(`span`, {
+	                                                className: `wanjuan-auto-download-state`,
+	                                                "data-wanjuan-auto-download-state": `true`,
+	                                                children: autoDownloadGeneratedResults ? `已开启` : `已关闭`,
+	                                              }),
+	                                              jsx(`input`, {
+	                                                type: `checkbox`,
+	                                                checked: autoDownloadGeneratedResults,
+	                                                readOnly: !0,
+	                                                "data-wanjuan-auto-download-toggle": `true`,
+	                                              }),
+	                                            ],
+	                                          }),
+	                                        ],
 	                                      }),
 	                                    ],
 	                                  }),
@@ -49328,26 +49936,36 @@ ${String(l || ``).slice(0, 5e4)}`;
                           jsxs(`div`, {
                             className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
                             children: [
-                              jsx(`div`, {
+                              jsxs(`div`, {
                                 className: `flex justify-between items-center p-4 select-none border-b border-[#222]`,
-                                children: jsxs(`div`, {
-                                  children: [
-                                    jsxs(`h2`, {
-                                      className: `font-bold text-gray-200 text-sm flex items-center gap-2 wanjuan-settings-card-title`,
-                                      children: [
-                                        jsx(`span`, {
-                                          className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-api`,
-                                          children: `🔐`,
-                                        }),
-                                        ` 统一 API 配置`,
-                                      ],
-                                    }),
-                                    jsx(`p`, {
-                                      className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help`,
-                                      children: `先维护供应商 Base URL 和 Key，再在下方按模型类型绑定具体调用方式。`,
-                                    }),
-                                  ],
-                                }),
+                                children: [
+                                  jsxs(`div`, {
+                                    className: `min-w-0`,
+                                    children: [
+                                      jsxs(`h2`, {
+                                        className: `font-bold text-gray-200 text-sm flex items-center gap-2 wanjuan-settings-card-title`,
+                                        children: [
+                                          jsx(`span`, {
+                                            className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-api`,
+                                            children: `🔐`,
+                                          }),
+                                          ` 统一 API 配置`,
+                                        ],
+                                      }),
+                                      jsx(`p`, {
+                                        className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help`,
+                                        children: `先维护供应商 Base URL 和 Key，再在下方按模型类型绑定具体调用方式。`,
+                                      }),
+                                    ],
+                                  }),
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    onClick: resetJixinDefaultConfiguration,
+                                    className: `shrink-0 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11px] font-semibold text-red-200 hover:bg-red-500/15 hover:border-red-400/45 hover:text-red-100 transition-colors wanjuan-settings-reset-api-button`,
+                                    title: `清除当前 API 与模型配置，恢复极鑫默认基础配置`,
+                                    children: `恢复默认配置`,
+                                  }),
+                                ],
                               }),
                               jsxs(`div`, {
                                 className: `px-4 space-y-3 pt-4`,

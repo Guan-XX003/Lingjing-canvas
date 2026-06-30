@@ -8,6 +8,14 @@ const {
   PRELOAD_CONTEXT_ISOLATED
 } = require("./runtime.cjs");
 
+const APP_VERSION = (() => {
+  try {
+    return require("../../package.json").version || "1.3.5";
+  } catch {
+    return "1.3.5";
+  }
+})();
+
 function pickStorage(keys, store) {
   if (keys == null) return { ...store };
   if (typeof keys === "string") return { [keys]: store[keys] };
@@ -37,7 +45,7 @@ function createChromeShim() {
     runtime: {
       id: "desktop",
       lastError: null,
-      getManifest: () => ({ version: "1.2.8" }),
+      getManifest: () => ({ version: APP_VERSION }),
       getURL: (p = "") => new URL(p, window.location.href).href,
       sendMessage: (_message, cb) => asyncCallback(cb, {}),
       onMessage: noopEvent

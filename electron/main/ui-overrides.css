@@ -3775,6 +3775,314 @@ html[data-wanjuan-performance-profile="performance"] .react-flow__edge .wanjuan-
   pointer-events: none;
 }
 
+.wanjuan-tianji-mode-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #333) 72%, transparent) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--wj-surface-2, #121212) 78%, var(--wj-bg, #0f0f0f) 22%) !important;
+  padding: 10px 12px !important;
+}
+
+.wanjuan-tianji-mode-row-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--wj-text, #d1d5db) !important;
+  line-height: 1.25 !important;
+}
+
+.wanjuan-tianji-mode-row-help {
+  margin-top: 3px !important;
+  font-size: 11px !important;
+  color: var(--wj-muted, #6b7280) !important;
+  line-height: 1.35 !important;
+}
+
+.wanjuan-tianji-mode-switch {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 3px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #333) 72%, transparent) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--wj-surface-2, #121212) 84%, var(--wj-bg, #0f0f0f) 16%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.wanjuan-tianji-mode-switch button {
+  height: 30px !important;
+  min-width: 84px !important;
+  padding: 0 14px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--wj-muted, #9ca3af) !important;
+  -webkit-text-fill-color: var(--wj-muted, #9ca3af) !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease !important;
+}
+
+.wanjuan-tianji-mode-switch button:not(.is-active):not([aria-pressed="true"]):hover {
+  background: var(--wj-control-hover-bg, color-mix(in srgb, var(--wj-surface-3, #2a2a2a) 88%, var(--wj-accent, #60a5fa) 12%)) !important;
+  border-color: var(--wj-control-hover-border, transparent) !important;
+  color: var(--wj-control-hover-text, var(--wj-text, #d1d5db)) !important;
+  -webkit-text-fill-color: var(--wj-control-hover-text, var(--wj-text, #d1d5db)) !important;
+}
+
+.wanjuan-tianji-mode-switch button.is-active,
+.wanjuan-tianji-mode-switch button[aria-pressed="true"] {
+  background: var(--wj-control-selected-bg, var(--wj-accent, #60a5fa)) !important;
+  background-image: var(--wj-control-selected-bg, var(--wj-accent, #60a5fa)) !important;
+  border-color: var(--wj-control-selected-border, color-mix(in srgb, var(--wj-accent, #60a5fa) 88%, var(--wj-text, #fff) 12%)) !important;
+  color: var(--wj-control-selected-text, var(--wj-on-accent, #fff)) !important;
+  -webkit-text-fill-color: var(--wj-control-selected-text, var(--wj-on-accent, #fff)) !important;
+  font-weight: 800 !important;
+  box-shadow: var(--wj-control-selected-shadow, inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 0 0 1px color-mix(in srgb, var(--wj-accent, #60a5fa) 34%, transparent)) !important;
+}
+
+.wanjuan-tianji-mode-switch button.is-active::before,
+.wanjuan-tianji-mode-switch button[aria-pressed="true"]::before {
+  content: "✓";
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  color: currentColor;
+  -webkit-text-fill-color: currentColor;
+}
+
+.wanjuan-tianji-settings-host {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-tianji-settings-host) {
+  display: none !important;
+}
+
+.wanjuan-tianji-settings-card {
+  display: block !important;
+  width: 100%;
+  height: auto !important;
+  max-height: min(620px, calc(100vh - 260px));
+  margin-top: 12px;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #333) 76%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wj-surface, #1a1a1a) 88%, var(--wj-bg, #121212) 12%);
+  color: var(--wj-text, #d1d5db);
+}
+
+.wanjuan-tianji-settings-card * {
+  box-sizing: border-box;
+}
+
+.wanjuan-tianji-settings-card[hidden] {
+  display: none !important;
+}
+
+.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-tianji-settings-card {
+  margin-top: 0;
+}
+
+.wanjuan-tianji-body {
+  display: grid !important;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.wanjuan-tianji-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.wanjuan-tianji-settings-card label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--wj-muted, #6b7280);
+  font-size: 11px;
+}
+
+.wanjuan-tianji-settings-card input,
+.wanjuan-tianji-settings-card textarea,
+.wanjuan-tianji-settings-card select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #333) 72%, transparent);
+  border-radius: 8px;
+  outline: none;
+  background: color-mix(in srgb, var(--wj-surface-2, #121212) 82%, var(--wj-bg, #0f0f0f) 18%);
+  color: var(--wj-text, #e5e7eb);
+  font-size: 12px;
+  padding: 9px 10px;
+}
+
+.wanjuan-tianji-settings-card input:focus,
+.wanjuan-tianji-settings-card textarea:focus,
+.wanjuan-tianji-settings-card select:focus {
+  border-color: color-mix(in srgb, var(--wj-accent, #60a5fa) 68%, var(--wj-border, #333));
+}
+
+.wanjuan-tianji-secret-field {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.wanjuan-tianji-secret-field input {
+  padding-right: 56px;
+}
+
+.wanjuan-tianji-secret-toggle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  height: 26px;
+  min-width: 44px;
+  padding: 0 8px !important;
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.wanjuan-tianji-settings-card textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.wanjuan-tianji-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.wanjuan-tianji-settings-card button {
+  border: 1px solid var(--wj-control-border, color-mix(in srgb, var(--wj-border, #333) 72%, transparent));
+  border-radius: 7px;
+  background: var(--wj-control-bg, color-mix(in srgb, var(--wj-surface-3, #222) 86%, transparent));
+  color: var(--wj-control-text, var(--wj-text, #d1d5db));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text, #fff) 7%, transparent);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 7px 10px;
+}
+
+.wanjuan-tianji-settings-card button:hover {
+  border-color: var(--wj-control-hover-border, color-mix(in srgb, var(--wj-accent, #60a5fa) 42%, var(--wj-border, #333) 58%));
+  background: var(--wj-control-hover-bg, color-mix(in srgb, var(--wj-accent, #60a5fa) 10%, var(--wj-surface-3, #2a2a2a)));
+  color: var(--wj-control-hover-text, var(--wj-text, #fff));
+}
+
+.wanjuan-tianji-primary {
+  border-color: var(--wj-control-primary-border, var(--wj-accent, #60a5fa)) !important;
+  background: var(--wj-control-primary-bg, var(--wj-accent, #2563eb)) !important;
+  background-image: var(--wj-control-primary-bg, var(--wj-accent, #2563eb)) !important;
+  color: var(--wj-control-primary-text, var(--wj-text, #fff)) !important;
+  box-shadow: var(--wj-control-primary-shadow, none) !important;
+}
+
+.wanjuan-tianji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.wanjuan-tianji-asset {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #2f2f2f) 72%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wj-surface, #151515) 92%, transparent);
+  padding: 6px;
+  text-align: center;
+}
+
+.wanjuan-tianji-asset.is-pending {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.wanjuan-tianji-asset img,
+.wanjuan-tianji-asset span {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--wj-surface, #0f0f0f) 90%, #000);
+}
+
+.wanjuan-tianji-asset img {
+  object-fit: cover;
+}
+
+.wanjuan-tianji-asset span {
+  display: grid;
+  place-items: center;
+  color: var(--wj-muted, #6b7280);
+  font-size: 10px;
+}
+
+.wanjuan-tianji-asset-name,
+.wanjuan-tianji-asset-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wanjuan-tianji-asset-name {
+  color: var(--wj-text, #e5e7eb);
+  font-size: 10px;
+}
+
+.wanjuan-tianji-asset-status {
+  color: var(--wj-muted, #6b7280);
+  font-size: 9px;
+}
+
+.wanjuan-tianji-asset-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.wanjuan-tianji-asset-actions button {
+  border-radius: 5px !important;
+  font-size: 9px !important;
+  padding: 4px 2px !important;
+}
+
+.wanjuan-tianji-empty {
+  border: 1px dashed color-mix(in srgb, var(--wj-border, #333) 72%, transparent);
+  border-radius: 8px;
+  color: var(--wj-muted, #6b7280);
+  font-size: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .wanjuan-tianji-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .wanjuan-seedream-official-row {
   display: flex;
   align-items: center;
@@ -5914,4 +6222,45 @@ html :is(
   color: currentColor !important;
   -webkit-text-fill-color: currentColor !important;
   stroke: currentColor !important;
+}
+
+/* Graphite workspace primary buttons should read as compact graphite pills,
+   not as washed-out white-text blocks. */
+html.theme-graphite .wanjuan-workspace-button.primary[class][class][class],
+html.theme-graphite.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-button.primary[class][class][class] {
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, #f4f6f8 0%, #d8dde3 100%) !important;
+  background-color: #d8dde3 !important;
+  background-image: linear-gradient(180deg, #f4f6f8 0%, #d8dde3 100%) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #191919 !important;
+  -webkit-text-fill-color: #191919 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 0 rgba(0, 0, 0, 0.36),
+    0 8px 18px rgba(0, 0, 0, 0.2) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+html.theme-graphite .wanjuan-workspace-button.primary[data-workspace-action="start-team"][class][class][class],
+html.theme-graphite.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-button.primary[data-workspace-action="start-team"][class][class][class] {
+  width: auto !important;
+  min-width: 132px !important;
+  max-width: calc(100% - 18px) !important;
+  align-self: center !important;
+  padding: 0 18px !important;
+}
+
+html.theme-graphite .wanjuan-workspace-button.primary:is(:hover, :focus-visible)[class][class][class],
+html.theme-graphite.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-button.primary:is(:hover, :focus-visible)[class][class][class] {
+  background: linear-gradient(180deg, #ffffff 0%, #e5e9ef 100%) !important;
+  background-color: #e5e9ef !important;
+  background-image: linear-gradient(180deg, #ffffff 0%, #e5e9ef 100%) !important;
+  border-color: rgba(255, 255, 255, 0.94) !important;
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
 }
