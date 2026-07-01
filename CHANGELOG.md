@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.6 - 2026-07-01
+
+- Hardened built-in Jixin video protocol defaults against the LConAI/Zhichuang Grok video API.
+- Normalized Grok video durations to documented values, including `grok-video-3` as 6 seconds and `grok-video-3-pro` as 10 seconds.
+- Ensured multipart video duration fields respect configured numeric field types before submission.
+- Kept Jimeng/Seedance and Tianji mode protocols unchanged.
+
 ## 1.3.5 - 2026-06-29
 
 - Added an official website button next to the in-app update checker.

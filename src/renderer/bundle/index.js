@@ -1695,7 +1695,9 @@ var TongyiWanxiangLogo = ({
                           `img-${index}`,
                         ),
                       ),
-                      selectedContextResources.map((resource, index) =>
+                      selectedContextResources
+                      .filter((resource) => !wanjuanResourceInList(resource, extractedResources.images))
+                      .map((resource, index) =>
                         jsxs(
                           `div`, {
                             className: `w-10 h-10 rounded-md overflow-hidden border border-blue-500/50 relative group bg-black`,
@@ -2698,7 +2700,9 @@ var TongyiWanxiangLogo = ({
                           `img-${index}`,
                         ),
                       ),
-                      selectedContextResources.map((resource, index) =>
+                      selectedContextResources
+                      .filter((resource) => !wanjuanResourceInList(resource, connectedContent.images))
+                      .map((resource, index) =>
                         jsxs(
                           `div`, {
                             className: `w-8 h-8 rounded overflow-hidden border border-blue-500/50 relative group bg-black`,
@@ -4588,7 +4592,11 @@ var Le = reactMemo(({
               kind: `audio`
             })),
 	          ];
-	        return allResources.map((resource) => labelResource(resource.kind || `image`, resource));
+	        return allResources.reduce((result, resource) => {
+	          if (wanjuanResourceInList(resource, result)) return result;
+	          result.push(labelResource(resource.kind || `image`, resource));
+	          return result;
+	        }, []);
 	      })(),
 	      seedanceMentionPickerResources = seedanceMentionResources;
     let seedancePortraitPickerIsTianji = seedanceModeValue === `tianji`,
@@ -5297,10 +5305,9 @@ var Le = reactMemo(({
                           `aud-${index}`,
                         ),
                       ),
-                      selectedContextResources.map((resource, index) =>
-                        isSeedanceOrWanxiang &&
-                        (contextResources.resources || []).some((item) => item.url === resource.url) ?
-                        null :
+                      selectedContextResources
+                      .filter((resource) => !wanjuanResourceInList(resource, contextResources.resources || contextResources.images))
+                      .map((resource, index) =>
                         jsxs(
                           `div`, {
                             className: `w-10 h-10 rounded-md overflow-hidden border border-blue-500/50 relative group bg-black`,
@@ -5549,7 +5556,7 @@ var Le = reactMemo(({
 	                                                        mentionToken &&
 	                                                        wanjuanLegacyMentionToken(item.mention) !==
 	                                                        wanjuanLegacyMentionToken(mentionToken) &&
-	                                                        item.url !== resource.url,
+	                                                        !wanjuanResourceSameIdentity(item, resource),
                                                       ),
                                                       {
 	                                                        ...resource,
@@ -14739,6 +14746,49 @@ function wanjuanResourceMediaUrl(resource) {
       resource?.url || resource?.imageUrl || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path || resource?.previewUrl || resource?.thumbnailUrl || ``
   );
 }
+function wanjuanNormalizeResourceSignatureValue(value) {
+  let text = String(value || ``).trim();
+  if (!text) return ``;
+  return text
+    .replace(/^asset:\/\//i, `asset://`)
+    .replace(/^file:\/\/localhost\//i, `file:///`)
+    .replace(/[?#]$/, ``);
+}
+function wanjuanResourceIdentitySignatures(resource) {
+  let signatures = new Set(),
+    addSignature = (prefix, value) => {
+      let normalized = wanjuanNormalizeResourceSignatureValue(value);
+      normalized && signatures.add(`${prefix}:${normalized}`);
+    },
+    kind = wanjuanResourceKind(resource);
+  addSignature(`kind-url-${kind}`, wanjuanResourceMediaUrl(resource));
+  [
+    resource?.url,
+    resource?.imageUrl,
+    resource?.thumbnailUrl,
+    resource?.previewUrl,
+    resource?.mediaUrl,
+    resource?.resultUrl,
+    resource?.localPath,
+    resource?.path,
+  ].forEach((value) => addSignature(`kind-media-${kind}`, value));
+  addSignature(`asset-${kind}`, resource?.seedanceAssetId || resource?.assetId);
+  addSignature(`tianji-${kind}`, resource?.tianjiPortraitAssetId || resource?.portraitAssetId);
+  addSignature(`source-${kind}`, resource?.sourceId);
+  addSignature(`id-${kind}`, resource?.id);
+  return signatures;
+}
+function wanjuanResourceSameIdentity(a, b) {
+  if (!a || !b) return !1;
+  let aSignatures = wanjuanResourceIdentitySignatures(a);
+  if (!aSignatures.size) return !1;
+  for (let signature of wanjuanResourceIdentitySignatures(b))
+    if (aSignatures.has(signature)) return !0;
+  return !1;
+}
+function wanjuanResourceInList(resource, list) {
+  return Array.isArray(list) && list.some((item) => wanjuanResourceSameIdentity(item, resource));
+}
 function wanjuanResourcePosterUrl(resource) {
   return String(resource?.thumbnailUrl || resource?.posterUrl || resource?.coverUrl || resource?.coverImageUrl || resource?.imageUrl || resource?.previewImageUrl || ``);
 }
@@ -16367,7 +16417,7 @@ const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://newapi.guancn.uk`;
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-06-29-v1`;
+const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-01-lconai-v2`;
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // OpenAI GPT 系列
   `gpt-5.5`,
@@ -16519,7 +16569,11 @@ const WANJUAN_JIXIN_BUILTIN_AUDIO_MODELS = [
   `qwen3-asr-flash-realtime`,
 ];
 const WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS = {
-  // Gemini 系列必须用 Gemini 原生协议
+  ...WANJUAN_JIXIN_BUILTIN_TEXT_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫文本兼容`,
+  }), {}),
+  // Gemini 系列按智创文档建议使用 Generate Content 协议
   [`gemini-3-pro`]: `Gemini 文本原生`,
   [`gemini-3.1-pro-preview`]: `Gemini 文本原生`,
   [`gemini-2.5-pro`]: `Gemini 文本原生`,
@@ -16553,7 +16607,61 @@ const WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS = {
   // Kling Image
   [`kling-image`]: `极鑫图片兼容`,
 };
+const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
+  ...WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: /^grok-/i.test(model) ? `极鑫 Grok 视频兼容` : `极鑫 Veo/Omni 视频兼容`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫通义万相文生视频`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_REFERENCE_IMAGE_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫通义万相参考图视频`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_IMAGE_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫通义万相图生视频`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_EDIT_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫通义万相视频编辑`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫视频兼容`,
+  }), {}),
+};
+const WANJUAN_JIXIN_BUILTIN_AUDIO_PROTOCOL_BINDINGS = {
+  ...WANJUAN_JIXIN_BUILTIN_AUDIO_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: /(?:whisper|asr|transcrib)/i.test(model) ? `极鑫音频转写兼容` : `极鑫 TTS 兼容`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_MUSIC_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫 Suno 音乐生成`,
+  }), {}),
+};
 const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
+  [`极鑫文本兼容`]: {
+    category: `text`,
+    requestType: `openai-chat`,
+    submitPath: `/v1/chat/completions`,
+    contentType: `application/json`,
+    fieldMapping: {
+      model: `model`,
+      messages: `messages`,
+      temperature: `temperature`,
+      responseFormat: `response_format`,
+    },
+    fieldValueTypes: {
+      temperature: `number`,
+    },
+    responseMapping: {
+      text: [`choices.0.message.content`, `output_text`, `text`],
+    },
+  },
   [`极鑫图片兼容`]: {
     category: `image`,
     requestType: `openai-images`,
@@ -16566,7 +16674,7 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       size: `size`,
       aspectRatio: ``,
       responseFormat: ``,
-      referenceImage: `image`,
+      referenceImage: `image[{index}]`,
     },
     fieldValueTypes: {
       n: `number`,
@@ -16629,6 +16737,187 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       status: [`status`, `data.status`, `state`],
     },
   },
+  [`极鑫 Veo/Omni 视频兼容`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `size`,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+      referenceVideo: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `number`,
+      size: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `dimension`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫 Grok 视频兼容`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `size`,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `number`,
+      size: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `aspect-ratio`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫通义万相文生视频`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    omitDuration: !1,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `size`,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: ``,
+      referenceVideo: ``,
+    },
+    fieldValueTypes: {
+      seconds: `number`,
+      size: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `aspect-ratio`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫通义万相参考图视频`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    requiresReferenceImage: !0,
+    referenceImageMode: `url`,
+    referenceVideoMode: `url`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `size`,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+      referenceVideo: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `string`,
+      size: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `aspect-ratio`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫通义万相图生视频`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    requiresReferenceImage: !0,
+    referenceImageMode: `url`,
+    referenceVideoMode: `url`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: ``,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+      referenceVideo: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `omit`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫通义万相视频编辑`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    requiresReferenceVideo: !0,
+    referenceImageMode: `url`,
+    referenceVideoMode: `url`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: ``,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+      referenceVideo: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `omit`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
   [`极鑫 Suno 音乐生成`]: {
     category: `music`,
     requestType: `suno-music`,
@@ -16643,6 +16932,40 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       audio: [`data.clips.0.audio_url`, `data.clips.0.audioUrl`, `data.0.audio_url`, `data.0.audioUrl`, `audio_url`, `url`],
       taskId: [`data`, `id`, `task_id`, `data.id`, `data.task_id`],
       status: [`data.status`, `status`],
+    },
+  },
+  [`极鑫音频转写兼容`]: {
+    category: `audio`,
+    requestType: `openai-audio-transcription`,
+    submitPath: `/v1/audio/transcriptions`,
+    fieldMapping: {
+      file: `file`,
+      model: `model`,
+      prompt: `prompt`,
+      responseFormat: `response_format`,
+      timestampGranularity: `timestamp_granularities[]`,
+    },
+    responseMapping: {
+      text: [`text`, `data.text`],
+      words: `words`,
+    },
+  },
+  [`极鑫 TTS 兼容`]: {
+    category: `audio`,
+    requestType: `openai-audio-speech`,
+    submitPath: `/v1/audio/speech`,
+    contentType: `application/json`,
+    fieldMapping: {
+      model: `model`,
+      input: `input`,
+      voice: `voice`,
+      format: `response_format`,
+      speed: `speed`,
+      instructions: `instructions`,
+      referenceAudio: ``,
+    },
+    fieldValueTypes: {
+      speed: `number`,
     },
   },
 };
@@ -16675,6 +16998,17 @@ const wanjuanMergeObjectDefaults = (target = {}, defaults = {}) => ({
   ...(defaults || {}),
   ...(target && typeof target == `object` ? target : {}),
 });
+const wanjuanMergeJixinVideoProtocolDefaults = (target = {}, defaults = {}) => {
+  let result = target && typeof target == `object` ? {
+      ...target
+    } : {},
+    replaceableBindings = new Set([`极鑫视频兼容`, `智创聚合视频统一`, `智创聚合视频 JSON`, `表单视频兼容`, `OpenAI 视频兼容`]);
+  Object.entries(defaults || {}).forEach(([model, protocolName]) => {
+    let current = result[model];
+    if (!current || replaceableBindings.has(current)) result[model] = protocolName;
+  });
+  return result;
+};
 const wanjuanGetJixinDefaultApiConfigId = (settings = {}) => {
   let apiConfigs = Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [],
     jixinConfig =
@@ -16732,14 +17066,52 @@ const wanjuanBuildJixinAudioModelBindings = (apiConfigId = WANJUAN_JIXIN_DEFAULT
     apiConfigId,
   );
 const wanjuanBuildJixinVideoProtocolBindings = () =>
-  [
-    ...WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS,
-    ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_MODELS,
-    ...WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS,
-  ].reduce((bindings, model) => ({
-    ...bindings,
-    [model]: `极鑫视频兼容`,
-  }), {});
+  ({
+    ...WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS,
+  });
+const wanjuanBuildJixinAudioProtocolBindings = () =>
+  ({
+    ...WANJUAN_JIXIN_BUILTIN_AUDIO_PROTOCOL_BINDINGS,
+  });
+const wanjuanApplyJixinBuiltinProtocolPatch = (settings = {}) => {
+  let nextSettings = {
+      ...settings,
+      modelProtocolRegistry: {
+        ...(settings.modelProtocolRegistry && typeof settings.modelProtocolRegistry == `object` ? settings.modelProtocolRegistry : {}),
+        ...WANJUAN_JIXIN_BUILTIN_PROTOCOLS,
+      },
+      textModelProtocolBindings: wanjuanMergeObjectDefaults(settings.textModelProtocolBindings, WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS),
+      imageModelProtocolBindings: wanjuanMergeObjectDefaults(settings.imageModelProtocolBindings, WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS),
+      videoModelProtocolBindings: wanjuanMergeJixinVideoProtocolDefaults(
+        settings.videoModelProtocolBindings,
+        wanjuanBuildJixinVideoProtocolBindings(),
+      ),
+      audioModelProtocolBindings: wanjuanMergeObjectDefaults(
+        settings.audioModelProtocolBindings,
+        wanjuanBuildJixinAudioProtocolBindings(),
+      ),
+    },
+    apiConfigId = wanjuanGetJixinDefaultApiConfigId(nextSettings);
+  return {
+    ...nextSettings,
+    textModelApiBindings: wanjuanMergeObjectDefaults(
+      nextSettings.textModelApiBindings,
+      wanjuanBuildJixinModelBindings(WANJUAN_JIXIN_BUILTIN_TEXT_MODELS, apiConfigId),
+    ),
+    imageModelApiBindings: wanjuanMergeObjectDefaults(
+      nextSettings.imageModelApiBindings,
+      wanjuanBuildJixinModelBindings(WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS, apiConfigId),
+    ),
+    videoModelApiBindings: wanjuanMergeObjectDefaults(
+      nextSettings.videoModelApiBindings,
+      wanjuanBuildJixinVideoModelBindings(apiConfigId),
+    ),
+    audioModelApiBindings: wanjuanMergeObjectDefaults(
+      nextSettings.audioModelApiBindings,
+      wanjuanBuildJixinAudioModelBindings(apiConfigId),
+    ),
+  };
+};
 const wanjuanHasUserModelConfiguration = (settings = {}) => {
   let hasModelText = [
       `textModel`,
@@ -16858,12 +17230,12 @@ const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
     audioModelApiBindings: wanjuanMergeObjectDefaults(source.audioModelApiBindings, audioBindings),
     textModelProtocolBindings: wanjuanMergeObjectDefaults(source.textModelProtocolBindings, WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS),
     imageModelProtocolBindings: wanjuanMergeObjectDefaults(source.imageModelProtocolBindings, WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS),
-    videoModelProtocolBindings: wanjuanMergeObjectDefaults(
+    videoModelProtocolBindings: wanjuanMergeJixinVideoProtocolDefaults(
       source.videoModelProtocolBindings,
       wanjuanBuildJixinVideoProtocolBindings(),
     ),
     audioModelProtocolBindings: wanjuanMergeObjectDefaults(source.audioModelProtocolBindings, {
-      suno_music: `极鑫 Suno 音乐生成`,
+      ...wanjuanBuildJixinAudioProtocolBindings(),
     }),
   };
 };
@@ -16881,6 +17253,28 @@ const wanjuanBuildJixinBuiltinStoredGlobalConfig = (config) => ({
     configButlerTargetApiConfigId: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
   },
 });
+const wanjuanSyncJixinBuiltinStoredGlobalConfig = (settings = {}) => {
+  let currentConfigs = Array.isArray(settings.storedGlobalConfigs) ? settings.storedGlobalConfigs : [],
+    builtinConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(wanjuanBuildJixinBuiltinBasePatch(settings)),
+    found = !1,
+    nextConfigs = currentConfigs.map((config) => {
+      if (config?.id !== WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID) return config;
+      found = !0;
+      return {
+        ...config,
+        ...builtinConfig,
+        name: config.name || builtinConfig.name,
+        description: builtinConfig.description,
+        updatedAt: builtinConfig.updatedAt,
+      };
+    });
+  found || nextConfigs.unshift(builtinConfig);
+  return {
+    ...settings,
+    storedGlobalConfigs: nextConfigs,
+    activeStoredGlobalConfigId: settings.activeStoredGlobalConfigId || builtinConfig.id,
+  };
+};
 const WANJUAN_BUILTIN_AGENT_ITEMS = [{
     id: `agent-seedance-prompt-optimizer`,
     name: `seedance提示词优化师`,
@@ -23980,7 +24374,8 @@ ${combinedPrompt}`,
 	                    })),
 	                  modelConfig.category === `video` &&
 	                  /^grok-(?:video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
-	                  /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl) &&
+	                  (/^https?:\/\/newapi\.guancn\.uk/i.test(apiUrl) ||
+	                    /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl)) &&
 	                  ((requestProfile.requestType = `multipart-video`),
 	          (requestProfile.submitPath = `/v1/videos`),
 	          (requestProfile.pollPath = `/v1/videos/{taskId}`),
@@ -23988,7 +24383,6 @@ ${combinedPrompt}`,
 	          delete requestProfile.referenceImageMode,
 	          delete requestProfile.referenceImageAsArray,
 	          delete requestProfile.referenceImageItemShape,
-	          (requestProfile.requiresReferenceImage = !0),
                     (requestProfile.fieldMapping = {
                       ...(requestProfile.fieldMapping || {}),
                       prompt: `prompt`,
@@ -24054,12 +24448,14 @@ ${combinedPrompt}`,
                 apiUrl: videoBaseUrl,
                 category: `video`,
               }),
-              effectiveFieldMapping = {
+	              effectiveFieldMapping = {
                 ...multipartFieldMapping,
                 ...(effectiveVideoRequestProfile?.fieldMapping || {}),
 	              },
 	              referenceImagesAsUrls =
 	              effectiveVideoRequestProfile?.referenceImageMode === `url`,
+	              referenceVideosAsUrls =
+	              effectiveVideoRequestProfile?.referenceVideoMode === `url`,
               referenceImagesAsArray =
               effectiveVideoRequestProfile?.referenceImageAsArray === !0,
               requiresReferenceImage =
@@ -24298,15 +24694,33 @@ ${combinedPrompt}`,
                     videoParameterAdapter.aspectRatioValueCase,
                   );
               },
-              durationValue =
-              duration ||
-              (g || `10`)
-              .split(
-                `
-	`,
-              )[0]
-              .trim();
-            if (requestType === `json-video` || requestType === `openai-video`) {
+	              durationValue =
+	              duration ||
+	              (g || `10`)
+	              .split(
+	                `
+		`,
+	              )[0]
+	              .trim();
+	            const normalizeGrokVideoDuration = (model, value) => {
+	              let modelText = String(model || ``).trim().toLowerCase();
+	              if (!/^grok-(?:video|imagine)/i.test(modelText)) return value;
+	              if (modelText === `grok-video-3`) return `6`;
+	              if (modelText === `grok-video-3-pro`) return `10`;
+	              if (modelText === `grok-video-3-max`) {
+	                let numericValue = Number(value);
+	                return Number.isFinite(numericValue) && numericValue > 0 ?
+	                  String(Math.round(numericValue)) :
+	                  `10`;
+	              }
+	              if (/grok-imagine-video-1\.5-preview/i.test(modelText)) return `15`;
+	              let numericValue = Number(value);
+	              return Number.isFinite(numericValue) && numericValue > 0 ?
+	                String(Math.round(numericValue)) :
+	                value;
+	            };
+	            durationValue = normalizeGrokVideoDuration(modelName, durationValue);
+	            if (requestType === `json-video` || requestType === `openai-video`) {
               let isVeoModel = /^veo/i.test(modelName) && !isLconaiVideoApi,
                 jsonBody = {
                   model: modelName,
@@ -24770,11 +25184,14 @@ ${combinedPrompt}`,
                     aspectRatioValue,
                   );
               })();
-            if (
-              (effectiveVideoRequestProfile?.omitDuration === !0 ||
-                formData.append(effectiveFieldMapping.duration || `seconds`, durationValue),
-                imageReferences.length > 0)
-            )
+	            if (
+	              (effectiveVideoRequestProfile?.omitDuration === !0 ||
+	                (() => {
+	                  let durationField = effectiveFieldMapping.duration || `seconds`;
+	                  formData.append(durationField, getFieldValue(durationField, durationValue));
+	                })(),
+	                imageReferences.length > 0)
+	            )
               if (referenceImagesAsUrls) {
                 for (let index = 0; index < imageReferences.length; index++) {
                   let referenceImageUrl = await uploadReferenceMediaForUrlOnlyModel(imageReferences[index], `image`);
@@ -24820,35 +25237,46 @@ ${combinedPrompt}`,
                   }
                 }
             if (videoReferences.length > 0)
-              for (let index = 0; index < videoReferences.length; index++) {
-                let dataUrl = videoReferences[index];
-                try {
-                  let base64Data = dataUrl.split(`,`)[1],
-                    mimeType = dataUrl.split(`,`)[0].split(`:`)[1].split(`;`)[0],
-                    binaryString = atob(base64Data),
-                    arrayBuffer = new ArrayBuffer(binaryString.length),
-                    byteArray = new Uint8Array(arrayBuffer);
-                  for (let index2 = 0; index2 < binaryString.length; index2++) byteArray[index2] = binaryString.charCodeAt(index2);
-                  let videoBlob = new Blob([arrayBuffer], {
-                      type: mimeType
-                    }),
-                    fileExtension = `mp4`;
-                  (mimeType === `video/webm` && (fileExtension = `webm`),
+              if (referenceVideosAsUrls) {
+                for (let index = 0; index < videoReferences.length; index++) {
+                  let referenceVideoUrl = await uploadReferenceMediaForUrlOnlyModel(videoReferences[index], `video`);
+                  referenceVideoUrl &&
+                    formData.append(
+                      effectiveFieldMapping.referenceVideo ||
+                      `input_video`,
+                      referenceVideoUrl,
+                    );
+                }
+              } else
+                for (let index = 0; index < videoReferences.length; index++) {
+                  let dataUrl = videoReferences[index];
+                  try {
+                    let base64Data = dataUrl.split(`,`)[1],
+                      mimeType = dataUrl.split(`,`)[0].split(`:`)[1].split(`;`)[0],
+                      binaryString = atob(base64Data),
+                      arrayBuffer = new ArrayBuffer(binaryString.length),
+                      byteArray = new Uint8Array(arrayBuffer);
+                    for (let index2 = 0; index2 < binaryString.length; index2++) byteArray[index2] = binaryString.charCodeAt(index2);
+                    let videoBlob = new Blob([arrayBuffer], {
+                        type: mimeType
+                      }),
+                      fileExtension = `mp4`;
+                    (mimeType === `video/webm` && (fileExtension = `webm`),
+                      formData.append(
+                        effectiveFieldMapping.referenceVideo || `input_video`,
+                        videoBlob,
+                        `reference_video_${index + 1}.${fileExtension}`,
+                      ));
+                  } catch (error) {
+                    console.error(`Error processing reference video:`, error);
+                    let videoBlob = await (await fetch(dataUrl)).blob();
                     formData.append(
                       effectiveFieldMapping.referenceVideo || `input_video`,
                       videoBlob,
-                      `reference_video_${index + 1}.${fileExtension}`,
-                    ));
-                } catch (error) {
-                  console.error(`Error processing reference video:`, error);
-                  let videoBlob = await (await fetch(dataUrl)).blob();
-                  formData.append(
-                    effectiveFieldMapping.referenceVideo || `input_video`,
-                    videoBlob,
-                    `reference_video_${index + 1}.mp4`,
-                  );
+                      `reference_video_${index + 1}.mp4`,
+                    );
+                  }
                 }
-              }
             console.info(
               `Sending Multipart Video API request info: ${safeStringifyRequestForLog({
                 modelName: modelName,
@@ -24910,7 +25338,7 @@ ${combinedPrompt}`,
                   thumbnailUrl: ``,
                 };
               },
-              normalizeGenericVideoResult = async (taskResult, taskId = taskId) => {
+              normalizeGenericVideoResult = async (taskResult, taskIdForContent = taskId) => {
                   // 数据驱动优先：若协议 responseMapping 配了视频结果路径(videoUrl/video_url/url/resultUrl 任一)，
                   // 先按协议路径取;取不到再回退下面的硬编码字段瀑布(保证未配协议的旧中转站仍可用)。
                   let readRespPath = (source, path) => {
@@ -24947,7 +25375,7 @@ ${combinedPrompt}`,
                     await fetchVideoByFileId(fileId) :
                     !videoUrl && contentPathTemplate ?
                     {
-                      videoUrl: await fetchVideoContentUrlByTaskId(taskId, contentPathTemplate),
+                      videoUrl: await fetchVideoContentUrlByTaskId(taskIdForContent, contentPathTemplate),
                       thumbnailUrl: thumbnailUrl,
                     } :
                     {
@@ -31346,6 +31774,7 @@ function St() {
   })),
   [protocolNamesText, setProtocolNamesText] = useState(
     `Gemini 文本原生
+极鑫文本兼容
 OpenAI Chat 原生
 OpenAI Responses 原生
 Gemini 图片原生
@@ -31357,11 +31786,19 @@ OpenAI 视频兼容
 表单视频兼容
 智创聚合视频统一
 智创聚合视频 JSON
+极鑫 Veo/Omni 视频兼容
+极鑫 Grok 视频兼容
+极鑫通义万相文生视频
+极鑫通义万相参考图视频
+极鑫通义万相图生视频
+极鑫通义万相视频编辑
 MiniMax 视频原生
 Seedance 视频原生
 OpenAI 音频转写原生
 智创聚合音频转写
+极鑫音频转写兼容
 OpenAI TTS 原生
+极鑫 TTS 兼容
 Suno 音乐生成`,
   ),
   [activeProtocolName, setActiveProtocolName] = useState(
@@ -31547,9 +31984,8 @@ time=1h`,
   })),
 	  [videoModelProtocolBindings, setVideoModelProtocolBindings] = useState(() =>
 	    wanjuanBuildJixinVideoProtocolBindings(), ),
-	  [audioModelProtocolBindings, setAudioModelProtocolBindings] = useState(() => ({
-	    suno_music: `极鑫 Suno 音乐生成`,
-	  }), ),
+	  [audioModelProtocolBindings, setAudioModelProtocolBindings] = useState(() =>
+	    wanjuanBuildJixinAudioProtocolBindings(), ),
 	  [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
 	  [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
   [$, setIsReady] = useState(!1),
@@ -36400,19 +36836,18 @@ ${docText}`;
                         settings.selectedAgentId = WANJUAN_BUILTIN_AGENT_ITEMS[0]?.id || ``;
                         settings.agentConversations = wanjuanCloneBuiltinAgentConversations();
                       }
-	                    } else settings = {
-	                      ...settings,
-	                      jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,
-	                    };
+		                    } else settings = wanjuanSyncJixinBuiltinStoredGlobalConfig({
+		                      ...wanjuanApplyJixinBuiltinProtocolPatch(settings),
+		                      jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,
+		                    });
                     if (typeof chrome < `u`) {
                       let storagePatch = {
                         jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,
                       };
-                      shouldSeedJixinBuiltinConfig &&
-                        Object.assign(storagePatch, {
-                          apiConfigs: settings.apiConfigs,
-                          textApiConfigId: settings.textApiConfigId,
-                          imageApiConfigId: settings.imageApiConfigId,
+	                      Object.assign(storagePatch, shouldSeedJixinBuiltinConfig ? {
+	                          apiConfigs: settings.apiConfigs,
+	                          textApiConfigId: settings.textApiConfigId,
+	                          imageApiConfigId: settings.imageApiConfigId,
                           videoApiConfigId: settings.videoApiConfigId,
                           audioApiConfigId: settings.audioApiConfigId,
                           textApiUrl: settings.textApiUrl,
@@ -36445,9 +36880,21 @@ ${docText}`;
                           videoModelProtocolBindings: settings.videoModelProtocolBindings,
                           audioModelApiBindings: settings.audioModelApiBindings,
                           audioModelProtocolBindings: settings.audioModelProtocolBindings,
-                          storedGlobalConfigs: settings.storedGlobalConfigs,
-                          activeStoredGlobalConfigId: settings.activeStoredGlobalConfigId,
-                        });
+	                          storedGlobalConfigs: settings.storedGlobalConfigs,
+	                          activeStoredGlobalConfigId: settings.activeStoredGlobalConfigId,
+	                        } : {
+	                          modelProtocolRegistry: settings.modelProtocolRegistry,
+	                          textModelApiBindings: settings.textModelApiBindings,
+	                          textModelProtocolBindings: settings.textModelProtocolBindings,
+	                          imageModelApiBindings: settings.imageModelApiBindings,
+	                          imageModelProtocolBindings: settings.imageModelProtocolBindings,
+	                          videoModelApiBindings: settings.videoModelApiBindings,
+	                          videoModelProtocolBindings: settings.videoModelProtocolBindings,
+	                          audioModelApiBindings: settings.audioModelApiBindings,
+	                          audioModelProtocolBindings: settings.audioModelProtocolBindings,
+	                          storedGlobalConfigs: settings.storedGlobalConfigs,
+	                          activeStoredGlobalConfigId: settings.activeStoredGlobalConfigId,
+	                        });
                       shouldSeedBuiltinAgents &&
                         Object.assign(storagePatch, {
                           agents: settings.agents,
