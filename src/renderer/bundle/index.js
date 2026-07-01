@@ -16417,7 +16417,7 @@ const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://newapi.guancn.uk`;
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-01-lconai-v2`;
+const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-01-lconai-v3`;
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // OpenAI GPT 系列
   `gpt-5.5`,
@@ -16459,6 +16459,7 @@ const WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS = [
   // Grok Image 系列
   `grok-4.2-image`,
   `grok-4.1-image`,
+  `grok-4-1-image`,
   `grok-imagine-image-pro`,
   `grok-imagine-image`,
   // Qwen Image 系列
@@ -16479,9 +16480,9 @@ const WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS = [
   `veo3.1`,
   `veo3.1-pro`,
   `veo3.1-fast`,
-  `veo3.1-landscape`,
-  `veo3.1-landscape-4k`,
-  `veo3.1-landscape-hd`,
+	  `veo3.1-landscape`,
+	  `veo3.1-landscape-4k`,
+	  `veo3.1-landscape-hd`,
   `veo3.1-portrait`,
   `veo3.1-portrait-4k`,
   `veo3.1-portrait-hd`,
@@ -16490,6 +16491,8 @@ const WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS = [
   `grok-video-3-pro`,
   `grok-video-3-max`,
   `grok-video-4.2`,
+  // Sora-2 系列
+  `sora_video2`,
 ];
 const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS = [
   `wan2.7-t2v-1080P`,
@@ -16577,6 +16580,11 @@ const WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS = {
   [`gemini-3-pro`]: `Gemini 文本原生`,
   [`gemini-3.1-pro-preview`]: `Gemini 文本原生`,
   [`gemini-2.5-pro`]: `Gemini 文本原生`,
+  // Claude 系列按智创文档使用 Messages 协议
+  [`claude-opus-4-8`]: `极鑫 Claude Messages 兼容`,
+  [`claude-opus-4-7`]: `极鑫 Claude Messages 兼容`,
+  [`claude-sonnet-4-6`]: `极鑫 Claude Messages 兼容`,
+  [`claude-sonnet-4-5`]: `极鑫 Claude Messages 兼容`,
 };
 const WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS = {
   // GPT Image 系列
@@ -16593,6 +16601,7 @@ const WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS = {
   // Grok Image 系列
   [`grok-4.2-image`]: `极鑫图片兼容`,
   [`grok-4.1-image`]: `极鑫图片兼容`,
+  [`grok-4-1-image`]: `极鑫 Grok 图片兼容`,
   [`grok-imagine-image-pro`]: `极鑫图片兼容`,
   [`grok-imagine-image`]: `极鑫图片兼容`,
   // Qwen Image 系列
@@ -16612,6 +16621,8 @@ const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
     ...bindings,
     [model]: /^grok-/i.test(model) ? `极鑫 Grok 视频兼容` : `极鑫 Veo/Omni 视频兼容`,
   }), {}),
+  [`sora_video2`]: `极鑫 Sora 视频兼容`,
+  [`sora-video2`]: `极鑫 Sora 视频兼容`,
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS.reduce((bindings, model) => ({
     ...bindings,
     [model]: `极鑫通义万相文生视频`,
@@ -16662,6 +16673,29 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       text: [`choices.0.message.content`, `output_text`, `text`],
     },
   },
+  [`极鑫 Claude Messages 兼容`]: {
+    category: `text`,
+    requestType: `claude-messages`,
+    submitPath: `/v1/messages`,
+    contentType: `application/json`,
+    fieldMapping: {
+      model: `model`,
+      messages: `messages`,
+      system: `system`,
+      temperature: `temperature`,
+      maxTokens: `max_tokens`,
+    },
+    fieldValueTypes: {
+      temperature: `number`,
+      max_tokens: `number`,
+    },
+    extraBody: {
+      max_tokens: 4096,
+    },
+    responseMapping: {
+      text: [`content.0.text`, `content.1.text`, `text`, `completion`],
+    },
+  },
   [`极鑫图片兼容`]: {
     category: `image`,
     requestType: `openai-images`,
@@ -16683,6 +16717,42 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
     parameterAdapter: {
       sizeValueMode: `dimension`,
       aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      image: [`data.0.url`, `data.0.b64_json`, `data.0.download_url`, `data.0.image_url`, `url`, `image_url`],
+    },
+  },
+  [`极鑫 Grok 图片兼容`]: {
+    category: `image`,
+    requestType: `openai-images`,
+    submitPath: `/v1/images/generations`,
+    editPath: `/v1/images/edits`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      count: `n`,
+      size: `size`,
+      aspectRatio: ``,
+      responseFormat: `response_format`,
+      referenceImage: `image[{index}]`,
+    },
+    fieldValueTypes: {
+      n: `number`,
+      size: `string`,
+      response_format: `string`,
+    },
+    parameterAdapter: {
+      sizeValueMode: `dimension`,
+      aspectRatioValueMode: `omit`,
+      sizeValueMap: {
+        [`1024x1024`]: `1024x1024`,
+        [`1280x720`]: `1280x720`,
+        [`720x1280`]: `720x1280`,
+        [`1536x1024`]: `1168x784`,
+        [`1024x1536`]: `784x1168`,
+        [`1280x960`]: `960x720`,
+        [`960x1280`]: `720x960`,
+      },
     },
     responseMapping: {
       image: [`data.0.url`, `data.0.b64_json`, `data.0.download_url`, `data.0.image_url`, `url`, `image_url`],
@@ -16785,6 +16855,35 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
     },
     parameterAdapter: {
       resolutionValueMode: `aspect-ratio`,
+      aspectRatioValueMode: `omit`,
+    },
+    responseMapping: {
+      video: [`video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+    },
+  },
+  [`极鑫 Sora 视频兼容`]: {
+    category: `video`,
+    requestType: `multipart-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `size`,
+      aspectRatio: ``,
+      duration: `seconds`,
+      referenceImage: `input_reference`,
+      referenceVideo: `input_reference`,
+    },
+    fieldValueTypes: {
+      seconds: `number`,
+      size: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `dimension`,
       aspectRatioValueMode: `omit`,
     },
     responseMapping: {
@@ -21100,12 +21199,18 @@ ${combinedPrompt}`,
 		                    imageParameterAdapter.sizeValueMode ||
 		                    ``,
 			                  ).trim().toLowerCase();
-			                  if (sizeValueMode === `none` || sizeValueMode === `omit`) return ``;
-			                  if (isImageResolutionMode) return openAiImageSize;
-			                  if (sizeValueMode === `preset` || sizeValueMode === `quality` || sizeValueMode === `quality-preset`)
-			                    return imagePresetSizeValue();
-		                  if (sizeValueMode === `dimension` || sizeValueMode === `dimensions` || sizeValueMode === `width-height`)
-		                    return openAiImageSize;
+			                if (sizeValueMode === `none` || sizeValueMode === `omit`) return ``;
+			                if (isImageResolutionMode) return openAiImageSize;
+			                if (sizeValueMode === `preset` || sizeValueMode === `quality` || sizeValueMode === `quality-preset`)
+			                  return imagePresetSizeValue();
+			                if (sizeValueMode === `dimension` || sizeValueMode === `dimensions` || sizeValueMode === `width-height`)
+			                  return applyProtocolParameterCase(
+			                    mapProtocolParameterValue(
+			                      openAiImageSize,
+			                      imageProtocolProfile.sizeValueMap || imageParameterAdapter.sizeValueMap,
+			                    ),
+			                    imageProtocolProfile.sizeValueCase || imageParameterAdapter.sizeValueCase,
+			                  );
 		                  if (sizeValueMode === `aspect-ratio` || sizeValueMode === `ratio`) return imageAspectRatioValue();
 		                  if (
 			                    !isImageResolutionMode &&
@@ -26251,11 +26356,13 @@ ${combinedPrompt}`,
                 ),
 	                requestEndpoint = endpointOverride ?
 	                endpointOverride :
-	                textRequestProtocol === `gemini-generate-content` ?
-	                `/v1beta/models/${encodeURIComponent(textModelName)}:generateContent` :
-	                textRequestProtocol === `openai-responses` ?
-	                `/v1/responses` :
-	                `/v1/chat/completions`,
+		                textRequestProtocol === `gemini-generate-content` ?
+		                `/v1beta/models/${encodeURIComponent(textModelName)}:generateContent` :
+		                textRequestProtocol === `openai-responses` ?
+		                `/v1/responses` :
+		                textRequestProtocol === `claude-messages` ?
+		                `/v1/messages` :
+		                `/v1/chat/completions`,
                 isGeminiProtocol =
                 textRequestProtocol === `gemini-generate-content` ||
                 /generatecontent/i.test(requestEndpoint),
@@ -26271,10 +26378,46 @@ ${combinedPrompt}`,
 `)}`;
 		                    return (
 			                      putTextProtocolField(textProtocolFieldMapping.model, requestBody, textModelName),
-			                      textRequestProtocol === `openai-responses` ?
-			                      putTextProtocolField(textProtocolFieldMapping.input, requestBody, messages2) :
-			                      textRequestProtocol === `openai-chat` ?
-			                      putTextProtocolField(textProtocolFieldMapping.messages, requestBody, messages2) :
+				                      textRequestProtocol === `openai-responses` ?
+				                      putTextProtocolField(textProtocolFieldMapping.input, requestBody, messages2) :
+				                      textRequestProtocol === `claude-messages` ?
+				                      (() => {
+				                        let systemMessage = messages2.find((message) => message.role === `system`)?.content;
+				                        systemMessage && putTextProtocolField(textProtocolFieldMapping.system, requestBody, systemMessage);
+				                        putTextProtocolField(
+				                          textProtocolFieldMapping.messages,
+				                          requestBody,
+				                          messages2
+				                            .filter((message) => message.role !== `system`)
+				                            .map((message) => ({
+				                              role: message.role === `assistant` ? `assistant` : `user`,
+				                              content: Array.isArray(message.content) ?
+				                                message.content.map((part) =>
+				                                  part?.type === `image_url` ?
+				                                  {
+				                                    type: `image`,
+				                                    source: {
+				                                      type: `base64`,
+				                                      media_type: String(part.image_url?.url || ``).match(/^data:([^;]+);base64,/)?.[1] || `image/jpeg`,
+				                                      data: String(part.image_url?.url || ``).replace(/^data:[^;]+;base64,/, ``),
+				                                    },
+				                                  } :
+				                                  part?.type === `text` ?
+				                                  {
+				                                    type: `text`,
+				                                    text: part.text || ` `
+				                                  } :
+				                                  {
+				                                    type: `text`,
+				                                    text: JSON.stringify(part)
+				                                  },
+				                                ) :
+				                                String(message.content || ` `),
+				                            })),
+				                        );
+				                      })() :
+				                      textRequestProtocol === `openai-chat` ?
+				                      putTextProtocolField(textProtocolFieldMapping.messages, requestBody, messages2) :
 			                      (textProtocolProfile.fieldMapping?.messages ||
 			                        (!textProtocolProfile.fieldMapping?.prompt &&
 			                          !textProtocolProfile.fieldMapping?.input)) &&
@@ -26285,7 +26428,8 @@ ${combinedPrompt}`,
 			                      textRequestProtocol !== `openai-responses` &&
 			                      putTextProtocolField(textProtocolFieldMapping.input, requestBody, inputText || textContent || ` `),
 	                      putTextProtocolField(textProtocolFieldMapping.temperature, requestBody, 0.7),
-	                      i &&
+		                      textRequestProtocol !== `claude-messages` &&
+		                      i &&
 	                      !(
 	                        textModelName.toLowerCase().includes(`deepseek`) ||
 	                        textModelName.toLowerCase().includes(`claude`)
@@ -33609,10 +33753,14 @@ time=${normalizedTtl}`,
           "gemini-image": `gemini-generate-content`,
           "gemini-text": `gemini-generate-content`,
           "openai-chat-completions": `openai-chat`,
-          "chat-completions": `openai-chat`,
-          "chat-completion": `openai-chat`,
-          "chat": `openai-chat`,
-          "openai-response": `openai-responses`,
+	          "chat-completions": `openai-chat`,
+	          "chat-completion": `openai-chat`,
+	          "chat": `openai-chat`,
+	          "claude": `claude-messages`,
+	          "anthropic": `claude-messages`,
+	          "anthropic-messages": `claude-messages`,
+	          "claude-messages-api": `claude-messages`,
+	          "openai-response": `openai-responses`,
           "openai-responses-api": `openai-responses`,
           "responses-api": `openai-responses`,
           "responses": `openai-responses`,
@@ -33984,9 +34132,10 @@ time=${normalizedTtl}`,
     inferProtocolDisplayName = (model) => {
       let requestType = String(model?.requestType || ``).trim(),
         labelMap = {
-          "gemini-generate-content": `Gemini 原生`,
-          "openai-chat": `OpenAI Chat 原生`,
-          "openai-responses": `OpenAI Responses 原生`,
+	          "gemini-generate-content": `Gemini 原生`,
+	          "openai-chat": `OpenAI Chat 原生`,
+	          "claude-messages": `Claude Messages 原生`,
+	          "openai-responses": `OpenAI Responses 原生`,
           "openai-images": `OpenAI 图片原生`,
           "gpt-image-2-async": `OpenAI 图片异步兼容`,
           "vectorengine-image-generation": `向量引擎图片原生`,
@@ -34008,8 +34157,9 @@ time=${normalizedTtl}`,
       let requestType = String(model?.requestType || ``).trim(),
         category = String(model?.category || ``).trim(),
         labelMap = {
-          "openai-chat": `OpenAI Chat 原生`,
-          "openai-responses": `OpenAI Responses 原生`,
+	          "openai-chat": `OpenAI Chat 原生`,
+	          "claude-messages": `Claude Messages 原生`,
+	          "openai-responses": `OpenAI Responses 原生`,
           "openai-images": `OpenAI 图片原生`,
           "gpt-image-2-async": `OpenAI 图片异步兼容`,
           "vectorengine-image-generation": `Ark 图片原生`,
@@ -34511,7 +34661,7 @@ ${curlText}`,
             trimValue(config[key]) && !/\{taskId\}/.test(trimValue(config[key])) && warnings.push(`${key} 应使用 {taskId} 占位符`);
           }),
           category === `text` &&
-          ![`openai-chat`, `openai-responses`, `gemini-generate-content`].includes(requestType) &&
+	          ![`openai-chat`, `openai-responses`, `gemini-generate-content`, `claude-messages`].includes(requestType) &&
           warnings.push(`文本模型 requestType 不是常用可执行协议`),
           category === `image` &&
           requestType === `openai-images` &&
@@ -50488,9 +50638,10 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                   ((next[index].protocolFormat = event.target.value), setApiConfigs(next));
                                                 },
                                                 children: [
-                                                  jsx(`option`, { value: `auto`, children: `自动检测` }),
-                                                  jsx(`option`, { value: `openai-chat`, children: `OpenAI Chat` }),
-                                                  jsx(`option`, { value: `gemini-generate-content`, children: `Gemini 原生` }),
+	                                                  jsx(`option`, { value: `auto`, children: `自动检测` }),
+	                                                  jsx(`option`, { value: `openai-chat`, children: `OpenAI Chat` }),
+	                                                  jsx(`option`, { value: `claude-messages`, children: `Claude Messages` }),
+	                                                  jsx(`option`, { value: `gemini-generate-content`, children: `Gemini 原生` }),
                                                   jsx(`option`, { value: `openai-images`, children: `OpenAI 图片` }),
                                                   jsx(`option`, { value: `openai-video`, children: `OpenAI 视频` }),
                                                   jsx(`option`, { value: `json-video`, children: `JSON 视频` }),

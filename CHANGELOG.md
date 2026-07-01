@@ -2,9 +2,10 @@
 
 ## 1.3.6 - 2026-07-01
 
-- Hardened built-in Jixin video protocol defaults against the LConAI/Zhichuang Grok video API.
-- Normalized Grok video durations to documented values, including `grok-video-3` as 6 seconds and `grok-video-3-pro` as 10 seconds.
-- Ensured multipart video duration fields respect configured numeric field types before submission.
+- Realigned built-in Jixin defaults with the LConAI/Zhichuang API docs across text, image, video, Tongyi Wanxiang, Suno, TTS, and ASR modules.
+- Added Claude Messages, Grok Image, Sora video, and stricter Grok video protocol handling for the Jixin preset.
+- Normalized documented Grok video durations, including `grok-video-3` as 6 seconds and `grok-video-3-pro` as 10 seconds.
+- Ensured multipart video and image fields respect configured parameter mappings and numeric field types before submission.
 - Kept Jimeng/Seedance and Tianji mode protocols unchanged.
 
 ## 1.3.5 - 2026-06-29
