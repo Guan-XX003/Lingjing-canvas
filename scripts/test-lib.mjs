@@ -81,9 +81,9 @@ async function run() {
   check("size fallback", normalizeVideoSizeValue("nope"), "1280x720");
 
   // Tianji defaults
-  check("tianji default base url", WANJUAN_TIANJI_DEFAULT_BASE_URL, "https://newapi.guancn.uk");
-  check("tianji missing base url uses default", wanjuanNormalizeTianjiSeedanceConfig({}).baseUrl, "https://newapi.guancn.uk");
-  check("tianji trims default trailing slash", wanjuanNormalizeTianjiSeedanceConfig({ baseUrl: " https://newapi.guancn.uk/ " }).baseUrl, "https://newapi.guancn.uk");
+  check("tianji default base url", WANJUAN_TIANJI_DEFAULT_BASE_URL, "https://jixing.guancn.uk");
+  check("tianji missing base url uses default", wanjuanNormalizeTianjiSeedanceConfig({}).baseUrl, "https://jixing.guancn.uk");
+  check("tianji trims default trailing slash", wanjuanNormalizeTianjiSeedanceConfig({ baseUrl: " https://jixing.guancn.uk/ " }).baseUrl, "https://jixing.guancn.uk");
   check("tianji saved empty base url stays empty", wanjuanNormalizeTianjiSeedanceConfig({ baseUrl: "" }).baseUrl, "");
   check("tianji default sync source follows jixin", wanjuanNormalizeTianjiSeedanceConfig({}).syncSource, WANJUAN_TIANJI_SYNC_SOURCE_JIXIN);
   check(

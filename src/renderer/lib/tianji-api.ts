@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-export const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://newapi.guancn.uk`;
+export const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://jixing.guancn.uk`;
 export const WANJUAN_TIANJI_SYNC_SOURCE_JIXIN = `jixin-default`;
 export const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
 
@@ -620,62 +620,85 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     }),
     taskId = wanjuanTianjiFindTaskId(submitResponse);
   if (!taskId) throw Error(`即梦天玑提交成功但未返回 execute_id`);
-  (options.updateGlobalTasks &&
-    options.updateGlobalTasks((tasks) => [
-      ...tasks,
-      {
-        id: taskId,
-        type: `video`,
-        provider: `tianji-seedance`,
-        apiBaseUrl: config.baseUrl,
-        modelName: model,
-        projectId: options.projectIdAtStart,
-        nodeId: options.nodeId,
-        status: `pending`,
-        progress: 0,
-        createdAt: Date.now(),
-        prompt: options.prompt,
-        requestProfile: requestSummary,
-      },
-    ]),
-    options.updateNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === options.nodeId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                seedanceTaskId: taskId,
-                tianjiExecuteId: taskId,
-                videoUrl: void 0,
-                thumbnailUrl: void 0,
-                resultData: void 0,
-                loading: true,
-                progress: 1,
-                errorMessage: void 0,
-                loadingText: `任务已提交，等待查询...`,
-              },
-            }
-          : node,
-      ),
+
+  // 先更新 localStorage（最高优先级，无依赖）
+  try {
+    localStorage.setItem(options.dailyKey, (options.dailyCount + 1).toString());
+  } catch (storageError) {
+    console.warn(`Failed to update daily count in localStorage:`, storageError);
+  }
+
+  // 第 1 步：添加任务到清单（防重复）
+  if (options.updateGlobalTasks) {
+    options.updateGlobalTasks((tasks) => {
+      if (tasks.some((t) => t.id === taskId)) {
+        console.warn(`Task ${taskId} already exists, preventing duplicate`);
+        return tasks;
+      }
+      return [
+        ...tasks,
+        {
+          id: taskId,
+          type: `video`,
+          provider: `tianji-seedance`,
+          apiBaseUrl: config.baseUrl,
+          modelName: model,
+          projectId: options.projectIdAtStart,
+          nodeId: options.nodeId,
+          status: `pending`,
+          progress: 0,
+          createdAt: Date.now(),
+          prompt: options.prompt,
+          requestProfile: requestSummary,
+        },
+      ];
+    });
+  }
+
+  // 第 2 步：更新节点状态
+  options.updateNodes((nodes) =>
+    nodes.map((node) =>
+      node.id === options.nodeId
+        ? {
+            ...node,
+            data: {
+              ...node.data,
+              seedanceTaskId: taskId,
+              tianjiExecuteId: taskId,
+              videoUrl: void 0,
+              thumbnailUrl: void 0,
+              resultData: void 0,
+              loading: true,
+              progress: 1,
+              errorMessage: void 0,
+              loadingText: `任务已提交，等待查询...`,
+            },
+          }
+        : node,
     ),
-    await options.persistVideoNodeState(
-      {},
-      {
-        seedanceTaskId: taskId,
-        tianjiExecuteId: taskId,
-        videoUrl: void 0,
-        thumbnailUrl: void 0,
-        resultData: void 0,
-        loading: true,
-        progress: 1,
-        errorMessage: void 0,
-        loadingText: `任务已提交，等待查询...`,
-      },
-    ),
-    localStorage.setItem(options.dailyKey, (options.dailyCount + 1).toString()),
-    options.setDailyCount(options.dailyCount + 1),
-    options.showToast(`即梦天玑任务提交成功，正在生成中...`));
+  );
+
+  // 第 3 步：持久化到存储
+  await options.persistVideoNodeState(
+    {},
+    {
+      seedanceTaskId: taskId,
+      tianjiExecuteId: taskId,
+      videoUrl: void 0,
+      thumbnailUrl: void 0,
+      resultData: void 0,
+      loading: true,
+      progress: 1,
+      errorMessage: void 0,
+      loadingText: `任务已提交，等待查询...`,
+    },
+  );
+
+  // 第 4 步：更新日期计数
+  options.setDailyCount(options.dailyCount + 1);
+
+  // 第 5 步：提示用户
+  options.showToast(`即梦天玑任务提交成功，正在生成中...`);
   let done = false,
     pollCount = 0,
     consecutiveErrors = 0,
@@ -688,6 +711,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     await new Promise((resolve) => setTimeout(resolve, options.pollingInterval));
     pollCount++;
     try {
+      if (abortController.signal.aborted) throw Error(`生成已取消`);
       let statusResponse = await wanjuanTianjiRequest(config, `/api/cut/model/coze-run-seedance-special-history`, {
           method: `GET`,
           query: {
@@ -828,8 +852,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
             edges.map((edge) => (edge.target === options.nodeId ? { ...edge, animated: false } : edge)),
           ));
         throw Error(failureMessage);
-      }
-      else {
+      } else {
         let progress = wanjuanTianjiFindProgress(statusResponse),
           hasRealProgress = !isNaN(progress);
         progress = hasRealProgress ? Math.min(99, Math.max(1, progress)) : NaN;
@@ -868,10 +891,17 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
             ));
       }
     } catch (error: any) {
-      if (error?.message && /失败|failed|error|expired|canceled|cancelled|rejected/i.test(error.message)) throw error;
-      (console.warn(`Tianji Seedance polling error:`, error),
-        consecutiveErrors++,
-        consecutiveErrors === 5 && options.showToast(`即梦天玑状态查询暂时失败，仍会继续重试...`));
+      if (error?.message && /生成已取消|失败|failed|error|expired|canceled|cancelled|rejected/i.test(error.message)) {
+        throw error;
+      }
+      console.warn(`Tianji Seedance polling error:`, error);
+      consecutiveErrors++;
+      if (consecutiveErrors === 5) {
+        options.showToast(`即梦天玑状态查询暂时失败，仍会继续重试...`);
+      }
+      if (consecutiveErrors >= 30) {
+        throw Error(`即梦天玑状态查询失败次数过多，已放弃重试`);
+      }
     }
   }
 }

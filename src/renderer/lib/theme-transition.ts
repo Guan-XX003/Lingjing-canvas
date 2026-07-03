@@ -18,6 +18,7 @@ declare global {
   interface Window {
     gsap?: any;
     __wanjuanThemeTransitionActive?: boolean;
+    __wanjuanThemeTransitionTimeoutId?: number;
   }
 }
 
@@ -205,12 +206,19 @@ export function wanjuanRunThemeTransition(
   const radius = Math.ceil(Math.hypot(viewportWidth, viewportHeight) / 2) + 96;
 
   window.__wanjuanThemeTransitionActive = true;
+  if (window.__wanjuanThemeTransitionTimeoutId) {
+    clearTimeout(window.__wanjuanThemeTransitionTimeoutId);
+  }
   const started = wanjuanRunThemeTransitionFallback(theme, applyTheme, radius);
 
-  return started
-    ? (window.setTimeout(() => {
-        window.__wanjuanThemeTransitionActive = false;
-      }, 760),
-      true)
-    : ((window.__wanjuanThemeTransitionActive = false), false);
+  if (started) {
+    window.__wanjuanThemeTransitionTimeoutId = window.setTimeout(() => {
+      window.__wanjuanThemeTransitionActive = false;
+      window.__wanjuanThemeTransitionTimeoutId = undefined;
+    }, 760);
+    return true;
+  } else {
+    window.__wanjuanThemeTransitionActive = false;
+    return false;
+  }
 }

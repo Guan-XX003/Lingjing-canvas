@@ -1286,6 +1286,156 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   border-color: color-mix(in srgb, var(--wj-border) 76%, transparent) !important;
 }
 
+.wanjuan-stored-global-config-card {
+  background: var(--wj-panel-bg) !important;
+  border-color: var(--wj-panel-border-soft) !important;
+}
+
+.wanjuan-stored-global-config-count {
+  background: color-mix(in srgb, var(--wj-control-bg) 84%, var(--wj-accent) 16%) !important;
+  border-color: color-mix(in srgb, var(--wj-control-border) 78%, var(--wj-accent) 22%) !important;
+  color: color-mix(in srgb, var(--wj-text) 86%, var(--wj-accent) 14%) !important;
+}
+
+.wanjuan-stored-global-config-apply {
+  min-width: 82px !important;
+  white-space: nowrap !important;
+}
+
+.wanjuan-config-butler-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.wanjuan-config-butler-mode-tabs {
+  background: color-mix(in srgb, var(--wj-field-bg) 86%, var(--wj-bg) 14%) !important;
+  border-color: var(--wj-field-border) !important;
+}
+
+.wanjuan-config-butler-help-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  z-index: 1 !important;
+}
+
+.wanjuan-config-butler-help-wrap:hover,
+.wanjuan-config-butler-help-wrap:focus-within {
+  z-index: 240 !important;
+}
+
+.wanjuan-config-butler-help-trigger {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-control-border) 78%, var(--wj-accent) 22%) !important;
+  background: color-mix(in srgb, var(--wj-control-bg) 86%, var(--wj-accent) 14%) !important;
+  color: color-mix(in srgb, var(--wj-text) 78%, var(--wj-accent) 22%) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 14px !important;
+  text-align: center !important;
+  cursor: help !important;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease !important;
+}
+
+.wanjuan-config-butler-help-trigger:hover,
+.wanjuan-config-butler-help-trigger:focus-visible {
+  background: color-mix(in srgb, var(--wj-control-bg) 72%, var(--wj-accent) 28%) !important;
+  border-color: color-mix(in srgb, var(--wj-control-border) 48%, var(--wj-accent) 52%) !important;
+  color: var(--wj-text) !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+}
+
+.wanjuan-config-butler-help-trigger-warning {
+  border-color: color-mix(in srgb, var(--wj-danger) 64%, var(--wj-control-border) 36%) !important;
+  background: color-mix(in srgb, var(--wj-control-bg) 78%, var(--wj-danger) 22%) !important;
+  color: color-mix(in srgb, var(--wj-text) 70%, var(--wj-danger) 30%) !important;
+}
+
+.wanjuan-config-butler-help-popover {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  left: 12px !important;
+  width: min(286px, calc(100vw - 64px)) !important;
+  max-width: 286px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-panel-border) 78%, var(--wj-accent) 22%) !important;
+  background: color-mix(in srgb, var(--wj-panel-bg-raised) 94%, var(--wj-bg) 6%) !important;
+  color: var(--wj-text) !important;
+  box-shadow: var(--wj-shadow-popover) !important;
+  transform: translateY(-4px) scale(0.98) !important;
+  transform-origin: top left !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease !important;
+  z-index: 260 !important;
+}
+
+.wanjuan-config-butler-help-wrap:hover .wanjuan-config-butler-help-popover,
+.wanjuan-config-butler-help-wrap:focus-within .wanjuan-config-butler-help-popover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+.wanjuan-config-butler-help-below-end .wanjuan-config-butler-help-popover {
+  right: 12px !important;
+  left: auto !important;
+  transform-origin: top right !important;
+}
+
+.wanjuan-config-butler-help-above-start .wanjuan-config-butler-help-popover,
+.wanjuan-config-butler-help-above-end .wanjuan-config-butler-help-popover {
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+  transform: translateY(4px) scale(0.98) !important;
+  transform-origin: bottom left !important;
+}
+
+.wanjuan-config-butler-help-above-end .wanjuan-config-butler-help-popover {
+  right: 12px !important;
+  left: auto !important;
+  transform-origin: bottom right !important;
+}
+
+.wanjuan-config-butler-help-above-start:hover .wanjuan-config-butler-help-popover,
+.wanjuan-config-butler-help-above-start:focus-within .wanjuan-config-butler-help-popover,
+.wanjuan-config-butler-help-above-end:hover .wanjuan-config-butler-help-popover,
+.wanjuan-config-butler-help-above-end:focus-within .wanjuan-config-butler-help-popover {
+  transform: translateY(0) scale(1) !important;
+}
+
+.wanjuan-config-butler-help-title,
+.wanjuan-config-butler-help-copy {
+  display: block !important;
+}
+
+.wanjuan-config-butler-help-title {
+  margin-bottom: 4px !important;
+  color: var(--wj-text) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+}
+
+.wanjuan-config-butler-help-copy {
+  color: var(--wj-muted) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  line-height: 1.65 !important;
+  white-space: normal !important;
+}
+
 .wanjuan-settings-save-button {
   background: var(--wj-control-primary-bg) !important;
   background-image: var(--wj-control-primary-bg) !important;
@@ -3864,8 +4014,12 @@ html[data-wanjuan-performance-profile="performance"] .react-flow__edge .wanjuan-
   min-width: 0;
 }
 
-.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-tianji-settings-host) {
+.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-seedance-mode-model-settings):not(.wanjuan-tianji-settings-host) {
   display: none !important;
+}
+
+.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-seedance-mode-model-settings {
+  display: block !important;
 }
 
 .wanjuan-tianji-settings-card {

@@ -147,6 +147,17 @@ function resolveModelApiBindingIdHelper(obj, modelKey, fallback) {
   return fallback;
 }
 
+function resolveModelProtocolBindingHelper(obj, modelKey, fallback = ``) {
+  if (!obj || typeof obj != `object`) return fallback;
+  let candidates = getModelBindingCandidatesHelper(modelKey);
+  for (let candidate of candidates)
+    if (obj[candidate]) return obj[candidate];
+  let candidateSet = new Set(candidates.map((candidate) => normalizeModelBindingKeyHelper(candidate)));
+  for (let [key, value] of Object.entries(obj))
+    if (candidateSet.has(normalizeModelBindingKeyHelper(key)) && value) return value;
+  return fallback;
+}
+
 function extractVideoTaskErrorHelper(result, fallbackMessage = `视频生成失败`) {
   if (!result || typeof result != `object`) return fallbackMessage;
   let errorItem = Array.isArray(result.items) ?
@@ -269,6 +280,33 @@ var je = De(),
 const { useState, useEffect, useRef, useCallback, useMemo, memo: reactMemo, StrictMode } = q;
 const { jsx, jsxs, Fragment } = J;
 const { createRoot } = je;
+const WanJuanConfigButlerHelp = ({ tone = `info`, placement = `below-start`, title, children }) =>
+  jsxs(`span`, {
+    className: `wanjuan-config-butler-help-wrap wanjuan-config-butler-help-${placement}`,
+    children: [
+      jsx(`button`, {
+        type: `button`,
+        className: `wanjuan-config-butler-help-trigger wanjuan-config-butler-help-trigger-${tone}`,
+        "aria-label": `${title || `配置管家`}说明`,
+        children: tone === `warning` ? `!` : `?`,
+      }),
+      jsxs(`span`, {
+        className: `wanjuan-config-butler-help-popover`,
+        role: `tooltip`,
+        children: [
+          title &&
+          jsx(`span`, {
+            className: `wanjuan-config-butler-help-title`,
+            children: title,
+          }),
+          jsx(`span`, {
+            className: `wanjuan-config-butler-help-copy`,
+            children: children,
+          }),
+        ],
+      }),
+    ],
+  });
 const WanJuanRenderRuntime = (() => {
     let counters = {
         nodeUpdates: [],
@@ -870,6 +908,14 @@ var TongyiWanxiangLogo = ({
           updateNodeData(nodeId, {
             imageUrl: fileUrl,
             thumbnailUrl: data.thumbnailUrl || fileUrl,
+            localPath: result.localPath,
+            filePath: result.localPath,
+            projectAssetBindings: {
+              ...(data.projectAssetBindings || {}),
+              imageUrl: wanjuanBuildProjectAssetBinding(result, {
+                sourceOrigin: data.sourceOrigin || `external-upload`,
+              }),
+            },
           });
         } catch {}
       })();
@@ -925,16 +971,83 @@ var TongyiWanxiangLogo = ({
           onChange: (event) => {
             let file = event.target.files?.[0];
             if (!file) return;
-            let reader = new FileReader();
-            ((reader.onload = (event2) => {
-                let dataUrl = event2.target?.result;
+            if (file.type.startsWith(`text/`)) {
+              let reader = new FileReader();
+              ((reader.onload = (event2) => {
+                  let text = event2.target?.result || ``;
+                  updateNodeData(nodeId, {
+                    imageUrl: `data:text/plain;charset=utf-8,${encodeURIComponent(String(text))}`,
+                    label: file.name,
+                    mediaKind: `text`,
+                  });
+                }),
+                reader.readAsText(file),
+                (event.target.value = ``));
+              return;
+            }
+            let mediaKind = wanjuanMediaKindFromFile(file),
+              nativePath = wanjuanGetDroppedFilePath(file),
+              stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
+              applySelectedMedia = (mediaUrl) => {
                 updateNodeData(nodeId, {
-                  imageUrl: dataUrl,
-                  label: file.name
+                  imageUrl: mediaUrl,
+                  label: file.name,
+                  mediaKind,
+                  sourceOrigin: data.sourceOrigin || `external-upload`,
+                  originalName: file.name,
+                  ...(nativePath ? {
+                    localPath: nativePath,
+                    filePath: nativePath,
+                  } : {}),
+                  projectAssetBindings: wanjuanClearProjectAssetBindingsFromData(data, [`imageUrl`])?.projectAssetBindings,
                 });
-              }),
-              reader.readAsDataURL(file),
-              (event.target.value = ``));
+              };
+            if (stableUrl) applySelectedMedia(stableUrl);
+            else {
+              let reader = new FileReader();
+              ((reader.onload = (event2) => {
+                  let dataUrl = event2.target?.result;
+                  typeof dataUrl == `string` && dataUrl && applySelectedMedia(dataUrl);
+                }),
+                reader.readAsDataURL(file));
+            }
+            (async () => {
+              try {
+                if (!window.wanjuanDesktop?.persistProjectAsset) return;
+                let payload = {
+                    projectId: (typeof globalThis !== `undefined` && globalThis.__wanjuanCurrentProjectId) || `default`,
+                    nodeId,
+                    field: `imageUrl`,
+                    kind: mediaKind,
+                    filename: file.name || `${mediaKind}-${Date.now()}`,
+                    mime: wanjuanMimeFromMediaKind(mediaKind, file),
+                    size: file.size || 0,
+                    directory: ``,
+                  };
+                nativePath && (payload.localPath = nativePath);
+                if (!payload.localPath) return;
+                let result = await window.wanjuanDesktop.persistProjectAsset(payload);
+                if (!result?.ok || !result.localPath) return;
+                let fileUrl = buildProjectMediaFileUrl(result.localPath);
+                updateNodeData(nodeId, {
+                  imageUrl: fileUrl,
+                  thumbnailUrl: mediaKind === `image` ? fileUrl : data.thumbnailUrl,
+                  label: file.name,
+                  mediaKind,
+                  localPath: result.localPath,
+                  filePath: result.localPath,
+                  projectAssetBindings: {
+                    ...(data.projectAssetBindings || {}),
+                    imageUrl: wanjuanBuildProjectAssetBinding(result, {
+                      sourceOrigin: data.sourceOrigin || `external-upload`,
+                    }),
+                  },
+                });
+              } catch (error) {
+                console.warn(`Image node media persist skipped`, error);
+              }
+            })();
+            event.target.value = ``;
           },
 			                              }),
 	                              jsx(`div`, {
@@ -1425,18 +1538,18 @@ var TongyiWanxiangLogo = ({
             display: `none`
           },
           accept: `image/*`,
-          onChange: (event) => {
-            let file = event.target.files?.[0];
-            if (!file) return;
-            let fileReader = new FileReader();
-            ((fileReader.onload = (event2) => {
-                let dataUrl = event2.target?.result;
-                data.onAddImage && data.onAddImage(nodeId, dataUrl);
-              }),
-              fileReader.readAsDataURL(file),
-              (event.target.value = ``));
-          },
-        }),
+	          onChange: (event) => {
+	            let file = event.target.files?.[0];
+	            if (!file) return;
+	            let fileReader = new FileReader();
+	            ((fileReader.onload = (event2) => {
+	                let dataUrl = event2.target?.result;
+	                data.onAddImage && data.onAddImage(nodeId, dataUrl);
+	              }),
+	              fileReader.readAsDataURL(file),
+	              (event.target.value = ``));
+	          },
+	        }),
         jsxs(`div`, {
 	          className: `relative bg-[#1c1c1c] rounded-xl overflow-visible border shadow-xl transition-all cursor-pointer group/image w-full flex-1 flex flex-col ${ce ? `wanjuan-loading-node-frame` : ``}
 	          ${selected ? `border-blue-500 shadow-blue-500/20` : `border-[#333] hover:border-gray-500`}
@@ -2466,18 +2579,18 @@ var TongyiWanxiangLogo = ({
             display: `none`
           },
           accept: `image/*`,
-          onChange: (event) => {
-            let file = event.target.files?.[0];
-            if (!file) return;
-            let reader = new FileReader();
-            ((reader.onload = (event2) => {
-                let dataUrl = event2.target?.result;
-                data.onAddImage && data.onAddImage(nodeId, dataUrl);
-              }),
-              reader.readAsDataURL(file),
-              (event.target.value = ``));
-          },
-        }),
+	          onChange: (event) => {
+	            let file = event.target.files?.[0];
+	            if (!file) return;
+	            let reader = new FileReader();
+	            ((reader.onload = (event2) => {
+	                let dataUrl = event2.target?.result;
+	                data.onAddImage && data.onAddImage(nodeId, dataUrl);
+	              }),
+	              reader.readAsDataURL(file),
+	              (event.target.value = ``));
+	          },
+	        }),
         jsxs(`div`, {
 	          className: `relative bg-[#1c1c1c] rounded-xl border shadow-xl transition-all flex flex-col ${ce ? `wanjuan-loading-node-frame` : ``}
 	          ${selected ? `border-blue-500 shadow-blue-500/20` : `border-[#333] hover:border-gray-500`}
@@ -4046,24 +4159,6 @@ var Le = reactMemo(({
       tongyiWanxiangMode = data.tongyiWanxiangMode || `text-to-video`,
       seedanceUploadModeValue = data.seedanceUploadMode || `public`,
       seedanceModeValue = data.seedanceMode === `tianji` ? `tianji` : `official`,
-      tianjiSeedanceGenerationModeValue = data.tianjiSeedanceGenerationMode || `text-to-video`,
-      tianjiSeedanceGenerationModeOptions = [{
-          value: `text-to-video`,
-          label: `文生视频`,
-        },
-        {
-          value: `first-frame`,
-          label: `首帧生视频`,
-        },
-        {
-          value: `first-last`,
-          label: `首尾帧生视频`,
-        },
-        {
-          value: `reference-media`,
-          label: `参考素材生视频`,
-        },
-      ],
       parseSeedanceList = (listText) =>
       String(listText || ``)
       .split(/[\s,，、]+/)
@@ -4108,6 +4203,24 @@ var Le = reactMemo(({
       currentTongyiWanxiangModels = parseSeedanceList(
         currentTongyiWanxiangModelText,
       ),
+	      activeVideoModelText =
+	      isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ?
+	      data.tianjiSeedanceModel || data.videoModel || `` :
+	      isSeedanceOrWanxiang && !isTongyiWanxiang ?
+	      data.seedanceModel || data.videoModel || `` :
+	      data.videoModel || ``,
+	      activeVideoSelectedModel =
+	      isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ?
+	      data.tianjiSelectedModel || data.selectedModel || `` :
+	      isSeedanceOrWanxiang && !isTongyiWanxiang ?
+	      data.seedanceSelectedModel || data.selectedModel || `` :
+	      data.selectedModel || ``,
+	      activeVideoModelManual =
+	      isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ?
+	      data.tianjiModelManual === !0 || (!data.tianjiSelectedModel && data.wanjuanModelManual === !0) :
+	      isSeedanceOrWanxiang && !isTongyiWanxiang ?
+	      data.seedanceModelManual === !0 || (!data.seedanceSelectedModel && data.wanjuanModelManual === !0) :
+	      data.wanjuanModelManual === !0,
       videoDurationOptions = parseSeedanceList(
         data.videoDurations || (isSeedanceOrWanxiang ? `10 15` : `10
 		15`),
@@ -4140,20 +4253,20 @@ var Le = reactMemo(({
         data.selectedSeconds :
         firstVideoDuration,
       ),
-      [seedanceResolution, setSeedanceResolution] = useState(
-        data.selectedResolution &&
-        seedanceResolutionOptions.some(
-          (resolution) => resolution.value === data.selectedResolution,
-        ) ?
+	      [seedanceResolution, setSeedanceResolution] = useState(
+	        data.selectedResolution &&
+	        seedanceResolutionOptions.some(
+	          (resolution) => resolution.value === data.selectedResolution,
+	        ) ?
         data.selectedResolution :
         firstSeedanceResolution,
-      ),
-      [selectedModel, _] = useState(() =>
-        WanJuanGetPreferredModel(data.videoModel, data.selectedModel || ``, void 0, {
-          manual: data.wanjuanModelManual === !0,
-          auto: data.wanjuanModelAuto === !0,
-        }),
-      ),
+	      ),
+	      [selectedModel, _] = useState(() =>
+	        WanJuanGetPreferredModel(activeVideoModelText, activeVideoSelectedModel || ``, void 0, {
+	          manual: activeVideoModelManual,
+	          auto: data.wanjuanModelAuto === !0,
+	        }),
+	      ),
       seedanceApiOptions = Array.isArray(data.apiConfigs) ?
       data.apiConfigs.filter((apiConfig) => apiConfig && apiConfig.id) :
       [],
@@ -4162,8 +4275,8 @@ var Le = reactMemo(({
         data.selectedApiConfigId ||
         data.videoModelApiBindings?.[
           data.selectedModel ||
-          (data.videoModel &&
-            data.videoModel
+          (activeVideoModelText &&
+            activeVideoModelText
             .split(
               `
 `,
@@ -4184,7 +4297,7 @@ var Le = reactMemo(({
       [w, T] = useState(!1),
       O = useRef(null),
       favoriteModels = WanJuanUseFavoriteModels(),
-      wanjuanModelManualRef = useRef(data.wanjuanModelManual === !0),
+	      wanjuanModelManualRef = useRef(activeVideoModelManual),
       [k, j] = useState(!1),
       M = useRef(null),
       [menuOpen, setMenuOpen] = useState(!1),
@@ -4203,26 +4316,32 @@ var Le = reactMemo(({
       [seedancePortraitPickerPage, setSeedancePortraitPickerPage] = useState(1),
       [tianjiPortraitPickerReachedEnd, setTianjiPortraitPickerReachedEnd] = useState(!1),
       seedanceNodeVirtualPortraits = wanjuanNormalizeSeedanceVirtualPortraits(data.seedanceVirtualPortraits || []);
-    let applyPreferredVideoModel = (favoritesOverride = favoriteModels.favorites) => {
-      if (!data.videoModel) return;
-      let currentModel = selectedModel || data.selectedModel || ``;
-      if (!WanJuanShouldAutoPreferredModel(data.videoModel, currentModel, {
-          manual: wanjuanModelManualRef.current || data.wanjuanModelManual === !0,
-          auto: data.wanjuanModelAuto === !0,
-        })) return;
-      let nextModel = WanJuanGetPreferredModel(data.videoModel, currentModel, favoritesOverride, {
-        auto: !0
-      });
-      nextModel &&
-        !WanJuanSameModelId(nextModel, currentModel) &&
-        ((wanjuanModelManualRef.current = !1),
-          _(nextModel),
-          updateNodeData(nodeId, {
-            selectedModel: nextModel,
-            wanjuanModelAuto: !0,
-            wanjuanModelManual: !1
-          }));
-    };
+	    let applyPreferredVideoModel = (favoritesOverride = favoriteModels.favorites) => {
+	      if (!activeVideoModelText) return;
+	      let currentModel = selectedModel || activeVideoSelectedModel || ``;
+	      if (!WanJuanShouldAutoPreferredModel(activeVideoModelText, currentModel, {
+	          manual: wanjuanModelManualRef.current || activeVideoModelManual,
+	          auto: data.wanjuanModelAuto === !0,
+	        })) return;
+	      let nextModel = WanJuanGetPreferredModel(activeVideoModelText, currentModel, favoritesOverride, {
+	        auto: !0
+	      });
+	      nextModel &&
+	        !WanJuanSameModelId(nextModel, currentModel) &&
+	        ((wanjuanModelManualRef.current = !1),
+	          _(nextModel),
+	          updateNodeData(nodeId, {
+	            selectedModel: nextModel,
+	            ...(isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ? {
+	              tianjiSelectedModel: nextModel
+	            } : {}),
+	            ...(isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue !== `tianji` ? {
+	              seedanceSelectedModel: nextModel
+	            } : {}),
+	            wanjuanModelAuto: !0,
+	            wanjuanModelManual: !1
+	          }));
+	    };
     let resolvePendingTianjiPortraitNodes = (assetsPayload, {
       showToastResolved: showToastResolved = !1
     } = {}) => {
@@ -4681,12 +4800,17 @@ var Le = reactMemo(({
           }));
         }
       }, [data.videoResolutions, data.size, size, nodeId, updateNodeData]),
-      useEffect(() => {
-        applyPreferredVideoModel();
-      }, [data.videoModel, selectedModel, data.wanjuanModelAuto, data.wanjuanModelManual, favoriteModels.favorites, nodeId, updateNodeData]),
-      useEffect(() => {
-        data.selectedModel && data.selectedModel !== selectedModel && _(data.selectedModel);
-      }, [data.selectedModel]),
+	      useEffect(() => {
+	        applyPreferredVideoModel();
+	      }, [activeVideoModelText, activeVideoSelectedModel, activeVideoModelManual, selectedModel, data.wanjuanModelAuto, favoriteModels.favorites, nodeId, updateNodeData]),
+	      useEffect(() => {
+	        let nextSelectedModel = WanJuanGetPreferredModel(activeVideoModelText, activeVideoSelectedModel || ``, favoriteModels.favorites, {
+	          manual: activeVideoModelManual,
+	          auto: data.wanjuanModelAuto === !0
+	        });
+	        nextSelectedModel && nextSelectedModel !== selectedModel && _(nextSelectedModel);
+	        wanjuanModelManualRef.current = activeVideoModelManual;
+	      }, [activeVideoModelText, activeVideoSelectedModel, activeVideoModelManual, data.wanjuanModelAuto, favoriteModels.favorites, selectedModel]),
       useEffect(() => {
         if (
           videoDurationOptions.length > 0 &&
@@ -4897,6 +5021,87 @@ var Le = reactMemo(({
         height = Number(ratioMatch[2]);
       return width > 0 && height > 0 ? `${width} / ${height}` : void 0;
     })();
+    let seedanceModeToggle =
+	      isSeedanceOrWanxiang && !isTongyiWanxiang ?
+	      jsxs(`div`, {
+	        className: `mb-2 nodrag flex w-full items-center wanjuan-seedance-mode-switch`,
+	        onClick: (event) => event.stopPropagation(),
+	        children: [
+	          jsxs(`div`, {
+	            className: `grid w-full grid-cols-2 gap-1.5 rounded-md bg-transparent`,
+	            children: [
+		              jsxs(`button`, {
+		                type: `button`,
+		                className: `h-8 min-w-0 rounded-md border px-2 text-[12px] font-semibold leading-none transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap ${seedanceModeValue === `official` ? `border-blue-300 bg-blue-600 text-white shadow-[0_0_0_1px_rgba(96,165,250,0.22),0_6px_14px_rgba(37,99,235,0.22)]` : `border-[#515762] bg-[#202226] text-gray-300 hover:border-[#6b7280] hover:bg-[#2a2d33] hover:text-gray-100`}`,
+		                onClick: (event) => {
+		                  let modeModelText = data.seedanceModel || data.videoModel || ``,
+		                    modeCurrentModel = data.seedanceSelectedModel || (seedanceModeValue === `official` ? selectedModel : ``) || ``,
+		                    modeManual = data.seedanceModelManual === !0,
+		                    modeSelectedModel = WanJuanGetPreferredModel(modeModelText, modeCurrentModel, favoriteModels.favorites, {
+		                      manual: modeManual,
+		                      auto: !modeManual
+		                    });
+		                  (event.stopPropagation(),
+		                    modeSelectedModel && _(modeSelectedModel),
+		                    (wanjuanModelManualRef.current = modeManual),
+		                    updateNodeData(nodeId, {
+		                      seedanceMode: `official`,
+		                      videoModel: modeModelText,
+		                      selectedModel: modeSelectedModel,
+		                      seedanceSelectedModel: modeSelectedModel,
+		                      wanjuanModelAuto: !modeManual,
+		                      wanjuanModelManual: modeManual,
+		                    }));
+		                },
+	                children: [
+	                  seedanceModeValue === `official` &&
+	                  jsx(`span`, {
+	                    className: `h-1.5 w-1.5 rounded-full bg-blue-300 shadow-[0_0_6px_rgba(147,197,253,0.65)]`,
+	                  }),
+	                  jsx(`span`, {
+	                    children: `官方兼容`,
+	                  }),
+	                ],
+	              }),
+		              jsxs(`button`, {
+		                type: `button`,
+		                className: `h-8 min-w-0 rounded-md border px-2 text-[12px] font-semibold leading-none transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap ${seedanceModeValue === `tianji` ? `border-blue-300 bg-blue-600 text-white shadow-[0_0_0_1px_rgba(96,165,250,0.22),0_6px_14px_rgba(37,99,235,0.22)]` : `border-[#515762] bg-[#202226] text-gray-300 hover:border-[#6b7280] hover:bg-[#2a2d33] hover:text-gray-100`}`,
+		                onClick: (event) => {
+		                  let modeModelText = data.tianjiSeedanceModel || data.videoModel || ``,
+		                    modeCurrentModel = data.tianjiSelectedModel || (seedanceModeValue === `tianji` ? selectedModel : ``) || ``,
+		                    modeManual = data.tianjiModelManual === !0,
+		                    modeSelectedModel = WanJuanGetPreferredModel(modeModelText, modeCurrentModel, favoriteModels.favorites, {
+		                      manual: modeManual,
+		                      auto: !modeManual
+		                    });
+		                  (event.stopPropagation(),
+		                    modeSelectedModel && _(modeSelectedModel),
+		                    (wanjuanModelManualRef.current = modeManual),
+		                    updateNodeData(nodeId, {
+		                      seedanceMode: `tianji`,
+		                      tianjiSeedanceGenerationMode: `reference-media`,
+		                      videoModel: modeModelText,
+		                      selectedModel: modeSelectedModel,
+		                      tianjiSelectedModel: modeSelectedModel,
+		                      wanjuanModelAuto: !modeManual,
+		                      wanjuanModelManual: modeManual,
+		                    }));
+		                },
+	                children: [
+	                  seedanceModeValue === `tianji` &&
+	                  jsx(`span`, {
+	                    className: `h-1.5 w-1.5 rounded-full bg-blue-300 shadow-[0_0_6px_rgba(147,197,253,0.65)]`,
+	                  }),
+	                  jsx(`span`, {
+	                    children: `天玑真人`,
+	                  }),
+	                ],
+	              }),
+	            ],
+	          }),
+	        ],
+	      }) :
+      null;
     return jsxs(`div`, {
       className: `flex flex-col items-center group/node transition-all w-full h-full min-w-[160px] min-h-[160px] ${selected ? `z-50` : `z-10`}`,
       children: [
@@ -4913,18 +5118,18 @@ var Le = reactMemo(({
             display: `none`
           },
           accept: `image/*`,
-          onChange: (event) => {
-            let file = event.target.files?.[0];
-            if (!file) return;
-            let reader = new FileReader();
-            ((reader.onload = (event2) => {
-                let dataUrl = event2.target?.result;
-                data.onAddImage && data.onAddImage(nodeId, dataUrl);
-              }),
-              reader.readAsDataURL(file),
-              (event.target.value = ``));
-          },
-        }),
+	          onChange: (event) => {
+	            let file = event.target.files?.[0];
+	            if (!file) return;
+	            let reader = new FileReader();
+	            ((reader.onload = (event2) => {
+	                let dataUrl = event2.target?.result;
+	                data.onAddImage && data.onAddImage(nodeId, dataUrl);
+	              }),
+	              reader.readAsDataURL(file),
+	              (event.target.value = ``));
+	          },
+	        }),
         jsxs(`div`, {
 	          className: `relative bg-[#1c1c1c] rounded-xl overflow-hidden border shadow-xl transition-all cursor-pointer group/display w-full flex-1 flex flex-col ${data.loading ? `wanjuan-loading-node-frame` : ``}
 	            ${selected ? `border-blue-500 shadow-blue-500/20` : `border-[#333] hover:border-gray-500`}
@@ -5378,6 +5583,7 @@ var Le = reactMemo(({
                     className: `flex items-start gap-2`,
                     children: [
                       contextResources.images.length === 0 &&
+                      !(isSeedanceOrWanxiang && !isTongyiWanxiang) &&
                       jsxs(`div`, {
                         className: `w-10 h-10 rounded-md border border-dashed border-[#444] flex flex-col items-center justify-center text-gray-600 bg-[#151515] hover:bg-[#222] hover:border-blue-500 hover:text-blue-500 cursor-pointer transition-colors flex-shrink-0 wanjuan-node-upload-trigger`,
                         onClick: () => fileInputRef.current?.click(),
@@ -5392,11 +5598,12 @@ var Le = reactMemo(({
                           }),
                         ],
                       }),
-                      jsxs(`div`, {
-                        className: `flex-1 nodrag relative`,
-                        children: [
-                          jsx(`textarea`, {
-                            className: `w-full h-20 bg-transparent text-[15px] text-gray-200 resize-y min-h-[80px] outline-none leading-relaxed placeholder-gray-600 font-sans custom-scrollbar nodrag wanjuan-video-prompt-textarea`,
+	                      jsxs(`div`, {
+	                        className: `flex-1 nodrag relative flex flex-col`,
+	                        children: [
+	                          seedanceModeToggle,
+	                          jsx(`textarea`, {
+	                            className: `block w-full h-20 bg-transparent text-[15px] text-gray-200 resize-y min-h-[80px] outline-none leading-relaxed placeholder-gray-600 font-sans custom-scrollbar nodrag wanjuan-video-prompt-textarea`,
                             placeholder: isSeedanceOrWanxiang ?
                               `描述视频，可输入 @图片1 / @视频1 / @音频1 调用多参...` :
                               `描述你想要的视频内容 (输入 @ 调出素材)...`,
@@ -5872,64 +6079,6 @@ var Le = reactMemo(({
                                 ],
                               }),
                               isSeedanceOrWanxiang &&
-                              !isTongyiWanxiang &&
-                              jsxs(`div`, {
-                                children: [
-                                  jsx(`div`, {
-                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
-                                    children: `即梦模式`,
-                                  }),
-                                  jsxs(`div`, {
-                                    className: `grid grid-cols-2 gap-1.5`,
-                                    children: [
-                                      jsx(`button`, {
-                                        className: `px-2 py-1.5 text-[11px] rounded-md transition-colors wanjuan-node-popover-option ${seedanceModeValue === `official` ? `bg-blue-600 border border-blue-400 text-white wanjuan-node-popover-option-active` : `bg-[#1c1c1c] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
-                                        onClick: () =>
-                                          updateNodeData(nodeId, {
-                                            seedanceMode: `official`,
-                                          }),
-                                        children: `官方/兼容`,
-                                      }),
-                                      jsx(`button`, {
-                                        className: `px-2 py-1.5 text-[11px] rounded-md transition-colors wanjuan-node-popover-option ${seedanceModeValue === `tianji` ? `bg-blue-600 border border-blue-400 text-white wanjuan-node-popover-option-active` : `bg-[#1c1c1c] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
-                                        onClick: () =>
-                                          updateNodeData(nodeId, {
-                                            seedanceMode: `tianji`,
-                                          }),
-                                        children: `天玑真人`,
-                                      }),
-                                    ],
-                                  }),
-                                ],
-                              }),
-                              isSeedanceOrWanxiang &&
-                              !isTongyiWanxiang &&
-                              seedanceModeValue === `tianji` &&
-                              jsxs(`div`, {
-                                children: [
-                                  jsx(`div`, {
-                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
-                                    children: `天玑生成方式`,
-                                  }),
-                                  jsx(`div`, {
-                                    className: `grid grid-cols-2 gap-1.5`,
-                                    children: tianjiSeedanceGenerationModeOptions.map((modeOption) =>
-                                      jsx(
-                                        `button`, {
-                                          className: `px-2 py-1.5 text-[11px] rounded-md transition-colors wanjuan-node-popover-option ${tianjiSeedanceGenerationModeValue === modeOption.value ? `bg-blue-600 border border-blue-400 text-white wanjuan-node-popover-option-active` : `bg-[#1c1c1c] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
-                                          onClick: () =>
-                                            updateNodeData(nodeId, {
-                                              tianjiSeedanceGenerationMode: modeOption.value,
-                                            }),
-                                          children: modeOption.label,
-                                        },
-                                        modeOption.value,
-                                      ),
-                                    ),
-                                  }),
-                                ],
-                              }),
-                              isSeedanceOrWanxiang &&
                               jsxs(`div`, {
                                 children: [
                                   jsx(`div`, {
@@ -6154,8 +6303,8 @@ var Le = reactMemo(({
                         ],
                       }),
                       !!(
-                        data.videoModel &&
-                        data.videoModel
+                        activeVideoModelText &&
+                        activeVideoModelText
                         .split(
                           `
 `,
@@ -6205,7 +6354,7 @@ var Le = reactMemo(({
                                 className: `wanjuan-theme-muted text-[10px] text-gray-500 mb-1 px-1`,
                                 children: `模型`,
                               }),
-                              favoriteModels.sortModels(WanJuanParseModelList(data.videoModel))
+                              favoriteModels.sortModels(WanJuanParseModelList(activeVideoModelText))
                               .map((model, index) =>
                                 jsxs(
                                   `button`, {
@@ -6220,13 +6369,21 @@ var Le = reactMemo(({
 		                                      boxSizing: `border-box`,
 		                                      border: WanJuanNormalizeModelId(selectedModel || data.selectedModel) === WanJuanNormalizeModelId(model) ? `1px solid currentColor` : `1px solid transparent`,
 	                                    },
-                                    onClick: () => {
-                                      (_(model),
-                                        updateNodeData(nodeId, {
-                                          selectedModel: model,
-                                          wanjuanModelAuto: !1,
-                                          wanjuanModelManual: !0
-                                        }),
+	                                    onClick: () => {
+	                                      (_(model),
+	                                        updateNodeData(nodeId, {
+	                                          selectedModel: model,
+	                                          ...(isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ? {
+	                                            tianjiSelectedModel: model,
+	                                            tianjiModelManual: !0
+	                                          } : {}),
+	                                          ...(isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue !== `tianji` ? {
+	                                            seedanceSelectedModel: model,
+	                                            seedanceModelManual: !0
+	                                          } : {}),
+	                                          wanjuanModelAuto: !1,
+	                                          wanjuanModelManual: !0
+	                                        }),
                                         (wanjuanModelManualRef.current = !0),
                                         T(!1));
                                     },
@@ -14170,6 +14327,49 @@ function buildProjectMediaFileUrl(filePath) {
   ).replace(/#/g, `%23`);
   return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
 }
+const WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS = 1500000;
+function wanjuanShouldSkipHydratedProjectAssetValue(value) {
+  return (
+    typeof value == `string` &&
+    value.length > WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS &&
+    /^data:(?:image|video|audio)\//i.test(value)
+  );
+}
+function wanjuanResolveHydratedProjectAssetFileValue(container, baseKey) {
+  let binding = container?.projectAssetBindings?.[baseKey];
+  if (!binding?.localPath || typeof binding.localPath != `string`) return ``;
+  if (!/^(?:imageUrl|videoUrl|audioUrl|thumbnailUrl)$/i.test(baseKey)) return ``;
+  return buildProjectMediaFileUrl(binding.localPath);
+}
+function wanjuanGetDroppedFilePath(file) {
+  return typeof file?.path == `string` && file.path ? file.path : ``;
+}
+function wanjuanMediaKindFromFile(file) {
+  return file?.type?.startsWith?.(`video/`) ? `video` : file?.type?.startsWith?.(`audio/`) ? `audio` : `image`;
+}
+function wanjuanMimeFromMediaKind(kind, file) {
+  return file?.type || (kind === `video` ? `video/mp4` : kind === `audio` ? `audio/mpeg` : `image/png`);
+}
+function wanjuanBuildProjectAssetBinding(persisted, extras = {}) {
+  if (!persisted?.ok || !persisted.localPath) return null;
+  return {
+    ok: !0,
+    assetId: persisted.assetId,
+    localPath: persisted.localPath,
+    filename: persisted.filename,
+    mime: persisted.mime,
+    size: persisted.size,
+    sha256: persisted.sha256,
+    projectId: persisted.projectId,
+    nodeId: persisted.nodeId,
+    field: persisted.field,
+    kind: persisted.kind,
+    savedAt: persisted.savedAt,
+    valueFormat: persisted.valueFormat || `file-url`,
+    sourceOrigin: extras.sourceOrigin || `external-upload`,
+    sourceSignature: buildProjectMediaFileUrl(persisted.localPath),
+  };
+}
 function wanjuanThemeTransitionPalette(themeName) {
   return ({
     dark: [`#0b1020`, `rgba(138,180,248,0.34)`],
@@ -16410,14 +16610,15 @@ var at = {
     },
   };
 
-const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://newapi.guancn.uk`;
+const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://jixing.guancn.uk`;
 const WANJUAN_TIANJI_SYNC_SOURCE_JIXIN = `jixin-default`;
 const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
 const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
-const WANJUAN_JIXIN_DEFAULT_API_URL = `https://newapi.guancn.uk`;
+const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
+const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-01-lconai-v3`;
+const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-04-jixing-gateway-models-v1`;
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // OpenAI GPT 系列
   `gpt-5.5`,
@@ -16425,74 +16626,72 @@ const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // DeepSeek 系列
   `deepseek-v4-pro`,
   `deepseek-v4-flash`,
+  `deepseek-v3.2-thinking`,
+  `deepseek-v3.2`,
   // Claude 系列
-  `claude-opus-4-8`,
-  `claude-opus-4-7`,
+  `claude-opus-4-6`,
+  `claude-opus-4-5-20251101`,
   `claude-sonnet-4-6`,
-  `claude-sonnet-4-5`,
+  `claude-sonnet-4-5-20250929`,
   // Qwen 系列
-  `Qwen3-235B-A22B-Instruct-2507`,
-  `Qwen3-30B-A3B-Instruct-2507`,
+  `qwen3.7-max`,
+  `qwen3.6-plus`,
   // Gemini 系列
-  `gemini-3-pro`,
   `gemini-3.1-pro-preview`,
-  `gemini-2.5-pro`,
+  `gemini-3.1-pro`,
+  `gemini-3-pro`,
+  `gemini-3.1-flash-lite-preview`,
+  `gemini-3-flash-preview`,
   // Kimi 系列
-  `Kimi-K2-Instruct`,
   `kimi-k2.6`,
+  `kimi-k2.5`,
   // Grok 系列
-  `grok-4.2`,
-  `grok-4.1`,
+  `grok-4-fast-reasoning`,
+  `grok-4-fast-non-reasoning`,
+  `grok-4`,
+  `grok-3`,
+  // GLM 系列
+  `glm-5.2`,
+  `glm-5.1`,
   // MiniMax 系列
   `MiniMax-M3`,
+  `MiniMax-M2.7`,
 ];
 const WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS = [
   // GPT Image 系列
   `gpt-image-2-pro`,
   `gpt-image-2`,
   `gpt-image-1.5`,
-  `gpt-image-1`,
+  `lconai-gpt-image-2`,
   // Gemini Image 系列
-  `gemini-3-pro-image-preview`,
+  `gemini-3.1-flash-image-preview-4k`,
+  `gemini-3.1-flash-image-preview-2k`,
   `gemini-3.1-flash-image-preview`,
-  `gemini-2.5-flash-image-preview`,
-  // Grok Image 系列
-  `grok-4.2-image`,
-  `grok-4.1-image`,
-  `grok-4-1-image`,
-  `grok-imagine-image-pro`,
-  `grok-imagine-image`,
+  `gemini-3-pro-image-preview-4k`,
+  `gemini-3-pro-image-preview-2k`,
+  `gemini-3-pro-image-preview`,
+  `gemini-2.5-flash-image`,
+  `nano-banana-2`,
+  `nano-banana`,
+  // 豆包 Seedream
+  `doubao-seedream-5-0`,
   // Qwen Image 系列
   `qwen-image-2.0-pro`,
   `qwen-image-2.0`,
-  `qwen-image-max`,
-  `qwen-image-plus-2026-01-09`,
+  `qwen-image-max-2025-12-30`,
   // 通义万象 Image
-  `wan2.7-image-pro`,
   `wan2.7-image`,
   `wan2.6-image`,
   // 其他
   `Z-Image-Turbo`,
-  `kling-image`,
 ];
 const WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS = [
-  // Google Veo3.1 系列
-  `veo3.1`,
-  `veo3.1-pro`,
+  // Google Veo 3.1 系列
   `veo3.1-fast`,
-	  `veo3.1-landscape`,
-	  `veo3.1-landscape-4k`,
-	  `veo3.1-landscape-hd`,
-  `veo3.1-portrait`,
-  `veo3.1-portrait-4k`,
-  `veo3.1-portrait-hd`,
+  `veo_3_1-fast`,
   // Grok Video 系列
   `grok-video-3`,
-  `grok-video-3-pro`,
-  `grok-video-3-max`,
-  `grok-video-4.2`,
-  // Sora-2 系列
-  `sora_video2`,
+  `grok-imagine-video-1.5-preview`,
 ];
 const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS = [
   `wan2.7-t2v-1080P`,
@@ -16520,6 +16719,10 @@ const WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS = [
   `doubao-seedance-2-0-260128`,
   `doubao-seedance-2-0-fast-260128`,
 ];
+const WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS = [
+  `doubao-seedance-2-0-260128`,
+  `doubao-seedance-2-0-fast-260128`,
+];
 const WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS = `4
 5
 6
@@ -16532,9 +16735,14 @@ const WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS = `4
 13
 14
 15`;
-const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS = `720p
+const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS = `480p
+720p
 1080p`;
-const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS = `16:9
+const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS = `21:9
+16:9
+4:3
+1:1
+3:4
 9:16`;
 const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_DURATIONS = `2
 5
@@ -16549,28 +16757,9 @@ const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RATIOS = `16:9
 3:4`;
 const WANJUAN_JIXIN_BUILTIN_MUSIC_MODELS = [
   `suno_music`,
-  `suno_music_open`,
   `suno_lyrics`,
-  `suno_concat`,
 ];
-const WANJUAN_JIXIN_BUILTIN_AUDIO_MODELS = [
-  // Qwen TTS 系列
-  `qwen3-tts-flash`,
-  `qwen3-tts-instruct-flash`,
-  `qwen-tts-flash`,
-  // GPT Audio/TTS 系列
-  `gpt-4o-audio-preview`,
-  `gpt-4o-mini-audio-preview`,
-  `tts-1-hd`,
-  `tts-1`,
-  // 其他 TTS
-  `kling-audio`,
-  `vidu-tts`,
-  // Whisper ASR 系列
-  `whisper`,
-  `whisper-1`,
-  `qwen3-asr-flash-realtime`,
-];
+const WANJUAN_JIXIN_BUILTIN_AUDIO_MODELS = [];
 const WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS = {
   ...WANJUAN_JIXIN_BUILTIN_TEXT_MODELS.reduce((bindings, model) => ({
     ...bindings,
@@ -16578,43 +16767,43 @@ const WANJUAN_JIXIN_BUILTIN_TEXT_PROTOCOLS = {
   }), {}),
   // Gemini 系列按智创文档建议使用 Generate Content 协议
   [`gemini-3-pro`]: `Gemini 文本原生`,
+  [`gemini-3.1-pro`]: `Gemini 文本原生`,
   [`gemini-3.1-pro-preview`]: `Gemini 文本原生`,
-  [`gemini-2.5-pro`]: `Gemini 文本原生`,
+  [`gemini-3.1-flash-lite-preview`]: `Gemini 文本原生`,
+  [`gemini-3-flash-preview`]: `Gemini 文本原生`,
   // Claude 系列按智创文档使用 Messages 协议
-  [`claude-opus-4-8`]: `极鑫 Claude Messages 兼容`,
-  [`claude-opus-4-7`]: `极鑫 Claude Messages 兼容`,
+  [`claude-opus-4-6`]: `极鑫 Claude Messages 兼容`,
+  [`claude-opus-4-5-20251101`]: `极鑫 Claude Messages 兼容`,
   [`claude-sonnet-4-6`]: `极鑫 Claude Messages 兼容`,
-  [`claude-sonnet-4-5`]: `极鑫 Claude Messages 兼容`,
+  [`claude-sonnet-4-5-20250929`]: `极鑫 Claude Messages 兼容`,
 };
 const WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS = {
   // GPT Image 系列
   [`gpt-image-2-pro`]: `极鑫图片兼容`,
   [`gpt-image-2`]: `极鑫图片兼容`,
   [`gpt-image-1.5`]: `极鑫图片兼容`,
-  [`gpt-image-1`]: `极鑫图片兼容`,
+  [`lconai-gpt-image-2`]: `极鑫图片兼容`,
   // Z-Image
   [`Z-Image-Turbo`]: `极鑫图片兼容`,
   // Gemini Image 系列
-  [`gemini-3-pro-image-preview`]: `极鑫 Gemini 图片兼容`,
+  [`gemini-3.1-flash-image-preview-4k`]: `极鑫 Gemini 图片兼容`,
+  [`gemini-3.1-flash-image-preview-2k`]: `极鑫 Gemini 图片兼容`,
   [`gemini-3.1-flash-image-preview`]: `极鑫 Gemini 图片兼容`,
-  [`gemini-2.5-flash-image-preview`]: `极鑫 Gemini 图片兼容`,
-  // Grok Image 系列
-  [`grok-4.2-image`]: `极鑫图片兼容`,
-  [`grok-4.1-image`]: `极鑫图片兼容`,
-  [`grok-4-1-image`]: `极鑫 Grok 图片兼容`,
-  [`grok-imagine-image-pro`]: `极鑫图片兼容`,
-  [`grok-imagine-image`]: `极鑫图片兼容`,
+  [`gemini-3-pro-image-preview-4k`]: `极鑫 Gemini 图片兼容`,
+  [`gemini-3-pro-image-preview-2k`]: `极鑫 Gemini 图片兼容`,
+  [`gemini-3-pro-image-preview`]: `极鑫 Gemini 图片兼容`,
+  [`gemini-2.5-flash-image`]: `极鑫 Gemini 图片兼容`,
+  [`nano-banana-2`]: `极鑫 Gemini 图片兼容`,
+  [`nano-banana`]: `极鑫 Gemini 图片兼容`,
+  // 豆包 Seedream
+  [`doubao-seedream-5-0`]: `极鑫图片兼容`,
   // Qwen Image 系列
   [`qwen-image-2.0-pro`]: `极鑫图片兼容`,
   [`qwen-image-2.0`]: `极鑫图片兼容`,
-  [`qwen-image-max`]: `极鑫图片兼容`,
-  [`qwen-image-plus-2026-01-09`]: `极鑫图片兼容`,
+  [`qwen-image-max-2025-12-30`]: `极鑫图片兼容`,
   // 通义万象 Image
-  [`wan2.7-image-pro`]: `极鑫图片兼容`,
   [`wan2.7-image`]: `极鑫图片兼容`,
   [`wan2.6-image`]: `极鑫图片兼容`,
-  // Kling Image
-  [`kling-image`]: `极鑫图片兼容`,
 };
 const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
   ...WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS.reduce((bindings, model) => ({
@@ -16640,6 +16829,10 @@ const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
     [model]: `极鑫通义万相视频编辑`,
   }), {}),
   ...WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS.reduce((bindings, model) => ({
+    ...bindings,
+    [model]: `极鑫视频兼容`,
+  }), {}),
+  ...WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS.reduce((bindings, model) => ({
     ...bindings,
     [model]: `极鑫视频兼容`,
   }), {}),
@@ -17097,6 +17290,8 @@ const wanjuanMergeObjectDefaults = (target = {}, defaults = {}) => ({
   ...(defaults || {}),
   ...(target && typeof target == `object` ? target : {}),
 });
+const wanjuanMergeOptionText = (current, defaults) =>
+  wanjuanMergeModelText(current, defaults);
 const wanjuanMergeJixinVideoProtocolDefaults = (target = {}, defaults = {}) => {
   let result = target && typeof target == `object` ? {
       ...target
@@ -17109,13 +17304,12 @@ const wanjuanMergeJixinVideoProtocolDefaults = (target = {}, defaults = {}) => {
   return result;
 };
 const wanjuanGetJixinDefaultApiConfigId = (settings = {}) => {
-  let apiConfigs = Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [],
-    jixinConfig =
-      apiConfigs.find((config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) ||
-      apiConfigs.find((config) => String(config?.url || ``).replace(/\s+/g, ``).replace(/\/+$/, ``) === WANJUAN_JIXIN_DEFAULT_API_URL) ||
-      apiConfigs[0];
-  return jixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID;
-};
+	  let apiConfigs = Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [],
+	    jixinConfig =
+	      apiConfigs.find((config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) ||
+	      apiConfigs[0];
+	  return jixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID;
+	};
 const wanjuanFindLegacyJixinApiKey = (settings = {}) =>
   [`apiKey`, `textApiKey`, `imageApiKey`, `videoApiKey`, `audioApiKey`]
     .map((key) => String(settings?.[key] || ``).trim())
@@ -17132,10 +17326,9 @@ const wanjuanEnsureJixinApiConfigKey = (settings = {}) => {
         key: ``,
         protocolFormat: `auto`,
       }],
-    jixinIndex = apiConfigs.findIndex((config) =>
-      config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
-      String(config?.url || ``).replace(/\s+/g, ``).replace(/\/+$/, ``) === WANJUAN_JIXIN_DEFAULT_API_URL
-    );
+	    jixinIndex = apiConfigs.findIndex((config) =>
+	      config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID
+	    );
   if (jixinIndex < 0 || String(apiConfigs[jixinIndex]?.key || ``).trim()) return settings;
   return {
     ...settings,
@@ -17153,6 +17346,7 @@ const wanjuanBuildJixinVideoModelBindings = (apiConfigId = WANJUAN_JIXIN_DEFAULT
       ...WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS,
       ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_MODELS,
       ...WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS,
+      ...WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS,
     ],
     apiConfigId,
   );
@@ -17211,6 +17405,17 @@ const wanjuanApplyJixinBuiltinProtocolPatch = (settings = {}) => {
     ),
   };
 };
+const wanjuanApplySeedanceOptionDefaults = (settings = {}) => ({
+  ...settings,
+  seedanceResolutions: wanjuanMergeOptionText(
+    settings.seedanceResolutions,
+    WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
+  ),
+  seedanceRatios: wanjuanMergeOptionText(
+    settings.seedanceRatios,
+    WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
+  ),
+});
 const wanjuanHasUserModelConfiguration = (settings = {}) => {
   let hasModelText = [
       `textModel`,
@@ -17219,6 +17424,7 @@ const wanjuanHasUserModelConfiguration = (settings = {}) => {
       `audioModel`,
       `ttsMusicModel`,
       `seedanceModel`,
+      `tianjiSeedanceModel`,
       `seedanceDurations`,
       `seedanceResolutions`,
       `seedanceRatios`,
@@ -17242,13 +17448,11 @@ const wanjuanHasUserModelConfiguration = (settings = {}) => {
       `audioModelProtocolBindings`,
     ].some((key) => settings?.[key] && typeof settings[key] == `object` && Object.keys(settings[key]).length > 0),
     hasStoredGlobalConfig = Array.isArray(settings.storedGlobalConfigs) && settings.storedGlobalConfigs.length > 0,
-    apiConfigs = Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [],
-    hasNonDefaultApiConfig = apiConfigs.some((config) => {
-      let normalizedUrl = String(config?.url || ``).replace(/\s+/g, ``).replace(/\/+$/, ``);
-      return config?.id !== WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
-        normalizedUrl && normalizedUrl !== WANJUAN_JIXIN_DEFAULT_API_URL ||
-        String(config?.key || ``).trim();
-    });
+	    apiConfigs = Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [],
+	    hasNonDefaultApiConfig = apiConfigs.some((config) => {
+	      return config?.id !== WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
+	        String(config?.key || ``).trim();
+	    });
   return hasModelText || hasModelBinding || hasStoredGlobalConfig || hasNonDefaultApiConfig;
 };
 const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
@@ -17262,9 +17466,8 @@ const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
         key: ``,
         protocolFormat: `auto`,
       }],
-    jixinConfig = apiConfigs.find((config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) ||
-      apiConfigs.find((config) => String(config?.url || ``).replace(/\s+/g, ``).replace(/\/+$/, ``) === WANJUAN_JIXIN_DEFAULT_API_URL) ||
-      apiConfigs[0],
+	    jixinConfig = apiConfigs.find((config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) ||
+	      apiConfigs[0],
     jixinConfigId = jixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
     textModel = wanjuanMergeModelText(source.textModel, WANJUAN_JIXIN_BUILTIN_TEXT_MODELS),
     drawingModel = wanjuanMergeModelText(source.drawingModel, WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS),
@@ -17280,21 +17483,21 @@ const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
     ...source,
     apiConfigs: apiConfigs.map((config) =>
       config === jixinConfig ? {
-        ...config,
-        id: jixinConfigId,
-        name: config.name || `极鑫`,
-        url: config.url || WANJUAN_JIXIN_DEFAULT_API_URL,
-        protocolFormat: config.protocolFormat || `auto`,
-      } : config,
-    ),
+	        ...config,
+	        id: jixinConfigId,
+	        name: config.name || `极鑫`,
+	        url: config.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ? WANJUAN_JIXIN_DEFAULT_API_URL : config.url || WANJUAN_JIXIN_DEFAULT_API_URL,
+	        protocolFormat: config.protocolFormat || `auto`,
+	      } : config,
+	    ),
     textApiConfigId: source.textApiConfigId || jixinConfigId,
     imageApiConfigId: source.imageApiConfigId || jixinConfigId,
     videoApiConfigId: source.videoApiConfigId || jixinConfigId,
     audioApiConfigId: source.audioApiConfigId || jixinConfigId,
-    textApiUrl: source.textApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
-    imageApiUrl: source.imageApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
-    videoApiUrl: source.videoApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
-    audioApiUrl: source.audioApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
+    textApiUrl: jixinConfigId === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ? WANJUAN_JIXIN_DEFAULT_API_URL : source.textApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
+    imageApiUrl: jixinConfigId === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ? WANJUAN_JIXIN_DEFAULT_API_URL : source.imageApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
+    videoApiUrl: jixinConfigId === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ? WANJUAN_JIXIN_DEFAULT_API_URL : source.videoApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
+    audioApiUrl: jixinConfigId === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ? WANJUAN_JIXIN_DEFAULT_API_URL : source.audioApiUrl || jixinConfig?.url || WANJUAN_JIXIN_DEFAULT_API_URL,
     textModel,
     drawingModel,
     videoModel,
@@ -17308,9 +17511,10 @@ const wanjuanBuildJixinBuiltinBasePatch = (source = {}) => {
     tongyiWanxiangResolutions: source.tongyiWanxiangResolutions || WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RESOLUTIONS,
     tongyiWanxiangRatios: source.tongyiWanxiangRatios || WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RATIOS,
     seedanceModel: source.seedanceModel || wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS),
+    tianjiSeedanceModel: source.tianjiSeedanceModel || wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS),
     seedanceDurations: source.seedanceDurations || WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
-    seedanceResolutions: source.seedanceResolutions || WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
-    seedanceRatios: source.seedanceRatios || WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
+    seedanceResolutions: wanjuanMergeModelText(source.seedanceResolutions, WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS),
+    seedanceRatios: wanjuanMergeModelText(source.seedanceRatios, WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS),
     videoResolutions: source.videoResolutions || `1280x720
 720x1280
 1920x1080
@@ -17455,7 +17659,7 @@ const wanjuanTianjiSeedanceDefaults = {
   syncSource: WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
   sassId: `1`,
   platform: `web`,
-  models: wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS),
+  models: wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS),
   durations: WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
   resolutions: WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
   ratios: WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
@@ -17609,7 +17813,7 @@ const wanjuanGetSyncedTianjiSeedanceConfig = async (options = {}) => {
   if (!jixinConfig) return currentConfig;
   let nextConfig = wanjuanBuildSyncedTianjiConfigFromJixin(currentConfig, jixinConfig, {
     ...options,
-    force: options.force === !0 || stored.advancedSettingsUnlocked !== !0,
+	          force: options.force === !0,
   });
   JSON.stringify(currentConfig) !== JSON.stringify(nextConfig) &&
     await wanjuanTianjiStorageSet({
@@ -18283,12 +18487,21 @@ const wanjuanTianjiMediaUrl = async (mediaRef, mediaKind = `image`, uploadOption
 async function wanjuanRunTianjiSeedanceVideo(options) {
   let config = await wanjuanGetSyncedTianjiSeedanceConfig(),
     sourceData = options.sourceNode?.data || {},
+    tianjiModelText = sourceData.tianjiSeedanceModel || config.models,
+    tianjiModelCandidates = String(tianjiModelText || ``)
+    .split(/[\s,，、]+/)
+    .map((part) => part.trim())
+    .filter(Boolean),
+    explicitTianjiModel = String(sourceData.tianjiSelectedModel || sourceData.selectedModel || ``).trim(),
     prompt =
     (Array.isArray(options.extraPrompts) && options.extraPrompts.length > 0 ?
       `${options.extraPrompts.join(`
 `)}\n${options.prompt || ``}` :
       options.prompt || ``).trim(),
-    model = wanjuanTianjiFirstListValue(sourceData.tianjiSelectedModel || sourceData.selectedModel || sourceData.videoModel || config.models),
+    model = explicitTianjiModel &&
+    tianjiModelCandidates.some((candidate) => WanJuanSameModelId(candidate, explicitTianjiModel)) ?
+    explicitTianjiModel :
+    wanjuanTianjiFirstListValue(tianjiModelText || sourceData.videoModel || config.models),
     resolution = String(
       sourceData.selectedResolution ||
       wanjuanTianjiFirstListValue(sourceData.seedanceResolutions || config.resolutions, `720p`),
@@ -18301,7 +18514,7 @@ async function wanjuanRunTianjiSeedanceVideo(options) {
     aspectRatio = String(sourceData.size || options.selectedSize || wanjuanTianjiFirstListValue(sourceData.seedanceRatios || sourceData.videoResolutions || config.ratios, `16:9`)).trim();
   if (!aspectRatio.includes(`:`)) aspectRatio = normalizeVideoAspectRatioValue(aspectRatio, `1280x720`);
   if (!model) throw Error(`请先在设置中配置天玑 Seedance 模型`);
-  let generationMode = sourceData.tianjiSeedanceGenerationMode || `text-to-video`,
+  let generationMode = `reference-media`,
     requestParams = {
       duration: duration,
       ratio: aspectRatio,
@@ -18780,6 +18993,7 @@ function dt({
 	3:2
 	2:3`,
   seedanceModel: seedanceModel = wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS),
+  tianjiSeedanceModel: tianjiSeedanceModel = wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS),
   seedanceDurations: seedanceDurations = WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
   seedanceResolutions: seedanceResolutions = WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
   seedanceRatios: seedanceRatios = WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
@@ -20613,14 +20827,15 @@ function dt({
         },
         [getNodes, setNodes, handleCrop, showToast, getEdges],
     ),
-    createImageNode = useCallback(
-      (sourceNodeId, imageUrl) => {
-        let sourceNode = getNodes().find((node) => node.id === sourceNodeId);
-        if (sourceNode) {
-          let imageNodeId = `image-${Date.now()}`,
-            imageNode = {
-              id: imageNodeId,
-              type: `imageNode`,
+	    createImageNode = useCallback(
+	      (sourceNodeId, imageUrl) => {
+	        let sourceNode = getNodes().find((node) => node.id === sourceNodeId);
+	        if (sourceNode) {
+	          if (!imageUrl) return;
+	          let imageNodeId = `image-${Date.now()}`,
+	            imageNode = {
+	              id: imageNodeId,
+	              type: `imageNode`,
               position: {
                 x: sourceNode.position.x - 400,
                 y: sourceNode.position.y
@@ -20628,25 +20843,25 @@ function dt({
               style: {
                 width: 224,
                 height: 224
-              },
-              data: {
-                imageUrl: imageUrl,
-                onCrop: handleCrop,
-                onZoom: openImagePreview,
-                onEdit: openImageEditor
-              },
-            };
-          setNodes((prevNodes) => prevNodes.concat(imageNode));
-          let newEdge = {
-            id: `e-${imageNodeId}-${sourceNodeId}`,
+	              },
+	              data: {
+	                imageUrl: imageUrl,
+	                onCrop: handleCrop,
+	                onZoom: openImagePreview,
+	                onEdit: openImageEditor,
+	              },
+	            };
+	          setNodes((prevNodes) => prevNodes.concat(imageNode));
+	          let newEdge = {
+	            id: `e-${imageNodeId}-${sourceNodeId}`,
             source: imageNodeId,
-            target: sourceNodeId
-          };
-          setEdges((prevEdges) => prevEdges.concat(newEdge));
-        }
-      },
-      [getNodes, setNodes, setEdges, handleCrop, openImagePreview],
-    ),
+	            target: sourceNodeId
+	          };
+	          setEdges((prevEdges) => prevEdges.concat(newEdge));
+	        }
+	      },
+	      [getNodes, setNodes, setEdges, handleCrop, openImagePreview, openImageEditor],
+	    ),
     generateImage = useCallback(
       async (nodeId, prompt, size = `1024x1024`, modelName, apiBindingId) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
@@ -22588,15 +22803,29 @@ ${combinedPrompt}`,
             .replace(/\s+/g, ``)
             .replace(/\/$/, ``),
             normalizeVideoModelName = (modelName3) =>
-            String(modelName3 || `grok-video-4.2`)
-            .split(/[\n,，、]+/)
-            .map((e) => e.trim())
-            .filter(Boolean)[0] || `grok-video-4.2`,
-            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
-            seedanceSourceNode = getNodes().find((node) => node.id === nodeId),
-            isVideoApiBoundSourceNode =
-            seedanceSourceNode?.type === `seedanceNode` ||
-            seedanceSourceNode?.type === `tongyiWanxiangNode`,
+	            String(modelName3 || `grok-video-4.2`)
+	            .split(/[\n,，、]+/)
+	            .map((e) => e.trim())
+	            .filter(Boolean)[0] || `grok-video-4.2`,
+	            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
+	            seedanceSourceNode = getNodes().find((node) => node.id === nodeId);
+	          if (seedanceSourceNode?.type === `seedanceNode` && seedanceSourceNode?.data?.seedanceMode !== `tianji`) {
+	            let seedanceOfficialModelText = seedanceSourceNode?.data?.seedanceModel || seedanceSourceNode?.data?.videoModel || ``,
+	              seedanceOfficialModel = WanJuanGetPreferredModel(
+	                seedanceOfficialModelText || modelName,
+	                seedanceSourceNode?.data?.seedanceSelectedModel || modelName || ``,
+	                void 0,
+	                {
+	                  manual: seedanceSourceNode?.data?.seedanceModelManual === !0,
+	                  auto: seedanceSourceNode?.data?.wanjuanModelAuto === !0,
+	                },
+	              );
+	            seedanceOfficialModel && (modelName = normalizeVideoModelName(seedanceOfficialModel));
+	          }
+	          let
+	            isVideoApiBoundSourceNode =
+	            seedanceSourceNode?.type === `seedanceNode` ||
+	            seedanceSourceNode?.type === `tongyiWanxiangNode`,
             selectedVideoApiConfigId =
             apiBindingId ||
             resolveModelApiBindingIdHelper(
@@ -22665,13 +22894,13 @@ ${combinedPrompt}`,
                 console.warn(`Failed to persist background video node`, error);
               }
             };
-          let isSeedanceNode =
-            seedanceSourceNode?.type === `seedanceNode` ||
-            /^(?:doubao-)?seedance(?:-2(?:\.|-)?0|-2-0)/i.test(modelName),
-            modelProtocolDefinition =
-            modelProtocolRegistry?.[
-              seedanceSourceNode?.data?.videoModelProtocolBindings?.[modelName] ||
-              videoModelProtocolBindings?.[modelName]
+		          let isSeedanceNode =
+		            seedanceSourceNode?.type === `seedanceNode` ||
+		            /^(?:doubao-)?seedance(?:-2(?:\.|-)?0|-2-0)/i.test(modelName),
+		            modelProtocolDefinition =
+		            modelProtocolRegistry?.[
+	              seedanceSourceNode?.data?.videoModelProtocolBindings?.[modelName] ||
+	              videoModelProtocolBindings?.[modelName]
             ],
             parseVideoModelRequestProfiles = (value) => {
               if (!value) return {};
@@ -24479,7 +24708,7 @@ ${combinedPrompt}`,
 	                    })),
 	                  modelConfig.category === `video` &&
 	                  /^grok-(?:video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
-	                  (/^https?:\/\/newapi\.guancn\.uk/i.test(apiUrl) ||
+                  (/^https?:\/\/jixing\.guancn\.uk/i.test(apiUrl) ||
 	                    /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl)) &&
 	                  ((requestProfile.requestType = `multipart-video`),
 	          (requestProfile.submitPath = `/v1/videos`),
@@ -25899,7 +26128,11 @@ ${combinedPrompt}`,
                 return textApiBaseUrl;
               }
             })(),
-            textProtocolBindingName = textModelProtocolBindings?.[textModelName],
+            textProtocolBindingName = resolveModelProtocolBindingHelper(
+              textModelProtocolBindings,
+              textModelName,
+              textModelProtocolBindings?.[textModelName],
+            ),
             textProtocolDefinition = modelProtocolRegistry?.[textProtocolBindingName],
             inferTextRequestProtocol = (e, t, n, r, apiUrl) => {
               let modelIdentifier = [e, t, n, r]
@@ -26243,40 +26476,28 @@ ${combinedPrompt}`,
                 }
               for (let videoUrl of videoUrls)
                 try {
-                  let originalUrl = videoUrl,
-                    videoDataUrl = await mediaUrlToDataUrl(videoUrl),
-                    dataUrlMatch = videoDataUrl.match(/^data:(video\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-                  dataUrlMatch
-                    ?
-                    parts.push({
-                      inlineData: {
-                        mimeType: dataUrlMatch[1],
-                        data: dataUrlMatch[2]
-                      }
-                    }) :
-                    /^(https?:|blob:)/i.test(videoDataUrl) ?
-                    parts.push({
-                      fileData: {
-                        mimeType: (() => {
-                          let lowerUrl = String(videoDataUrl || originalUrl || ``).toLowerCase();
-                          return lowerUrl.includes(`.webm`) ?
-                            `video/webm` :
-                            lowerUrl.includes(`.mov`) ?
-                            `video/quicktime` :
-                            lowerUrl.includes(`.m4v`) ?
-                            `video/x-m4v` :
-                            `video/mp4`;
-                        })(),
-                        fileUri: videoDataUrl,
-                      },
-                    }) :
-                    console.warn(
-                      `Video was not attached to Gemini request because it could not be converted to inlineData or fileData:`,
-                      originalUrl,
-                      videoDataUrl,
-                    );
+                  let videoDataUrl = await mediaUrlToDataUrl(videoUrl),
+                    dataUrlMatch = String(videoDataUrl || ``).match(/^data:([^;,]*)(;base64)?,(.*)$/s);
+                  if (!dataUrlMatch || !dataUrlMatch[2] || !dataUrlMatch[3])
+                    throw Error(`参考视频未能转为模型可读取的视频内容，请检查资源文件是否存在或重新选择本地视频`);
+                  let lowerUrl = String(videoUrl || ``).toLowerCase(),
+                    mimeType = /^video\//i.test(String(dataUrlMatch[1] || ``).trim()) ?
+                    String(dataUrlMatch[1] || ``).trim() :
+                    lowerUrl.includes(`.webm`) ?
+                    `video/webm` :
+                    lowerUrl.includes(`.mov`) ?
+                    `video/quicktime` :
+                    lowerUrl.includes(`.m4v`) ?
+                    `video/x-m4v` :
+                    `video/mp4`;
+                  parts.push({
+                    inlineData: {
+                      mimeType: mimeType,
+                      data: String(dataUrlMatch[3] || ``).replace(/\s+/g, ``),
+                    },
+                  });
                 } catch (error) {
-                  console.warn(`Failed to process video for text node:`, videoUrl, error);
+                  throw Error(`参考视频处理失败，未发送到模型：${error?.message || error}`);
                 }
               parts.length === 0 && systemParts.length === 0 && systemParts.push({
                 text: ` `
@@ -27670,15 +27891,39 @@ ${combinedPrompt}`,
         },
         [setNodes, showToast],
     ),
-    handleExtractFrames = useCallback(
-      async (nodeId) => {
-          let node = getNodes().find((node2) => node2.id === nodeId);
-          node && node.data.onExtractFrames && (await node.data.onExtractFrames(nodeId));
-        },
-        [getNodes],
-    ),
-    runNodeChain = useCallback(
-      async (nodeId) => {
+	    handleExtractFrames = useCallback(
+	      async (nodeId) => {
+	          let node = getNodes().find((node2) => node2.id === nodeId);
+	          node && node.data.onExtractFrames && (await node.data.onExtractFrames(nodeId));
+	        },
+	        [getNodes],
+	    ),
+	    resolveVideoRunModel = (nodeData = {}, nodeType = ``) => {
+	      let modelText =
+	          nodeType === `seedanceNode` ?
+	          nodeData.seedanceMode === `tianji` ?
+	          nodeData.tianjiSeedanceModel || nodeData.videoModel :
+	          nodeData.seedanceModel || nodeData.videoModel :
+	          nodeData.videoModel,
+	        currentModel =
+	          nodeType === `seedanceNode` ?
+	          nodeData.seedanceMode === `tianji` ?
+	          nodeData.tianjiSelectedModel || nodeData.selectedModel :
+	          nodeData.seedanceSelectedModel || nodeData.selectedModel :
+	          nodeData.selectedModel;
+	      return currentModel ?
+	        currentModel :
+	        modelText ?
+	        String(modelText)
+	        .split(
+	          `
+		`,
+	        )[0]
+	        .trim() :
+	        void 0;
+	    },
+	    runNodeChain = useCallback(
+	      async (nodeId) => {
           let descendantIds = new Set(),
             edges2 = getEdges(),
             queue = [nodeId];
@@ -27786,19 +28031,10 @@ ${combinedPrompt}`,
                   await generateVideo(
                     nodeId2,
                     nodeData.prompt || ``,
-                    String(nodeData.size || `1280x720`)
-                    .split(/[\s,，、]+/)[0]
-                    ?.trim() || `1280x720`,
-                    nodeData.selectedModel ?
-                    nodeData.selectedModel :
-                    nodeData.videoModel ?
-                    nodeData.videoModel
-                    .split(
-                      `
-	`,
-                    )[0]
-                    .trim() :
-                    void 0,
+	                    String(nodeData.size || `1280x720`)
+	                    .split(/[\s,，、]+/)[0]
+	                    ?.trim() || `1280x720`,
+	                    resolveVideoRunModel(nodeData, node.type),
                     nodeData.selectedSeconds ?
                     String(nodeData.selectedSeconds || ``)
                     .split(/[\s,，、]+/)[0]
@@ -27995,19 +28231,10 @@ ${combinedPrompt}`,
                     await generateVideo(
                       nodeId,
                       nodeData.prompt || ``,
-                      String(nodeData.size || `1280x720`)
-                      .split(/[\s,，、]+/)[0]
-                      ?.trim() || `1280x720`,
-                      nodeData.selectedModel ?
-                      nodeData.selectedModel :
-                      nodeData.videoModel ?
-                      nodeData.videoModel
-                      .split(
-                        `
-	`,
-                      )[0]
-                      .trim() :
-                      void 0,
+	                      String(nodeData.size || `1280x720`)
+	                      .split(/[\s,，、]+/)[0]
+	                      ?.trim() || `1280x720`,
+	                      resolveVideoRunModel(nodeData, node.type),
                       nodeData.selectedSeconds ?
                       String(nodeData.selectedSeconds || ``)
                       .split(/[\s,，、]+/)[0]
@@ -28078,7 +28305,11 @@ ${combinedPrompt}`,
         [getNodes, getEdges, generateImage, generateText, generateVideo, handleGenerateCustom, showToast, layeredRunMaxConcurrency],
     ),
     $ = (nodeType, position, nodeData = {}, connection) => {
-      let newNodeId = `${nodeType}-${Date.now()}`,
+      let {
+          __nodeId,
+          ...cleanNodeData
+        } = nodeData || {},
+        newNodeId = typeof __nodeId == `string` && __nodeId ? __nodeId : `${nodeType}-${Date.now()}`,
         newNode = {
           id: newNodeId,
           type: nodeType,
@@ -28110,12 +28341,12 @@ ${combinedPrompt}`,
             } :
             void 0,
           data: {
-            ...nodeData,
-            expanded: nodeData.expanded === void 0 ?
+            ...cleanNodeData,
+            expanded: cleanNodeData.expanded === void 0 ?
               nodeType === `promptNode` || nodeType === `textNode` || nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ?
               !0 :
               void 0 :
-              nodeData.expanded,
+              cleanNodeData.expanded,
             onGenerate: nodeType === `promptNode` ? generateImage : void 0,
             onGenerateText: nodeType === `textNode` ? generateText : void 0,
             onGenerateVideo: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? generateVideo : void 0,
@@ -28192,6 +28423,8 @@ ${combinedPrompt}`,
             tongyiWanxiangResolutions: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangResolutions : void 0,
             tongyiWanxiangRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : void 0,
             videoModel: nodeType === `seedanceNode` ?
+              cleanNodeData.seedanceMode === `tianji` ?
+              tianjiSeedanceModel :
               seedanceModel :
               nodeType === `tongyiWanxiangNode` ?
               tongyiWanxiangTextModels :
@@ -28199,6 +28432,8 @@ ${combinedPrompt}`,
               videoModel :
               void 0,
             videoDurations: nodeType === `seedanceNode` ? seedanceDurations : nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : nodeType === `videoNode` ? g : void 0,
+            seedanceModel: nodeType === `seedanceNode` ? seedanceModel : void 0,
+            tianjiSeedanceModel: nodeType === `seedanceNode` ? tianjiSeedanceModel : void 0,
             videoResolutions: nodeType === `seedanceNode` ?
               seedanceRatios :
               nodeType === `tongyiWanxiangNode` ?
@@ -28279,40 +28514,126 @@ ${combinedPrompt}`,
       }
       setMenuPosition(null);
     },
+    persistImportedMediaFile = async (file, nodeId, field, mediaKind, mediaUrl = ``) => {
+      if (!file || !window.wanjuanDesktop?.persistProjectAsset) return null;
+      try {
+        let nativePath = wanjuanGetDroppedFilePath(file),
+          payload = {
+            projectId: projectIdRef.current || `default`,
+            nodeId,
+            field,
+            kind: mediaKind,
+            filename: file.name || `${mediaKind}-${Date.now()}`,
+            mime: wanjuanMimeFromMediaKind(mediaKind, file),
+            size: file.size || 0,
+            directory: ``,
+          };
+        nativePath ?
+          (payload.localPath = nativePath) :
+          mediaUrl &&
+          (payload.url = mediaUrl);
+        if (!payload.localPath && !payload.url) return null;
+        let persisted = await window.wanjuanDesktop.persistProjectAsset(payload);
+        if (!persisted?.ok || !persisted.localPath) return null;
+        let fileUrl = buildProjectMediaFileUrl(persisted.localPath);
+        return {
+          url: fileUrl,
+          localPath: persisted.localPath,
+          binding: wanjuanBuildProjectAssetBinding(persisted, {
+            sourceOrigin: `external-upload`,
+          }),
+        };
+      } catch (error) {
+        return (console.warn(`Import media persist skipped`, error), null);
+      }
+    },
+    createImportedMediaNode = (file, position, connection) => {
+      let mediaKind = wanjuanMediaKindFromFile(file),
+        nodeId = `imageNode-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        nativePath = wanjuanGetDroppedFilePath(file),
+        stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
+        createNodeWithUrl = (mediaUrl) => {
+          if (!mediaUrl) return;
+          $(
+            `imageNode`,
+            position, {
+              __nodeId: nodeId,
+              imageUrl: mediaUrl,
+              label: file.name,
+              sourceOrigin: `external-upload`,
+              originalName: file.name,
+              mediaKind,
+              ...(nativePath ? {
+                localPath: nativePath,
+                filePath: nativePath,
+              } : {}),
+            },
+            connection,
+          );
+          persistImportedMediaFile(file, nodeId, `imageUrl`, mediaKind, mediaUrl).then((persisted) => {
+        if (!persisted?.url) {
+          addGeneratedAsset?.(mediaUrl, mediaKind, file.name, `external-upload`);
+          return;
+        }
+        setNodes((nodes2) =>
+          nodes2.map((node) =>
+            node.id === nodeId ?
+            {
+              ...node,
+              data: {
+                ...node.data,
+                imageUrl: persisted.url,
+                localPath: persisted.localPath,
+                filePath: persisted.localPath,
+                projectAssetBindings: persisted.binding ? {
+                  ...(node.data?.projectAssetBindings || {}),
+                  imageUrl: persisted.binding,
+                } : node.data?.projectAssetBindings,
+              },
+            } :
+            node,
+          ),
+        );
+        addGeneratedAsset?.(persisted.url, mediaKind, file.name, `external-upload`);
+          });
+        };
+      if (stableUrl) {
+        createNodeWithUrl(stableUrl);
+        return;
+      }
+      let reader = new FileReader();
+      ((reader.onload = (event2) => {
+          let dataUrl = event2.target?.result;
+          typeof dataUrl == `string` && dataUrl && createNodeWithUrl(dataUrl);
+        }),
+        reader.readAsDataURL(file));
+    },
     handleFileChange = (event) => {
       !event.target.files ||
         event.target.files.length === 0 ||
         (Array.from(event.target.files).forEach((file, index) => {
-            let reader = new FileReader();
-            ((reader.onload = (event2) => {
-                let result = event2.target?.result;
-                if (menuPosition) {
-                  let position = screenToFlowPosition({
-                    x: menuPosition.x + (wrapperRef.current?.getBoundingClientRect().left || 0) + index * 50,
-                    y: menuPosition.y + (wrapperRef.current?.getBoundingClientRect().top || 0) + index * 50,
-                  });
-	                  file.type.startsWith(`text/`) ?
-	                    $(`textNode`, position, {
-	                      text: result,
-	                      label: file.name,
-	                      sourceOrigin: `external-upload`,
-	                      originalName: file.name,
-	                    }, menuPosition.connection) :
-	                    $(
-	                      `imageNode`,
-	                      position, {
-                        imageUrl: result,
-                        label: file.name,
-                        sourceOrigin: `external-upload`,
-                        originalName: file.name,
-                        mediaKind: file.type.startsWith(`video/`) ? `video` : file.type.startsWith(`audio/`) ? `audio` : `image`,
-	                      },
-	                      menuPosition.connection,
-	                    );
-	                  addGeneratedAsset?.(result, file.type.startsWith(`text/`) ? `text` : file.type.startsWith(`video/`) ? `video` : file.type.startsWith(`audio/`) ? `audio` : `image`, file.name, `external-upload`);
-	                }
-	              }),
-              file.type.startsWith(`text/`) ? reader.readAsText(file) : reader.readAsDataURL(file));
+            if (!menuPosition) return;
+            let position = screenToFlowPosition({
+              x: menuPosition.x + (wrapperRef.current?.getBoundingClientRect().left || 0) + index * 50,
+              y: menuPosition.y + (wrapperRef.current?.getBoundingClientRect().top || 0) + index * 50,
+            });
+            if (file.type.startsWith(`text/`)) {
+              let reader = new FileReader();
+              ((reader.onload = (event2) => {
+                  let result = event2.target?.result;
+                  ($(`textNode`, position, {
+                      text: result,
+                      label: file.name,
+                      sourceOrigin: `external-upload`,
+                      originalName: file.name,
+                    }, menuPosition.connection),
+                    addGeneratedAsset?.(result, `text`, file.name, `external-upload`));
+                }),
+                reader.readAsText(file));
+              return;
+            }
+            (file.type.startsWith(`image/`) || file.type.startsWith(`video/`) || file.type.startsWith(`audio/`)) &&
+              createImportedMediaNode(file, position, menuPosition.connection);
           }),
           (event.target.value = ``));
     },
@@ -28795,13 +29116,14 @@ ${combinedPrompt}`,
                     file.type.startsWith(`audio/`) ||
                     file.type.startsWith(`text/`)
                   ) {
-                    let fileReader = new FileReader();
-                    ((fileReader.onload = (event2) => {
-                        let fileResult = event2.target?.result,
-                          position = {
-                            x: dropPosition.x + index * 50,
-                            y: dropPosition.y + index * 50
-                          };
+                    let position = {
+                      x: dropPosition.x + index * 50,
+                      y: dropPosition.y + index * 50
+                    };
+                    if (file.type.startsWith(`text/`)) {
+                      let fileReader = new FileReader();
+                      ((fileReader.onload = (event2) => {
+                          let fileResult = event2.target?.result;
                         file.type.startsWith(`text/`) ?
                           $(`textNode`, position, {
                             text: fileResult,
@@ -28809,18 +29131,13 @@ ${combinedPrompt}`,
                             sourceOrigin: `external-upload`,
                             originalName: file.name,
                           }) :
-	                          $(`imageNode`, position, {
-	                            imageUrl: fileResult,
-	                            label: file.name,
-	                            sourceOrigin: `external-upload`,
-	                            originalName: file.name,
-	                            mediaKind: file.type.startsWith(`video/`) ? `video` : file.type.startsWith(`audio/`) ? `audio` : `image`,
-	                          });
-	                        addGeneratedAsset?.(fileResult, file.type.startsWith(`text/`) ? `text` : file.type.startsWith(`video/`) ? `video` : file.type.startsWith(`audio/`) ? `audio` : `image`, file.name, `external-upload`);
+                          null;
+                        addGeneratedAsset?.(fileResult, `text`, file.name, `external-upload`);
 	                      }),
-                      file.type.startsWith(`text/`) ?
-                      fileReader.readAsText(file) :
-                      fileReader.readAsDataURL(file));
+                        fileReader.readAsText(file));
+                      return;
+                    }
+                    createImportedMediaNode(file, position);
                   }
                 });
                 return;
@@ -28902,12 +29219,44 @@ ${combinedPrompt}`,
             (nodeData.seedanceNode !== !0 && ((nodeData.seedanceNode = !0), (hasChanged = !0)),
               nodeData.tongyiWanxiangNode !== void 0 &&
               ((nodeData.tongyiWanxiangNode = void 0), (hasChanged = !0)),
-              nodeData.videoModel !==
-              seedanceModel &&
-              ((nodeData.videoModel = seedanceModel),
-                (hasChanged = !0)),
-              nodeData.videoDurations !== seedanceDurations &&
-              ((nodeData.videoDurations = seedanceDurations), (hasChanged = !0)),
+              nodeData.seedanceModel !== seedanceModel &&
+              ((nodeData.seedanceModel = seedanceModel), (hasChanged = !0)),
+	              nodeData.tianjiSeedanceModel !== tianjiSeedanceModel &&
+	              ((nodeData.tianjiSeedanceModel = tianjiSeedanceModel), (hasChanged = !0)),
+	              nodeData.videoModel !==
+	              (nodeData.seedanceMode === `tianji` ? tianjiSeedanceModel : seedanceModel) &&
+	              ((nodeData.videoModel = nodeData.seedanceMode === `tianji` ? tianjiSeedanceModel : seedanceModel),
+	                (hasChanged = !0)),
+	              (() => {
+	                let officialSelectedModel = WanJuanGetPreferredModel(seedanceModel, nodeData.seedanceSelectedModel || nodeData.selectedModel || ``, void 0, {
+	                    manual: nodeData.seedanceModelManual === !0,
+	                    auto: nodeData.wanjuanModelAuto === !0,
+	                  }),
+	                  tianjiSelectedModel = WanJuanGetPreferredModel(tianjiSeedanceModel, nodeData.tianjiSelectedModel || nodeData.selectedModel || ``, void 0, {
+	                    manual: nodeData.tianjiModelManual === !0,
+	                    auto: nodeData.wanjuanModelAuto === !0,
+	                  }),
+	                  nextSelectedModel = nodeData.seedanceMode === `tianji` ? tianjiSelectedModel : officialSelectedModel;
+	                officialSelectedModel &&
+	                  !WanJuanSameModelId(nodeData.seedanceSelectedModel, officialSelectedModel) &&
+	                  WanJuanShouldAutoPreferredModel(seedanceModel, nodeData.seedanceSelectedModel || nodeData.selectedModel || ``, {
+	                    manual: nodeData.seedanceModelManual === !0,
+	                    auto: nodeData.wanjuanModelAuto === !0,
+	                  }) &&
+	                  ((nodeData.seedanceSelectedModel = officialSelectedModel), (hasChanged = !0));
+	                tianjiSelectedModel &&
+	                  !WanJuanSameModelId(nodeData.tianjiSelectedModel, tianjiSelectedModel) &&
+	                  WanJuanShouldAutoPreferredModel(tianjiSeedanceModel, nodeData.tianjiSelectedModel || nodeData.selectedModel || ``, {
+	                    manual: nodeData.tianjiModelManual === !0,
+	                    auto: nodeData.wanjuanModelAuto === !0,
+	                  }) &&
+	                  ((nodeData.tianjiSelectedModel = tianjiSelectedModel), (hasChanged = !0));
+	                nextSelectedModel &&
+	                  !WanJuanSameModelId(nodeData.selectedModel, nextSelectedModel) &&
+	                  ((nodeData.selectedModel = nextSelectedModel), (hasChanged = !0));
+	              })(),
+	              nodeData.videoDurations !== seedanceDurations &&
+	              ((nodeData.videoDurations = seedanceDurations), (hasChanged = !0)),
               nodeData.seedanceResolutions !== seedanceResolutions &&
               ((nodeData.seedanceResolutions = seedanceResolutions), (hasChanged = !0)),
               nodeData.seedanceRatios !== seedanceRatios &&
@@ -29189,6 +29538,7 @@ ${combinedPrompt}`,
     l,
     updateTaskList,
     seedanceModel,
+    tianjiSeedanceModel,
     seedanceDurations,
     seedanceResolutions,
     seedanceRatios,
@@ -31757,13 +32107,7 @@ function St() {
   [currentPage, setCurrentPage] = useState(1),
   [activeView, setActiveView] = useState(`canvas`),
   [activeSettingsTab, setActiveSettingsTab] = useState(`oneStop`),
-  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(() => {
-    try {
-      return localStorage.getItem(`wanjuanAdvancedSettingsUnlocked`) === `true`;
-    } catch {
-      return !1;
-    }
-  }),
+	  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(!0),
   [settingsNavUnlockClicks, setSettingsNavUnlockClicks] = useState(0),
   [te, R] = useState(!1),
   [ne, z] = useState(``),
@@ -31987,13 +32331,13 @@ Suno 音乐生成`,
   [configButlerManualProblemPart, setConfigButlerManualProblemPart] = useState(`submit`),
   [configButlerRepairHistory, setConfigButlerRepairHistory] = useState([]),
   [configButlerRepairHistoryOpen, setConfigButlerRepairHistoryOpen] = useState(!1),
-  [configButlerExpanded, setConfigButlerExpanded] = useState(!1),
+  [configButlerExpanded, setConfigButlerExpanded] = useState(!0),
   [jixinModelScanNotice, setJixinModelScanNotice] = useState(null),
   [jixinModelScanBusy, setJixinModelScanBusy] = useState(!1),
   [configButlerAgentExpanded, setConfigButlerAgentExpanded] = useState(
-    !1,
+    !0,
   ),
-  [globalConfigPresetsExpanded, setGlobalConfigPresetsExpanded] = useState(!1),
+  [globalConfigPresetsExpanded, setGlobalConfigPresetsExpanded] = useState(!0),
   [storedGlobalConfigs, setStoredGlobalConfigs] = useState([]),
   [activeStoredGlobalConfigId, setActiveStoredGlobalConfigId] = useState(``),
   [protocolFormatsExpanded, setProtocolFormatsExpanded] = useState(!1),
@@ -32037,7 +32381,8 @@ Suno 音乐生成`,
 3840x2160
 2160x3840`),
 	  [videoModelRequestProfilesText, setVideoModelRequestProfilesText] = useState(`{}`),
-  [seedanceModel, setSeedanceModel] = useState(wanjuanTianjiSeedanceDefaults.models),
+  [seedanceModel, setSeedanceModel] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS)),
+  [tianjiSeedanceModel, setTianjiSeedanceModel] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS)),
   [seedanceDurations, setSeedanceDurations] = useState(wanjuanTianjiSeedanceDefaults.durations),
   [seedanceResolutions, setSeedanceResolutions] = useState(wanjuanTianjiSeedanceDefaults.resolutions),
   [seedanceRatios, setSeedanceRatios] = useState(wanjuanTianjiSeedanceDefaults.ratios),
@@ -32107,13 +32452,13 @@ time=1h`,
   [layeredRunMaxConcurrency, setLayeredRunMaxConcurrency] =
   useState(2),
   [edges, setEdges] = useState([]),
-  [apiConfigs, setApiConfigs] = useState([{
-    id: `jixin-default`,
-    name: `极鑫`,
-    url: `https://newapi.guancn.uk`,
-    key: ``,
-    protocolFormat: `auto`,
-  }]),
+	  [apiConfigs, setApiConfigs] = useState([{
+	    id: `jixin-default`,
+	    name: `极鑫`,
+	    url: WANJUAN_JIXIN_DEFAULT_API_URL,
+	    key: ``,
+	    protocolFormat: `auto`,
+	  }]),
   [textApiConfigId, setTextApiConfigId] = useState(WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID),
   [imageApiConfigId, setImageApiConfigId] = useState(WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID),
   [videoApiConfigId, setVideoApiConfigId] = useState(WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID),
@@ -32369,6 +32714,7 @@ time=1h`,
 	    videoAspectRatios,
 	    videoModelRequestProfilesText,
 	    seedanceModel,
+	    tianjiSeedanceModel,
 	    seedanceDurations,
 	    seedanceResolutions,
 	    seedanceRatios,
@@ -32725,14 +33071,13 @@ time=1h`,
           setShowToast(!1);
         }, 2e3));
     },
-    WANJUAN_JIXIN_API_URL = `https://newapi.guancn.uk`,
-    WANJUAN_JIXIN_DOC_URL = `https://newapi.guancn.uk/docs`,
+	    WANJUAN_JIXIN_API_URL = WANJUAN_JIXIN_DEFAULT_API_URL,
+	    WANJUAN_JIXIN_DOC_URL = `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs`,
     WANJUAN_CUSTOM_API_LIMIT = 3,
-    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN = `jixin-default`,
-    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL = `manual`,
-    isJixinDefaultApiConfig = (config) =>
-    config?.id === `jixin-default` ||
-    normalizeButlerBaseUrl(config?.url) === normalizeButlerBaseUrl(WANJUAN_JIXIN_API_URL),
+	    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN = `jixin-default`,
+	    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL = `manual`,
+	    isJixinDefaultApiConfig = (config) =>
+	    config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
     resolveJixinApiConfigForTianjiSettings = (candidateConfig = null, stored = {}) => {
       let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],
         storedJixinConfig = storedApiConfigs.find(isJixinDefaultApiConfig) || null,
@@ -32803,7 +33148,7 @@ time=1h`,
         {},
         nextConfig = buildSyncedTianjiConfigFromJixinApi(currentConfig, jixinConfig, {
           ...options,
-          force: options.force === !0 || stored.advancedSettingsUnlocked !== !0,
+	          force: options.force === !0,
         });
       JSON.stringify(currentConfig) !== JSON.stringify(nextConfig) &&
         (await wanjuanTianjiStorageSet({
@@ -32825,31 +33170,22 @@ time=1h`,
       } catch {}
       showToast2(`高级设置已解锁`);
     },
-    lockAdvancedSettings = () => {
-      (setAdvancedSettingsUnlocked(!1),
-        setSettingsNavUnlockClicks(0),
-        tianjiSeedanceSettingsMode === `tianji` && applyTianjiSeedanceSettingsMode(`official`));
-      try {
-        localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `false`);
-        typeof chrome < `u` &&
-          chrome.storage?.local?.set?.({
-            advancedSettingsUnlocked: !1,
-            tianjiSeedanceSettingsMode: `official`,
-          });
-      } catch {}
-      syncTianjiConfigFromJixinApi(apiConfigs, {
-        force: !0
-      }).catch((error) => console.warn(`Sync Tianji config after advanced lock failed`, error));
-      showToast2(`高级设置已上锁`);
-    },
-    handleSettingsNavClick = () => {
-      setActiveView(`settings`);
-      setSettingsNavUnlockClicks((clickCount) => {
-        let nextCount = clickCount + 1;
-        nextCount >= 10 && (advancedSettingsUnlocked ? lockAdvancedSettings() : unlockAdvancedSettings());
-        return nextCount >= 10 ? 0 : nextCount;
-      });
-    },
+	    lockAdvancedSettings = () => {
+	      (setAdvancedSettingsUnlocked(!0),
+	        setSettingsNavUnlockClicks(0));
+	      try {
+	        localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
+	        typeof chrome < `u` &&
+	          chrome.storage?.local?.set?.({
+	            advancedSettingsUnlocked: !0,
+	          });
+	      } catch {}
+	      showToast2(`高级设置已默认开放`);
+	    },
+	    handleSettingsNavClick = () => {
+	      setActiveView(`settings`);
+	      setSettingsNavUnlockClicks(0);
+	    },
     settingsHydratedRef = useRef(!1),
     projectHydratedRef = useRef(!1),
     nonModelSettingsSaveTimerRef = useRef(null),
@@ -32972,6 +33308,7 @@ time=${normalizedTtl}`,
         setVideoAspectRatios(patch.videoAspectRatios),
         setVideoModelRequestProfilesText(`{}`),
         setSeedanceModel(patch.seedanceModel),
+        setTianjiSeedanceModel(patch.tianjiSeedanceModel || wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS)),
         setSeedanceDurations(patch.seedanceDurations),
         setSeedanceResolutions(patch.seedanceResolutions),
         setSeedanceRatios(patch.seedanceRatios),
@@ -33059,6 +33396,7 @@ time=${normalizedTtl}`,
             videoResolutions: videoResolutions,
             videoAspectRatios: videoAspectRatios,
             seedanceModel: seedanceModel,
+            tianjiSeedanceModel: tianjiSeedanceModel,
             seedanceDurations: seedanceDurations,
             seedanceResolutions: seedanceResolutions,
             seedanceRatios: seedanceRatios,
@@ -33066,7 +33404,7 @@ time=${normalizedTtl}`,
             seedanceWatermark: seedanceWatermark,
             seedanceEnableWebSearch: seedanceEnableWebSearch,
             seedanceVirtualPortraits: seedanceVirtualPortraits,
-            tianjiSeedanceSettingsMode: advancedSettingsUnlocked ? tianjiSeedanceSettingsMode : `official`,
+	            tianjiSeedanceSettingsMode: tianjiSeedanceSettingsMode,
             tongyiWanxiangTextModels: tongyiWanxiangTextModels,
             tongyiWanxiangReferenceImageModels: tongyiWanxiangReferenceImageModels,
             tongyiWanxiangImageModels: tongyiWanxiangImageModels,
@@ -33115,7 +33453,10 @@ time=${normalizedTtl}`,
           try {
             let syncedTianjiSeedanceConfig = await syncTianjiConfigFromJixinApi(apiConfigs);
             syncedTianjiSeedanceConfig &&
-              (settingsPatch.tianjiSeedanceConfig = syncedTianjiSeedanceConfig);
+              (settingsPatch.tianjiSeedanceConfig = {
+                ...syncedTianjiSeedanceConfig,
+                models: String(tianjiSeedanceModel || ``).trim() || wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS),
+              });
           } catch (error) {
             console.warn(`Auto sync Tianji config from Jixin API failed`, error);
           }
@@ -33247,13 +33588,9 @@ time=${normalizedTtl}`,
         setSeedanceSettingsExpanded(expanded2),
         setTongyiWanxiangSettingsExpanded(expanded2)
       );
-    },
-    applyTianjiSeedanceSettingsMode = (mode) => {
-      if (mode === `tianji` && !advancedSettingsUnlocked) {
-        showToast2(`连续点击顶部“设置”10次后可解锁天玑模式配置`);
-        return;
-      }
-      let normalizedMode = mode === `tianji` ? `tianji` : `official`;
+	    },
+	    applyTianjiSeedanceSettingsMode = (mode) => {
+	      let normalizedMode = mode === `tianji` ? `tianji` : `official`;
       setTianjiSeedanceSettingsMode(normalizedMode);
       try {
         document.querySelector(`.wanjuan-seedance-settings-card`)?.classList?.toggle(`wanjuan-tianji-mode-active`, normalizedMode === `tianji`);
@@ -33329,11 +33666,7 @@ time=${normalizedTtl}`,
     },
     getDefaultButlerModel = () =>
     configButlerModel.trim() ||
-    textModels
-    .split(/\r?\n/)
-    .map((name) => name.trim())
-    .find(Boolean) ||
-    `gemini-3-flash-preview`,
+    WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL,
     getSelectedButlerTargetApiConfig = () =>
     apiConfigs.find((config) => config.id === configButlerTargetApiConfigId) ||
     apiConfigs.find((config) => config.id === `vectorengine`) ||
@@ -33531,6 +33864,7 @@ time=${normalizedTtl}`,
       videoAspectRatios: videoAspectRatios,
       videoModelRequestProfiles: videoModelRequestProfilesText,
       seedanceModel: seedanceModel,
+      tianjiSeedanceModel: tianjiSeedanceModel,
       seedanceDurations: seedanceDurations,
       seedanceResolutions: seedanceResolutions,
       seedanceRatios: seedanceRatios,
@@ -33609,6 +33943,7 @@ time=${normalizedTtl}`,
         repairedConfig.videoAspectRatios && setVideoAspectRatios(repairedConfig.videoAspectRatios),
         repairedConfig.videoModelRequestProfiles && setVideoModelRequestProfilesText(typeof repairedConfig.videoModelRequestProfiles == `string` ? repairedConfig.videoModelRequestProfiles : JSON.stringify(repairedConfig.videoModelRequestProfiles, null, 2)),
         repairedConfig.seedanceModel && setSeedanceModel(repairedConfig.seedanceModel),
+        repairedConfig.tianjiSeedanceModel && setTianjiSeedanceModel(repairedConfig.tianjiSeedanceModel),
         repairedConfig.seedanceDurations && setSeedanceDurations(repairedConfig.seedanceDurations),
         repairedConfig.seedanceResolutions && setSeedanceResolutions(repairedConfig.seedanceResolutions),
         repairedConfig.seedanceRatios && setSeedanceRatios(repairedConfig.seedanceRatios),
@@ -36665,11 +37000,15 @@ ${docText}`;
             setConfigButlerLoading(!1);
           }
         };
-  useEffect(() => {
-    if (!advancedSettingsUnlocked && tianjiSeedanceSettingsMode === `tianji`) {
-      applyTianjiSeedanceSettingsMode(`official`);
-    }
-  }, [advancedSettingsUnlocked, tianjiSeedanceSettingsMode]);
+	  useEffect(() => {
+	    try {
+	      localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
+	      typeof chrome < `u` &&
+	        chrome.storage?.local?.set?.({
+	          advancedSettingsUnlocked: !0,
+	        });
+	    } catch {}
+	  }, []);
   useEffect(() => {
     if (!$ || !settingsHydratedRef.current) return;
     syncTianjiConfigFromJixinApi(apiConfigs).catch((error) => console.warn(`Sync Tianji config from Jixin API failed`, error));
@@ -36693,18 +37032,7 @@ ${docText}`;
   useEffect(() => {
     if (!$ || !settingsHydratedRef.current) return;
     if (!configButlerDocUrl) setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
-    let cancelled = !1;
-    (async () => {
-      let stored = await readChromeStorage([`jixinGatewayModelScanLastAt`]),
-        lastScanAt = Number(stored.jixinGatewayModelScanLastAt || 0),
-        oneWeekMs = 7 * 24 * 60 * 60 * 1e3;
-      if (cancelled || Date.now() - lastScanAt < oneWeekMs) return;
-      await scanJixinGatewayModels();
-    })();
-    return () => {
-      cancelled = !0;
-    };
-  }, [$, apiConfigs, configButlerDocUrl]);
+  }, [$, configButlerDocUrl]);
   useEffect(() => {
     if (activeView === `settings`) {
       let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
@@ -36905,6 +37233,7 @@ ${docText}`;
                   `videoAspectRatios`,
                   `videoModelRequestProfiles`,
                   `seedanceModel`,
+                  `tianjiSeedanceModel`,
                   `seedanceDurations`,
                   `seedanceResolutions`,
                   `seedanceRatios`,
@@ -36986,8 +37315,8 @@ ${docText}`;
                         settings.selectedAgentId = WANJUAN_BUILTIN_AGENT_ITEMS[0]?.id || ``;
                         settings.agentConversations = wanjuanCloneBuiltinAgentConversations();
                       }
-		                    } else settings = wanjuanSyncJixinBuiltinStoredGlobalConfig({
-		                      ...wanjuanApplyJixinBuiltinProtocolPatch(settings),
+                    } else settings = wanjuanSyncJixinBuiltinStoredGlobalConfig({
+		                      ...wanjuanApplySeedanceOptionDefaults(wanjuanApplyJixinBuiltinProtocolPatch(settings)),
 		                      jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,
 		                    });
                     if (typeof chrome < `u`) {
@@ -37009,6 +37338,7 @@ ${docText}`;
                           videoModel: settings.videoModel,
                           ttsMusicModel: settings.ttsMusicModel,
                           seedanceModel: settings.seedanceModel,
+                          tianjiSeedanceModel: settings.tianjiSeedanceModel,
                           seedanceDurations: settings.seedanceDurations,
                           seedanceResolutions: settings.seedanceResolutions,
                           seedanceRatios: settings.seedanceRatios,
@@ -37042,6 +37372,8 @@ ${docText}`;
 	                          videoModelProtocolBindings: settings.videoModelProtocolBindings,
 	                          audioModelApiBindings: settings.audioModelApiBindings,
 	                          audioModelProtocolBindings: settings.audioModelProtocolBindings,
+	                          seedanceResolutions: settings.seedanceResolutions,
+	                          seedanceRatios: settings.seedanceRatios,
 	                          storedGlobalConfigs: settings.storedGlobalConfigs,
 	                          activeStoredGlobalConfigId: settings.activeStoredGlobalConfigId,
 	                        });
@@ -37054,8 +37386,7 @@ ${docText}`;
 	                      chrome.storage?.local?.set(storagePatch);
                     }
                   }
-                  let storedAdvancedSettingsUnlocked =
-                    advancedSettingsUnlocked || settings.advancedSettingsUnlocked === !0;
+	                  let storedAdvancedSettingsUnlocked = !0;
                   (Array.isArray(settings.apiConfigs) &&
                     (() => {
                       let normalizedApiConfigs = normalizeUnifiedApiConfigs(settings.apiConfigs);
@@ -37176,6 +37507,9 @@ ${docText}`;
                       JSON.stringify(settings.videoModelRequestProfiles, null, 2),
                     ),
                     settings.seedanceModel && setSeedanceModel(settings.seedanceModel),
+                    settings.tianjiSeedanceModel ?
+                    setTianjiSeedanceModel(settings.tianjiSeedanceModel) :
+                    setTianjiSeedanceModel(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS)),
                     settings.seedanceDurations &&
                     setSeedanceDurations(settings.seedanceDurations),
                     settings.seedanceResolutions &&
@@ -37988,6 +38322,7 @@ ${docText}`;
     if (resourceType === `audio`) {
       /^data:audio\/wav/i.test(url) || /\.wav(?:$|[?#])/i.test(url) ? mimeType = `audio/wav` : /^data:audio\/ogg/i.test(url) || /\.ogg(?:$|[?#])/i.test(url) ? mimeType = `audio/ogg` : /^data:audio\/mp4/i.test(url) || /\.(m4a|aac)(?:$|[?#])/i.test(url) ? mimeType = `audio/mp4` : /^data:audio\/flac/i.test(url) || /\.flac(?:$|[?#])/i.test(url) ? mimeType = `audio/flac` : mimeType = `audio/mpeg`;
     }
+    let localResourcePath = /^file:\/\//i.test(url) ? localPathFromProjectFileUrl(url) : ``;
     setTransitResources((existingResources) => {
       if (existingResources.some((resource) => resource.url === url || resource.originalUrl === url)) return existingResources;
       let resourceEntry = {
@@ -38000,6 +38335,20 @@ ${docText}`;
 	        source,
 	        sourceOrigin: source,
 	        originalName: resourceName || ``,
+	        ...(localResourcePath ? {
+	          localPath: localResourcePath,
+	          projectAssetBinding: {
+	            ok: !0,
+	            localPath: localResourcePath,
+	            filename: resourceName || ``,
+	            mime: mimeType,
+	            field: `url`,
+	            kind: resourceType,
+	            sourceOrigin: source,
+	            sourceSignature: url,
+	            valueFormat: `file-url`,
+	          },
+	        } : {}),
 	      },
         updatedResources = [resourceEntry, ...existingResources];
       persistTransitResource(resourceEntry).then((persistedResource) => {
@@ -40308,7 +40657,24 @@ ${docText}`;
 	                resolveDataUrl = async (attachment) =>
 	                  /^blob:/i.test(String(attachment?.url || ``)) && attachment?.file ?
 	                  await readAgentAttachmentFileAsDataUrl(attachment) :
-	                  await mediaUrlToDataUrl(attachment.url);
+	                  await mediaUrlToDataUrl(attachment.url),
+	                resolveGeminiInlineVideoPart = async (video) => {
+	                  let dataUrl = await resolveDataUrl(video),
+	                    dataUrlMatch = String(dataUrl || ``).match(/^data:([^;,]*)(;base64)?,(.*)$/s);
+	                  if (!dataUrlMatch || !dataUrlMatch[2] || !dataUrlMatch[3])
+	                    throw Error(`参考视频未能转为模型可读取的视频内容，请重新选择本地视频文件或检查资源文件是否存在`);
+	                  let mimeType = /^video\//i.test(String(dataUrlMatch[1] || ``).trim()) ?
+	                    String(dataUrlMatch[1] || ``).trim() :
+	                    /^video\//i.test(String(video?.mime || ``).trim()) ?
+	                    String(video?.mime || ``).trim() :
+	                    `video/mp4`;
+	                  return {
+	                    inlineData: {
+	                      mimeType: mimeType,
+	                      data: String(dataUrlMatch[3] || ``).replace(/\s+/g, ``),
+	                    },
+	                  };
+	                };
               (setAgentConversations((prevConversations) => ({
                   ...prevConversations,
                   [selectedAgent.id]: [...(prevConversations[selectedAgent.id] || []), userMessage, assistantMessage],
@@ -40335,7 +40701,11 @@ ${docText}`;
                       return baseUrl;
                     }
                   })(),
-                  _ = textModelProtocolBindings?.[modelName],
+                  _ = resolveModelProtocolBindingHelper(
+                    textModelProtocolBindings,
+                    modelName,
+                    textModelProtocolBindings?.[modelName],
+                  ),
                   protocolConfig = modelProtocolRegistry?.[_],
                   isVectorEngineHost = /(?:^|\.)api\.vectorengine\.ai$/i.test(String(apiHost || ``)),
                   requestType =
@@ -40424,32 +40794,7 @@ ${docText}`;
                     }
 	                  for (let video of videoAttachments)
 	                    try {
-	                      let dataUrl = /^blob:/i.test(String(video.url || ``)) && video?.file ?
-	                        await readAgentAttachmentFileAsDataUrl(video) :
-	                        await mediaUrlToDataUrl(video.url),
-	                        videoDataMatch = dataUrl.match(/^data:(video\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-	                      videoDataMatch
-	                        ?
-	                        parts.push({
-                          inlineData: {
-                            mimeType: videoDataMatch[1],
-                            data: videoDataMatch[2]
-                          }
-                        }) :
-	                        /^https?:/i.test(dataUrl) ?
-	                        parts.push({
-	                          fileData: {
-	                            mimeType: video.mime || `video/mp4`,
-	                            fileUri: dataUrl,
-	                          },
-	                        }) :
-	                        /^blob:/i.test(dataUrl) &&
-	                        parts.push({
-	                          fileData: {
-	                            mimeType: video.mime || `video/mp4`,
-	                            fileUri: await resolveFileUri(video),
-	                          },
-	                        });
+	                      parts.push(await resolveGeminiInlineVideoPart(video));
                     } catch (error) {
                       throw Error(`参考视频处理失败，未发送到模型：${error?.message || error}`);
                     }
@@ -42553,6 +42898,7 @@ ${String(l || ``).slice(0, 5e4)}`;
         `videoAspectRatios`,
         `videoModelRequestProfiles`,
         `seedanceModel`,
+        `tianjiSeedanceModel`,
         `seedanceDurations`,
         `seedanceResolutions`,
         `seedanceRatios`,
@@ -42775,11 +43121,25 @@ ${String(l || ``).slice(0, 5e4)}`;
               ),
             );
           if (!container || typeof container != `object`) return container;
-          let result = {};
-          for (let [key, value] of Object.entries(container)) {
-            if (shouldPersistProjectAssetValue(key, value)) {
-              let portableString = await convertProjectAssetValueToPortableString(value),
-                storageKey = buildProjectAssetStorageKey(projectId, nodeId, `${path}-${key}`);
+	          let result = {};
+	          for (let [key, value] of Object.entries(container)) {
+	            if (shouldPersistProjectAssetValue(key, value)) {
+	              if (wanjuanShouldSkipHydratedProjectAssetValue(value)) {
+	                let existingRef = container[`${key}${PROJECT_ASSET_REF_SUFFIX}`],
+	                  fileValue = wanjuanResolveHydratedProjectAssetFileValue(container, key);
+	                if (typeof existingRef == `string` && existingRef) {
+	                  result[`${key}${PROJECT_ASSET_REF_SUFFIX}`] = existingRef;
+	                  continue;
+	                }
+	                if (fileValue) {
+	                  result[key] = fileValue;
+	                  continue;
+	                }
+	                console.warn(`Skipped oversized project media data URL during canvas externalize`, key, nodeId);
+	                continue;
+	              }
+	              let portableString = await convertProjectAssetValueToPortableString(value),
+	                storageKey = buildProjectAssetStorageKey(projectId, nodeId, `${path}-${key}`);
               ((assetMap[storageKey] = portableString),
                 persist && X.default && (await X.default.setItem(storageKey, portableString)),
                 (result[`${key}${PROJECT_ASSET_REF_SUFFIX}`] = storageKey));
@@ -42819,28 +43179,33 @@ ${String(l || ``).slice(0, 5e4)}`;
             );
           },
           hydrateProjectAssetContainer = async (container) => {
-              if (Array.isArray(container))
+	              if (Array.isArray(container))
                 return await Promise.all(container.map((item) => hydrateProjectAssetContainer(item)));
-              if (!container || typeof container != `object`) return container;
+	              if (!container || typeof container != `object`) return container;
               let result = {};
-              for (let [key, value] of Object.entries(container)) {
-                if (typeof value == `string` && key.endsWith(PROJECT_ASSET_REF_SUFFIX)) {
-                  let baseKey = key.slice(0, -PROJECT_ASSET_REF_SUFFIX.length);
-                  if (baseKey && container[baseKey] === void 0 && X.default)
-                    try {
-                      let storedValue = await X.default.getItem(value);
-                      storedValue && (result[baseKey] = storedValue);
-                    } catch (error) {
-                      console.error(`Failed to hydrate project asset`, error);
-                    }
-                  result[key] = value;
-                  continue;
-                }
+	              for (let [key, value] of Object.entries(container)) {
+	                if (typeof value == `string` && key.endsWith(PROJECT_ASSET_REF_SUFFIX)) {
+	                  let baseKey = key.slice(0, -PROJECT_ASSET_REF_SUFFIX.length);
+	                  if (baseKey && container[baseKey] === void 0 && X.default)
+	                    try {
+	                      let storedValue = await X.default.getItem(value);
+                      if (wanjuanShouldSkipHydratedProjectAssetValue(storedValue)) {
+                        let fileValue = wanjuanResolveHydratedProjectAssetFileValue(container, baseKey);
+                        fileValue && (result[baseKey] = fileValue);
+                      } else {
+                        storedValue && (result[baseKey] = storedValue);
+                      }
+	                    } catch (error) {
+	                      console.error(`Failed to hydrate project asset`, error);
+	                    }
+	                  result[key] = value;
+	                  continue;
+	                }
                 result[key] = await hydrateProjectAssetContainer(value);
               }
-              return result;
-            },
-            extractProjectAssetRefs = (container, refs = new Set()) => {
+	              return result;
+	            },
+	            extractProjectAssetRefs = (container, refs = new Set()) => {
               if (Array.isArray(container)) {
                 container.forEach((item) => extractProjectAssetRefs(item, refs));
                 return [...refs];
@@ -43354,12 +43719,42 @@ ${String(l || ``).slice(0, 5e4)}`;
                           bindings = {
                             ...(data.projectAssetBindings || {})
                           };
-                        for (let bindingKey of projectMediaFieldList) {
-                          let fieldValue = data[bindingKey],
-                            binding = bindings[bindingKey] || {},
-                            kind = binding.kind || getProjectMediaBindingKind(bindingKey, node),
-                            strippedBinding = stripLargeProjectMediaPortablePayload(binding, bindingKey, kind);
-                          if (options.forceRehomeExistingFiles) {
+	                        for (let bindingKey of projectMediaFieldList) {
+	                          let fieldValue = data[bindingKey],
+	                            binding = bindings[bindingKey] || {},
+	                            kind = binding.kind || getProjectMediaBindingKind(bindingKey, node),
+	                            strippedBinding = stripLargeProjectMediaPortablePayload(binding, bindingKey, kind);
+	                          if (wanjuanShouldSkipHydratedProjectAssetValue(fieldValue)) {
+	                            let fileValue =
+	                              wanjuanResolveHydratedProjectAssetFileValue(data, bindingKey) ||
+	                              (binding.localPath ? buildProjectMediaFileUrl(binding.localPath) : ``),
+	                              existingRef = data[`${bindingKey}${PROJECT_ASSET_REF_SUFFIX}`] || binding.portableDataRef;
+	                            if (fileValue) {
+	                              data[bindingKey] = fileValue;
+	                              bindings[bindingKey] = {
+	                                ...strippedBinding,
+	                                field: bindingKey,
+	                                kind: kind,
+	                                valueFormat: `file-url`,
+	                                sourceSignature: fileValue,
+	                                missing: !1,
+	                              };
+	                            } else {
+	                              delete data[bindingKey];
+	                              existingRef &&
+	                                (bindings[bindingKey] = {
+	                                  ...strippedBinding,
+	                                  field: bindingKey,
+	                                  kind: kind,
+	                                  portableDataRef: existingRef,
+	                                  valueFormat: strippedBinding.valueFormat || `data-url`,
+	                                  sourceSignature: strippedBinding.sourceSignature || `${PROJECT_ASSET_STORAGE_PREFIX}${existingRef}`,
+	                                });
+	                            }
+	                            console.warn(`Skipped oversized project media data URL during canvas save`, bindingKey, node.id);
+	                            continue;
+	                          }
+	                          if (options.forceRehomeExistingFiles) {
                             let existingFileValue =
                               binding.localPath ||
                               (typeof fieldValue == `string` && fieldValue.startsWith(`file://`) ? fieldValue : ``);
@@ -46193,6 +46588,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                       videoAspectRatios: videoAspectRatios,
                       videoModelRequestProfiles: videoModelRequestProfilesText,
                       seedanceModel: seedanceModel,
+                      tianjiSeedanceModel: tianjiSeedanceModel,
                       seedanceDurations: seedanceDurations,
                       seedanceResolutions: seedanceResolutions,
                       seedanceRatios: seedanceRatios,
@@ -49117,12 +49513,12 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       }),
                                       jsx(`p`, {
                                         className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help`,
-                                        children: `在应用内打开 newapi.guancn.uk，集中管理模型服务相关能力。`,
+                                        children: `在应用内打开 jixing.guancn.uk，集中管理模型服务相关能力。`,
                                       }),
                                     ],
                                   }),
                                   jsx(`a`, {
-                                    href: `https://newapi.guancn.uk`,
+                                    href: WANJUAN_JIXIN_DEFAULT_API_URL,
                                     target: `_blank`,
                                     rel: `noreferrer`,
                                     className: `px-3 py-2 rounded-lg border border-[#333] bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] hover:text-white transition-colors whitespace-nowrap`,
@@ -49137,7 +49533,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                   minHeight: 600,
                                 },
                                 children: jsx(`webview`, {
-                                  src: `https://newapi.guancn.uk`,
+                                  src: WANJUAN_JIXIN_DEFAULT_API_URL,
                                   className: `w-full h-full bg-white`,
                                   allowpopups: `true`,
                                   partition: `persist:wanjuan-one-stop-center`,
@@ -49787,7 +50183,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      ],
 	                                    }),
 	                                  }),
-	                                  jsxs(`div`, {
+                                  jsxs(`div`, {
 	                                    children: [
 	                                      jsxs(`label`, {
 	                                        className: `block text-xs font-bold text-gray-300 mb-2 wanjuan-settings-field-label`,
@@ -49818,8 +50214,8 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      }),
 	                                    ],
 	                                  }),
-	                                  jsxs(`div`, {
-	                                    children: [
+			                                  jsxs(`div`, {
+		                                    children: [
 	                                      jsxs(`label`, {
 	                                        className: `block text-xs font-bold text-gray-300 mb-2 wanjuan-settings-field-label`,
 	                                        children: [
@@ -50667,33 +51063,159 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       config.id,
                                     ),
                                   ),
-                                  jsx(`button`, {
-                                    onClick: () => {
-                                      if (!advancedSettingsUnlocked && getCustomApiConfigCount() >= WANJUAN_CUSTOM_API_LIMIT) {
-                                        showToast2(`最多只能添加 ${WANJUAN_CUSTOM_API_LIMIT} 个自定义统一 API`);
-                                        return;
-                                      }
-                                      setApiConfigs([
-                                        ...apiConfigs,
-                                        {
+	                                  jsx(`button`, {
+	                                    onClick: () => {
+	                                      setApiConfigs([
+	                                        ...apiConfigs,
+	                                        {
                                           id: Date.now().toString(),
                                           name: ``,
                                           url: ``,
                                           key: ``,
                                           protocolFormat: `auto`,
+	                                        },
+	                                      ]);
+	                                    },
+	                                    className: `w-full py-2 rounded-lg transition-colors text-xs font-medium bg-[#222] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`,
+	                                    children: `+ 添加统一配置`,
+	                                  }),
+                                ],
+                              }),
+                            ],
+                          }),
+                          activeSettingsTab === `api` &&
+                          jsxs(`div`, {
+                            className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card wanjuan-stored-global-config-card`,
+                            children: [
+                              jsxs(`div`, {
+                                className: `flex justify-between items-center gap-3 p-4 border-b border-[#222] wanjuan-settings-card-header`,
+                                children: [
+                                  jsxs(`div`, {
+                                    className: `min-w-0`,
+                                    children: [
+                                      jsxs(`h2`, {
+                                        className: `font-bold text-gray-200 text-sm flex items-center gap-2 wanjuan-settings-card-title`,
+                                        children: [
+                                          jsx(`span`, {
+                                            className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-api`,
+                                            children: `🗂️`,
+                                          }),
+                                          ` 已存储统一全局配置`,
+                                          jsx(`span`, {
+                                            className: `rounded-full border px-2 py-0.5 text-[10px] font-medium wanjuan-stored-global-config-count`,
+                                            children: `${(storedGlobalConfigs || []).length || 0} 个`,
+                                          }),
+                                        ],
+                                      }),
+                                      jsx(`p`, {
+                                        className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help truncate`,
+                                        children: activeStoredGlobalConfigId &&
+                                          (storedGlobalConfigs || []).find((config) => config.id === activeStoredGlobalConfigId) ?
+                                          `当前：${(storedGlobalConfigs || []).find((config) => config.id === activeStoredGlobalConfigId)?.name || ``}` :
+                                          `保存并切换整套模型列表、API 绑定、协议配置和接口文档链接。`,
+                                      }),
+                                    ],
+                                  }),
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    onClick: () => setGlobalConfigPresetsExpanded((prev) => !prev),
+                                    className: `shrink-0 px-2.5 py-1 rounded-md border border-[#333] bg-[#222] text-[11px] text-gray-300 hover:bg-[#2a2a2a] transition-colors wanjuan-settings-button wanjuan-settings-chip-button ${globalConfigPresetsExpanded ? `wanjuan-settings-chip-button-open` : ``}`,
+                                    children: globalConfigPresetsExpanded ? `收起` : `展开`,
+                                  }),
+                                ],
+                              }),
+                              globalConfigPresetsExpanded &&
+                              jsxs(`div`, {
+                                className: `px-4 pt-4 space-y-3 wanjuan-settings-card-body`,
+                                children: [
+                                  jsxs(`div`, {
+                                    className: `grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-2`,
+                                    children: [
+                                      jsx(`select`, {
+                                        className: `w-full border rounded-lg px-3 py-2 text-xs focus:outline-none wanjuan-settings-control wanjuan-settings-select`,
+                                        value: activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                        onChange: (event) => {
+                                          let selectedId = event.target.value,
+                                            selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === selectedId);
+                                          setActiveStoredGlobalConfigId(selectedId);
+                                          selectedConfig && setConfigButlerDocUrl(String(selectedConfig.apiDocUrl || selectedConfig.config?.apiDocUrl || selectedConfig.config?.configButlerDocUrl || ``));
                                         },
-                                      ]);
-                                    },
-                                    disabled: !advancedSettingsUnlocked && getCustomApiConfigCount() >= WANJUAN_CUSTOM_API_LIMIT,
-                                    className: `w-full py-2 rounded-lg transition-colors text-xs font-medium ${!advancedSettingsUnlocked && getCustomApiConfigCount() >= WANJUAN_CUSTOM_API_LIMIT ? `bg-[#1a1a1a] text-gray-600 border border-[#2a2a2a] cursor-not-allowed` : `bg-[#222] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
-                                    children: !advancedSettingsUnlocked && getCustomApiConfigCount() >= WANJUAN_CUSTOM_API_LIMIT ?
-                                      `已达到 ${WANJUAN_CUSTOM_API_LIMIT} 个自定义统一 API 上限` :
-                                      `+ 添加统一配置`,
+                                        children: (storedGlobalConfigs || []).length ?
+                                        (storedGlobalConfigs || []).map((config) =>
+                                          jsx(
+                                            `option`, {
+                                              value: config.id,
+                                              children: config.name,
+                                            },
+                                            config.id,
+                                          ),
+                                        ) :
+                                        jsx(`option`, {
+                                          value: ``,
+                                          children: `暂无已存储配置`,
+                                        }),
+                                      }),
+                                      jsx(`button`, {
+                                        type: `button`,
+                                        onClick: () => applyStoredGlobalConfig(activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``)),
+                                        disabled: !(storedGlobalConfigs || []).length,
+                                        className: `px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors wanjuan-settings-save-button wanjuan-stored-global-config-apply`,
+                                        children: `应用配置`,
+                                      }),
+                                    ],
+                                  }),
+                                  jsxs(`div`, {
+                                    className: `grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-2`,
+                                    children: [
+                                      jsx(`input`, {
+                                        className: `w-full border rounded-lg px-3 py-2 text-xs focus:outline-none wanjuan-settings-control`,
+                                        value: (() => {
+                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                            selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
+                                          return String(selectedConfig?.apiDocUrl || selectedConfig?.config?.apiDocUrl || selectedConfig?.config?.configButlerDocUrl || configButlerDocUrl || ``);
+                                        })(),
+                                        onChange: (event) => {
+                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                            newValue = String(event.target.value || ``);
+                                          setConfigButlerDocUrl(newValue);
+                                          setStoredGlobalConfigs((prev) =>
+                                            (prev || []).map((config) =>
+                                              config.id === configId ? {
+                                                ...config,
+                                                apiDocUrl: newValue,
+                                                config: {
+                                                  ...(config.config || {}),
+                                                  apiDocUrl: newValue,
+                                                  configButlerDocUrl: newValue,
+                                                },
+                                              } : config,
+                                            ),
+                                          );
+                                        },
+                                        placeholder: `全局配置 API 文档链接，例如 https://dguhm2n0pd.apifox.cn/`,
+                                      }),
+                                      jsx(`button`, {
+                                        type: `button`,
+                                        onClick: () => {
+                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                            selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
+                                          saveStoredGlobalConfigApiDocUrl(configId, selectedConfig?.apiDocUrl || selectedConfig?.config?.apiDocUrl || selectedConfig?.config?.configButlerDocUrl || configButlerDocUrl || ``);
+                                        },
+                                        disabled: !(storedGlobalConfigs || []).length,
+                                        className: `px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors wanjuan-settings-button`,
+                                        children: `保存文档链接`,
+                                      }),
+                                    ],
+                                  }),
+                                  jsx(`div`, {
+                                    className: `rounded-lg border px-3 py-2 text-[11px] leading-5 wanjuan-settings-note`,
+                                    children: `切换会同步模型列表、API 绑定、协议配置和图片/视频参数适配规则；错误查询会优先读取当前已存储配置的 API 文档链接。`,
                                   }),
                                 ],
                               }),
                             ],
                           }),
+                          !1 &&
                           activeSettingsTab === `api` &&
                           jsxs(`div`, {
                             className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
@@ -50730,8 +51252,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         className: `px-3 py-1.5 rounded-lg border border-[#333] bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] disabled:opacity-50 transition-colors`,
                                         children: jixinModelScanBusy ? `扫描中` : `立即扫描`,
                                       }),
-                                      advancedSettingsUnlocked &&
-                                      jsx(`button`, {
+	                                      jsx(`button`, {
                                         type: `button`,
                                         onClick: runJixinGatewaySync,
                                         disabled: configButlerBatchLoading,
@@ -50762,8 +51283,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               }),
                             ],
                           }),
-                          advancedSettingsUnlocked &&
-                          activeSettingsTab === `api` &&
+	                          activeSettingsTab === `api` &&
                           jsxs(`div`, {
                             className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
                             children: [
@@ -50804,25 +51324,9 @@ ${String(l || ``).slice(0, 5e4)}`;
                               }),
                               configButlerExpanded &&
                               jsxs(`div`, {
-	                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body`,
+	                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body wanjuan-config-butler-body`,
 	                                children: [
-		                                  jsxs(`div`, {
-	                                    className: `flex items-center gap-2 bg-[#121212] border border-[#333] rounded-lg p-1`,
-	                                    children: [
-	                                      jsx(`button`, {
-	                                        type: `button`,
-	                                        onClick: () => setConfigButlerMode(`single`),
-	                                        className: `wj-mode-tab flex-1 px-3 py-2 rounded-md text-xs font-medium transition-colors ${configButlerMode === `single` ? `wj-mode-tab-active bg-blue-600 text-white` : `text-gray-400 hover:bg-[#222] hover:text-gray-200`}`,
-	                                        children: `基础单模型模式`,
-	                                      }),
-	                                      jsx(`button`, {
-	                                        type: `button`,
-	                                        onClick: () => setConfigButlerMode(`batch`),
-	                                        className: `wj-mode-tab flex-1 px-3 py-2 rounded-md text-xs font-medium transition-colors ${configButlerMode === `batch` ? `wj-mode-tab-active bg-blue-600 text-white` : `text-gray-400 hover:bg-[#222] hover:text-gray-200`}`,
-	                                        children: `全局批量模式`,
-	                                      }),
-	                                    ],
-	                                  }),
+	                                  false &&
 	                                  configButlerMode === `batch` &&
 	                                  jsxs(`div`, {
 	                                    className: `bg-gradient-to-r from-[#14213d] via-[#121826] to-[#23172a] border border-blue-400/55 rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(96,165,250,0.12),0_16px_34px_rgba(37,99,235,0.18)]`,
@@ -50963,11 +51467,11 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                    ],
 	                                  }),
 	                                  jsxs(`div`, {
-	                                    className: `flex items-center justify-between gap-3`,
+	                                    className: `flex items-center justify-between gap-3 wanjuan-config-butler-agent-summary`,
                                     children: [
                                       jsx(`div`, {
                                         className: `text-[11px] text-gray-500`,
-                                        children: `基础智能体设置默认收起，仅手动修改，不随全局配置切换变化。`,
+                                        children: `基础智能体设置可按需手动修改，不随全局配置切换变化。`,
                                       }),
                                       jsx(`button`, {
                                         type: `button`,
@@ -50984,13 +51488,20 @@ ${String(l || ``).slice(0, 5e4)}`;
                                   }),
                                   configButlerAgentExpanded &&
                                   jsxs(`div`, {
-                                    className: `grid grid-cols-1 md:grid-cols-4 gap-3`,
+                                    className: `grid grid-cols-1 md:grid-cols-4 gap-3 wanjuan-config-butler-agent-fields`,
                                     children: [
 	                                      jsxs(`div`, {
 	                                        children: [
 	                                          jsx(`label`, {
-	                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `基础智能体请求地址`,
+	                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `基础智能体请求地址`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                title: `基础智能体请求地址`,
+                                                placement: `below-start`,
+                                                children: `填写中转站的 Base URL，一般在 API 文档、接入地址、接口地址里复制。常见格式是 https://xxx.com，不要填模型名，也不要填完整的 /v1/chat/completions。`,
+                                              }),
+                                            ],
                                           }),
                                           jsx(`input`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51006,8 +51517,16 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      jsxs(`div`, {
 	                                        children: [
 	                                          jsx(`label`, {
-	                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `基础智能体 API Key`,
+	                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `基础智能体 API Key`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                tone: `warning`,
+                                                title: `基础智能体 API Key`,
+                                                placement: `below-start`,
+                                                children: `填写中转站后台生成的 API Key / Token，通常在“API 密钥”“令牌”“Token”页面创建。它只用于配置管家分析文档，不会自动覆盖其他模型配置。`,
+                                              }),
+                                            ],
                                           }),
                                           jsx(`input`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51023,8 +51542,15 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       jsxs(`div`, {
                                         children: [
                                           jsx(`label`, {
-                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `基础智能体协议`,
+                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `基础智能体协议`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                title: `基础智能体协议`,
+                                                placement: `below-start`,
+                                                children: `大多数中转站选择 OpenAI。只有服务商明确提供 Gemini 原生接口时再选 Gemini；不确定时选 OpenAI。`,
+                                              }),
+                                            ],
                                           }),
                                           jsxs(`select`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51049,8 +51575,15 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       jsxs(`div`, {
                                         children: [
                                           jsx(`label`, {
-                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `基础智能体模型名`,
+                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `基础智能体模型名`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                title: `基础智能体模型名`,
+                                                placement: `below-end`,
+                                                children: `配置管家用这个模型阅读 API 文档并生成配置。留空时默认使用 gpt-5.5；如果中转站没有这个模型，就填一个可用的文本或多模态文本模型 ID。`,
+                                              }),
+                                            ],
                                           }),
                                           jsx(`input`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51059,20 +51592,45 @@ ${String(l || ``).slice(0, 5e4)}`;
                                               setConfigButlerModel(
                                                 event.target.value,
                                               ),
-                                            placeholder: `留空时使用第一个文本模型`,
+                                            placeholder: `留空时默认使用 gpt-5.5`,
                                           }),
                                         ],
                                       }),
                                     ],
                                   }),
+		                                  jsxs(`div`, {
+	                                    className: `flex items-center gap-2 bg-[#121212] border border-[#333] rounded-lg p-1 wanjuan-config-butler-mode-tabs`,
+	                                    children: [
+	                                      jsx(`button`, {
+	                                        type: `button`,
+	                                        onClick: () => setConfigButlerMode(`single`),
+	                                        className: `wj-mode-tab flex-1 px-3 py-2 rounded-md text-xs font-medium transition-colors ${configButlerMode === `single` ? `wj-mode-tab-active bg-blue-600 text-white` : `text-gray-400 hover:bg-[#222] hover:text-gray-200`}`,
+	                                        children: `基础单模型模式`,
+	                                      }),
+	                                      jsx(`button`, {
+	                                        type: `button`,
+	                                        onClick: () => setConfigButlerMode(`batch`),
+	                                        className: `wj-mode-tab flex-1 px-3 py-2 rounded-md text-xs font-medium transition-colors ${configButlerMode === `batch` ? `wj-mode-tab-active bg-blue-600 text-white` : `text-gray-400 hover:bg-[#222] hover:text-gray-200`}`,
+	                                        children: `全局批量模式`,
+	                                      }),
+	                                    ],
+	                                  }),
                                   jsxs(`div`, {
                                     className: `grid grid-cols-1 md:grid-cols-3 gap-3`,
                                     children: [
                                       jsxs(`div`, {
                                         children: [
                                           jsx(`label`, {
-                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `API 文档链接`,
+                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `API 文档链接`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                tone: `warning`,
+                                                title: `API 文档链接`,
+                                                placement: `below-start`,
+                                                children: `填写中转站的 API 文档链接，不是官网首页。最好是包含模型列表、请求示例、参数说明的页面，例如 Apifox 文档、llms.txt 或 OpenAPI 文档。`,
+                                              }),
+                                            ],
                                           }),
                                           jsx(`input`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51089,8 +51647,15 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      jsxs(`div`, {
 	                                        children: [
 	                                          jsx(`label`, {
-	                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-	                                            children: `模型类型`,
+	                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+	                                            children: [
+                                              `模型类型`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                title: `模型类型`,
+                                                placement: `below-start`,
+                                                children: `告诉配置管家你要配置哪一类模型。视频生成选视频，图片生成选图片，聊天或多模态理解模型选文本。`,
+                                              }),
+                                            ],
                                           }),
                                           jsxs(`select`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51128,8 +51693,16 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                      jsxs(`div`, {
 	                                        children: [
 	                                          jsx(`label`, {
-	                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-	                                            children: `模型名称`,
+	                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+	                                            children: [
+                                              `模型名称`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                tone: `warning`,
+                                                title: `模型名称`,
+                                                placement: `below-start`,
+                                                children: `填写中转站里实际调用的模型 ID，需要和请求时传给 API 的 model 字段一致。不要填中文备注名，除非文档里明确就是这个名称。`,
+                                              }),
+                                            ],
                                           }),
                                           jsx(`input`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51145,8 +51718,15 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       jsxs(`div`, {
                                         children: [
                                           jsx(`label`, {
-                                            className: `block text-xs font-medium text-gray-500 mb-2`,
-                                            children: `目标统一 API 配置`,
+                                            className: `flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2`,
+                                            children: [
+                                              `目标统一 API 配置`,
+                                              jsx(WanJuanConfigButlerHelp, {
+                                                title: `目标统一 API 配置`,
+                                                placement: `below-start`,
+                                                children: `选择这条模型配置要绑定到哪个统一 API。比如要把模型绑定到极鑫，就选择极鑫。`,
+                                              }),
+                                            ],
                                           }),
                                           jsxs(`select`, {
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500`,
@@ -51172,36 +51752,59 @@ ${String(l || ``).slice(0, 5e4)}`;
                                   jsxs(`div`, {
                                     className: `flex gap-3`,
                                     children: [
-	                                      jsx(`button`, {
-	                                        type: `button`,
-	                                        onClick: configButlerMode === `batch` ? runConfigButlerBatch : runConfigButler,
-	                                        disabled: configButlerMode === `batch` ? configButlerBatchLoading : configButlerLoading,
-	                                        className: `px-4 py-2 rounded-lg ${configButlerMode === `batch` ? `bg-blue-600 hover:bg-blue-500` : `bg-emerald-600 hover:bg-emerald-500`} text-white text-xs font-medium disabled:opacity-50 transition-colors`,
-	                                        children: configButlerMode === `batch` ?
-	                                          configButlerBatchLoading ?
-	                                          `扫描分析中...` :
-	                                          `扫描并生成批量配置` :
-	                                          configButlerLoading ?
-	                                          `分析中...` :
-	                                          `分析文档并生成配置`,
+	                                      jsxs(`span`, {
+	                                        className: `inline-flex items-center gap-1.5`,
+	                                        children: [
+	                                          jsx(`button`, {
+	                                            type: `button`,
+	                                            onClick: configButlerMode === `batch` ? runConfigButlerBatch : runConfigButler,
+	                                            disabled: configButlerMode === `batch` ? configButlerBatchLoading : configButlerLoading,
+	                                            className: `px-4 py-2 rounded-lg ${configButlerMode === `batch` ? `bg-blue-600 hover:bg-blue-500` : `bg-emerald-600 hover:bg-emerald-500`} text-white text-xs font-medium disabled:opacity-50 transition-colors`,
+	                                            children: configButlerMode === `batch` ?
+	                                              configButlerBatchLoading ?
+	                                              `扫描分析中...` :
+	                                              `扫描并生成批量配置` :
+	                                              configButlerLoading ?
+	                                              `分析中...` :
+	                                              `分析文档并生成配置`,
+	                                          }),
+	                                          jsx(WanJuanConfigButlerHelp, {
+	                                            title: configButlerMode === `batch` ? `扫描并生成批量配置` : `分析文档并生成配置`,
+	                                            placement: `above-start`,
+	                                            children: configButlerMode === `batch` ?
+	                                              `配置管家会读取文档和当前模型列表，批量识别接口路径、协议和参数规则。生成后可在批量结果里检查再应用。` :
+	                                              `配置管家会读取文档，并按当前模型类型、模型名称生成一份结构化配置。生成后建议先检查输出，再应用到设置。`,
+	                                          }),
+	                                        ],
 	                                      }),
 	                                      configButlerMode === `single` ?
-	                                      jsx(`button`, {
-	                                        type: `button`,
-	                                        onClick: () => {
-	                                          try {
-                                            let jsonBlock = extractJsonBlock(
-                                              configButlerResultText,
-                                            );
-                                            applyConfigButlerResult(jsonBlock);
-                                          } catch (error) {
-                                            showToast2(
-                                              `配置管家结果格式不正确：${error.message}`,
-                                            );
-                                          }
-	                                        },
-	                                        className: `px-4 py-2 rounded-lg bg-[#222] text-gray-200 text-xs font-medium hover:bg-[#2a2a2a] transition-colors`,
-	                                        children: `应用到当前设置`,
+	                                      jsxs(`span`, {
+	                                        className: `inline-flex items-center gap-1.5`,
+	                                        children: [
+	                                          jsx(`button`, {
+	                                            type: `button`,
+	                                            onClick: () => {
+	                                              try {
+                                                let jsonBlock = extractJsonBlock(
+                                                  configButlerResultText,
+                                                );
+                                                applyConfigButlerResult(jsonBlock);
+                                              } catch (error) {
+                                                showToast2(
+                                                  `配置管家结果格式不正确：${error.message}`,
+                                                );
+                                              }
+	                                            },
+	                                            className: `px-4 py-2 rounded-lg bg-[#222] text-gray-200 text-xs font-medium hover:bg-[#2a2a2a] transition-colors`,
+	                                            children: `应用到当前设置`,
+	                                          }),
+	                                          jsx(WanJuanConfigButlerHelp, {
+	                                            tone: `warning`,
+	                                            title: `应用到当前设置`,
+	                                            placement: `above-start`,
+	                                            children: `会把当前生成的配置写入软件设置，影响对应模型后续生成请求。确认模型名、接口路径和参数字段无误后再应用。`,
+	                                          }),
+	                                        ],
 	                                      }) :
 	                                      jsx(`button`, {
 	                                        type: `button`,
@@ -51954,7 +52557,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                              jsxs(`div`, {
 	                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body`,
 	                                children: [
-	                                  advancedSettingsUnlocked ?
+		                                  true ?
 	                                    jsxs(`div`, {
 	                                      className: `wanjuan-tianji-mode-row is-unlocked flex items-center justify-between gap-3 rounded-lg border border-[#333] bg-[#121212] px-3 py-2`,
 	                                      children: [
@@ -52009,23 +52612,25 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                        }),
 	                                      ],
 	                                    }),
-	                                  jsxs(`div`, {
-	                                    children: [
-                                      jsx(`label`, {
-                                        className: `block text-xs font-medium text-gray-500 mb-2`,
-                                        children: `模型 ID (换行分隔)`,
-                                      }),
+		                                  jsxs(`div`, {
+		                                    className: `wanjuan-seedance-mode-model-settings`,
+		                                    children: [
+	                                      jsx(`label`, {
+	                                        className: `block text-xs font-medium text-gray-500 mb-2`,
+	                                        children: tianjiSeedanceSettingsMode === `tianji` ? `天玑模式模型 ID (换行分隔)` : `普通模式模型 ID (换行分隔)`,
+	                                      }),
                                       jsx(`textarea`, {
-                                        value: seedanceModel,
+                                        value: tianjiSeedanceSettingsMode === `tianji` ? tianjiSeedanceModel : seedanceModel,
                                         onChange: (event) =>
-                                          setSeedanceModel(
-                                            event.target.value,
-                                          ),
+                                          tianjiSeedanceSettingsMode === `tianji` ?
+                                          setTianjiSeedanceModel(event.target.value) :
+                                          setSeedanceModel(event.target.value),
                                         className: `w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-all min-h-[72px] resize-y`,
-                                        placeholder: `每行一个即梦模型 ID`,
+                                        placeholder: tianjiSeedanceSettingsMode === `tianji` ? `每行一个天玑 Seedance 模型 ID` : `每行一个普通即梦模型 ID`,
                                       }),
                                     ],
                                   }),
+                                  tianjiSeedanceSettingsMode !== `tianji` &&
                                   jsxs(`div`, {
                                     children: [
                                       jsx(`label`, {
@@ -52096,7 +52701,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       }),
                                       jsx(`p`, {
                                         className: `text-[10px] text-gray-500 mt-1 wanjuan-settings-help`,
-                                        children: `建议为每个即梦模型选择可调用它的 API 配置；节点里也可以再单独覆盖。`,
+                                        children: `普通模式建议为每个即梦模型选择可调用它的 API 配置；节点里也可以再单独覆盖。`,
                                       }),
                                     ],
                                   }),
@@ -52135,7 +52740,8 @@ ${String(l || ``).slice(0, 5e4)}`;
                                                 event.target.value,
                                               ),
                                             className: `w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-all min-h-[96px] resize-y`,
-                                            placeholder: `720p
+                                            placeholder: `480p
+720p
 1080p`,
                                           }),
                                         ],
@@ -52464,8 +53070,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                     className: `text-[10px] text-gray-500`,
                                     children: `即梦节点会使用这里的专属模型、API 配置、比例、时长和默认开关；节点里也可以再单独覆盖 API。`,
                                   }),
-                                  advancedSettingsUnlocked &&
-                                  jsx(`div`, {
+	                                  jsx(`div`, {
                                     className: `wanjuan-tianji-settings-host`,
                                     "data-wanjuan-tianji-settings-host": `true`,
                                   }),

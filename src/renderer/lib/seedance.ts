@@ -125,15 +125,15 @@ export async function wanjuanPortableSeedancePortraitPreview(rawUrl: any): Promi
   if (/^(blob:|file:\/\/|https?:\/\/)/i.test(url))
     try {
       let response = await fetch(url);
-      if (!response.ok) throw Error(`preview fetch failed`);
+      if (!response.ok) throw Error(`preview fetch failed: ${response.status}`);
       return await wanjuanPrepareSeedancePortraitPreview(
         await wanjuanBlobToDataUrl(await response.blob()),
       );
-    } catch (error) {
-      return (
-        console.warn(`Seedance portrait preview portable fallback`, error),
-        /^(blob:|file:\/\/)/i.test(url) ? `` : url
-      );
+    } catch (error: any) {
+      console.warn(`Seedance portrait preview portable fallback`, error);
+      if (/^(blob:|file:\/\/)/i.test(url)) return ``;
+      if (/^https?:\/\//i.test(url)) return url;
+      return ``;
     }
   return url;
 }
@@ -142,19 +142,31 @@ export async function wanjuanPortableSeedancePortraitPreview(rawUrl: any): Promi
  * 把虚拟人像列表转换为可移植形式。
  *
  * 先归一化，再清空 imageUrl，并把 previewUrl(回退 imageUrl)转换为可移植预览 dataURL。
+ * 单个人像转换失败时保留失败前的状态（previewUrl 保持原值或空）。
  */
 export async function wanjuanMakeSeedanceVirtualPortraitsPortable(
   rawPortraits: any,
 ): Promise<SeedanceVirtualPortrait[]> {
   let portraits = wanjuanNormalizeSeedanceVirtualPortraits(rawPortraits);
   return await Promise.all(
-    portraits.map(async (portrait) => ({
-      ...portrait,
-      imageUrl: ``,
-      previewUrl: await wanjuanPortableSeedancePortraitPreview(
-        portrait.previewUrl || portrait.imageUrl || ``,
-      ),
-    })),
+    portraits.map(async (portrait) => {
+      try {
+        return {
+          ...portrait,
+          imageUrl: ``,
+          previewUrl: await wanjuanPortableSeedancePortraitPreview(
+            portrait.previewUrl || portrait.imageUrl || ``,
+          ),
+        };
+      } catch (error) {
+        console.warn(`Failed to make portrait portable:`, portrait.id, error);
+        return {
+          ...portrait,
+          imageUrl: ``,
+          previewUrl: portrait.previewUrl || portrait.imageUrl || ``,
+        };
+      }
+    }),
   );
 }
 

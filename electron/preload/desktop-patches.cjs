@@ -1246,7 +1246,7 @@ function installDesktopPatches() {
   const autoClickLabels = ["开发模式：模拟进入", "模拟进入"];
   let autoClicked = false;
   let projectNameSynced = false;
-  const TIANJI_DEFAULT_BASE_URL = "https://newapi.guancn.uk";
+  const TIANJI_DEFAULT_BASE_URL = "https://jixing.guancn.uk";
   const TIANJI_SYNC_SOURCE_JIXIN = "jixin-default";
   const TIANJI_SYNC_SOURCE_MANUAL = "manual";
   const TIANJI_CONFIG_MIRROR_KEY = "wanjuan.tianjiSeedanceConfig.v1";
@@ -1695,7 +1695,7 @@ function installDesktopPatches() {
     if (!jixinConfig) return currentConfig;
     const nextConfig = tianjiBuildSyncedConfigFromJixin(currentConfig, jixinConfig, {
       ...options,
-      force: options.force === true || stored.advancedSettingsUnlocked !== true
+      force: options.force === true
     });
     if (JSON.stringify(currentConfig) !== JSON.stringify(nextConfig)) {
       await tianjiStorageSet({ tianjiSeedanceConfig: nextConfig });
@@ -2413,7 +2413,8 @@ function installDesktopPatches() {
       .wanjuan-tianji-settings-card *{box-sizing:border-box}
       .wanjuan-tianji-settings-card[hidden]{display:none!important}
       .wanjuan-tianji-settings-host{display:grid;gap:12px;min-width:0}
-      .wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-tianji-settings-host){display:none!important}
+      .wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-seedance-mode-model-settings):not(.wanjuan-tianji-settings-host){display:none!important}
+      .wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-seedance-mode-model-settings{display:block!important}
       .wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-tianji-settings-card{margin-top:0}
       .wanjuan-tianji-mode-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px;border:1px solid color-mix(in srgb,var(--wj-border,#333) 72%,transparent);border-radius:8px;background:color-mix(in srgb,var(--wj-surface-2,#121212) 78%,var(--wj-bg,#0f0f0f) 22%);padding:10px 12px}
       .wanjuan-tianji-mode-row-title{font-size:12px;font-weight:650;color:var(--wj-text,#d1d5db);line-height:1.25}
