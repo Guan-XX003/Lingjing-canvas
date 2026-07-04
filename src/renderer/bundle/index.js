@@ -33212,6 +33212,7 @@ Suno 音乐生成`,
         "当前已启用全局统一API配置": "目前已啟用全域統一 API 配置",
         "切换石墨灰、曜石黑、晴空蓝、暖砂白、樱雾粉、薄荷绿或跟随系统外观，不改变现有布局结构": "切換石墨灰、曜石黑、晴空藍、暖砂白、櫻霧粉、薄荷綠或跟隨系統外觀，不改變現有布局結構",
         "选择界面语言偏好，后续多语言文案将按此设置展示": "選擇介面語言偏好，介面文案會依此設定顯示",
+        "1.3.6：接入后台系统通知，优化通知铃铛、已读不再显示、天玑模式提示、素材选择触发和极鑫默认配置体验，并发布新的 Mac/Windows 安装包。": "1.3.6：接入後台系統通知，優化通知鈴鐺、已讀不再顯示、天璣模式提示、素材選擇觸發和極鑫預設配置體驗，並發布新的 Mac/Windows 安裝包。",
         "1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。": "1.3.5：修復即夢天璣模式配置傳遞，確保同步極鑫配置後畫布生成可正確讀取授權資訊，並發布新的 Mac/Windows 安裝包。",
         "1.3.3：优化石墨灰主题控件选中态、内置语言包和离线工具包打包流程。": "1.3.3：優化石墨灰主題控制項選中態、內建語言包和離線工具包打包流程。",
         "1.3.2：优化即梦天玑人像审核后的自动刷新绑定，提高素材库最终 ID 回填成功率。": "1.3.2：優化即夢天璣人像審核後的自動刷新綁定，提高素材庫最終 ID 回填成功率。",
@@ -33275,6 +33276,7 @@ Suno 音乐生成`,
         "当前已启用全局统一API配置": "Global unified API config is enabled",
         "切换石墨灰、曜石黑、晴空蓝、暖砂白、樱雾粉、薄荷绿或跟随系统外观，不改变现有布局结构": "Switch the visual theme without changing the current layout.",
         "选择界面语言偏好，后续多语言文案将按此设置展示": "Choose the interface language. Supported interface text follows this setting.",
+        "1.3.6：接入后台系统通知，优化通知铃铛、已读不再显示、天玑模式提示、素材选择触发和极鑫默认配置体验，并发布新的 Mac/Windows 安装包。": "1.3.6: Added backend system notifications, refined the notification bell, read-and-hide behavior, Tianji mode tips, asset picker triggering, and Jixin default configuration experience, and shipped new Mac/Windows installers.",
         "1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。": "1.3.5: Fixed Jimeng Tianji config delivery so canvas generation can correctly read synced Jixin authorization, and shipped new Mac/Windows installers.",
         "1.3.3：优化石墨灰主题控件选中态、内置语言包和离线工具包打包流程。": "1.3.3: Improved Graphite theme selected states, the built-in language pack, and offline tool packaging workflow.",
         "1.3.2：优化即梦天玑人像审核后的自动刷新绑定，提高素材库最终 ID 回填成功率。": "1.3.2: Improved automatic refresh binding after Jimeng Tianji portrait review, increasing the success rate of final asset ID backfill.",
@@ -45067,7 +45069,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           [],
                         ),
                         buildBackupPayload = async (e, t, n, r = {}) => ({
-				                            version: `1.3.5`,
+				                            version: `1.3.6`,
                             backupFormat: `4`,
                             exportedAt: new Date().toISOString(),
                             modules: await buildBackupModules(e, t, n, r),
@@ -45667,7 +45669,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-					                  children: `v1.3.5`,
+					                  children: `v1.3.6`,
                 }),
               ],
             }),
@@ -49645,7 +49647,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.3.5：修复即梦天玑模式配置传递，确保同步极鑫配置后画布生成可正确读取授权信息，并发布新的 Mac/Windows 安装包。`),
+				                                          children: wanjuanT(`1.3.6：接入后台系统通知，优化通知铃铛、已读不再显示、天玑模式提示、素材选择触发和极鑫默认配置体验，并发布新的 Mac/Windows 安装包。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -49662,7 +49664,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-					                                          children: `1.3.5`,
+					                                          children: `1.3.6`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,
