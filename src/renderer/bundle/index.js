@@ -33344,6 +33344,20 @@ Suno 音乐生成`,
       if (!linkUrl) return;
       window.wanjuanDesktop?.openExternal?.(linkUrl) || window.open(linkUrl, `_blank`);
     },
+    getUnreadSystemNotifications = () => {
+      let dismissedIds = new Set(systemNotificationDismissedIds);
+      return systemNotifications.filter((notification) => notification?.id && !dismissedIds.has(notification.id));
+    },
+    markSystemNotificationRead = (notification) => {
+      if (!notification?.id) return;
+      let nextIds = Array.from(new Set([...systemNotificationDismissedIds, notification.id]));
+      (setSystemNotificationDismissedIds(nextIds), WanJuanSaveDismissedAppNotificationIds(nextIds));
+    },
+    getVisibleSystemNotifications = () => {
+      let unreadNotifications = getUnreadSystemNotifications(),
+        pageNotifications = unreadNotifications.filter((notification) => notification.display_type === `page`);
+      return pageNotifications.length ? pageNotifications : unreadNotifications;
+    },
     dismissSystemNotificationDialog = (notification) => {
       if (notification?.id) {
         let nextIds = Array.from(new Set([...systemNotificationDismissedIds, notification.id]));
@@ -33381,51 +33395,9 @@ Suno 音乐生成`,
           source: `panel`,
           silent: !1,
         }));
-      try {
-        let result = await window.wanjuanDesktop?.checkForUpdates?.();
-        result?.hasUpdate && (setUpdateInfo(result), showToast2(`发现新版本 v${result.version}`));
-      } catch (error) {
-        console.warn(`topbar update check failed`, error);
-      }
     },
     renderSystemNotificationBanner = () => {
-      let bannerNotifications = systemNotifications.filter((notification) => notification.display_type === `banner`).slice(0, 2);
-      if (!bannerNotifications.length || activeView !== `canvas` && activeView !== `settings`) return null;
-      return jsx(`div`, {
-        className: `wanjuan-system-notification-banner-wrap`,
-        children: bannerNotifications.map((notification) =>
-          jsxs(`div`, {
-            className: `wanjuan-system-notification-banner wanjuan-system-notification-${notification.level}`,
-            onClick: () => openSystemNotificationLink(notification),
-            role: notification.link_url ? `button` : void 0,
-            children: [
-              jsx(`span`, {
-                className: `wanjuan-system-notification-pill`,
-                children: notificationLevelLabel(notification.level),
-              }),
-              jsxs(`div`, {
-                className: `min-w-0 flex-1`,
-                children: [
-                  jsx(`div`, {
-                    className: `wanjuan-system-notification-title`,
-                    children: notification.title,
-                  }),
-                  notification.content &&
-                  jsx(`div`, {
-                    className: `wanjuan-system-notification-content`,
-                    children: notification.content,
-                  }),
-                ],
-              }),
-              notification.link_url &&
-              jsx(`span`, {
-                className: `wanjuan-system-notification-link-hint`,
-                children: `查看`,
-              }),
-            ],
-          }, notification.id),
-        ),
-      });
+      return null;
     },
 	    WANJUAN_JIXIN_API_URL = WANJUAN_JIXIN_DEFAULT_API_URL,
 	    WANJUAN_JIXIN_DOC_URL = `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs`,
@@ -37403,22 +37375,8 @@ ${docText}`;
     });
   }, [activeView]);
   useEffect(() => {
-    if (!systemNotifications.length) return;
-    let toastShown = systemNotificationToastShownRef.current;
-    systemNotifications
-      .filter((notification) => notification.display_type === `toast`)
-      .forEach((notification) => {
-        if (toastShown.has(notification.id)) return;
-        toastShown.add(notification.id);
-        showToast2(notification.title || notification.content || `系统通知`);
-      });
-    WanJuanSaveSessionToastAppNotificationIds(Array.from(toastShown));
-    if (!systemNotificationDialog) {
-      let dismissedIds = new Set(systemNotificationDismissedIds),
-        nextDialog = systemNotifications.find((notification) => notification.display_type === `dialog` && !dismissedIds.has(notification.id));
-      nextDialog && setSystemNotificationDialog(nextDialog);
-    }
-  }, [systemNotifications, systemNotificationDismissedIds, systemNotificationDialog]);
+    systemNotificationDialog && setSystemNotificationDialog(null);
+  }, [systemNotificationDialog]);
   useEffect(() => {
     if (activeView === `settings`) {
       let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
@@ -45711,15 +45669,10 @@ ${String(l || ``).slice(0, 5e4)}`;
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
 					                  children: `v1.3.5`,
                 }),
-                (updateInfo?.hasUpdate || systemNotifications.length > 0) &&
-                jsx(`span`, {
-                  className: `absolute top-4 right-4 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.5)]`,
-                }),
               ],
             }),
           ],
         }),
-        renderSystemNotificationBanner(),
         jsxs(`div`, {
           className: `flex-1 relative overflow-hidden bg-[#121212]`,
           // overflow:clip 替代 hidden：clip 不创建滚动容器，scrollTop 恒为 0。
@@ -46239,8 +46192,8 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                        jsxs(`button`, {
 	                          type: `button`,
 	                          className: `wanjuan-topbar-notification-button`,
-	                          title: updateInfo?.hasUpdate ? `发现新版本 v${updateInfo.version}，点击查看系统通知与更新` : `系统通知与公告`,
-	                          "aria-label": updateInfo?.hasUpdate ? `发现新版本 v${updateInfo.version}` : `系统通知与公告`,
+	                          title: `系统通知与公告`,
+	                          "aria-label": `系统通知与公告`,
 	                          disabled: settingsNotificationChecking,
 	                          onClick: async (event) => {
 	                            event.preventDefault();
@@ -46267,7 +46220,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                }),
 	                              ],
 	                            }),
-	                            (updateInfo?.hasUpdate || systemNotifications.length > 0) &&
+	                            getUnreadSystemNotifications().length > 0 &&
 	                            jsx(`span`, {
 	                              className: `wanjuan-topbar-notification-dot`,
 	                              "aria-hidden": `true`,
@@ -54831,45 +54784,12 @@ ${String(l || ``).slice(0, 5e4)}`;
                   }),
                 ],
               }),
-              updateInfo?.hasUpdate &&
-              jsxs(`button`, {
-                type: `button`,
-                className: `wanjuan-system-notification-update-card`,
-                onClick: () => openSystemNotificationLink({
-                  link_url: updateInfo.downloadUrl || `https://lingjing.guancn.uk`,
-                }),
-                children: [
-                  jsx(`span`, {
-                    className: `wanjuan-system-notification-pill wanjuan-system-notification-update-pill`,
-                    children: `版本`,
-                  }),
-                  jsxs(`div`, {
-                    className: `min-w-0 flex-1 text-left`,
-                    children: [
-                      jsxs(`div`, {
-                        className: `wanjuan-system-notification-title`,
-                        children: [`发现新版本 v`, updateInfo.version],
-                      }),
-                      jsx(`div`, {
-                        className: `wanjuan-system-notification-content`,
-                        children: updateInfo.changelog || `修复了一些已知问题，优化了使用体验。`,
-                      }),
-                    ],
-                  }),
-                  jsx(`span`, {
-                    className: `wanjuan-system-notification-link-hint`,
-                    children: `查看`,
-                  }),
-                ],
-              }),
               jsx(`div`, {
                 className: `wanjuan-system-notification-list`,
-                children: (systemNotifications.filter((notification) => notification.display_type === `page`).length ? systemNotifications.filter((notification) => notification.display_type === `page`) : systemNotifications).length ?
-                  (systemNotifications.filter((notification) => notification.display_type === `page`).length ? systemNotifications.filter((notification) => notification.display_type === `page`) : systemNotifications).map((notification) =>
-                    jsxs(`button`, {
-                      type: `button`,
+                children: getVisibleSystemNotifications().length ?
+                  getVisibleSystemNotifications().map((notification) =>
+                    jsxs(`div`, {
                       className: `wanjuan-system-notification-list-item wanjuan-system-notification-${notification.level}`,
-                      onClick: () => openSystemNotificationLink(notification),
                       children: [
                         jsx(`span`, {
                           className: `wanjuan-system-notification-pill`,
@@ -54894,9 +54814,17 @@ ${String(l || ``).slice(0, 5e4)}`;
                           ],
                         }),
                         notification.link_url &&
-                        jsx(`span`, {
+                        jsx(`button`, {
+                          type: `button`,
                           className: `wanjuan-system-notification-link-hint`,
+                          onClick: () => openSystemNotificationLink(notification),
                           children: `打开`,
+                        }),
+                        jsx(`button`, {
+                          type: `button`,
+                          className: `wanjuan-system-notification-read-button`,
+                          onClick: () => markSystemNotificationRead(notification),
+                          children: `已读不再显示`,
                         }),
                       ],
                     }, notification.id),
