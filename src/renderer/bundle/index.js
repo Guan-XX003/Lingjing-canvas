@@ -4157,7 +4157,7 @@ var Le = reactMemo(({
       isSeedanceOrWanxiang = data.seedanceNode === !0 || data.tongyiWanxiangNode === !0,
       isTongyiWanxiang = data.tongyiWanxiangNode === !0,
       tongyiWanxiangMode = data.tongyiWanxiangMode || `text-to-video`,
-      seedanceUploadModeValue = data.seedanceUploadMode || `public`,
+      seedanceUploadModeValue = data.seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE,
       seedanceModeValue = data.seedanceMode === `tianji` ? `tianji` : `official`,
       parseSeedanceList = (listText) =>
       String(listText || ``)
@@ -5073,40 +5073,64 @@ var Le = reactMemo(({
 	                  }),
 	                ],
 	              }),
-		              jsxs(`button`, {
-		                type: `button`,
-		                className: `h-8 min-w-0 rounded-md border px-2 text-[12px] font-semibold leading-none transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap ${seedanceModeValue === `tianji` ? `border-blue-300 bg-blue-600 text-white shadow-[0_0_0_1px_rgba(96,165,250,0.22),0_6px_14px_rgba(37,99,235,0.22)]` : `border-[#515762] bg-[#202226] text-gray-300 hover:border-[#6b7280] hover:bg-[#2a2d33] hover:text-gray-100`}`,
-		                onClick: (event) => {
-		                  let modeModelText = data.tianjiSeedanceModel || data.videoModel || ``,
-		                    modeCurrentModel = data.tianjiSelectedModel || (seedanceModeValue === `tianji` ? selectedModel : ``) || ``,
-		                    modeManual = data.tianjiModelManual === !0,
-		                    modeSelectedModel = WanJuanGetPreferredModel(modeModelText, modeCurrentModel, favoriteModels.favorites, {
-		                      manual: modeManual,
-		                      auto: !modeManual
-		                    });
-		                  (event.stopPropagation(),
-		                    modeSelectedModel && _(modeSelectedModel),
-		                    (wanjuanModelManualRef.current = modeManual),
-		                    updateNodeData(nodeId, {
-		                      seedanceMode: `tianji`,
-		                      tianjiSeedanceGenerationMode: `reference-media`,
-		                      videoModel: modeModelText,
-		                      selectedModel: modeSelectedModel,
-		                      tianjiSelectedModel: modeSelectedModel,
-		                      wanjuanModelAuto: !modeManual,
-		                      wanjuanModelManual: modeManual,
-		                    }));
-		                },
-	                children: [
-	                  seedanceModeValue === `tianji` &&
-	                  jsx(`span`, {
-	                    className: `h-1.5 w-1.5 rounded-full bg-blue-300 shadow-[0_0_6px_rgba(147,197,253,0.65)]`,
-	                  }),
-	                  jsx(`span`, {
-	                    children: `天玑真人`,
-	                  }),
-	                ],
-	              }),
+			              jsxs(`div`, {
+			                className: `relative min-w-0`,
+			                children: [
+			                  jsxs(`button`, {
+			                    type: `button`,
+			                    className: `h-8 w-full min-w-0 rounded-md border px-2 pr-7 text-[12px] font-semibold leading-none transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap ${seedanceModeValue === `tianji` ? `border-blue-300 bg-blue-600 text-white shadow-[0_0_0_1px_rgba(96,165,250,0.22),0_6px_14px_rgba(37,99,235,0.22)]` : `border-[#515762] bg-[#202226] text-gray-300 hover:border-[#6b7280] hover:bg-[#2a2d33] hover:text-gray-100`}`,
+			                    onClick: (event) => {
+			                      let modeModelText = data.tianjiSeedanceModel || data.videoModel || ``,
+			                        modeCurrentModel = data.tianjiSelectedModel || (seedanceModeValue === `tianji` ? selectedModel : ``) || ``,
+			                        modeManual = data.tianjiModelManual === !0,
+			                        modeSelectedModel = WanJuanGetPreferredModel(modeModelText, modeCurrentModel, favoriteModels.favorites, {
+			                          manual: modeManual,
+			                          auto: !modeManual
+			                        });
+			                      (event.stopPropagation(),
+			                        modeSelectedModel && _(modeSelectedModel),
+			                        (wanjuanModelManualRef.current = modeManual),
+			                        updateNodeData(nodeId, {
+			                          seedanceMode: `tianji`,
+			                          tianjiSeedanceGenerationMode: `reference-media`,
+			                          videoModel: modeModelText,
+			                          selectedModel: modeSelectedModel,
+			                          tianjiSelectedModel: modeSelectedModel,
+			                          wanjuanModelAuto: !modeManual,
+			                          wanjuanModelManual: modeManual,
+			                        }));
+			                    },
+			                    children: [
+			                      seedanceModeValue === `tianji` &&
+			                      jsx(`span`, {
+			                        className: `h-1.5 w-1.5 rounded-full bg-blue-300 shadow-[0_0_6px_rgba(147,197,253,0.65)]`,
+			                      }),
+			                      jsx(`span`, {
+			                        children: `天玑真人`,
+			                      }),
+			                    ],
+			                  }),
+			                  jsx(`span`, {
+			                    className: `wanjuan-seedance-tianji-help nodrag`,
+			                    onClick: (event) => event.stopPropagation(),
+			                    onMouseDown: (event) => event.stopPropagation(),
+			                    children: jsx(WanJuanConfigButlerHelp, {
+			                      tone: `info`,
+			                      placement: `above-end`,
+			                      title: `天玑模式说明`,
+			                      children: jsxs(Fragment, {
+			                        children: [
+			                          `1. 天玑模式最多支持 4 张参考图片、2 个参考视频、1 个参考音频。`,
+			                          jsx(`br`, {}),
+			                          `2. 使用真人图片生成时，需要先在图片节点完成天玑人像审核；如果图片中没有人物正面或脸部，可以不用审核，直接连接作为参考。`,
+			                          jsx(`br`, {}),
+			                          `3. 如果图片节点的天玑人像审核回绑 ID 失败，可以在天玑人像库刷新素材，选择已审核完成的人像图片使用。`,
+			                        ],
+			                      }),
+			                    }),
+			                  }),
+			                ],
+			              }),
 	            ],
 	          }),
 	        ],
@@ -5618,10 +5642,7 @@ var Le = reactMemo(({
                               `描述视频，可输入 @图片1 / @视频1 / @音频1 调用多参...` :
                               `描述你想要的视频内容 (输入 @ 调出素材)...`,
 		                            value: prompt,
-		                            onFocus: (event) => {
-		                              wanjuanShouldShowMentionPicker(event.currentTarget) && (setSeedanceApiMenuOpen(!1), T(!1), j(!1), setMenuOpen(!1), setSeedancePortraitPickerOpen(!1), setIsMentionPickerOpen(!0));
-		                            },
-	                            onChange: (event) => {
+		                            onChange: (event) => {
 	                              let value = event.target.value;
 	                              (setPrompt(value),
 	                                updateNodeData(nodeId, {
@@ -11282,7 +11303,7 @@ ${data.audioModel || ``}`)
 	        qiniuConfig = data.qiniuConfig || {},
 	        tosConfig = data.tosConfig || {},
 	        customUploadConfig = data.customPublicUploadConfig || {},
-	        initialUploadMode = [`tos`, `qiniu`, `custom`].includes(data.fileToLinkUploadMode) ? data.fileToLinkUploadMode : [`tos`, `qiniu`, `custom`].includes(data.seedanceUploadMode) ? data.seedanceUploadMode : `qiniu`,
+	        initialUploadMode = [`tos`, `qiniu`, `custom`].includes(data.fileToLinkUploadMode) ? data.fileToLinkUploadMode : [`tos`, `qiniu`, `custom`].includes(data.seedanceUploadMode) ? data.seedanceUploadMode : WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE,
 	        [uploadMode, setUploadMode] = useState(initialUploadMode),
 	        activeUploadMode = uploadMode || initialUploadMode,
 	        providerLabel = activeUploadMode === `tos` ? `火山 TOS` : activeUploadMode === `custom` ? `自定义` : `七牛云`,
@@ -16627,6 +16648,15 @@ const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
 const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
+const WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE = `custom`;
+const WANJUAN_DEFAULT_CUSTOM_PUBLIC_UPLOAD_CONFIG = Object.freeze({
+  endpoint: `https://litterbox.catbox.moe/resources/internals/api.php`,
+  fileField: `fileToUpload`,
+  fields: `reqtype=fileupload
+time=1h`,
+  headers: ``,
+  resultPath: ``,
+});
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
 const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-04-jixing-gateway-models-v1`;
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
@@ -18493,7 +18523,7 @@ const wanjuanTianjiMediaUrl = async (mediaRef, mediaKind = `image`, uploadOption
   if (/^https?:\/\//i.test(mediaUrl)) return mediaUrl;
   if (!window.wanjuanDesktop?.uploadPublicMedia && !window.wanjuanDesktop?.uploadTosMedia && !window.wanjuanDesktop?.uploadCustomPublicMedia && !window.wanjuanDesktop?.uploadQiniuMedia)
     throw Error(`天玑模式参考${mediaKind === `video` ? `视频` : mediaKind === `audio` ? `音频` : `图片`}必须是公网 URL`);
-  let uploadMode = String(uploadOptions.uploadMode || uploadOptions.seedanceUploadMode || `public`).trim(),
+  let uploadMode = String(uploadOptions.uploadMode || uploadOptions.seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE).trim(),
     filename = `tianji-seedance-${mediaKind}-${Date.now()}`;
   let uploadResult =
     uploadMode === `tos` && typeof window.wanjuanDesktop?.uploadTosMedia == `function` ?
@@ -19084,7 +19114,7 @@ function dt({
 	  videoModelRequestProfiles: videoModelRequestProfiles = `{}`,
 	  audioModelProtocolBindings: audioModelProtocolBindings = {},
 	  audioModelApiBindings: audioModelApiBindings = {},
-	  seedanceUploadMode: seedanceUploadMode = `public`,
+	  seedanceUploadMode: seedanceUploadMode = WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE,
 	  tosConfig: tosConfig = {},
 	  customPublicUploadConfig: customPublicUploadConfig = {},
   qiniuConfig: qiniuConfig = {},
@@ -26356,7 +26386,7 @@ ${combinedPrompt}`,
                       console.log(`Text node chat video using direct public URL:`, trimmedUrl),
                       trimmedUrl
                     );
-                  let uploadMode = seedanceUploadMode || `public`;
+                  let uploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE;
                   try {
                     let uploadResult =
                       uploadMode === `tos` &&
@@ -29313,7 +29343,7 @@ ${combinedPrompt}`,
               nodeData.seedanceVirtualPortraits !== seedanceVirtualPortraits &&
               ((nodeData.seedanceVirtualPortraits = seedanceVirtualPortraits), (hasChanged = !0)),
               ![`public`, `tos`, `custom`, `qiniu`].includes(nodeData.seedanceUploadMode) &&
-              ((nodeData.seedanceUploadMode = seedanceUploadMode || `public`), (hasChanged = !0)),
+              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = !0)),
               nodeData.tosConfig !== tosConfig &&
               ((nodeData.tosConfig = tosConfig), (hasChanged = !0)),
               nodeData.customPublicUploadConfig !== customPublicUploadConfig &&
@@ -29371,7 +29401,7 @@ ${combinedPrompt}`,
                   `720P`),
                 (hasChanged = !0)),
               ![`public`, `tos`, `custom`, `qiniu`].includes(nodeData.seedanceUploadMode) &&
-              ((nodeData.seedanceUploadMode = seedanceUploadMode || `public`), (hasChanged = !0)),
+              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = !0)),
               nodeData.tosConfig !== tosConfig &&
               ((nodeData.tosConfig = tosConfig), (hasChanged = !0)),
               nodeData.customPublicUploadConfig !== customPublicUploadConfig &&
@@ -32450,7 +32480,7 @@ Suno 音乐生成`,
   [tongyiWanxiangDurations, setTongyiWanxiangDurations] = useState(WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_DURATIONS),
   [tongyiWanxiangResolutions, setTongyiWanxiangResolutions] = useState(WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RESOLUTIONS),
   [tongyiWanxiangRatios, setTongyiWanxiangRatios] = useState(WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RATIOS),
-  [seedanceUploadMode, setSeedanceUploadMode] = useState(`public`),
+  [seedanceUploadMode, setSeedanceUploadMode] = useState(WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE),
   [tosConfig, setTosConfig] = useState({
     accessKeyId: ``,
     secretAccessKey: ``,
@@ -32460,14 +32490,7 @@ Suno 音乐生成`,
     prefix: `wanjuan/seedance`,
     publicBaseUrl: ``,
   }),
-  [customPublicUploadConfig, setCustomPublicUploadConfig] = useState({
-    endpoint: `https://litterbox.catbox.moe/resources/internals/api.php`,
-    fileField: `fileToUpload`,
-    fields: `reqtype=fileupload
-time=1h`,
-    headers: ``,
-    resultPath: ``,
-  }),
+  [customPublicUploadConfig, setCustomPublicUploadConfig] = useState(() => ({ ...WANJUAN_DEFAULT_CUSTOM_PUBLIC_UPLOAD_CONFIG })),
   [qiniuConfig, setQiniuConfig] = useState({
     accessKey: ``,
     secretKey: ``,
@@ -32899,6 +32922,7 @@ time=1h`,
   [membershipCode, setMembershipCode] = useState(``),
   [deviceId, setDeviceId] = useState(``),
   [updateInfo, setUpdateInfo] = useState(null),
+  [settingsNotificationChecking, setSettingsNotificationChecking] = useState(!1),
   membershipLimits = {
       FREE: {
         accounts: 999999,
@@ -40643,7 +40667,7 @@ ${docText}`;
 		                    } else mediaUrl = String(attachment?.url || ``).trim();
 		                  }
 	                  if (/^https?:\/\//i.test(mediaUrl) && isPublicUrl(mediaUrl) && isNonVideoUrl(mediaUrl)) return mediaUrl;
-	                  let uploadMode = seedanceUploadMode || `public`;
+	                  let uploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE;
 	                  try {
                     let uploadResult =
                       uploadMode === `tos` &&
@@ -45889,12 +45913,64 @@ ${String(l || ``).slice(0, 5e4)}`;
                         }),
                       ],
                     }),
-                    jsx(`div`, {
-                      className: `flex items-center gap-2`,
-                      children: [
-                        jsxs(`button`, {
-                          onClick: runManualConfigButlerErrorQuery,
-                          className: `bg-transparent text-white border border-white pl-3 pr-8 py-1 rounded text-xs hover:bg-white/10 transition-colors flex items-center gap-1 relative`,
+	                    jsx(`div`, {
+	                      className: `flex items-center gap-2`,
+	                      children: [
+	                        jsxs(`button`, {
+	                          type: `button`,
+	                          className: `wanjuan-topbar-notification-button`,
+	                          title: updateInfo?.hasUpdate ? `发现新版本 v${updateInfo.version}，点击查看更新` : `系统通知与更新`,
+	                          "aria-label": updateInfo?.hasUpdate ? `发现新版本 v${updateInfo.version}` : `系统通知与更新`,
+	                          disabled: settingsNotificationChecking,
+	                          onClick: async (event) => {
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            if (settingsNotificationChecking) return;
+	                            setSettingsNotificationChecking(!0);
+	                            try {
+	                              let result = await window.wanjuanDesktop?.checkForUpdates?.();
+	                              if (result?.hasUpdate) {
+	                                setUpdateInfo(result);
+	                                showToast2(`发现新版本 v${result.version}`);
+	                              } else {
+	                                showToast2(`暂无新的系统通知或版本更新`);
+	                              }
+	                            } catch (error) {
+	                              console.warn(`topbar notification check failed`, error);
+	                              showToast2(`通知检查失败：${error?.message || error}`);
+	                            } finally {
+	                              setSettingsNotificationChecking(!1);
+	                            }
+	                          },
+	                          children: [
+	                            jsxs(`svg`, {
+	                              xmlns: `http://www.w3.org/2000/svg`,
+	                              viewBox: `0 0 24 24`,
+	                              fill: `none`,
+	                              stroke: `currentColor`,
+	                              strokeWidth: `2`,
+	                              strokeLinecap: `round`,
+	                              strokeLinejoin: `round`,
+	                              "aria-hidden": `true`,
+	                              children: [
+	                                jsx(`path`, {
+	                                  d: `M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8`,
+	                                }),
+	                                jsx(`path`, {
+	                                  d: `M13.73 21a2 2 0 0 1-3.46 0`,
+	                                }),
+	                              ],
+	                            }),
+	                            updateInfo?.hasUpdate &&
+	                            jsx(`span`, {
+	                              className: `wanjuan-topbar-notification-dot`,
+	                              "aria-hidden": `true`,
+	                            }),
+	                          ],
+	                        }),
+	                        jsxs(`button`, {
+	                          onClick: runManualConfigButlerErrorQuery,
+	                          className: `bg-transparent text-white border border-white pl-3 pr-8 py-1 rounded text-xs hover:bg-white/10 transition-colors flex items-center gap-1 relative`,
 	                          title: `手动查询任务清单中最新一次失败任务的错误原因`,
                           style: {
                             height: `30px`,
@@ -48985,12 +49061,12 @@ ${String(l || ``).slice(0, 5e4)}`;
                     }),
                   ],
                 }),
-                jsx(`div`, {
-                  className: `flex-1 overflow-y-auto p-6 relative pb-24 custom-scrollbar bg-[#121212] wanjuan-settings-content`,
-                  children: jsxs(`div`, {
-                    className: `${activeSettingsTab === `oneStop` ? `max-w-none` : `max-w-4xl mx-auto`} flex flex-col gap-6 wanjuan-settings-content-inner`,
-                    children: [
-                      updateInfo?.hasUpdate &&
+		                jsx(`div`, {
+		                  className: `flex-1 overflow-y-auto p-6 relative pb-24 custom-scrollbar bg-[#121212] wanjuan-settings-content`,
+		                  children: jsxs(`div`, {
+		                    className: `${activeSettingsTab === `oneStop` ? `max-w-none` : `max-w-4xl mx-auto`} flex flex-col gap-6 wanjuan-settings-content-inner`,
+		                    children: [
+	                      updateInfo?.hasUpdate &&
                       jsxs(`div`, {
                         className: `bg-gradient-to-r from-blue-900/30 to-indigo-900/30 p-4 rounded-xl border border-blue-500/30 mb-4 flex justify-between items-center shadow-lg`,
                         children: [
@@ -49363,18 +49439,18 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                              className: `wanjuan-settings-button wanjuan-update-action-button wanjuan-official-site-button`,
 	                                              "data-wanjuan-official-site": `true`,
 	                                              onClick: () => window.open(`https://lingjing.guancn.uk`, `_blank`, `noopener,noreferrer`),
-	                                              children: `前往官网`,
-	                                            }),
-	                                          ],
-	                                        }),
-                                      ],
-                                    }),
-                                  ],
-                                }),
-	                              ],
-	                            }),
-		                          }),
-		                          false &&
+		                                              children: `前往官网`,
+		                                            }),
+		                                          ],
+		                                        }),
+	                                      ],
+	                                    }),
+	                                  ],
+	                                }),
+		                              ],
+		                            }),
+			                          }),
+			                          false &&
 		                          jsxs(`div`, {
 	                            className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
 	                            children: [

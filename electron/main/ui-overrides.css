@@ -1273,6 +1273,64 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   cursor: wait !important;
 }
 
+.wanjuan-topbar-notification-button {
+  position: relative !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border) 72%, var(--wj-text) 28%) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--wj-control-bg) 78%, transparent) !important;
+  color: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-text) 22%) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent),
+    0 8px 18px color-mix(in srgb, var(--wj-bg) 34%, transparent) !important;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease, opacity 150ms ease !important;
+}
+
+.wanjuan-topbar-notification-button:hover {
+  border-color: color-mix(in srgb, var(--wj-accent) 58%, var(--wj-border) 42%) !important;
+  background: color-mix(in srgb, var(--wj-control-hover-bg) 82%, var(--wj-accent) 18%) !important;
+  color: color-mix(in srgb, var(--wj-accent) 86%, var(--wj-text) 14%) !important;
+  transform: translateY(-1px) !important;
+}
+
+.wanjuan-topbar-notification-button:disabled {
+  cursor: wait !important;
+  opacity: 0.68 !important;
+  transform: none !important;
+}
+
+.wanjuan-topbar-notification-button svg {
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+}
+
+.wanjuan-topbar-notification-dot {
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 9999px !important;
+  background: var(--wj-danger) !important;
+  box-shadow: 0 0 0 2px var(--wj-control-bg), 0 0 8px color-mix(in srgb, var(--wj-danger) 62%, transparent) !important;
+}
+
+.wanjuan-settings-notification-bell {
+  display: none !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.wanjuan-settings-notification-dot {
+  display: none !important;
+}
+
 .wanjuan-settings-button-muted {
   color: color-mix(in srgb, var(--wj-muted) 84%, var(--wj-text) 16%) !important;
 }
@@ -1434,6 +1492,34 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   font-weight: 400 !important;
   line-height: 1.65 !important;
   white-space: normal !important;
+}
+
+.wanjuan-seedance-tianji-help {
+  position: absolute !important;
+  top: 50% !important;
+  right: 7px !important;
+  z-index: 12 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateY(-50%) !important;
+}
+
+.wanjuan-seedance-tianji-help .wanjuan-config-butler-help-trigger {
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  font-size: 9px !important;
+  line-height: 13px !important;
+  background: color-mix(in srgb, var(--wj-control-bg) 76%, var(--wj-accent) 24%) !important;
+  border-color: color-mix(in srgb, var(--wj-control-border) 54%, var(--wj-accent) 46%) !important;
+  color: color-mix(in srgb, var(--wj-text) 88%, var(--wj-accent) 12%) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--wj-bg) 36%, transparent) !important;
+}
+
+.wanjuan-seedance-tianji-help .wanjuan-config-butler-help-popover {
+  width: min(320px, calc(100vw - 64px)) !important;
+  max-width: 320px !important;
 }
 
 .wanjuan-settings-save-button {
