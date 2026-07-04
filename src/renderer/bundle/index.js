@@ -4311,11 +4311,12 @@ var Le = reactMemo(({
       [selectedContextResources, setSelectedContextResources] = useState(data.selectedContextResources || []),
       [seedancePortraitPickerOpen, setSeedancePortraitPickerOpen] = useState(!1),
       seedancePortraitPickerRef = useRef(null),
-      [tianjiNodePortraitAssets, setTianjiNodePortraitAssets] = useState([]),
-      [tianjiPortraitPickerRefreshing, setTianjiPortraitPickerRefreshing] = useState(!1),
-      [seedancePortraitPickerPage, setSeedancePortraitPickerPage] = useState(1),
-      [tianjiPortraitPickerReachedEnd, setTianjiPortraitPickerReachedEnd] = useState(!1),
-      seedanceNodeVirtualPortraits = wanjuanNormalizeSeedanceVirtualPortraits(data.seedanceVirtualPortraits || []);
+	      [tianjiNodePortraitAssets, setTianjiNodePortraitAssets] = useState([]),
+	      [tianjiPortraitPickerRefreshing, setTianjiPortraitPickerRefreshing] = useState(!1),
+	      [seedancePortraitPickerPage, setSeedancePortraitPickerPage] = useState(1),
+	      [tianjiPortraitPickerReachedEnd, setTianjiPortraitPickerReachedEnd] = useState(!1),
+	      [tianjiPortraitPickerTotalCount, setTianjiPortraitPickerTotalCount] = useState(0),
+	      seedanceNodeVirtualPortraits = wanjuanNormalizeSeedanceVirtualPortraits(data.seedanceVirtualPortraits || []);
 	    let applyPreferredVideoModel = (favoritesOverride = favoriteModels.favorites) => {
 	      if (!activeVideoModelText) return;
 	      let currentModel = selectedModel || activeVideoSelectedModel || ``;
@@ -4401,10 +4402,11 @@ var Le = reactMemo(({
         let cancelled = !1,
           applyTianjiPortraitAssets = (stored) => {
             if (cancelled) return;
-            setTianjiNodePortraitAssets(wanjuanNormalizeTianjiPortraitAssets(stored?.tianjiSeedanceAssets || {}));
-            resolvePendingTianjiPortraitNodes(stored?.tianjiSeedanceAssets || {});
-            setTianjiPortraitPickerReachedEnd(!1);
-          };
+	            setTianjiNodePortraitAssets(wanjuanNormalizeTianjiPortraitAssets(stored?.tianjiSeedanceAssets || {}));
+	            resolvePendingTianjiPortraitNodes(stored?.tianjiSeedanceAssets || {});
+	            setTianjiPortraitPickerReachedEnd(!1);
+	            setTianjiPortraitPickerTotalCount(0);
+	          };
         if (typeof chrome < `u` && chrome.storage?.local) {
           chrome.storage.local.get([`tianjiSeedanceAssets`], applyTianjiPortraitAssets);
           let handleStorageChange = (changes, areaName) => {
@@ -4718,20 +4720,26 @@ var Le = reactMemo(({
 	        }, []);
 	      })(),
 	      seedanceMentionPickerResources = seedanceMentionResources;
-    let seedancePortraitPickerIsTianji = seedanceModeValue === `tianji`,
-      seedancePortraitPickerTitle = seedancePortraitPickerIsTianji ? `天玑人像库` : `虚拟人像库`,
-      seedancePortraitPickerItems = seedancePortraitPickerIsTianji ? tianjiNodePortraitAssets : seedanceNodeVirtualPortraits;
-    let seedancePortraitPickerPageSize = 10,
-      seedancePortraitPickerTotalPages = Math.max(1, Math.ceil(seedancePortraitPickerItems.length / seedancePortraitPickerPageSize)),
-      seedancePortraitPickerCurrentPage = Math.min(Math.max(seedancePortraitPickerPage, 1), seedancePortraitPickerTotalPages),
-      seedancePortraitPickerVisibleItems = seedancePortraitPickerItems.slice(
-        (seedancePortraitPickerCurrentPage - 1) * seedancePortraitPickerPageSize,
-        seedancePortraitPickerCurrentPage * seedancePortraitPickerPageSize,
-      ),
-      seedancePortraitPickerCanTryNextPage =
-      seedancePortraitPickerIsTianji &&
-      seedancePortraitPickerVisibleItems.length === seedancePortraitPickerPageSize &&
-      tianjiPortraitPickerReachedEnd !== !0;
+	    let seedancePortraitPickerIsTianji = seedanceModeValue === `tianji`,
+	      seedancePortraitPickerTitle = seedancePortraitPickerIsTianji ? `天玑人像库` : `虚拟人像库`,
+	      seedancePortraitPickerItems = seedancePortraitPickerIsTianji ? tianjiNodePortraitAssets : seedanceNodeVirtualPortraits;
+	    let seedancePortraitPickerPageSize = 10,
+	      seedancePortraitPickerLoadedPages = Math.max(1, Math.ceil(seedancePortraitPickerItems.length / seedancePortraitPickerPageSize)),
+	      seedancePortraitPickerRemotePages =
+	      seedancePortraitPickerIsTianji && tianjiPortraitPickerTotalCount ?
+	      Math.max(1, Math.ceil(tianjiPortraitPickerTotalCount / seedancePortraitPickerPageSize)) :
+	      0,
+	      seedancePortraitPickerTotalPages = seedancePortraitPickerRemotePages || seedancePortraitPickerLoadedPages,
+	      seedancePortraitPickerCurrentPage = Math.min(Math.max(seedancePortraitPickerPage, 1), seedancePortraitPickerTotalPages),
+	      seedancePortraitPickerVisibleItems = seedancePortraitPickerItems.slice(
+	        (seedancePortraitPickerCurrentPage - 1) * seedancePortraitPickerPageSize,
+	        seedancePortraitPickerCurrentPage * seedancePortraitPickerPageSize,
+	      ),
+	      seedancePortraitPickerCanTryNextPage =
+	      seedancePortraitPickerIsTianji &&
+	      (seedancePortraitPickerRemotePages ?
+	        seedancePortraitPickerCurrentPage < seedancePortraitPickerRemotePages :
+	        seedancePortraitPickerVisibleItems.length === seedancePortraitPickerPageSize && tianjiPortraitPickerReachedEnd !== !0);
     let loadTianjiPortraitPickerPage = async (pageNumber, { showLoadingToast: showLoadingToast = !0 } = {}) => {
       if (!seedancePortraitPickerIsTianji || tianjiPortraitPickerRefreshing) return 0;
       try {
@@ -4745,13 +4753,15 @@ var Le = reactMemo(({
             pageNumber: pageNumber,
             pageSize: seedancePortraitPickerPageSize,
           }),
-          nextAssets = wanjuanNormalizeTianjiPortraitAssets(refresh?.assets || {});
-        (setTianjiNodePortraitAssets(nextAssets),
-          resolvePendingTianjiPortraitNodes(refresh?.assets || {}, {
-            showToastResolved: !0
-          }),
-          setTianjiPortraitPickerReachedEnd((refresh?.aigcCount || 0) < seedancePortraitPickerPageSize),
-          refresh?.aigcCount > 0 && setSeedancePortraitPickerPage(pageNumber));
+	          nextAssets = wanjuanNormalizeTianjiPortraitAssets(refresh?.assets || {}),
+	          nextTotalCount = refresh?.aigcTotal || 0;
+	        (setTianjiNodePortraitAssets(nextAssets),
+	          resolvePendingTianjiPortraitNodes(refresh?.assets || {}, {
+	            showToastResolved: !0
+	          }),
+	          setTianjiPortraitPickerTotalCount((current) => nextTotalCount || (pageNumber > 1 ? current : 0)),
+	          setTianjiPortraitPickerReachedEnd(nextTotalCount ? pageNumber >= Math.ceil(nextTotalCount / seedancePortraitPickerPageSize) : (refresh?.aigcCount || 0) < seedancePortraitPickerPageSize),
+	          refresh?.aigcCount > 0 && setSeedancePortraitPickerPage(pageNumber));
         return refresh?.aigcCount || 0;
       } catch (error) {
         (console.error(`Load Tianji portrait page failed`, error),
@@ -6276,14 +6286,14 @@ var Le = reactMemo(({
                                           jsx(`button`, {
                                             type: `button`,
                                             disabled: tianjiPortraitPickerRefreshing || seedancePortraitPickerCurrentPage >= seedancePortraitPickerTotalPages && !seedancePortraitPickerCanTryNextPage,
-                                            onClick: async (event) => {
-                                              event.preventDefault();
-                                              event.stopPropagation();
-                                              let nextPage = seedancePortraitPickerCurrentPage + 1;
-                                              if (nextPage <= seedancePortraitPickerTotalPages) {
-                                                setSeedancePortraitPickerPage(nextPage);
-                                                return;
-                                              }
+	                                            onClick: async (event) => {
+	                                              event.preventDefault();
+	                                              event.stopPropagation();
+	                                              let nextPage = seedancePortraitPickerCurrentPage + 1;
+	                                              if (nextPage <= seedancePortraitPickerLoadedPages) {
+	                                                setSeedancePortraitPickerPage(nextPage);
+	                                                return;
+	                                              }
                                               let loadedCount = await loadTianjiPortraitPickerPage(nextPage);
                                               if (!loadedCount) {
                                                 setTianjiPortraitPickerReachedEnd(!0);
@@ -17910,9 +17920,9 @@ const wanjuanTianjiRequest = async (rawConfig, path, {
     };
   }
   if (!response.ok)
-    throw Error(responseData?.message || responseData?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
+    throw Error(responseData?.message || responseData?.msg || responseData?.error?.message || responseData?.error?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
   if (responseData?.code && responseData.code !== 200)
-    throw Error(responseData.message || responseData.msg || `即梦天玑返回错误: ${responseData.code}`);
+    throw Error(responseData.message || responseData.msg || responseData?.error?.message || responseData?.error?.msg || `即梦天玑返回错误: ${responseData.code}`);
   return responseData;
 };
 
@@ -18013,6 +18023,33 @@ const wanjuanTianjiFindArray = (value) => {
   }
   return [];
 };
+
+const wanjuanTianjiReadPositiveNumber = (value, fallback = 0) => {
+  let parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const wanjuanTianjiAssetListParams = (groupType, groupId, pageNumber = 1, pageSize = WANJUAN_TIANJI_ASSET_PAGE_SIZE) => {
+  let page = Math.max(1, Number(pageNumber) || 1),
+    size = Math.max(1, Number(pageSize) || WANJUAN_TIANJI_ASSET_PAGE_SIZE);
+  return {
+    group_ids: groupId,
+    group_type: groupType,
+    statuses: `Active`,
+    PageNumber: String(page),
+    PageSize: String(size),
+    page: String(page),
+    page_size: String(size),
+    SortBy: `CreateTime`,
+    SortOrder: `Desc`,
+  };
+};
+
+const wanjuanTianjiAssetPagination = (result, fallbackPage = 1, fallbackPageSize = WANJUAN_TIANJI_ASSET_PAGE_SIZE) => ({
+  total: wanjuanTianjiReadPositiveNumber(wanjuanTianjiFindDeep(result, [`TotalCount`, `totalCount`, `total_count`, `total`, `Total`, `count`, `Count`])),
+  page: wanjuanTianjiReadPositiveNumber(wanjuanTianjiFindDeep(result, [`PageNumber`, `pageNumber`, `page_number`, `page`, `Page`]), fallbackPage),
+  pageSize: wanjuanTianjiReadPositiveNumber(wanjuanTianjiFindDeep(result, [`PageSize`, `pageSize`, `page_size`, `limit`, `Limit`, `size`, `Size`]), fallbackPageSize),
+});
 
 const wanjuanTianjiExtractGroups = (result, current = {}, preferredType = ``) => {
   let found = [],
@@ -18245,43 +18282,47 @@ const wanjuanTianjiRefreshPortraitAssets = async (config, {
       console.warn(`Tianji portrait group sync failed`, error);
     }
   }
-  let normalizedPageNumber = Math.max(1, Number(pageNumber) || 1),
-    normalizedPageSize = Math.max(1, Number(pageSize) || WANJUAN_TIANJI_ASSET_PAGE_SIZE),
-    load = async (groupType, groupId, nextPageNumber = normalizedPageNumber) => {
-      if (!groupId) return [];
-      let result = await wanjuanTianjiRequest(config, `/api/cut/model/get-list-assets`, {
-        params: {
-          group_ids: groupId,
-          group_type: groupType,
-          statuses: `Active`,
-          PageNumber: String(Math.max(1, nextPageNumber)),
-          PageSize: String(normalizedPageSize),
-          SortBy: `CreateTime`,
-          SortOrder: `Desc`,
-        },
-      });
-      return wanjuanTianjiFindArray(result);
-    },
-    aigcItems = Array.isArray(currentAssets.AIGC) ? currentAssets.AIGC : [],
-    liveItems = Array.isArray(currentAssets.LivenessFace) ? currentAssets.LivenessFace : [];
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      groups.AIGC && (aigcItems = await load(`AIGC`, groups.AIGC, normalizedPageNumber));
-      if (aigcItems.length > 0 || attempt >= retries) break;
+	let normalizedPageNumber = Math.max(1, Number(pageNumber) || 1),
+	    normalizedPageSize = Math.max(1, Number(pageSize) || WANJUAN_TIANJI_ASSET_PAGE_SIZE),
+	    load = async (groupType, groupId, nextPageNumber = normalizedPageNumber) => {
+	      if (!groupId) return { items: [], pagination: { total: 0, page: nextPageNumber, pageSize: normalizedPageSize } };
+	      let result = await wanjuanTianjiRequest(config, `/api/cut/model/get-list-assets`, {
+	        params: wanjuanTianjiAssetListParams(groupType, groupId, nextPageNumber, normalizedPageSize),
+	      });
+	      return {
+	        items: wanjuanTianjiFindArray(result),
+	        pagination: wanjuanTianjiAssetPagination(result, nextPageNumber, normalizedPageSize),
+	      };
+	    },
+	    aigcItems = Array.isArray(currentAssets.AIGC) ? currentAssets.AIGC : [],
+	    liveItems = Array.isArray(currentAssets.LivenessFace) ? currentAssets.LivenessFace : [],
+	    aigcPagination = { total: 0, page: normalizedPageNumber, pageSize: normalizedPageSize },
+	    livePagination = { total: 0, page: normalizedPageNumber, pageSize: normalizedPageSize };
+	  for (let attempt = 0; attempt <= retries; attempt++) {
+	    try {
+	      if (groups.AIGC) {
+	        let loaded = await load(`AIGC`, groups.AIGC, normalizedPageNumber);
+	        aigcItems = loaded.items;
+	        aigcPagination = loaded.pagination;
+	      }
+	      if (aigcItems.length > 0 || attempt >= retries) break;
     } catch (error) {
       if (attempt >= retries) throw error;
       console.warn(`Tianji AIGC portrait refresh retry`, error);
     }
     await sleep(delayMs);
-  }
-  aigcItems.length === 0 &&
-    Array.isArray(currentAssets.AIGC) &&
-    currentAssets.AIGC.length > 0 &&
-    (aigcItems = currentAssets.AIGC);
-  if (preferredType === `LivenessFace` && groups.LivenessFace)
-    try {
-      liveItems = await load(`LivenessFace`, groups.LivenessFace, normalizedPageNumber);
-    } catch (error) {
+	  }
+	  aigcItems.length === 0 &&
+	    normalizedPageNumber === 1 &&
+	    Array.isArray(currentAssets.AIGC) &&
+	    currentAssets.AIGC.length > 0 &&
+	    (aigcItems = currentAssets.AIGC);
+	  if (preferredType === `LivenessFace` && groups.LivenessFace)
+	    try {
+	      let loaded = await load(`LivenessFace`, groups.LivenessFace, normalizedPageNumber);
+	      liveItems = loaded.items;
+	      livePagination = loaded.pagination;
+	    } catch (error) {
       console.warn(`Tianji live portrait refresh skipped`, error);
     }
   let nextAssets = {
@@ -18297,10 +18338,12 @@ const wanjuanTianjiRefreshPortraitAssets = async (config, {
   });
   return {
     assets: nextAssets,
-    groups: groups,
-    aigcCount: aigcItems.length,
-    liveCount: liveItems.length,
-    pageNumber: normalizedPageNumber,
+	    groups: groups,
+	    aigcCount: aigcItems.length,
+	    liveCount: liveItems.length,
+	    aigcTotal: aigcPagination.total || (normalizedPageNumber === 1 ? aigcItems.length : 0),
+	    liveTotal: livePagination.total || (normalizedPageNumber === 1 ? liveItems.length : 0),
+	    pageNumber: normalizedPageNumber,
     pageSize: normalizedPageSize,
   };
 };

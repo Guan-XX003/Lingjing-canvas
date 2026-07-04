@@ -1269,6 +1269,7 @@ function installDesktopPatches() {
   let tianjiAssetsState = { LivenessFace: [], AIGC: [] };
   let tianjiAssetPagesState = { LivenessFace: 1, AIGC: 1 };
   let tianjiAssetPageEndState = { LivenessFace: false, AIGC: false };
+  let tianjiAssetTotalsState = { LivenessFace: 0, AIGC: 0 };
   const TIANJI_ASSET_PAGE_SIZE = 10;
   let tianjiGroupsState = {};
   let tianjiPointsLogsDialog = null;
@@ -1769,6 +1770,37 @@ function installDesktopPatches() {
     return visit(value);
   };
 
+  const tianjiReadPositiveNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  const tianjiAssetListParams = (groupType, groupId, pageNumber = 1, pageSize = TIANJI_ASSET_PAGE_SIZE) => {
+    const page = Math.max(1, Number(pageNumber) || 1);
+    const size = Math.max(1, Number(pageSize) || TIANJI_ASSET_PAGE_SIZE);
+    return {
+      group_ids: groupId,
+      group_type: groupType,
+      statuses: "Active",
+      PageNumber: String(page),
+      PageSize: String(size),
+      page: String(page),
+      page_size: String(size),
+      SortBy: "CreateTime",
+      SortOrder: "Desc"
+    };
+  };
+
+  const tianjiAssetPagination = (result, fallbackPage = 1, fallbackPageSize = TIANJI_ASSET_PAGE_SIZE) => {
+    const total = tianjiReadPositiveNumber(tianjiFindDeepValue(result, ["TotalCount", "totalCount", "total_count", "total", "Total", "count", "Count"]));
+    const page = tianjiReadPositiveNumber(tianjiFindDeepValue(result, ["PageNumber", "pageNumber", "page_number", "page", "Page"]), fallbackPage);
+    const pageSize = tianjiReadPositiveNumber(tianjiFindDeepValue(result, ["PageSize", "pageSize", "page_size", "limit", "Limit", "size", "Size"]), fallbackPageSize);
+    return { total, page, pageSize };
+  };
+
+  const tianjiErrorMessageFromResult = (json, fallback) =>
+    json?.message || json?.msg || json?.Message || json?.error?.message || json?.error?.msg || json?.Error?.Message || fallback;
+
   const tianjiPadNumber = (value) => String(value).padStart(2, "0");
 
   const tianjiFormatDateTime = (date) => {
@@ -2142,8 +2174,8 @@ function installDesktopPatches() {
     } catch {
       json = { raw: text };
     }
-    if (!response.ok) throw new Error(json?.message || json?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
-    if (json && json.code && json.code !== 200) throw new Error(json.message || json.msg || `即梦天玑返回错误: ${json.code}`);
+    if (!response.ok) throw new Error(tianjiErrorMessageFromResult(json, `即梦天玑请求失败: ${response.status} ${response.statusText}`));
+    if (json && json.code && json.code !== 200) throw new Error(tianjiErrorMessageFromResult(json, `即梦天玑返回错误: ${json.code}`));
     return json;
   };
 
@@ -2179,24 +2211,21 @@ function installDesktopPatches() {
       "";
     if (!groupId) return [];
     const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-list-assets", {
-      params: {
-        group_ids: groupId,
-        group_type: normalizedType,
-        statuses: "Active",
-        PageNumber: String(Math.max(1, pageNumber)),
-        PageSize: String(TIANJI_ASSET_PAGE_SIZE),
-        SortBy: "CreateTime",
-        SortOrder: "Desc"
-      }
+      params: tianjiAssetListParams(normalizedType, groupId, pageNumber, TIANJI_ASSET_PAGE_SIZE)
     });
     const items = tianjiFindArray(result);
+    const pagination = tianjiAssetPagination(result, pageNumber, TIANJI_ASSET_PAGE_SIZE);
     tianjiAssetsState = {
       ...tianjiAssetsState,
       [normalizedType]: tianjiMergePagedAssets(tianjiAssetsState[normalizedType], items, pageNumber)
     };
+    tianjiAssetTotalsState = {
+      ...tianjiAssetTotalsState,
+      [normalizedType]: pagination.total || tianjiAssetTotalsState[normalizedType] || 0
+    };
     tianjiAssetPageEndState = {
       ...tianjiAssetPageEndState,
-      [normalizedType]: items.length < TIANJI_ASSET_PAGE_SIZE
+      [normalizedType]: pagination.total ? pageNumber >= Math.ceil(pagination.total / TIANJI_ASSET_PAGE_SIZE) : items.length < TIANJI_ASSET_PAGE_SIZE
     };
     await tianjiStorageSet({ tianjiSeedanceAssets: tianjiAssetsState });
     return items;
@@ -2208,11 +2237,13 @@ function installDesktopPatches() {
     const pageSize = TIANJI_ASSET_PAGE_SIZE;
     const renderGroup = (title, type) => {
       const assets = Array.isArray(tianjiAssetsState[type]) ? tianjiAssetsState[type] : [];
-      const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
+      const knownTotal = tianjiReadPositiveNumber(tianjiAssetTotalsState[type]);
+      const loadedPages = Math.max(1, Math.ceil(assets.length / pageSize));
+      const totalPages = Math.max(1, knownTotal ? Math.ceil(knownTotal / pageSize) : loadedPages);
       const currentPage = Math.min(Math.max(Number(tianjiAssetPagesState[type] || 1), 1), totalPages);
       tianjiAssetPagesState[type] = currentPage;
       const pageAssets = assets.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-      const canTryNextPage = pageAssets.length === pageSize && tianjiAssetPageEndState[type] !== true;
+      const canTryNextPage = knownTotal ? currentPage < totalPages : pageAssets.length === pageSize && tianjiAssetPageEndState[type] !== true;
       const body = assets.length
         ? pageAssets.map((item) => {
             const isLocalPending = item?.localUploaded === true;
@@ -2229,14 +2260,14 @@ function installDesktopPatches() {
             </div>`;
           }).join("")
         : `<div class="wanjuan-tianji-empty">暂无素材，刷新列表或上传人像后查看。</div>`;
-      const pageControls = assets.length > pageSize || canTryNextPage
+      const pageControls = totalPages > 1 || canTryNextPage
         ? `<div class="wanjuan-tianji-pager" data-tianji-pager="${type}">
             <button type="button" data-tianji-page="${type}" data-tianji-page-dir="-1" ${currentPage <= 1 ? "disabled" : ""}>上一页</button>
-            <span>${currentPage} / ${currentPage >= totalPages && canTryNextPage ? "?" : totalPages}</span>
+            <span>${currentPage} / ${knownTotal ? totalPages : currentPage >= totalPages && canTryNextPage ? "?" : totalPages}</span>
             <button type="button" data-tianji-page="${type}" data-tianji-page-dir="1" ${currentPage >= totalPages && !canTryNextPage ? "disabled" : ""}>下一页</button>
           </div>`
         : ``;
-      return `<section><div class="wanjuan-tianji-subtitle-row"><div class="wanjuan-tianji-subtitle">${title} · ${assets.length} 个</div>${pageControls}</div><div class="wanjuan-tianji-grid">${body}</div></section>`;
+      return `<section><div class="wanjuan-tianji-subtitle-row"><div class="wanjuan-tianji-subtitle">${title} · ${knownTotal || assets.length} 个</div>${pageControls}</div><div class="wanjuan-tianji-grid">${body}</div></section>`;
     };
     target.innerHTML = renderGroup("虚拟人像", "AIGC") + renderGroup("真人人像", "LivenessFace");
     target.querySelectorAll("[data-tianji-page]").forEach((button) => {
@@ -2247,10 +2278,12 @@ function installDesktopPatches() {
         const dir = Number(button.getAttribute("data-tianji-page-dir") || 0);
         if (!type || !dir) return;
         const assets = Array.isArray(tianjiAssetsState[type]) ? tianjiAssetsState[type] : [];
-        const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
+        const knownTotal = tianjiReadPositiveNumber(tianjiAssetTotalsState[type]);
+        const loadedPages = Math.max(1, Math.ceil(assets.length / pageSize));
+        const totalPages = Math.max(1, knownTotal ? Math.ceil(knownTotal / pageSize) : loadedPages);
         const currentPage = Math.min(Math.max(Number(tianjiAssetPagesState[type] || 1), 1), totalPages);
         const nextPage = Math.max(currentPage + dir, 1);
-        if (dir > 0 && nextPage > totalPages) {
+        if (dir > 0 && nextPage > loadedPages) {
           const loaded = await tianjiLoadAssetPage(panel, type, nextPage);
           if (!loaded.length) {
             tianjiAssetPageEndState = {
@@ -2262,7 +2295,9 @@ function installDesktopPatches() {
           }
         }
         const nextAssets = Array.isArray(tianjiAssetsState[type]) ? tianjiAssetsState[type] : [];
-        const nextTotalPages = Math.max(1, Math.ceil(nextAssets.length / pageSize));
+        const nextKnownTotal = tianjiReadPositiveNumber(tianjiAssetTotalsState[type]);
+        const nextLoadedPages = Math.max(1, Math.ceil(nextAssets.length / pageSize));
+        const nextTotalPages = Math.max(1, nextKnownTotal ? Math.ceil(nextKnownTotal / pageSize) : nextLoadedPages);
         tianjiAssetPagesState[type] = Math.min(Math.max(nextPage, 1), nextTotalPages);
         tianjiRenderAssetList(panel);
       });
@@ -2305,17 +2340,9 @@ function installDesktopPatches() {
     const load = async (groupType, groupId, pageNumber = 1) => {
       if (!groupId) return { items: [], raw: null, summary: "缺少 group_id" };
       const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-list-assets", {
-        params: {
-          group_ids: groupId,
-          group_type: groupType,
-          statuses: "Active",
-          PageNumber: String(Math.max(1, pageNumber)),
-          PageSize: String(TIANJI_ASSET_PAGE_SIZE),
-          SortBy: "CreateTime",
-          SortOrder: "Desc"
-        }
+        params: tianjiAssetListParams(groupType, groupId, pageNumber, TIANJI_ASSET_PAGE_SIZE)
       });
-      return { items: tianjiFindArray(result), raw: result, summary: tianjiResultSummary(result) };
+      return { items: tianjiFindArray(result), raw: result, pagination: tianjiAssetPagination(result, pageNumber, TIANJI_ASSET_PAGE_SIZE), summary: tianjiResultSummary(result) };
     };
     const loadWithFallback = async (groupType, primaryGroupId) => {
       const tried = [];
@@ -2324,9 +2351,9 @@ function installDesktopPatches() {
         tried.push(primaryGroupId);
         const loaded = await load(groupType, primaryGroupId, 1);
         summaries.push(`${primaryGroupId}: ${loaded.summary}`);
-        return { items: loaded.items, groupId: primaryGroupId, tried, summaries };
+        return { items: loaded.items, groupId: primaryGroupId, tried, summaries, pagination: loaded.pagination };
       }
-      return { items: [], groupId: primaryGroupId || "", tried, summaries };
+      return { items: [], groupId: primaryGroupId || "", tried, summaries, pagination: { total: 0, page: 1, pageSize: TIANJI_ASSET_PAGE_SIZE } };
     };
     const liveResult = await loadWithFallback("LivenessFace", liveGroup);
     const aigcResult = await loadWithFallback("AIGC", aigcGroup);
@@ -2344,9 +2371,13 @@ function installDesktopPatches() {
       AIGC: tianjiMergeLocalAssets(loadedAigc)
     };
     tianjiAssetPagesState = { LivenessFace: 1, AIGC: 1 };
+    tianjiAssetTotalsState = {
+      LivenessFace: liveResult.pagination?.total || loadedLive.length || 0,
+      AIGC: aigcResult.pagination?.total || loadedAigc.length || 0
+    };
     tianjiAssetPageEndState = {
-      LivenessFace: loadedLive.length < TIANJI_ASSET_PAGE_SIZE,
-      AIGC: loadedAigc.length < TIANJI_ASSET_PAGE_SIZE
+      LivenessFace: tianjiAssetTotalsState.LivenessFace ? 1 >= Math.ceil(tianjiAssetTotalsState.LivenessFace / TIANJI_ASSET_PAGE_SIZE) : loadedLive.length < TIANJI_ASSET_PAGE_SIZE,
+      AIGC: tianjiAssetTotalsState.AIGC ? 1 >= Math.ceil(tianjiAssetTotalsState.AIGC / TIANJI_ASSET_PAGE_SIZE) : loadedAigc.length < TIANJI_ASSET_PAGE_SIZE
     };
     if (liveResult.groupId || aigcResult.groupId) await tianjiStorageSet({ tianjiSeedanceGroups: tianjiGroupsState });
     await tianjiStorageSet({ tianjiSeedanceAssets: tianjiAssetsState });
