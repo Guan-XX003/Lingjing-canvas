@@ -1331,6 +1331,247 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   display: none !important;
 }
 
+.wanjuan-system-notification-banner-wrap {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 10px 16px 0 !important;
+  background: var(--wj-bg) !important;
+  border-top: 1px solid color-mix(in srgb, var(--wj-border) 54%, transparent) !important;
+}
+
+.wanjuan-system-notification-banner,
+.wanjuan-system-notification-update-card,
+.wanjuan-system-notification-list-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border) 78%, var(--wj-accent) 22%) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--wj-surface) 86%, var(--wj-accent) 6%) !important;
+  color: var(--wj-text) !important;
+  padding: 10px 12px !important;
+  text-align: left !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wj-text) 7%, transparent) !important;
+}
+
+.wanjuan-system-notification-banner[role="button"],
+.wanjuan-system-notification-update-card,
+.wanjuan-system-notification-list-item {
+  cursor: pointer !important;
+}
+
+.wanjuan-system-notification-banner[role="button"]:hover,
+.wanjuan-system-notification-update-card:hover,
+.wanjuan-system-notification-list-item:hover {
+  border-color: color-mix(in srgb, var(--wj-accent) 52%, var(--wj-border) 48%) !important;
+  background: color-mix(in srgb, var(--wj-control-hover-bg) 84%, var(--wj-accent) 16%) !important;
+}
+
+.wanjuan-system-notification-pill {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 42px !important;
+  height: 22px !important;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 42%, var(--wj-border) 58%) !important;
+  background: color-mix(in srgb, var(--wj-accent) 18%, var(--wj-control-bg) 82%) !important;
+  color: color-mix(in srgb, var(--wj-accent) 82%, var(--wj-text) 18%) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.wanjuan-system-notification-warning .wanjuan-system-notification-pill {
+  border-color: color-mix(in srgb, var(--wj-warning, #f59e0b) 56%, var(--wj-border) 44%) !important;
+  background: color-mix(in srgb, var(--wj-warning, #f59e0b) 18%, var(--wj-control-bg) 82%) !important;
+  color: color-mix(in srgb, var(--wj-warning, #f59e0b) 82%, var(--wj-text) 18%) !important;
+}
+
+.wanjuan-system-notification-success .wanjuan-system-notification-pill {
+  border-color: color-mix(in srgb, var(--wj-success, #10b981) 56%, var(--wj-border) 44%) !important;
+  background: color-mix(in srgb, var(--wj-success, #10b981) 18%, var(--wj-control-bg) 82%) !important;
+  color: color-mix(in srgb, var(--wj-success, #10b981) 82%, var(--wj-text) 18%) !important;
+}
+
+.wanjuan-system-notification-danger .wanjuan-system-notification-pill {
+  border-color: color-mix(in srgb, var(--wj-danger) 58%, var(--wj-border) 42%) !important;
+  background: color-mix(in srgb, var(--wj-danger) 18%, var(--wj-control-bg) 82%) !important;
+  color: color-mix(in srgb, var(--wj-danger) 86%, var(--wj-text) 14%) !important;
+}
+
+.wanjuan-system-notification-title {
+  min-width: 0 !important;
+  color: var(--wj-text) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+.wanjuan-system-notification-content {
+  margin-top: 3px !important;
+  color: color-mix(in srgb, var(--wj-muted) 84%, var(--wj-text) 16%) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  white-space: pre-wrap !important;
+}
+
+.wanjuan-system-notification-time {
+  margin-top: 7px !important;
+  color: color-mix(in srgb, var(--wj-muted) 76%, transparent) !important;
+  font-size: 11px !important;
+}
+
+.wanjuan-system-notification-link-hint {
+  flex: 0 0 auto !important;
+  color: color-mix(in srgb, var(--wj-accent) 82%, var(--wj-text) 18%) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 22px !important;
+}
+
+.wanjuan-system-notification-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483200 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 28px !important;
+  background: color-mix(in srgb, var(--wj-bg) 62%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(118%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(118%) !important;
+  pointer-events: auto !important;
+}
+
+.wanjuan-system-notification-panel,
+.wanjuan-system-notification-dialog {
+  width: min(680px, calc(100vw - 44px)) !important;
+  max-height: min(720px, calc(100vh - 56px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border) 78%, var(--wj-text) 12%) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--wj-surface) 96%, var(--wj-bg) 4%) !important;
+  color: var(--wj-text) !important;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--wj-bg) 68%, transparent) !important;
+}
+
+.wanjuan-system-notification-dialog {
+  width: min(480px, calc(100vw - 44px)) !important;
+}
+
+.wanjuan-system-notification-panel-header {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 16px 18px !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--wj-border) 74%, transparent) !important;
+  background: color-mix(in srgb, var(--wj-surface-2) 90%, var(--wj-bg) 10%) !important;
+}
+
+.wanjuan-system-notification-panel-title {
+  color: var(--wj-text) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.wanjuan-system-notification-panel-subtitle {
+  margin-top: 4px !important;
+  color: color-mix(in srgb, var(--wj-muted) 86%, var(--wj-text) 14%) !important;
+  font-size: 12px !important;
+}
+
+.wanjuan-system-notification-panel-actions,
+.wanjuan-system-notification-dialog-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.wanjuan-system-notification-close-button,
+.wanjuan-system-notification-soft-button,
+.wanjuan-system-notification-primary-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-border) 76%, var(--wj-text) 14%) !important;
+  background: var(--wj-control-bg) !important;
+  color: var(--wj-control-text, var(--wj-text)) !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.wanjuan-system-notification-close-button {
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+.wanjuan-system-notification-primary-button {
+  border-color: color-mix(in srgb, var(--wj-accent) 78%, var(--wj-border) 22%) !important;
+  background: var(--wj-control-primary-bg) !important;
+  color: var(--wj-control-primary-text, var(--wj-on-accent)) !important;
+}
+
+.wanjuan-system-notification-close-button:hover,
+.wanjuan-system-notification-soft-button:hover {
+  background: var(--wj-control-hover-bg) !important;
+  color: var(--wj-control-hover-text, var(--wj-text)) !important;
+}
+
+.wanjuan-system-notification-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 14px !important;
+}
+
+.wanjuan-system-notification-update-card {
+  margin: 14px 14px 0 !important;
+}
+
+.wanjuan-system-notification-empty {
+  min-height: 160px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: color-mix(in srgb, var(--wj-muted) 82%, var(--wj-text) 18%) !important;
+  font-size: 13px !important;
+  border: 1px dashed color-mix(in srgb, var(--wj-border) 78%, transparent) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--wj-control-bg) 62%, transparent) !important;
+}
+
+.wanjuan-system-notification-dialog-content {
+  padding: 18px !important;
+  color: color-mix(in srgb, var(--wj-text) 90%, var(--wj-muted) 10%) !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  white-space: pre-wrap !important;
+}
+
+.wanjuan-system-notification-dialog-actions {
+  justify-content: flex-end !important;
+  padding: 14px 18px 18px !important;
+}
+
 .wanjuan-settings-button-muted {
   color: color-mix(in srgb, var(--wj-muted) 84%, var(--wj-text) 16%) !important;
 }
