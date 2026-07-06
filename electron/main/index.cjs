@@ -78,6 +78,16 @@ if (!gotSingleInstanceLock) {
   process.exit(0);
 }
 
+// second-instance 监听必须在拿到单实例锁后立即注册（whenReady 之前），
+// 避免 ready 前有第二实例启动时事件丢失。
+app.on("second-instance", () => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+});
+
 app.whenReady().then(async () => {
   installApplicationMenu();
   const desktopBaseUrl = await createStaticServer();
@@ -94,14 +104,6 @@ app.whenReady().then(async () => {
   });
   createMainWindow(desktopBaseUrl);
   scheduleAutomaticUpdateCheck();
-
-  app.on("second-instance", () => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    if (win.isMinimized()) win.restore();
-    win.show();
-    win.focus();
-  });
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow(desktopBaseUrl);
