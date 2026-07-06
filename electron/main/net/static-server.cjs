@@ -44,7 +44,9 @@ function createStaticServer() {
     const requested = decodeURIComponent(parsedUrl.pathname === "/" ? "/index.html" : parsedUrl.pathname);
     const safeRelative = requested.replace(/^\/+/, "");
     const filePath = path.resolve(distRoot, safeRelative);
-    if (!filePath.startsWith(distRoot + path.sep) && filePath !== distRoot) {
+    // 用 path.relative 判定穿越，避免前缀比较在大小写/分隔符边界上的疏漏。
+    const relative = path.relative(distRoot, filePath);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
       res.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
       res.end("Forbidden");
       return;
