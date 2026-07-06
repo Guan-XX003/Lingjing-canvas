@@ -7,7 +7,9 @@ const fs = require('node:fs');
 const FILE = require('node:path').resolve('src/renderer/bundle/index.js');
 let text = fs.readFileSync(FILE, 'utf8');
 
-const renames = process.argv.slice(2).map((s) => {
+let rawSpecs = process.argv.slice(2);
+if (rawSpecs.length === 1 && rawSpecs[0] === '--file') rawSpecs = fs.readFileSync('/tmp/alias-specs.txt', 'utf8').split('\n').filter(Boolean);
+const renames = rawSpecs.map((s) => {
   const i1 = s.indexOf(':'), i2 = s.indexOf(':', i1 + 1);
   return { line: +s.slice(0, i1), oldName: s.slice(i1 + 1, i2), newName: s.slice(i2 + 1) };
 });

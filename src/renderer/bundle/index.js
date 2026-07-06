@@ -329,7 +329,7 @@ import {
   WanJuanComputeNodeRenderMode,
   WanJuanIsCriticalNodePatch,
   WanJuanUseThrottledNodeDataUpdate,
-  WanJuanNodeHandle as Y,
+  WanJuanNodeHandle,
 } from "../components/render-mode";
 import {
   WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY,
@@ -355,64 +355,64 @@ import {
 } from "../lib/model-favorites";
 import { videoEditorModal } from "../components/video-editor-modal";
 import {
-  wanjuanCropImageToDataUrl as Fe,
-  WanJuanImageCropNode as Ie,
+  wanjuanCropImageToDataUrl,
+  WanJuanImageCropNode,
 } from "../components/image-crop-node";
 import { WjImageZoomModal } from "../components/image-zoom-modal";
 import {
   wanjuanRenderResourcePreview,
   wanjuanRenderResourcePickerHeader,
-  WanJuanResourcePicker as rt,
+  WanJuanResourcePicker,
 } from "../components/resource-picker";
 import { WanJuanVideoFaceBlurNode } from "../components/video-face-blur-node";
 import { WanJuanQwenTtsCloneNode } from "../components/qwen-tts-clone-node";
 import { WanJuanRealEsrganVideoNode } from "../components/real-esrgan-video-node";
-import { WanJuanImageNode as Me } from "../components/image-node";
-import { WanJuanPromptNode as Ne } from "../components/prompt-node";
-import { WanJuanTextNode as Pe } from "../components/text-node";
-import { WanJuanGridSplitNode as Le } from "../components/grid-split-node";
-import { WanJuanGridMergeNode as Re } from "../components/grid-merge-node";
-import { WanJuanVideoNode as We } from "../components/video-node";
+import { WanJuanImageNode } from "../components/image-node";
+import { WanJuanPromptNode } from "../components/prompt-node";
+import { WanJuanTextNode } from "../components/text-node";
+import { WanJuanGridSplitNode } from "../components/grid-split-node";
+import { WanJuanGridMergeNode } from "../components/grid-merge-node";
+import { WanJuanVideoNode } from "../components/video-node";
 import {
   WanJuanTtsMusicNode,
   WanJuanUnifiedAudioNode,
   WanJuanIsMusicModel,
 } from "../components/audio-nodes";
-import { WanJuanCustomApiNode as qe } from "../components/custom-api-node";
-import { WanJuanVideoExtractNode as Je } from "../components/video-extract-node";
+import { WanJuanCustomApiNode } from "../components/custom-api-node";
+import { WanJuanVideoExtractNode } from "../components/video-extract-node";
 import {
   wanjuanLooksLikeLocalMediaPath,
   wanjuanNormalizeReferenceMediaUrl,
   wanjuanPushReferenceMediaUrl,
-  wanjuanNodeTextValue as Ye,
-  wanjuanCollectNodeReferenceMedia as Xe,
+  wanjuanNodeTextValue,
+  wanjuanCollectNodeReferenceMedia,
   mediaUrlToDataUrl,
-  wanjuanMediaUrlToDataUrl as Ze,
+  wanjuanMediaUrlToDataUrl,
 } from "../lib/reference-media";
-import { WanJuanTextConcatNode as Qe } from "../components/text-concat-node";
-import { WanJuanUrlToImageNode as $e } from "../components/url-to-image-node";
+import { WanJuanTextConcatNode } from "../components/text-concat-node";
+import { WanJuanUrlToImageNode } from "../components/url-to-image-node";
 import { WanJuanFileToLinkNode } from "../components/file-to-link-node";
-import { WanJuanFlowEdge as et } from "../components/flow-edge";
-import { WanJuanImageAnnotateModal as nt } from "../components/image-annotate-modal";
+import { WanJuanFlowEdge } from "../components/flow-edge";
+import { WanJuanImageAnnotateModal } from "../components/image-annotate-modal";
 import {
-  WANJUAN_NODE_TYPES as at,
-  WANJUAN_EDGE_TYPES as ot,
-  wanjuanCreateStarterCanvas as st,
-  WANJUAN_STARTER_EDGES as ct,
-  wanjuanIsDefaultStarterCanvas as isDefaultStarterCanvas,
-  WANJUAN_PLAN_LIMITS as lt,
+  WANJUAN_NODE_TYPES,
+  WANJUAN_EDGE_TYPES,
+  wanjuanCreateStarterCanvas,
+  WANJUAN_STARTER_EDGES,
+  wanjuanIsDefaultStarterCanvas,
+  WANJUAN_PLAN_LIMITS,
 } from "../components/canvas-node-registry";
 import {
-  WANJUAN_MULTIWINDOW_SECRET_SALT as ft,
-  WANJUAN_ACTIVATION_SERVER_URL as pt,
-  wanjuanHashString as mt,
-  wanjuanVerifyActivationCode as ht,
-  wanjuanCheckForUpdate as gt,
-  wanjuanInstallCrossWindowNavigation as _t,
-  WANJUAN_DEVICE_ID_STORAGE_KEY as vt,
-  wanjuanGenerateUuid as yt,
-  wanjuanGetOrCreateDeviceId as bt,
-  wanjuanChildWindowRefs as xt,
+  WANJUAN_MULTIWINDOW_SECRET_SALT,
+  WANJUAN_ACTIVATION_SERVER_URL,
+  wanjuanHashString,
+  wanjuanVerifyActivationCode,
+  wanjuanCheckForUpdate,
+  wanjuanInstallCrossWindowNavigation,
+  WANJUAN_DEVICE_ID_STORAGE_KEY,
+  wanjuanGenerateUuid,
+  wanjuanGetOrCreateDeviceId,
+  wanjuanChildWindowRefs,
 } from "../lib/collaboration";
 
 if (typeof globalThis.hydrateProjectAssetContainer !== `function`) {
@@ -788,7 +788,7 @@ function WanJuanAppCanvas({
   onInitialEmptyProjectReady: onInitialEmptyProjectReady,
 	}) {
   let [nodes, setNodes, onNodesChange] = le([]),
-		    [edges, setEdges, onEdgesChange] = te(ct),
+		    [edges, setEdges, onEdgesChange] = te(WANJUAN_STARTER_EDGES),
 		    [shouldFitView, setShouldFitView] = useState(!1),
 		    [menuPosition, setMenuPosition] = useState(null),
 		    lastCanvasMenuPositionRef = useRef(null),
@@ -938,7 +938,7 @@ function WanJuanAppCanvas({
     historyIndexRef = useRef(-1),
     [dailyGenerationCount, setDailyGenerationCount] = useState(0),
     LoadOnceRef = useRef(!1),
-    planLimits = lt[membership.type] || lt.FREE;
+    planLimits = WANJUAN_PLAN_LIMITS[membership.type] || WANJUAN_PLAN_LIMITS.FREE;
   useEffect(() => {
     let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
     setDailyGenerationCount(parseInt(localStorage.getItem(dailyLimitKey) || `0`));
@@ -1791,7 +1791,7 @@ function WanJuanAppCanvas({
         (async () => {
           let storageKey = `${canvasStateKeyPrefix}${projectId}`;
           if (initialEmptyProject) {
-            (setNodes([]), setEdges(ct));
+            (setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
             try {
               await X.default.removeItem(storageKey);
               localStorage.removeItem(storageKey);
@@ -1878,7 +1878,7 @@ function WanJuanAppCanvas({
                 } catch (error) {
                   console.warn(`Project asset check skipped`, error);
                 }
-	                isDefaultStarterCanvas(nodes2, edges2) && ((nodes2 = []), (edges2 = []));
+	                wanjuanIsDefaultStarterCanvas(nodes2, edges2) && ((nodes2 = []), (edges2 = []));
 	                (nodes2 && nodes2.length > 0 ?
 	                  setNodes(
 	                    await Promise.all(
@@ -1999,9 +1999,9 @@ function WanJuanAppCanvas({
 	                  ) :
                   setNodes([]),
 	                  edges2 && setEdges(edges2));
-	            } else(setNodes([]), setEdges(ct));
+	            } else(setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
 	          } catch (error) {
-            (console.error(`Failed to load canvas state`, error), setNodes([]), setEdges(ct));
+            (console.error(`Failed to load canvas state`, error), setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
 	          } finally {
             setTimeout(() => {
               (setShouldFitView(!0), (shouldFitViewRef.current = !0), (LoadOnceRef.current = !0));
@@ -2772,9 +2772,9 @@ function WanJuanAppCanvas({
                 let {
                   images: images,
                   videos: videos
-                } = Xe(sourceNode, edge.sourceHandle);
+                } = wanjuanCollectNodeReferenceMedia(sourceNode, edge.sourceHandle);
                 (imageUrls.push(...images), videoUrls.push(...videos));
-                let text = Ye(sourceNode);
+                let text = wanjuanNodeTextValue(sourceNode);
                 text && textParts.push(text);
               }
             });
@@ -4860,7 +4860,7 @@ ${combinedPrompt}`,
                 let {
                   images: images,
                   videos: videos
-                } = Xe(sourceNode, edge.sourceHandle);
+                } = wanjuanCollectNodeReferenceMedia(sourceNode, edge.sourceHandle);
                 (images || []).forEach(addVideoReferenceImage);
                 (videos || []).forEach(addVideoReferenceVideo);
               }
@@ -7959,9 +7959,9 @@ ${combinedPrompt}`,
                 let {
                   images: images,
                   videos: videos
-                } = Xe(sourceNode, edge.sourceHandle);
+                } = wanjuanCollectNodeReferenceMedia(sourceNode, edge.sourceHandle);
                 (imageUrls.push(...images), videoUrls.push(...videos));
-                let nodeText = Ye(sourceNode);
+                let nodeText = wanjuanNodeTextValue(sourceNode);
                 nodeText && textParts.push(nodeText);
               }
             });
@@ -10692,7 +10692,7 @@ ${combinedPrompt}`,
         copyNodeImage = async () => {
             if (menuPosition?.nodeId) {
               let targetNode = nodes.find((node) => node.id === menuPosition.nodeId),
-                imageUrl = targetNode ? Xe(targetNode).images[0] : ``;
+                imageUrl = targetNode ? wanjuanCollectNodeReferenceMedia(targetNode).images[0] : ``;
               if (targetNode && imageUrl)
                 try {
                   let imageUrl2 = imageUrl,
@@ -10746,7 +10746,7 @@ ${combinedPrompt}`,
           addGridSplitNode = () => {
             if (menuPosition?.nodeId) {
               let targetNode = nodes.find((node) => node.id === menuPosition.nodeId),
-                imageUrl = targetNode ? Xe(targetNode).images[0] : ``;
+                imageUrl = targetNode ? wanjuanCollectNodeReferenceMedia(targetNode).images[0] : ``;
               if (targetNode && (targetNode.type === `imageNode` || targetNode.type === `promptNode` || imageUrl)) {
                 let gridSplitNodeId = `gridSplitNode-${Date.now()}`,
                   newNode = {
@@ -11769,8 +11769,8 @@ ${combinedPrompt}`,
 	          onConnect: handleConnect,
 	          onEdgeClick: wanjuanHandleEdgeClick,
 	          onEdgeDoubleClick: onDeleteEdge,
-          nodeTypes: at,
-          edgeTypes: ot,
+          nodeTypes: WANJUAN_NODE_TYPES,
+          edgeTypes: WANJUAN_EDGE_TYPES,
           onNodeClick: ht,
           onPaneContextMenu: handleContextMenu,
           onNodeContextMenu: ft,
@@ -13196,7 +13196,7 @@ ${combinedPrompt}`,
                             clipPath: `inset(-80px -80px -80px 0)`
                           },
                           onClick: (event) => event.stopPropagation(),
-                          children: jsx(rt, {
+                          children: jsx(WanJuanResourcePicker, {
                             resources: resources,
                             onSelect: (resource) => {
                               let position = screenToFlowPosition({
@@ -13275,7 +13275,7 @@ ${combinedPrompt}`,
                 (() => {
 	                  let node = nodes.find((node2) => node2.id === menuPosition?.nodeId),
 	                    selectedNodes = nodes.filter((node2) => node2.selected),
-		                    media = node ? Xe(node) : {
+		                    media = node ? wanjuanCollectNodeReferenceMedia(node) : {
 		                      images: [],
 		                      videos: []
 		                    },
@@ -13658,7 +13658,7 @@ ${combinedPrompt}`,
           document.body,
         ),
         imageEditState &&
-        jsx(nt, {
+        jsx(WanJuanImageAnnotateModal, {
           imageUrl: imageEditState.url,
           initialTool: imageEditState.initialTool,
           onSave: handleCropComplete,
@@ -17729,7 +17729,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	              }),
 	              filteredModels = filterButlerLatestTwoGenerations(rawModels),
 	              docText = await fetchDocAsPlainText(WANJUAN_JIXIN_DOC_URL).catch(() => ``),
-	              docHash = docText ? mt(docText) : ``,
+	              docHash = docText ? wanjuanHashString(docText) : ``,
 	              stored = await readChromeStorage([`jixinGatewayModelScanSnapshot`]),
 	              previousSnapshot = stored.jixinGatewayModelScanSnapshot || {},
 	              diff = compareButlerModelSnapshots(previousSnapshot.filteredModels || [], filteredModels),
@@ -18755,10 +18755,10 @@ ${docText}`;
         chrome.tabs.getCurrent((e) => {
           e && b(!0);
         }));
-      let deviceId2 = bt();
+      let deviceId2 = wanjuanGetOrCreateDeviceId();
       (setDeviceId(deviceId2),
         (async () => {
-          let updateInfo2 = await gt(
+          let updateInfo2 = await wanjuanCheckForUpdate(
             typeof chrome < `u` && chrome.runtime && chrome.runtime.getManifest ?
             chrome.runtime.getManifest().version :
             `1.0`,
@@ -18810,8 +18810,8 @@ ${docText}`;
                 )),
               result && result.users && result.users.length > 0 ?
               setUsers(result.users) :
-              (setUsers(xt), chrome.storage.local.set({
-                users: xt
+              (setUsers(wanjuanChildWindowRefs), chrome.storage.local.set({
+                users: wanjuanChildWindowRefs
               })),
               chrome.storage.local.get(
                 [`transitResources`, `transitGridCols`],
@@ -19306,7 +19306,7 @@ ${docText}`;
                     let now = Date.now();
                     settings.membership.expiry > now ?
                       (setMembership(settings.membership),
-                        ht(settings.membership.code, deviceId2).then((result2) => {
+                        wanjuanVerifyActivationCode(settings.membership.code, deviceId2).then((result2) => {
                           result2.valid ||
                             (setMembership({
                                 type: `FREE`,
@@ -19353,7 +19353,7 @@ ${docText}`;
       } else
         ((settingsHydratedRef.current = !0),
           (projectHydratedRef.current = !0),
-          setUsers(xt),
+          setUsers(wanjuanChildWindowRefs),
           setIsLoading(!1),
           setIsReady(!0),
           clearTimeout(timeoutId));
@@ -24457,7 +24457,7 @@ ${String(l || ``).slice(0, 5e4)}`;
               handleServerVerify = async () => {
                 try {
                   showToast2(`正在连接服务器验证...`);
-                  let verifyResult = await ht(membershipCode, deviceId);
+                  let verifyResult = await wanjuanVerifyActivationCode(membershipCode, deviceId);
                   if (verifyResult.valid) {
                     let membership = {
                       type: verifyResult.type,
@@ -24480,7 +24480,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                 } catch (error) {
                   console.error(`Server verification error`, error);
                 }
-                let verifyResult = _t(membershipCode, deviceId);
+                let verifyResult = wanjuanInstallCrossWindowNavigation(membershipCode, deviceId);
                 if (verifyResult.valid) {
                   let membership = {
                     type: verifyResult.type,
