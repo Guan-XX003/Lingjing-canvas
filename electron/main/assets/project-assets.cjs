@@ -23,6 +23,23 @@ const { writeContentAddressedFile, writeContentAddressedFileFromPath, diagnoseCo
 const { assertActiveMigration, recordMigrationAsset, removeProjectReferences } = require("./migration-manager.cjs");
 const { assertStorageWriteAllowed } = require("./storage-optimization.cjs");
 
+// 原子写入：先写 tmp 再 rename，避免崩溃留下半包被 existsSync 误判为已完成。
+function writeFileAtomicSync(targetPath, buffer) {
+  const temporaryPath = `${targetPath}.tmp-${process.pid}-${Math.random().toString(16).slice(2)}`;
+  try {
+    fs.writeFileSync(temporaryPath, buffer, { flag: "wx" });
+    try {
+      fs.renameSync(temporaryPath, targetPath);
+    } catch (error) {
+      if (!fs.existsSync(targetPath)) throw error;
+    }
+  } finally {
+    try {
+      fs.rmSync(temporaryPath, { force: true });
+    } catch {}
+  }
+}
+
 async function persistProjectAsset(payload = {}) {
   assertStorageWriteAllowed();
   const downloadRoot = payload?.directory || defaultDownloadDirectory();
@@ -96,7 +113,7 @@ async function persistProjectAsset(payload = {}) {
     const assetRoot = path.join(projectRoot, "assets", nodeId);
     fs.mkdirSync(assetRoot, { recursive: true });
     const targetPath = path.join(assetRoot, `${field}-${assetId}-${filename}`);
-    if (!fs.existsSync(targetPath)) fs.writeFileSync(targetPath, buffer);
+    if (!fs.existsSync(targetPath)) writeFileAtomicSync(targetPath, buffer);
     const stat = fs.statSync(targetPath);
     const portableValue =
       /^video\//i.test(finalMime) || /^audio\//i.test(finalMime)
@@ -625,7 +642,7 @@ function copyExternalProjectAssetFiles(targetJsonPath, assetFiles = [], requeste
       const targetPath = existingTargetPath ||
         uniqueAssetExportPath(folderPath, preferredName, `asset-${manifest.files.length + 1}${fallbackExt}`);
       if (!existingTargetPath) {
-        fs.writeFileSync(targetPath, source.buffer);
+        writeFileAtomicSync(targetPath, source.buffer);
         exportedByHash.set(contentHash, targetPath);
         manifest.physicalFileCount += 1;
       }
