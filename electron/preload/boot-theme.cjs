@@ -27,13 +27,42 @@ function clearLegacyThemeStorage() {
   }
 }
 
-function appendRendererDebugLog(type, payload) {
+// 渲染进程日志：异步批量写（避免同步 IO 阻塞渲染帧），相同 type+message 一分钟内只记一次。
+const rendererDebugLogState = {
+  buffer: [],
+  flushTimer: null,
+  recent: new Map()
+};
+
+function flushRendererDebugLog() {
+  rendererDebugLogState.flushTimer = null;
+  if (!rendererDebugLogState.buffer.length) return;
+  const lines = rendererDebugLogState.buffer.join("");
+  rendererDebugLogState.buffer = [];
   try {
     const logPath = path.join(os.tmpdir(), "wanjuan-renderer-debug.log");
-    fs.appendFileSync(
-      logPath,
+    fs.appendFile(logPath, lines, () => {});
+  } catch {}
+}
+
+function appendRendererDebugLog(type, payload) {
+  try {
+    const dedupeKey = `${type}\0${String(payload?.message || "")}`;
+    const now = Date.now();
+    const lastSeen = rendererDebugLogState.recent.get(dedupeKey);
+    if (lastSeen && now - lastSeen < 60000) return;
+    rendererDebugLogState.recent.set(dedupeKey, now);
+    if (rendererDebugLogState.recent.size > 200) {
+      for (const [key, time] of rendererDebugLogState.recent) {
+        if (now - time >= 60000) rendererDebugLogState.recent.delete(key);
+      }
+    }
+    rendererDebugLogState.buffer.push(
       `${JSON.stringify({ time: new Date().toISOString(), type, payload })}\n`
     );
+    if (!rendererDebugLogState.flushTimer) {
+      rendererDebugLogState.flushTimer = setTimeout(flushRendererDebugLog, 1000);
+    }
   } catch {}
 }
 
