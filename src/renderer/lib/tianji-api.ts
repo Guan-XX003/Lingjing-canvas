@@ -725,7 +725,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
         thumbUrl = wanjuanTianjiFindThumbUrl(statusResponse),
         statusLabel = wanjuanTianjiStatusLabel(status);
       consecutiveErrors = 0;
-      if ([`succeeded`, `completed`, `complete`, `success`, `done`].includes(status) || videoUrl) {
+      // 只按 status 判定完成；不再用 videoUrl 兜底，避免预览片段被当成最终结果。
+      if ([`succeeded`, `completed`, `complete`, `success`, `done`].includes(status)) {
         if (!videoUrl) throw Error(`即梦天玑任务已完成，但未返回视频地址`);
         let displayWidth = 320,
           displayHeight = 320,
