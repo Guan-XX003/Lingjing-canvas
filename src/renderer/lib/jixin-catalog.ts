@@ -66,7 +66,11 @@ export const wanjuanMergeModelText = (...inputs: any[]): string => {
 // —— 以下为极心内置目录全量与配置修补域（自 bundle 反混淆迁入，行为保持一致）——
 // 内置文本/图片/视频/音频模型清单与协议绑定、默认 API 配置、内置全局配置基线 patch、
 // 内置智能体（Agent）目录，以及把内置目录合并进用户设置的修补函数。
-import { wanjuanFindLegacyJixinApiKey } from "./tianji-api";
+/** 从旧版设置字段（apiKey / textApiKey / …）里找第一个非空的极心 API key。 */
+export const wanjuanFindLegacyJixinApiKey = (settings: any = {}): string =>
+  [`apiKey`, `textApiKey`, `imageApiKey`, `videoApiKey`, `audioApiKey`]
+    .map((key) => String(settings?.[key] || ``).trim())
+    .find(Boolean) || ``;
 
 export const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 export const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;

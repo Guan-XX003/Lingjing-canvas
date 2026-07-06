@@ -237,11 +237,9 @@ export const wanjuanIsJixinApiConfig = (config: any): boolean =>
   config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
   wanjuanNormalizeTianjiApiBaseUrl(config?.url) === wanjuanNormalizeTianjiApiBaseUrl(WANJUAN_TIANJI_DEFAULT_BASE_URL);
 
-/** 从旧版设置字段（apiKey / textApiKey / …）里找第一个非空的极心 API key。 */
-export const wanjuanFindLegacyJixinApiKey = (settings: any = {}): string =>
-  [`apiKey`, `textApiKey`, `imageApiKey`, `videoApiKey`, `audioApiKey`]
-    .map((key) => String(settings?.[key] || ``).trim())
-    .find(Boolean) || ``;
+// wanjuanFindLegacyJixinApiKey 移至 jixin-catalog（避免与其形成循环导入），此处转发导出。
+import { wanjuanFindLegacyJixinApiKey } from "./jixin-catalog";
+export { wanjuanFindLegacyJixinApiKey };
 
 /**
  * 解析出用于天玑同步的极心 API 配置。
