@@ -668,6 +668,29 @@ function createMainWindow(baseUrl) {
 
   });
 
+  // webview 白名单：仅允许挂载一站式中心站点，剥离危险 webPreferences；弹窗一律转系统浏览器。
+  const WEBVIEW_ALLOWED_ORIGINS = new Set(["https://jixing.guancn.uk"]);
+  win.webContents.on("will-attach-webview", (event, webPreferences, params) => {
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    let allowed = false;
+    try {
+      allowed = WEBVIEW_ALLOWED_ORIGINS.has(new URL(String(params.src || "")).origin);
+    } catch {}
+    if (!allowed) {
+      appendDesktopLog("webview-attach-blocked", { src: truncateLogValue(String(params.src || "")) });
+      event.preventDefault();
+    }
+  });
+  win.webContents.on("did-attach-webview", (_event, contents) => {
+    contents.setWindowOpenHandler(({ url }) => {
+      if (isSafeExternalUrl(url)) shell.openExternal(url).catch(() => {});
+      return { action: "deny" };
+    });
+  });
+
   // Safer default: open external links in system browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (isSafeExternalUrl(url)) shell.openExternal(url).catch(() => {});
