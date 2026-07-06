@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { app, BrowserWindow, shell, dialog } = require("./electron-refs.cjs");
-const { TEST_CONTEXT_ISOLATION, TEST_PROXY_FETCH_SELFTEST, TEST_PROXY_FETCH_SELFTEST_URL } = require("./config.cjs");
+const { TEST_PROXY_FETCH_SELFTEST, TEST_PROXY_FETCH_SELFTEST_URL } = require("./config.cjs");
 const { appendDesktopLog, formatErrorMessage, truncateLogValue } = require("./logging.cjs");
 const { isSafeExternalUrl } = require("./net/security.cjs");
 const { loadTextApiSelfTestConfig } = require("./self-test.cjs");
@@ -50,7 +50,8 @@ function createMainWindow(baseUrl) {
     backgroundColor: "#0c1021",
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.cjs"),
-      contextIsolation: TEST_CONTEXT_ISOLATION,
+      // 安全底盘：渲染进程与 preload 强制隔离，桥接一律走 contextBridge（见 preload/chrome-shim.cjs exposeGlobal）。
+      contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
       webSecurity: false,
@@ -249,11 +250,11 @@ function createMainWindow(baseUrl) {
   };
 
   appendDesktopLog("desktop-web-preferences", {
-    contextIsolation: TEST_CONTEXT_ISOLATION,
+    contextIsolation: true,
     nodeIntegration: false,
     sandbox: false,
     webSecurity: false,
-    mode: TEST_CONTEXT_ISOLATION ? "context-isolation-test" : "compat"
+    mode: "context-isolation"
   });
 
   const checkForBlankScreen = async () => {
@@ -433,7 +434,7 @@ function createMainWindow(baseUrl) {
   });
   win.webContents.on("did-finish-load", async () => {
     await injectDesktopCss();
-    if (TEST_CONTEXT_ISOLATION) return;
+    // 以下 executeJavaScript 注入运行在主世界，与 contextIsolation 无关，隔离模式下同样生效。
     try {
       await win.webContents.executeJavaScript(`
         (() => {

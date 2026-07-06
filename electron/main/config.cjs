@@ -4,7 +4,7 @@ const TEST_BUILD_NAME = "万卷灵境";
 const TEST_USER_DATA_DIR = "wanjuan-ai-canvas-desktop-test";
 const TEST_USER_DATA_PATH = process.env.WANJUAN_TEST_USER_DATA_PATH || "";
 const TEST_DEFAULT_PORT = 54134;
-const TEST_CONTEXT_ISOLATION = process.env.WANJUAN_TEST_CONTEXT_ISOLATION === "1";
+// contextIsolation 已在 window.cjs 硬编码为 true，不再提供开关。
 const TEST_PROXY_FETCH_SELFTEST = process.env.WANJUAN_TEST_PROXY_FETCH_SELFTEST === "1";
 const TEST_PROXY_FETCH_SELFTEST_URL =
   process.env.WANJUAN_TEST_PROXY_FETCH_SELFTEST_URL || "https://example.com/";
@@ -15,7 +15,6 @@ module.exports = {
   TEST_USER_DATA_DIR,
   TEST_USER_DATA_PATH,
   TEST_DEFAULT_PORT,
-  TEST_CONTEXT_ISOLATION,
   TEST_PROXY_FETCH_SELFTEST,
   TEST_PROXY_FETCH_SELFTEST_URL,
   TEST_TEXT_API_BACKUP_PATH,
