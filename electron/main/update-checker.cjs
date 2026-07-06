@@ -150,6 +150,8 @@ function normalizeLatestYaml(text, arch = process.arch, platform = process.platf
   const files = Array.isArray(metadata?.files) ? metadata.files : [];
   const assets = files.map((file) => ({
     name: String(file?.url || ""),
+    sha512: String(file?.sha512 || ""),
+    size: Number(file?.size || 0),
     browser_download_url: file?.url
       ? `https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/${encodeURIComponent(file.url)}`
       : ""
@@ -163,6 +165,8 @@ function normalizeLatestYaml(text, arch = process.arch, platform = process.platf
     releaseUrl: RELEASES_PAGE_URL,
     downloadUrl: DOWNLOAD_PAGE_URL,
     assetName: String(asset?.name || ""),
+    assetSha512: String(asset?.sha512 || ""),
+    assetSize: Number(asset?.size || 0),
     source: source || (normalizePlatform(platform) === "win32" ? "latest.yml" : "latest-mac.yml")
   };
 }
@@ -207,6 +211,8 @@ async function showUpdateAvailable(release) {
     `当前版本：${currentVersion}`,
     `最新版本：${release.version}`,
     release.assetName ? `安装包：${release.assetName}` : "",
+    // 展示官方校验和，供用户下载后核对安装包完整性（shasum -a 512 对比 base64 值）。
+    release.assetSha512 ? `SHA512 校验和（base64）：${release.assetSha512}` : "",
     release.notes ? `\n${release.notes.slice(0, 1200)}` : ""
   ].filter(Boolean).join("\n");
   const result = await dialog.showMessageBox(getParentWindow(), {
