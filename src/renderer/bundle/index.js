@@ -576,7 +576,7 @@ X.default.config({
   storeName: `canvas_state`,
 	      });
 
-function ut(props) {
+function WanJuanCanvasShell(props) {
   return jsxs(W, {
     children: [
       jsx(`style`, {
@@ -691,14 +691,14 @@ function ut(props) {
         }
       `,
       }),
-      jsx(dt, {
+      jsx(WanJuanAppCanvas, {
         ...props
       }),
     ],
   });
 }
 
-function dt({
+function WanJuanAppCanvas({
   projectId: projectId = `default`,
   textApiUrl: propTextApiUrl,
   textApiKey: propTextApiKey,
@@ -13676,7 +13676,7 @@ ${combinedPrompt}`,
   );
 }
 
-function St() {
+function WanJuanAppRoot() {
   let [globalTasks, setGlobalTasks] = useState([]),
   [isOpen, setIsOpen] = useState(!1),
   [users, setUsers] = useState([]),
@@ -28284,7 +28284,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                 jsx(`div`, {
                   className: `flex-1 relative`,
                   children: jsx(
-                    ut, {
+                    WanJuanCanvasShell, {
                       projectId: activeProjectId,
                       textApiUrl: textApiUrl,
                       textApiKey: textApiKey,
@@ -36283,6 +36283,6 @@ var Ct = console.error;
   }),
   createRoot(document.getElementById(`root`)).render(
     jsx(StrictMode, {
-      children: jsx(St, {})
+      children: jsx(WanJuanAppRoot, {})
     }),
   ));
