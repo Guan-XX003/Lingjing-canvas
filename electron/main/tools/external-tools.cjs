@@ -1232,30 +1232,54 @@ function getRealEsrganToolStatus() {
 
 async function downloadFile(url, destination) {
   fs.mkdirSync(path.dirname(destination), { recursive: true });
-  await new Promise((resolve, reject) => {
-    const request = https.get(url, {
-      headers: {
-        "User-Agent": "WanJuanCanvas/1.2.8"
-      }
-    }, (response) => {
-      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        response.resume();
-        downloadFile(new URL(response.headers.location, url).toString(), destination).then(resolve, reject);
-        return;
-      }
-      if (response.statusCode !== 200) {
-        response.resume();
-        reject(new Error(`下载失败：HTTP ${response.statusCode}`));
-        return;
-      }
-      const file = fs.createWriteStream(destination);
-      pipeline(response, file).then(resolve, reject);
+  // 先写 .downloading 临时文件，校验完整性后 rename，避免中断留下的半包被 existsSync 误判为已完成。
+  const temporaryPath = `${destination}.downloading`;
+  try {
+    await new Promise((resolve, reject) => {
+      const request = https.get(url, {
+        headers: {
+          "User-Agent": "WanJuanCanvas/1.2.8"
+        }
+      }, (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+          response.resume();
+          downloadFile(new URL(response.headers.location, url).toString(), destination).then(resolve, reject);
+          return;
+        }
+        if (response.statusCode !== 200) {
+          response.resume();
+          reject(new Error(`下载失败：HTTP ${response.statusCode}`));
+          return;
+        }
+        const expectedBytes = Number(response.headers["content-length"] || 0);
+        const file = fs.createWriteStream(temporaryPath);
+        pipeline(response, file).then(() => {
+          try {
+            if (expectedBytes > 0) {
+              const actualBytes = fs.statSync(temporaryPath).size;
+              if (actualBytes !== expectedBytes) {
+                reject(new Error(`下载不完整：${actualBytes}/${expectedBytes} 字节`));
+                return;
+              }
+            }
+            fs.renameSync(temporaryPath, destination);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        }, reject);
+      });
+      request.on("error", reject);
+      request.setTimeout(10 * 60 * 1000, () => {
+        request.destroy(new Error("下载超时"));
+      });
     });
-    request.on("error", reject);
-    request.setTimeout(10 * 60 * 1000, () => {
-      request.destroy(new Error("下载超时"));
-    });
-  });
+  } catch (error) {
+    try {
+      fs.rmSync(temporaryPath, { force: true });
+    } catch {}
+    throw error;
+  }
 }
 
 async function installRealEsrganTool() {
