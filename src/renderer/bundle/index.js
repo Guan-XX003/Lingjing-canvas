@@ -154,6 +154,10 @@ import {
   WanJuanSameModelId,
   WanJuanParseModelList,
 } from "../lib/model-id";
+import {
+  WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE,
+  WANJUAN_DEFAULT_CUSTOM_PUBLIC_UPLOAD_CONFIG,
+} from "../lib/upload-defaults";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -16126,15 +16130,6 @@ const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
 const WANJUAN_JIXIN_DEFAULT_DOC_URL = `https://kcn07wr6x9xu.feishu.cn/wiki/RBPHwKfzhiq7Xuk06M8c3NgInKd`;
 const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
-const WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE = `custom`;
-const WANJUAN_DEFAULT_CUSTOM_PUBLIC_UPLOAD_CONFIG = Object.freeze({
-  endpoint: `https://litterbox.catbox.moe/resources/internals/api.php`,
-  fileField: `fileToUpload`,
-  fields: `reqtype=fileupload
-time=1h`,
-  headers: ``,
-  resultPath: ``,
-});
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
 const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-06-feishu-doc-url-v1`;
 const wanjuanIsLegacyJixinDocUrl = (url) => {
