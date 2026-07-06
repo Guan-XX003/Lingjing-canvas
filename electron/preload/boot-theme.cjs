@@ -239,7 +239,14 @@ function installBootStabilityStyle() {
       const removeWhenReady = () => {
         if (document.documentElement.classList.contains("wanjuan-booting")) return;
         splash.classList.add("is-leaving");
+        // 正常路径也断开两个 observer，避免 transitionend 不触发时永久泄漏。
+        observer.disconnect();
         themeObserver.disconnect();
+        // 减少动态效果时没有过渡动画，直接移除，不等 transitionend。
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+          splash.remove();
+          return;
+        }
         setTimeout(() => splash.remove(), 360);
       };
       const observer = new MutationObserver(removeWhenReady);
