@@ -229,6 +229,7 @@ export const wanjuanTianjiRequest = async (
       headers,
       bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
       requestTimeout: 18e4,
+      signal,
     });
     if (!proxyResult?.ok) throw Error(proxyResult?.error || `即梦天玑请求失败`);
     response = {

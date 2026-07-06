@@ -277,7 +277,8 @@ exposeGlobal("wanjuanDesktop", {
 	  },
 	  proxyFetch: async (payload = {}) => {
     const nextPayload = buildDesktopProxyFetchBridgePayload(payload);
-    return invokeDesktopProxyFetchPayload(nextPayload, null);
+    // 透传 AbortSignal，取消时通过 wanjuan:abort-fetch 中断主进程请求（见 fetch-proxy.cjs）。
+    return invokeDesktopProxyFetchPayload(nextPayload, payload?.signal || null);
   },
   abortProxyFetch: async (requestId) => {
     ipcRenderer.send("wanjuan:abort-fetch", String(requestId || ""));
