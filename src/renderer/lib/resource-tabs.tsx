@@ -134,3 +134,41 @@ export function wanjuanRenderResourceSourceTabs(
     ],
   });
 }
+
+// —— 以下为素材预览的图片→视频回退逻辑（自 bundle 反混淆迁入，行为保持一致）——
+import {
+  wanjuanResourceLooksLikeImageUrl,
+  wanjuanResourceLooksLikeVideoUrl,
+  wanjuanResourceSourceKind,
+} from "./resource";
+
+export function wanjuanCanFallbackImageToVideo(resource: any, mediaUrl: any, posterUrl: any) {
+  if (!mediaUrl || wanjuanResourceLooksLikeImageUrl(mediaUrl) || wanjuanResourceLooksLikeImageUrl(posterUrl)) return !1;
+  if (wanjuanResourceLooksLikeVideoUrl(mediaUrl) || resource?.videoUrl || resource?.resultVideoUrl) return !0;
+  return wanjuanResourceSourceKind(resource) === `generated` && !/^data:image\//i.test(mediaUrl);
+}
+export function wanjuanUseVideoResourceFallback(event: any, mediaUrl: any, posterUrl: any) {
+  let imageElement = event.currentTarget;
+  imageElement.onerror = null;
+  let videoElement = document.createElement(`video`);
+  videoElement.src = mediaUrl;
+  if (posterUrl && posterUrl !== mediaUrl) videoElement.poster = posterUrl;
+  videoElement.muted = !0;
+  videoElement.playsInline = !0;
+  videoElement.preload = `metadata`;
+  videoElement.className = `w-full h-full object-cover bg-black`;
+  videoElement.title = `视频素材`;
+  let badge = document.createElement(`div`);
+  badge.className = `absolute left-1.5 bottom-1.5 rounded bg-black/65 px-1.5 py-0.5 text-[9px] leading-none text-white/90 pointer-events-none`;
+  badge.textContent = `视频`;
+  videoElement.onerror = () => {
+    let brokenImage = document.createElement(`img`);
+    brokenImage.src = wanjuanBrokenResourceImage;
+    brokenImage.className = `w-full h-full object-cover bg-black wanjuan-resource-image-broken`;
+    brokenImage.title = `素材无法加载，可能是链接已失效或本地文件不可访问`;
+    badge.remove();
+    videoElement.replaceWith(brokenImage);
+  };
+  imageElement.replaceWith(videoElement);
+  videoElement.parentElement?.appendChild(badge);
+}

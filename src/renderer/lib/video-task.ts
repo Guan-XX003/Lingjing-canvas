@@ -139,3 +139,36 @@ export function wanjuanVideoTaskCanAttachToNode(
       !/seedance|doubao|wanx|wan\d|tongyi/i.test(taskModel);
   return false;
 }
+
+/** 任务的创建时间（毫秒），createdAt 缺失时回退 updatedAt，非法值返回 0。 */
+export function wanjuanTaskCreatedAt(task: any): number {
+  let value = Number(task?.createdAt || task?.updatedAt || 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+/** 判断任务是否占用 Seedance 生成配额槽位（按 provider 或节点类型 + 模型名）。 */
+export function wanjuanTaskUsesSeedanceSlot(task: any, node: any): boolean {
+  let provider = String(task?.provider || ``).toLowerCase(),
+    modelName = String(task?.modelName || task?.model || ``).toLowerCase();
+  return provider.includes(`seedance`) || (node?.type === `seedanceNode` && /seedance|doubao/.test(modelName));
+}
+
+/**
+ * 找出可附着到节点上的最新任务：按创建时间倒序取第一个；
+ * 若给了 currentTask，只有更新的任务才返回（否则返回 null 表示无需切换）。
+ */
+export function wanjuanNewestNodeTask(tasks: any, node: any, projectId?: string | null, currentTask?: any): any {
+  if (!Array.isArray(tasks) || !node?.id) return null;
+  let currentTime = wanjuanTaskCreatedAt(currentTask),
+    candidates = tasks
+      .filter((task) =>
+        task?.id &&
+        !task.stoppedByUser &&
+        task.nodeId === node.id &&
+        (task.projectId || `default`) === (projectId || `default`) &&
+        wanjuanVideoTaskCanAttachToNode(task, node, projectId),
+      )
+      .sort((taskA, taskB) => wanjuanTaskCreatedAt(taskB) - wanjuanTaskCreatedAt(taskA));
+  if (!candidates.length) return null;
+  return !currentTask || wanjuanTaskCreatedAt(candidates[0]) > currentTime ? candidates[0] : null;
+}

@@ -170,3 +170,196 @@ export function buildProjectMediaFileUrl(filePath: any): string {
   ).replace(/#/g, `%23`);
   return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
 }
+
+// —— 以下为资源身份 / 生成视频提取工具（自 bundle 反混淆迁入，行为保持一致）——
+
+/** 按资源种类取其主要媒体地址（视频/音频/图片各有字段优先级）。 */
+export function wanjuanResourceMediaUrl(resource: any) {
+  let resourceKind = wanjuanResourceKind(resource);
+  return String(
+    resourceKind === `video` ?
+      resource?.videoUrl || resource?.resultVideoUrl || resource?.url || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path || resource?.previewUrl || resource?.thumbnailUrl :
+      resourceKind === `audio` ?
+      resource?.audioUrl || resource?.resultAudioUrl || resource?.url || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path :
+      resource?.url || resource?.imageUrl || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path || resource?.previewUrl || resource?.thumbnailUrl || ``
+  );
+}
+export function wanjuanNormalizeResourceSignatureValue(value: any) {
+  let text = String(value || ``).trim();
+  if (!text) return ``;
+  return text
+    .replace(/^asset:\/\//i, `asset://`)
+    .replace(/^file:\/\/localhost\//i, `file:///`)
+    .replace(/[?#]$/, ``);
+}
+export function wanjuanResourceIdentitySignatures(resource: any) {
+  let signatures = new Set(),
+    addSignature = (prefix, value) => {
+      let normalized = wanjuanNormalizeResourceSignatureValue(value);
+      normalized && signatures.add(`${prefix}:${normalized}`);
+    },
+    kind = wanjuanResourceKind(resource);
+  addSignature(`kind-url-${kind}`, wanjuanResourceMediaUrl(resource));
+  [
+    resource?.url,
+    resource?.imageUrl,
+    resource?.thumbnailUrl,
+    resource?.previewUrl,
+    resource?.mediaUrl,
+    resource?.resultUrl,
+    resource?.localPath,
+    resource?.path,
+  ].forEach((value) => addSignature(`kind-media-${kind}`, value));
+  addSignature(`asset-${kind}`, resource?.seedanceAssetId || resource?.assetId);
+  addSignature(`tianji-${kind}`, resource?.tianjiPortraitAssetId || resource?.portraitAssetId);
+  addSignature(`source-${kind}`, resource?.sourceId);
+  addSignature(`id-${kind}`, resource?.id);
+  return signatures;
+}
+export function wanjuanResourceSameIdentity(a: any, b: any) {
+  if (!a || !b) return !1;
+  let aSignatures = wanjuanResourceIdentitySignatures(a);
+  if (!aSignatures.size) return !1;
+  for (let signature of wanjuanResourceIdentitySignatures(b))
+    if (aSignatures.has(signature)) return !0;
+  return !1;
+}
+export function wanjuanResourceInList(resource: any, list: any) {
+  return Array.isArray(list) && list.some((item) => wanjuanResourceSameIdentity(item, resource));
+}
+export function wanjuanResourcePosterUrl(resource: any) {
+  return String(resource?.thumbnailUrl || resource?.posterUrl || resource?.coverUrl || resource?.coverImageUrl || resource?.imageUrl || resource?.previewImageUrl || ``);
+}
+export function wanjuanResourceLooksLikeImageUrl(value: any) {
+  return /^data:image\//i.test(String(value || ``)) || /\.(png|jpe?g|webp|gif|svg|bmp|heic|avif)(?:$|[?#])/i.test(String(value || ``));
+}
+export function wanjuanResourceLooksLikeVideoUrl(value: any) {
+  return /^data:video\//i.test(String(value || ``)) || /\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|[?#])/i.test(String(value || ``));
+}
+export function wanjuanGetTransitResourcePageSize(gridCols: any) {
+  let cols = parseInt(gridCols, 10);
+  if (!Number.isFinite(cols) || cols <= 0) cols = 4;
+  return Math.max(20, cols * 5);
+}
+export function wanjuanStableResourceIdPart(value: any) {
+  let text = String(value || ``),
+    hash = 0;
+  for (let index = 0; index < text.length; index++) hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+  return hash.toString(16);
+}
+export function wanjuanCollectResourceSignatures(resource: any) {
+  let signatures = [];
+  [
+    resource?.url,
+    resource?.originalUrl,
+    resource?.remoteUrl,
+    resource?.sourceUrl,
+    resource?.resultUrl,
+    resource?.mediaUrl,
+    resource?.videoUrl,
+    resource?.resultVideoUrl,
+    resource?.localPath,
+    resource?.path,
+    resource?.projectAssetBinding?.localPath,
+    resource?.projectAssetBinding?.sourceSignature,
+  ].forEach((value) => {
+    typeof value == `string` && value.trim() && signatures.push(value.trim());
+  });
+  return signatures;
+}
+export function wanjuanExtractVideoUrlFromValue(value: any) {
+  if (!value) return ``;
+  if (typeof value == `string`) {
+    let trimmed = value.trim();
+    if (!trimmed) return ``;
+    if (/^(https?:\/\/|file:\/\/|blob:|data:video\/)/i.test(trimmed) || wanjuanResourceLooksLikeVideoUrl(trimmed)) return trimmed;
+    try {
+      let parsed = JSON.parse(trimmed);
+      return wanjuanExtractVideoUrlFromValue(parsed);
+    } catch {
+      let match = trimmed.match(/(?:https?:\/\/|file:\/\/)[^\s"'<>]+?\.(?:mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:[?#][^\s"'<>]*)?/i);
+      return match?.[0] || ``;
+    }
+  }
+  if (Array.isArray(value)) {
+    for (let item of value) {
+      let url = wanjuanExtractVideoUrlFromValue(item);
+      if (url) return url;
+    }
+    return ``;
+  }
+  if (typeof value == `object`) {
+    for (let key of [
+        `videoUrl`,
+        `resultVideoUrl`,
+        `outputVideoUrl`,
+        `video_url`,
+        `result_video_url`,
+        `output_video_url`,
+        `mediaUrl`,
+        `resultUrl`,
+        `url`,
+        `downloadUrl`,
+      ]) {
+      let url = wanjuanExtractVideoUrlFromValue(value[key]);
+      if (url) return url;
+    }
+  }
+  return ``;
+}
+export function wanjuanBuildGeneratedVideoResourcesFromNodes(nodes: any, existingResources: any, projectId: any) {
+  let existingSignatures = new Set();
+  (Array.isArray(existingResources) ? existingResources : []).forEach((resource) =>
+    wanjuanCollectResourceSignatures(resource).forEach((signature) => existingSignatures.add(signature)),
+  );
+  let generatedResources = [],
+    generatedSignatures = new Set(),
+    generatedNodeTypes = new Set([`videoNode`, `seedanceNode`, `tongyiWanxiangNode`, `videoFaceBlurNode`]);
+  (Array.isArray(nodes) ? nodes : []).forEach((node) => {
+    let nodeData = node?.data || {},
+      nodeType = String(node?.type || ``),
+      sourceText = [
+        nodeData.source,
+        nodeData.sourceOrigin,
+        nodeData.mediaSourceOrigin,
+        nodeData.origin,
+        nodeData.provider,
+      ].map((value) => String(value || ``).toLowerCase()).join(` `),
+      isGeneratedVideo =
+      generatedNodeTypes.has(nodeType) ||
+      nodeData.mediaKind === `video` && /\bgenerated\b|ai|seedance|doubao|tongyi|wanxiang|task|video-editor/.test(sourceText);
+    if (!isGeneratedVideo) return;
+    let videoUrl =
+      wanjuanExtractVideoUrlFromValue(nodeData.videoUrl) ||
+      wanjuanExtractVideoUrlFromValue(nodeData.resultVideoUrl) ||
+      wanjuanExtractVideoUrlFromValue(nodeData.outputVideoUrl) ||
+      wanjuanExtractVideoUrlFromValue(nodeData.mediaUrl) ||
+      wanjuanExtractVideoUrlFromValue(nodeData.resultUrl) ||
+      wanjuanExtractVideoUrlFromValue(nodeData.resultData) ||
+      (nodeData.mediaKind === `video` ? wanjuanExtractVideoUrlFromValue(nodeData.imageUrl) : ``);
+    if (!videoUrl || existingSignatures.has(videoUrl) || generatedSignatures.has(videoUrl)) return;
+    generatedSignatures.add(videoUrl);
+    let posterUrl = String(nodeData.thumbnailUrl || nodeData.posterUrl || nodeData.coverUrl || nodeData.previewImageUrl || ``).trim(),
+      resourceName = String(
+        nodeData.videoName ||
+        nodeData.originalName ||
+        nodeData.label ||
+        nodeData.name ||
+        (nodeType === `seedanceNode` ? `即梦视频结果` : nodeType === `tongyiWanxiangNode` ? `通义万相视频结果` : `AI生成视频`),
+      ).trim();
+    generatedResources.push({
+      id: `generated-video-${node?.id || `node`}-${wanjuanStableResourceIdPart(videoUrl)}`,
+      url: videoUrl,
+      videoUrl: videoUrl,
+      thumbnailUrl: posterUrl,
+      type: `video/mp4`,
+      timestamp: Date.now(),
+      pageUrl: `canvas:${projectId || `default`}`,
+      pageTitle: resourceName || `AI生成视频`,
+      source: `generated`,
+      sourceOrigin: `generated`,
+      originalName: resourceName || ``,
+    });
+  });
+  return generatedResources;
+}

@@ -100,6 +100,9 @@ import {
   wanjuanCloneNodeDataForClipboard,
   wanjuanVideoTaskMatchesNodeByPrompt,
   wanjuanVideoTaskCanAttachToNode,
+  wanjuanTaskCreatedAt,
+  wanjuanTaskUsesSeedanceSlot,
+  wanjuanNewestNodeTask,
 } from "../lib/video-task";
 import {
   wanjuanFindMentionRange,
@@ -122,6 +125,19 @@ import {
 import {
   wanjuanClearProjectAssetBindingsFromData,
   wanjuanResourceKind,
+  wanjuanResourceMediaUrl,
+  wanjuanNormalizeResourceSignatureValue,
+  wanjuanResourceIdentitySignatures,
+  wanjuanResourceSameIdentity,
+  wanjuanResourceInList,
+  wanjuanResourcePosterUrl,
+  wanjuanResourceLooksLikeImageUrl,
+  wanjuanResourceLooksLikeVideoUrl,
+  wanjuanGetTransitResourcePageSize,
+  wanjuanStableResourceIdPart,
+  wanjuanCollectResourceSignatures,
+  wanjuanExtractVideoUrlFromValue,
+  wanjuanBuildGeneratedVideoResourcesFromNodes,
   wanjuanResourceSourceKind,
   wanjuanResourceMatchesFilter,
   reviveProjectMediaBindingValue,
@@ -191,6 +207,8 @@ import {
 import {
   wanjuanBrokenResourceImage,
   wanjuanUseBrokenResourceImage,
+  wanjuanCanFallbackImageToVideo,
+  wanjuanUseVideoResourceFallback,
   wanjuanRenderResourceFilterTabs,
   wanjuanRenderResourceSourceTabs,
 } from "../lib/resource-tabs";
@@ -14451,249 +14469,6 @@ function wanjuanBuildProjectAssetBinding(persisted, extras = {}) {
     sourceOrigin: extras.sourceOrigin || `external-upload`,
     sourceSignature: buildProjectMediaFileUrl(persisted.localPath),
   };
-}
-function wanjuanTaskCreatedAt(task) {
-  let value = Number(task?.createdAt || task?.updatedAt || 0);
-  return Number.isFinite(value) ? value : 0;
-}
-function wanjuanTaskUsesSeedanceSlot(task, node) {
-  let provider = String(task?.provider || ``).toLowerCase(),
-    modelName = String(task?.modelName || task?.model || ``).toLowerCase();
-  return provider.includes(`seedance`) || (node?.type === `seedanceNode` && /seedance|doubao/.test(modelName));
-}
-function wanjuanNewestNodeTask(tasks, node, projectId, currentTask) {
-  if (!Array.isArray(tasks) || !node?.id) return null;
-  let currentTime = wanjuanTaskCreatedAt(currentTask),
-    candidates = tasks
-      .filter((task) =>
-        task?.id &&
-        !task.stoppedByUser &&
-        task.nodeId === node.id &&
-        (task.projectId || `default`) === (projectId || `default`) &&
-        wanjuanVideoTaskCanAttachToNode(task, node, projectId),
-      )
-      .sort((taskA, taskB) => wanjuanTaskCreatedAt(taskB) - wanjuanTaskCreatedAt(taskA));
-  if (!candidates.length) return null;
-  return !currentTask || wanjuanTaskCreatedAt(candidates[0]) > currentTime ? candidates[0] : null;
-}
-function wanjuanResourceMediaUrl(resource) {
-  let resourceKind = wanjuanResourceKind(resource);
-  return String(
-    resourceKind === `video` ?
-      resource?.videoUrl || resource?.resultVideoUrl || resource?.url || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path || resource?.previewUrl || resource?.thumbnailUrl :
-      resourceKind === `audio` ?
-      resource?.audioUrl || resource?.resultAudioUrl || resource?.url || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path :
-      resource?.url || resource?.imageUrl || resource?.mediaUrl || resource?.resultUrl || resource?.localPath || resource?.path || resource?.previewUrl || resource?.thumbnailUrl || ``
-  );
-}
-function wanjuanNormalizeResourceSignatureValue(value) {
-  let text = String(value || ``).trim();
-  if (!text) return ``;
-  return text
-    .replace(/^asset:\/\//i, `asset://`)
-    .replace(/^file:\/\/localhost\//i, `file:///`)
-    .replace(/[?#]$/, ``);
-}
-function wanjuanResourceIdentitySignatures(resource) {
-  let signatures = new Set(),
-    addSignature = (prefix, value) => {
-      let normalized = wanjuanNormalizeResourceSignatureValue(value);
-      normalized && signatures.add(`${prefix}:${normalized}`);
-    },
-    kind = wanjuanResourceKind(resource);
-  addSignature(`kind-url-${kind}`, wanjuanResourceMediaUrl(resource));
-  [
-    resource?.url,
-    resource?.imageUrl,
-    resource?.thumbnailUrl,
-    resource?.previewUrl,
-    resource?.mediaUrl,
-    resource?.resultUrl,
-    resource?.localPath,
-    resource?.path,
-  ].forEach((value) => addSignature(`kind-media-${kind}`, value));
-  addSignature(`asset-${kind}`, resource?.seedanceAssetId || resource?.assetId);
-  addSignature(`tianji-${kind}`, resource?.tianjiPortraitAssetId || resource?.portraitAssetId);
-  addSignature(`source-${kind}`, resource?.sourceId);
-  addSignature(`id-${kind}`, resource?.id);
-  return signatures;
-}
-function wanjuanResourceSameIdentity(a, b) {
-  if (!a || !b) return !1;
-  let aSignatures = wanjuanResourceIdentitySignatures(a);
-  if (!aSignatures.size) return !1;
-  for (let signature of wanjuanResourceIdentitySignatures(b))
-    if (aSignatures.has(signature)) return !0;
-  return !1;
-}
-function wanjuanResourceInList(resource, list) {
-  return Array.isArray(list) && list.some((item) => wanjuanResourceSameIdentity(item, resource));
-}
-function wanjuanResourcePosterUrl(resource) {
-  return String(resource?.thumbnailUrl || resource?.posterUrl || resource?.coverUrl || resource?.coverImageUrl || resource?.imageUrl || resource?.previewImageUrl || ``);
-}
-function wanjuanResourceLooksLikeImageUrl(value) {
-  return /^data:image\//i.test(String(value || ``)) || /\.(png|jpe?g|webp|gif|svg|bmp|heic|avif)(?:$|[?#])/i.test(String(value || ``));
-}
-function wanjuanResourceLooksLikeVideoUrl(value) {
-  return /^data:video\//i.test(String(value || ``)) || /\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|[?#])/i.test(String(value || ``));
-}
-function wanjuanGetTransitResourcePageSize(gridCols) {
-  let cols = parseInt(gridCols, 10);
-  if (!Number.isFinite(cols) || cols <= 0) cols = 4;
-  return Math.max(20, cols * 5);
-}
-function wanjuanStableResourceIdPart(value) {
-  let text = String(value || ``),
-    hash = 0;
-  for (let index = 0; index < text.length; index++) hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
-  return hash.toString(16);
-}
-function wanjuanCollectResourceSignatures(resource) {
-  let signatures = [];
-  [
-    resource?.url,
-    resource?.originalUrl,
-    resource?.remoteUrl,
-    resource?.sourceUrl,
-    resource?.resultUrl,
-    resource?.mediaUrl,
-    resource?.videoUrl,
-    resource?.resultVideoUrl,
-    resource?.localPath,
-    resource?.path,
-    resource?.projectAssetBinding?.localPath,
-    resource?.projectAssetBinding?.sourceSignature,
-  ].forEach((value) => {
-    typeof value == `string` && value.trim() && signatures.push(value.trim());
-  });
-  return signatures;
-}
-function wanjuanExtractVideoUrlFromValue(value) {
-  if (!value) return ``;
-  if (typeof value == `string`) {
-    let trimmed = value.trim();
-    if (!trimmed) return ``;
-    if (/^(https?:\/\/|file:\/\/|blob:|data:video\/)/i.test(trimmed) || wanjuanResourceLooksLikeVideoUrl(trimmed)) return trimmed;
-    try {
-      let parsed = JSON.parse(trimmed);
-      return wanjuanExtractVideoUrlFromValue(parsed);
-    } catch {
-      let match = trimmed.match(/(?:https?:\/\/|file:\/\/)[^\s"'<>]+?\.(?:mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:[?#][^\s"'<>]*)?/i);
-      return match?.[0] || ``;
-    }
-  }
-  if (Array.isArray(value)) {
-    for (let item of value) {
-      let url = wanjuanExtractVideoUrlFromValue(item);
-      if (url) return url;
-    }
-    return ``;
-  }
-  if (typeof value == `object`) {
-    for (let key of [
-        `videoUrl`,
-        `resultVideoUrl`,
-        `outputVideoUrl`,
-        `video_url`,
-        `result_video_url`,
-        `output_video_url`,
-        `mediaUrl`,
-        `resultUrl`,
-        `url`,
-        `downloadUrl`,
-      ]) {
-      let url = wanjuanExtractVideoUrlFromValue(value[key]);
-      if (url) return url;
-    }
-  }
-  return ``;
-}
-function wanjuanBuildGeneratedVideoResourcesFromNodes(nodes, existingResources, projectId) {
-  let existingSignatures = new Set();
-  (Array.isArray(existingResources) ? existingResources : []).forEach((resource) =>
-    wanjuanCollectResourceSignatures(resource).forEach((signature) => existingSignatures.add(signature)),
-  );
-  let generatedResources = [],
-    generatedSignatures = new Set(),
-    generatedNodeTypes = new Set([`videoNode`, `seedanceNode`, `tongyiWanxiangNode`, `videoFaceBlurNode`]);
-  (Array.isArray(nodes) ? nodes : []).forEach((node) => {
-    let nodeData = node?.data || {},
-      nodeType = String(node?.type || ``),
-      sourceText = [
-        nodeData.source,
-        nodeData.sourceOrigin,
-        nodeData.mediaSourceOrigin,
-        nodeData.origin,
-        nodeData.provider,
-      ].map((value) => String(value || ``).toLowerCase()).join(` `),
-      isGeneratedVideo =
-      generatedNodeTypes.has(nodeType) ||
-      nodeData.mediaKind === `video` && /\bgenerated\b|ai|seedance|doubao|tongyi|wanxiang|task|video-editor/.test(sourceText);
-    if (!isGeneratedVideo) return;
-    let videoUrl =
-      wanjuanExtractVideoUrlFromValue(nodeData.videoUrl) ||
-      wanjuanExtractVideoUrlFromValue(nodeData.resultVideoUrl) ||
-      wanjuanExtractVideoUrlFromValue(nodeData.outputVideoUrl) ||
-      wanjuanExtractVideoUrlFromValue(nodeData.mediaUrl) ||
-      wanjuanExtractVideoUrlFromValue(nodeData.resultUrl) ||
-      wanjuanExtractVideoUrlFromValue(nodeData.resultData) ||
-      (nodeData.mediaKind === `video` ? wanjuanExtractVideoUrlFromValue(nodeData.imageUrl) : ``);
-    if (!videoUrl || existingSignatures.has(videoUrl) || generatedSignatures.has(videoUrl)) return;
-    generatedSignatures.add(videoUrl);
-    let posterUrl = String(nodeData.thumbnailUrl || nodeData.posterUrl || nodeData.coverUrl || nodeData.previewImageUrl || ``).trim(),
-      resourceName = String(
-        nodeData.videoName ||
-        nodeData.originalName ||
-        nodeData.label ||
-        nodeData.name ||
-        (nodeType === `seedanceNode` ? `即梦视频结果` : nodeType === `tongyiWanxiangNode` ? `通义万相视频结果` : `AI生成视频`),
-      ).trim();
-    generatedResources.push({
-      id: `generated-video-${node?.id || `node`}-${wanjuanStableResourceIdPart(videoUrl)}`,
-      url: videoUrl,
-      videoUrl: videoUrl,
-      thumbnailUrl: posterUrl,
-      type: `video/mp4`,
-      timestamp: Date.now(),
-      pageUrl: `canvas:${projectId || `default`}`,
-      pageTitle: resourceName || `AI生成视频`,
-      source: `generated`,
-      sourceOrigin: `generated`,
-      originalName: resourceName || ``,
-    });
-  });
-  return generatedResources;
-}
-function wanjuanCanFallbackImageToVideo(resource, mediaUrl, posterUrl) {
-  if (!mediaUrl || wanjuanResourceLooksLikeImageUrl(mediaUrl) || wanjuanResourceLooksLikeImageUrl(posterUrl)) return !1;
-  if (wanjuanResourceLooksLikeVideoUrl(mediaUrl) || resource?.videoUrl || resource?.resultVideoUrl) return !0;
-  return wanjuanResourceSourceKind(resource) === `generated` && !/^data:image\//i.test(mediaUrl);
-}
-function wanjuanUseVideoResourceFallback(event, mediaUrl, posterUrl) {
-  let imageElement = event.currentTarget;
-  imageElement.onerror = null;
-  let videoElement = document.createElement(`video`);
-  videoElement.src = mediaUrl;
-  if (posterUrl && posterUrl !== mediaUrl) videoElement.poster = posterUrl;
-  videoElement.muted = !0;
-  videoElement.playsInline = !0;
-  videoElement.preload = `metadata`;
-  videoElement.className = `w-full h-full object-cover bg-black`;
-  videoElement.title = `视频素材`;
-  let badge = document.createElement(`div`);
-  badge.className = `absolute left-1.5 bottom-1.5 rounded bg-black/65 px-1.5 py-0.5 text-[9px] leading-none text-white/90 pointer-events-none`;
-  badge.textContent = `视频`;
-  videoElement.onerror = () => {
-    let brokenImage = document.createElement(`img`);
-    brokenImage.src = wanjuanBrokenResourceImage;
-    brokenImage.className = `w-full h-full object-cover bg-black wanjuan-resource-image-broken`;
-    brokenImage.title = `素材无法加载，可能是链接已失效或本地文件不可访问`;
-    badge.remove();
-    videoElement.replaceWith(brokenImage);
-  };
-  imageElement.replaceWith(videoElement);
-  videoElement.parentElement?.appendChild(badge);
 }
 function wanjuanRenderResourcePreview(resource, options = {}) {
   let resourceKind = wanjuanResourceKind(resource),
