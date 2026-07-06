@@ -101,6 +101,24 @@ import {
   wanjuanVideoTaskMatchesNodeByPrompt,
   wanjuanVideoTaskCanAttachToNode,
 } from "../lib/video-task";
+import {
+  wanjuanFindMentionRange,
+  wanjuanMentionHostFromElement,
+  wanjuanUpdateMentionPickerPosition,
+  wanjuanClearMentionPickerPosition,
+  wanjuanShouldShowMentionPicker,
+  wanjuanMentionRangeFromPicker,
+  wanjuanReplaceMentionToken,
+  wanjuanFormatMentionToken,
+  wanjuanLegacyMentionToken,
+  wanjuanNormalizeMentionTokensForApi,
+  wanjuanFindMentionTokenDeleteRange,
+  wanjuanDeleteMentionTokenAsUnit,
+} from "../lib/mention";
+import {
+  wanjuanNormalizeTianjiPortraitAssets,
+  wanjuanTianjiPortraitToResource,
+} from "../lib/tianji-portrait";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -14512,128 +14530,6 @@ function wanjuanUseBrokenResourceImage(event) {
     imageElement.classList.add(`wanjuan-resource-image-broken`),
     (imageElement.title = `素材图片无法加载，可能是链接已失效或本地文件不可访问`));
 }
-function wanjuanFindMentionRange(text, caretPosition = text.length) {
-  let endIndex = Math.max(0, Math.min(Number.isFinite(caretPosition) ? caretPosition : text.length, text.length)),
-    atIndex = text.lastIndexOf(`@`, Math.max(0, endIndex - 1));
-  if (atIndex < 0) return null;
-  let mentionText = text.slice(atIndex + 1, endIndex);
-  return /[\s」,，.。!！?？;；:：、()[\]{}<>《》"'“”‘’]/.test(mentionText) ||
-    /^(图片|视频|音频)\d+$/u.test(mentionText) ?
-    null : {
-    start: atIndex,
-    end: endIndex
-  };
-}
-function wanjuanMentionHostFromElement(element) {
-  return element?.closest?.(`[data-wanjuan-mention-host="true"]`) || element?.parentElement || null;
-}
-function wanjuanUpdateMentionPickerPosition(inputElement) {
-  if (!inputElement) return null;
-  let mentionRange = wanjuanFindMentionRange(inputElement.value || ``, inputElement.selectionStart || 0),
-    mentionHost = wanjuanMentionHostFromElement(inputElement);
-  if (!mentionRange || !mentionHost) return mentionRange;
-  mentionHost.dataset.wanjuanMentionHost = `true`;
-  mentionHost.dataset.wanjuanMentionStart = String(mentionRange.start);
-  mentionHost.dataset.wanjuanMentionEnd = String(mentionRange.end);
-  let computedStyle = getComputedStyle(inputElement),
-    mirrorDiv = document.createElement(`div`),
-    markerSpan = document.createElement(`span`);
-  Object.assign(mirrorDiv.style, {
-    position: `absolute`,
-    visibility: `hidden`,
-    whiteSpace: `pre-wrap`,
-    overflowWrap: `break-word`,
-    boxSizing: `border-box`,
-    width: `${inputElement.clientWidth}px`,
-    minHeight: `${inputElement.clientHeight}px`,
-    font: computedStyle.font,
-    letterSpacing: computedStyle.letterSpacing,
-    lineHeight: computedStyle.lineHeight,
-    padding: computedStyle.padding,
-    border: computedStyle.border,
-  });
-  mirrorDiv.textContent = (inputElement.value || ``).slice(0, mentionRange.end);
-  markerSpan.textContent = `\u200b`;
-  mirrorDiv.appendChild(markerSpan);
-  mentionHost.appendChild(mirrorDiv);
-  let lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.35 || 18,
-    leftPosition = Math.max(0, markerSpan.offsetLeft - inputElement.scrollLeft),
-    topPosition = Math.max(0, markerSpan.offsetTop - inputElement.scrollTop + lineHeight + 6);
-  mirrorDiv.remove();
-  mentionHost.style.setProperty(`--wanjuan-mention-left`, `${Math.min(leftPosition, Math.max(0, mentionHost.clientWidth - 288))}px`);
-  mentionHost.style.setProperty(`--wanjuan-mention-top`, `${topPosition}px`);
-  return mentionRange;
-}
-function wanjuanClearMentionPickerPosition(element) {
-  let mentionHost = element?.closest?.(`[data-wanjuan-mention-host="true"]`) || wanjuanMentionHostFromElement(element);
-  if (!mentionHost) return;
-  delete mentionHost.dataset.wanjuanMentionStart;
-  delete mentionHost.dataset.wanjuanMentionEnd;
-  mentionHost.removeAttribute(`data-wanjuan-mention-host`);
-  mentionHost.style.removeProperty(`--wanjuan-mention-left`);
-  mentionHost.style.removeProperty(`--wanjuan-mention-top`);
-}
-function wanjuanShouldShowMentionPicker(element) {
-  return !!wanjuanUpdateMentionPickerPosition(element);
-}
-function wanjuanMentionRangeFromPicker(element, text) {
-  let mentionHost = element?.closest?.(`[data-wanjuan-mention-host="true"]`),
-    mentionStart = Number(mentionHost?.dataset?.wanjuanMentionStart),
-    mentionEnd = Number(mentionHost?.dataset?.wanjuanMentionEnd);
-  return Number.isFinite(mentionStart) && Number.isFinite(mentionEnd) && text[mentionStart] === `@` && mentionEnd <= text.length ?
-    {
-      start: mentionStart,
-      end: mentionEnd
-    } :
-    wanjuanFindMentionRange(text, text.length);
-}
-function wanjuanReplaceMentionToken(text, range, replacement = ``) {
-  return range ? text.slice(0, range.start) + replacement + text.slice(range.end) : text + replacement;
-}
-function wanjuanFormatMentionToken(rawLabel) {
-  let cleanLabel = String(rawLabel || `素材`).replace(/^@/, ``).replace(/^「|」$/g, ``);
-  return `@「${cleanLabel}」`;
-}
-function wanjuanLegacyMentionToken(e) {
-  return String(e || ``).replace(/^@「([^」]+)」$/, `@$1`);
-}
-function wanjuanNormalizeMentionTokensForApi(e) {
-  return String(e || ``).replace(/@「((?:图片|视频|音频)\d+)」/g, `@$1`);
-}
-function wanjuanFindMentionTokenDeleteRange(text, selectionStart, selectionEnd, key) {
-  if (selectionStart !== selectionEnd) return null;
-  let mentionRegex = /@「(?:图片|视频|音频)\d+」|@(图片|视频|音频)\d+/g,
-    match;
-  for (; (match = mentionRegex.exec(text));) {
-    let tokenStart = match.index,
-      tokenEnd = tokenStart + match[0].length;
-    if (key === `Backspace` && (selectionStart === tokenEnd || (selectionStart > tokenStart && selectionStart <= tokenEnd))) return {
-      start: tokenStart,
-      end: tokenEnd
-    };
-    if (key === `Delete` && (selectionStart === tokenStart || (selectionStart >= tokenStart && selectionStart < tokenEnd))) return {
-      start: tokenStart,
-      end: tokenEnd
-    };
-  }
-  return null;
-}
-function wanjuanDeleteMentionTokenAsUnit(event, t) {
-  if (!event || (event.key !== `Backspace` && event.key !== `Delete`) || event.metaKey || event.ctrlKey || event.altKey) return null;
-  let inputElement = event.currentTarget,
-    value = inputElement.value || ``,
-    selectionStart = Number(inputElement.selectionStart),
-    selectionEnd = Number(inputElement.selectionEnd),
-    deleteRange = wanjuanFindMentionTokenDeleteRange(value, selectionStart, selectionEnd, event.key);
-  if (!deleteRange) return null;
-  event.preventDefault();
-  let newValue = `${value.slice(0, deleteRange.start)}${value.slice(deleteRange.end)}`;
-  return (requestAnimationFrame(() => {
-    try {
-      (inputElement.selectionStart = deleteRange.start, inputElement.selectionEnd = deleteRange.start);
-    } catch {}
-  }), t?.(newValue), newValue);
-}
 function wanjuanTaskCreatedAt(task) {
   let value = Number(task?.createdAt || task?.updatedAt || 0);
   return Number.isFinite(value) ? value : 0;
@@ -14820,65 +14716,6 @@ function wanjuanSeedancePortraitToResource(portrait, index = 0) {
     projectName: portrait.projectName || ``,
     source: `seedance-virtual-portrait`,
     isSeedanceVirtualPortrait: !0,
-  };
-}
-function wanjuanNormalizeTianjiPortraitAssets(input) {
-  let result = [];
-  if (Array.isArray(input)) result = input.map((portrait) => ({
-    ...portrait,
-    groupType: portrait?.groupType || portrait?.group_type || portrait?.type || ``
-  }));
-  else if (input && typeof input == `object`)
-    [`LivenessFace`, `AIGC`].forEach((groupKey) => {
-      Array.isArray(input[groupKey]) &&
-        input[groupKey].forEach((portrait) =>
-          result.push({
-            ...portrait,
-            groupType: portrait?.groupType || portrait?.group_type || groupKey
-          }),
-        );
-    });
-  return result
-    .map((portrait, index) => {
-      let assetId = String(portrait?.portrait_asset_id || portrait?.asset_id || portrait?.assetId || portrait?.id || portrait?.Id || portrait?.AssetId || ``).trim(),
-        imageUrl = String(portrait?.image_url || portrait?.imageUrl || portrait?.cover_url || portrait?.preview_url || portrait?.url || portrait?.URL || portrait?.thumbnailUrl || ``).trim(),
-        groupType = String(portrait?.groupType || portrait?.group_type || portrait?.asset_type || portrait?.type || ``).trim();
-      return imageUrl ?
-        {
-          id: assetId || `tianji-portrait-${Date.now()}-${index}`,
-          name: String(portrait?.name || portrait?.Name || portrait?.label || (groupType === `AIGC` ? `虚拟人像` : `真人人像`)),
-          portraitAssetId: assetId,
-          imageUrl: imageUrl,
-          previewUrl: imageUrl,
-          groupType: groupType || `LivenessFace`,
-          status: String(portrait?.status || portrait?.Status || ``),
-          localUploaded: portrait?.localUploaded === !0,
-          createdAt: Number(portrait?.createdAt || portrait?.CreateTime || Date.now()),
-        } :
-        null;
-    })
-    .filter((portrait) => portrait && portrait.localUploaded !== !0);
-}
-function wanjuanTianjiPortraitToResource(portrait, index = 0) {
-  let imageUrl = String(portrait?.imageUrl || portrait?.previewUrl || portrait?.url || ``).trim();
-  if (!imageUrl) return null;
-  let displayName = portrait?.groupType === `AIGC` ? `虚拟人像` : `真人人像`,
-    assetId = String(portrait?.portraitAssetId || portrait?.id || ``).trim();
-  return {
-    id: `tianji-portrait-${portrait?.id || index}`,
-    tianjiPortraitAssetId: assetId,
-    url: imageUrl,
-    thumbnailUrl: portrait?.previewUrl || imageUrl,
-    previewUrl: portrait?.previewUrl || imageUrl,
-    type: `image/tianji-portrait`,
-    pageTitle: portrait?.name || displayName,
-    label: portrait?.name || displayName,
-    name: portrait?.name || displayName,
-    source: `tianji-portrait`,
-    sourceOrigin: `tianji-portrait`,
-    groupType: portrait?.groupType || `LivenessFace`,
-    localUploaded: portrait?.localUploaded === !0,
-    isTianjiPortrait: !0,
   };
 }
 function wanjuanResourceMatchesFilter(resource, kind, sourceKind = `all`, favoriteOnly = !1) {
