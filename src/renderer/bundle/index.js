@@ -141,6 +141,13 @@ import {
   wanjuanNormalizeSeedanceVirtualPortraits,
   wanjuanSeedancePortraitToResource,
 } from "../lib/seedance";
+import {
+  WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
+  wanjuanMergeModelText,
+} from "../lib/jixin-catalog";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -16274,31 +16281,6 @@ const WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS = [
   `doubao-seedance-2-0-260128`,
   `doubao-seedance-2-0-fast-260128`,
 ];
-const WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS = [
-  `doubao-seedance-2-0-260128`,
-  `doubao-seedance-2-0-fast-260128`,
-];
-const WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS = `4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15`;
-const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS = `480p
-720p
-1080p`;
-const WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS = `21:9
-16:9
-4:3
-1:1
-3:4
-9:16`;
 const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_DURATIONS = `2
 5
 10
@@ -16815,22 +16797,6 @@ const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       speed: `number`,
     },
   },
-};
-const wanjuanMergeModelText = (...inputs) => {
-  let seen = new Set(),
-    models = [];
-  inputs.forEach((input) => {
-    (Array.isArray(input) ? input : String(input || ``).split(/[\n,，、]+/))
-      .map((model) => String(model || ``).trim())
-      .filter(Boolean)
-      .forEach((model) => {
-        if (seen.has(model)) return;
-        seen.add(model);
-        models.push(model);
-      });
-  });
-  return models.join(`
-`);
 };
 const wanjuanBuildJixinModelBindings = (models, apiConfigId = WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID) =>
   String(models || ``)
