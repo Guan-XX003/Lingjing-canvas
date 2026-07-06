@@ -16,6 +16,7 @@ const { TEST_BUILD_NAME, TEST_USER_DATA_DIR, TEST_USER_DATA_PATH } = require("./
 const { isBenignEpipeError, appendDesktopLog } = require("./logging.cjs");
 const { setDesktopBaseUrl } = require("./runtime-state.cjs");
 const { createStaticServer } = require("./net/static-server.cjs");
+const { installFileAccessFilter } = require("./net/file-access-filter.cjs");
 const { registerDesktopIpc } = require("./ipc.cjs");
 const { createMainWindow } = require("./window.cjs");
 const { installApplicationMenu, scheduleAutomaticUpdateCheck } = require("./update-checker.cjs");
@@ -90,6 +91,8 @@ app.on("second-instance", () => {
 
 app.whenReady().then(async () => {
   installApplicationMenu();
+  // file:// 请求白名单过滤：webSecurity 关闭期间阻断任意本地文件读取。
+  installFileAccessFilter();
   const desktopBaseUrl = await createStaticServer();
   setDesktopBaseUrl(desktopBaseUrl);
   // IPC 注册放在 baseUrl 就绪之后，确保 isTrustedIpcEvent 始终有校验依据；
