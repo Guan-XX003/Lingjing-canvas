@@ -90,6 +90,17 @@ import {
   yt as ke,
   z as Ae,
 } from "./vendor.js";
+// —— 可读源码接线：以下模块已反混淆至 src/renderer/lib/，bundle 内联副本已删除 ——
+import {
+  normalizeVideoSizeValue,
+  normalizeVideoAspectRatioValue,
+  snapVideoAspectRatioToSupported,
+} from "../lib/video-aspect-ratio";
+import {
+  wanjuanCloneNodeDataForClipboard,
+  wanjuanVideoTaskMatchesNodeByPrompt,
+  wanjuanVideoTaskCanAttachToNode,
+} from "../lib/video-task";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -4125,47 +4136,6 @@ var Le = reactMemo(({
       value: `720x720`
     },
   ],
-  normalizeVideoSizeValue = (sizeText) => {
-    let sizeMatch = String(sizeText || ``).trim().match(/(\d{2,5})\s*[xX]\s*(\d{2,5})/);
-    return sizeMatch ? `${sizeMatch[1]}x${sizeMatch[2]}` : `1280x720`;
-  },
-  normalizeVideoAspectRatioValue = (sizeText, fallbackSize = `1280x720`) => {
-    let rawRatio = String(sizeText || ``).trim(),
-      ratioMatch = rawRatio.match(/^(\d+(?:\.\d+)?)\s*[:xX\/]\s*(\d+(?:\.\d+)?)$/);
-    if (ratioMatch && rawRatio.includes(`:`)) return `${ratioMatch[1]}:${ratioMatch[2]}`;
-    if (!ratioMatch) ratioMatch = String(fallbackSize || ``).trim().match(/^(\d+(?:\.\d+)?)\s*[xX]\s*(\d+(?:\.\d+)?)$/);
-    if (!ratioMatch) return `16:9`;
-    let ratioWidth = Number(ratioMatch[1]),
-      ratioHeight = Number(ratioMatch[2]);
-    if (!isFinite(ratioWidth) || !isFinite(ratioHeight) || ratioWidth <= 0 || ratioHeight <= 0) return `16:9`;
-    let gcd = (firstNumber, secondNumber) => (secondNumber === 0 ? firstNumber : gcd(secondNumber, firstNumber % secondNumber)),
-      divisor = gcd(Math.round(ratioWidth * 100), Math.round(ratioHeight * 100));
-    return `${Math.round(ratioWidth * 100) / divisor}:${Math.round(ratioHeight * 100) / divisor}`;
-  },
-  // 上游只接受固定几个画幅；任意比例（如 2.35:1）按对数距离就近吸附到候选列表。
-  snapVideoAspectRatioToSupported = (ratioText, supportedRatios = [`16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`]) => {
-    let parseRatioValue = (value) => {
-        let ratioMatch = String(value || ``).trim().match(/^(\d+(?:\.\d+)?)\s*[:xX\/]\s*(\d+(?:\.\d+)?)$/);
-        if (!ratioMatch) return NaN;
-        let ratioWidth = Number(ratioMatch[1]),
-          ratioHeight = Number(ratioMatch[2]);
-        return ratioWidth > 0 && ratioHeight > 0 ? ratioWidth / ratioHeight : NaN;
-      },
-      normalized = String(ratioText || ``).trim(),
-      fallback = supportedRatios[0] || `16:9`;
-    if (supportedRatios.includes(normalized)) return normalized;
-    let target = parseRatioValue(normalized);
-    if (!isFinite(target)) return fallback;
-    let best = fallback,
-      bestDistance = Infinity;
-    for (let candidate of supportedRatios) {
-      let value = parseRatioValue(candidate);
-      if (!isFinite(value)) continue;
-      let distance = Math.abs(Math.log(value / target));
-      distance < bestDistance && ((bestDistance = distance), (best = candidate));
-    }
-    return best;
-  },
   We = reactMemo(({
     id: nodeId,
     data: nodeData,
@@ -14663,78 +14633,6 @@ function wanjuanDeleteMentionTokenAsUnit(event, t) {
       (inputElement.selectionStart = deleteRange.start, inputElement.selectionEnd = deleteRange.start);
     } catch {}
   }), t?.(newValue), newValue);
-}
-function wanjuanCloneNodeDataForClipboard(source, options = {}) {
-  let result = {
-    ...(source || {})
-  };
-  Object.keys(result).forEach((key) => {
-    typeof result[key] == `function` && delete result[key];
-  });
-  [
-    `loading`,
-    `progress`,
-    `status`,
-    `errorMessage`,
-    `errorMsg`,
-    `taskId`,
-    `seedanceTaskId`,
-    `audioTaskId`,
-    `videoUrl`,
-    `imageUrl`,
-    `audioUrl`,
-    `thumbnailUrl`,
-    `resultData`,
-    `extractedImages`,
-    `generatedAt`,
-    `wanjuanSelectedReferenceSourceIds`,
-  ].forEach((key) => {
-    delete result[key];
-  });
-  options.keepContextResources || delete result.selectedContextResources;
-  return result;
-}
-function wanjuanVideoTaskMatchesNodeByPrompt(task, node, n, projectId) {
-  if (!task || !node || !n) return !1;
-  if (!task.id || task.status !== `completed` || !task.resultUrl || task.stoppedByUser) return !1;
-  if ((task.projectId || `default`) !== (projectId || `default`)) return !1;
-  if (String(task.prompt || ``).trim() !== String(n || ``).trim()) return !1;
-  if (task.nodeId && task.nodeId !== node.id) return !1;
-  if (task.nodeId === node.id) return !0;
-  let provider = String(task.provider || ``).toLowerCase(),
-    modelName = String(task.modelName || task.model || ``).trim(),
-    videoModel = String(node.data?.videoModel || ``).trim();
-  if (modelName && videoModel && modelName !== videoModel) return !1;
-  if (node.type === `seedanceNode`)
-    return provider === `seedance` || /seedance|doubao/i.test(modelName);
-  if (node.type === `tongyiWanxiangNode`)
-    return provider === `tongyi-wanxiang` || /wanx|wan\d|tongyi/i.test(modelName);
-  if (node.type === `videoNode`)
-    return (task.type === `video` || task.customOutputType === `video`) &&
-      provider !== `seedance` &&
-      provider !== `tongyi-wanxiang` &&
-      !/seedance|doubao|wanx|wan\d|tongyi/i.test(modelName);
-  return !1;
-}
-function wanjuanVideoTaskCanAttachToNode(task, node, projectId) {
-  if (!task || !node || !task.id || task.stoppedByUser) return !1;
-  if ((task.projectId || `default`) !== (projectId || `default`)) return !1;
-  if (task.nodeId && task.nodeId !== node.id) return !1;
-  if (task.nodeId === node.id) return !0;
-  let provider = String(task.provider || ``).toLowerCase(),
-    modelName = String(task.modelName || task.model || ``).trim(),
-    videoModel = String(node.data?.videoModel || ``).trim();
-  if (modelName && videoModel && modelName !== videoModel) return !1;
-  if (node.type === `seedanceNode`)
-    return provider === `seedance` || /seedance|doubao/i.test(modelName);
-  if (node.type === `tongyiWanxiangNode`)
-    return provider === `tongyi-wanxiang` || /wanx|wan\d|tongyi/i.test(modelName);
-  if (node.type === `videoNode`)
-    return (task.type === `video` || task.customOutputType === `video`) &&
-      provider !== `seedance` &&
-      provider !== `tongyi-wanxiang` &&
-      !/seedance|doubao|wanx|wan\d|tongyi/i.test(modelName);
-  return !1;
 }
 function wanjuanTaskCreatedAt(task) {
   let value = Number(task?.createdAt || task?.updatedAt || 0);
