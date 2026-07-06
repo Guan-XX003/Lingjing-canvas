@@ -121,13 +121,21 @@ export function reviveProjectMediaBindingValue(binding: any): any {
 /**
  * 由本地文件路径构造 file:// 协议地址。
  *
- * 非字符串或空字符串返回空串；已是 file:// 开头的地址原样返回；
- * 否则对路径进行 URI 编码并把 "#" 转义为 "%23"，再拼接 file:// 前缀。
+ * 非字符串或空字符串返回空串；已是 file:// 开头的地址原样返回。
+ * 兼容 Windows 路径：反斜杠统一为正斜杠；盘符路径（C:/）前补 "/"；
+ * UNC 路径（//server/share）使用 file: 前缀（形成 file://server/share）。
+ * 编码时把 "#" 转义为 "%23" 以避免被解析为片段。
  */
 export function buildProjectMediaFileUrl(filePath: any): string {
-  return typeof filePath == `string` && filePath
-    ? /^file:\/\//i.test(filePath)
-      ? filePath
-      : `file://${encodeURI(filePath).replace(/#/g, `%23`)}`
-    : ``;
+  if (typeof filePath != `string` || !filePath) return ``;
+  if (/^file:\/\//i.test(filePath)) return filePath;
+  const normalized = filePath.replace(/\\/g, `/`);
+  const encoded = encodeURI(
+    /^[A-Za-z]:\//.test(normalized)
+      ? `/${normalized}`
+      : /^\/[A-Za-z]:\//.test(normalized) || normalized.startsWith(`//`)
+        ? normalized
+        : filePath,
+  ).replace(/#/g, `%23`);
+  return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
 }

@@ -119,6 +119,13 @@ import {
   wanjuanNormalizeTianjiPortraitAssets,
   wanjuanTianjiPortraitToResource,
 } from "../lib/tianji-portrait";
+import {
+  wanjuanResourceKind,
+  wanjuanResourceSourceKind,
+  wanjuanResourceMatchesFilter,
+  reviveProjectMediaBindingValue,
+  buildProjectMediaFileUrl,
+} from "../lib/resource";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -14357,19 +14364,6 @@ function localPathFromProjectFileUrl(value) {
     return ``;
   }
 }
-function buildProjectMediaFileUrl(filePath) {
-  if (typeof filePath != `string` || !filePath) return ``;
-  if (/^file:\/\//i.test(filePath)) return filePath;
-  const normalized = filePath.replace(/\\/g, `/`);
-  const encoded = encodeURI(
-    /^[A-Za-z]:\//.test(normalized) ?
-      `/${normalized}` :
-      /^\/[A-Za-z]:\//.test(normalized) || normalized.startsWith(`//`) ?
-      normalized :
-      filePath
-  ).replace(/#/g, `%23`);
-  return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
-}
 const WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS = 1500000;
 function wanjuanShouldSkipHydratedProjectAssetValue(value) {
   return (
@@ -14511,18 +14505,6 @@ function wanjuanRunThemeTransition(themeName, callback) {
     }, 760), !0) :
     ((window.__wanjuanThemeTransitionActive = !1), !1);
 }
-function reviveProjectMediaBindingValue(e) {
-  if (!e) return void 0;
-  let portableData = e.portableData;
-  if (typeof portableData != `string`) return portableData;
-  if (e.valueFormat === `json`)
-    try {
-      return JSON.parse(portableData);
-    } catch {
-      return portableData;
-    }
-  return portableData;
-}
 function wanjuanUseBrokenResourceImage(event) {
   let imageElement = event.currentTarget;
   (imageElement.onerror = null,
@@ -14576,28 +14558,6 @@ function wanjuanClearProjectAssetBindingsFromData(data, fields = []) {
     (nextData.projectAssetBindings = nextBindings) :
     delete nextData.projectAssetBindings;
   return nextData;
-}
-function wanjuanResourceKind(mediaItem) {
-  let mediaType = String(mediaItem?.type || mediaItem?.mediaKind || ``).toLowerCase(),
-    mediaUrl = String(mediaItem?.url || mediaItem?.videoUrl || mediaItem?.resultVideoUrl || mediaItem?.audioUrl || mediaItem?.resultAudioUrl || mediaItem?.imageUrl || mediaItem?.mediaUrl || mediaItem?.resultUrl || mediaItem?.localPath || mediaItem?.path || mediaItem?.thumbnailUrl || ``).toLowerCase();
-  return mediaType === `text` || mediaType.startsWith(`text/`) ? `text` :
-    mediaType === `audio` || mediaType.startsWith(`audio/`) || /^data:audio\//.test(mediaUrl) || /\.(mp3|wav|m4a|aac|ogg|flac)(?:$|[?#])/i.test(mediaUrl) ? `audio` :
-    mediaType === `video` || mediaType.startsWith(`video/`) || /^data:video\//.test(mediaUrl) || /\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|[?#])/i.test(mediaUrl) ? `video` :
-    `image`;
-}
-function wanjuanResourceSourceKind(mediaItem) {
-  let sources = [
-      mediaItem?.source,
-      mediaItem?.sourceOrigin,
-      mediaItem?.mediaSourceOrigin,
-      mediaItem?.origin,
-      mediaItem?.sourceKind,
-      mediaItem?.pageUrl,
-    ]
-    .map((status) => String(status || ``).toLowerCase())
-    .filter(Boolean)
-    .join(` `);
-  return /\bgenerated\b|ai|seedream|seedance|doubao|tongyi|wanxiang|task|tts|music|video-editor/.test(sources) ? `generated` : `external`;
 }
 function wanjuanNormalizeSeedanceAssetId(e) {
   return String(e || ``)
@@ -14717,14 +14677,6 @@ function wanjuanSeedancePortraitToResource(portrait, index = 0) {
     source: `seedance-virtual-portrait`,
     isSeedanceVirtualPortrait: !0,
   };
-}
-function wanjuanResourceMatchesFilter(resource, kind, sourceKind = `all`, favoriteOnly = !1) {
-  let normalizedKind = kind === `favorite` ? `all` : kind,
-    requireFavorite = favoriteOnly || kind === `favorite`,
-    matchesKind = normalizedKind === `all` || !normalizedKind || wanjuanResourceKind(resource) === normalizedKind,
-    matchesSource = sourceKind === `all` || !sourceKind || wanjuanResourceSourceKind(resource) === sourceKind,
-    matchesFavorite = !requireFavorite || resource?.isFavorite === !0;
-  return matchesKind && matchesSource && matchesFavorite;
 }
 function wanjuanResourceMediaUrl(resource) {
   let resourceKind = wanjuanResourceKind(resource);
