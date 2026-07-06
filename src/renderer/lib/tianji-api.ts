@@ -13,7 +13,7 @@
 
 // normalizeVideoAspectRatioValue 是 bundle 内的通用视频比例归一化工具（原 bundle line 3522），
 // 非本组函数，从兄弟模块引入。
-import { normalizeVideoAspectRatioValue } from "./video-aspect-ratio";
+import { normalizeVideoAspectRatioValue, snapVideoAspectRatioToSupported } from "./video-aspect-ratio";
 
 /** chrome 扩展运行时（仅在浏览器扩展环境存在）。 */
 declare const chrome: any;
@@ -556,6 +556,14 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
         wanjuanTianjiFirstListValue(nodeData.seedanceRatios || nodeData.videoResolutions || config.ratios, `16:9`),
     ).trim();
   if (!ratio.includes(`:`)) ratio = normalizeVideoAspectRatioValue(ratio, `1280x720`);
+  // 上游只接受固定几个画幅，浮点比例（如 2.35:1）就近吸附到配置的候选列表。
+  {
+    let supportedRatios = String(nodeData.seedanceRatios || nodeData.videoResolutions || config.ratios || ``)
+      .split(/[\s,，、]+/)
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.includes(`:`));
+    ratio = snapVideoAspectRatioToSupported(ratio, supportedRatios.length ? supportedRatios : void 0);
+  }
   if (!model) throw Error(`请先在设置中配置天玑 Seedance 模型`);
   let generationMode = nodeData.tianjiSeedanceGenerationMode || `text-to-video`,
     payload: any = {

@@ -16,6 +16,43 @@ export function normalizeVideoSizeValue(input: any): string {
  * - 否则尝试从 fallback 尺寸（默认 "1280x720"）推导；
  * - 都失败则返回 "16:9"。
  */
+/** 上游 API 支持的固定画幅白名单。 */
+export const SUPPORTED_VIDEO_ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"];
+
+/**
+ * 把任意比例就近吸附到白名单值（按对数距离比较，如 "2.35:1" → "21:9"）。
+ * 已在白名单内的原样返回；解析失败回退白名单首项。
+ */
+export function snapVideoAspectRatioToSupported(
+  ratio: string,
+  supported: string[] = SUPPORTED_VIDEO_ASPECT_RATIOS,
+): string {
+  const parseRatioValue = (value: string): number => {
+    const match = String(value || "").trim().match(/^(\d+(?:\.\d+)?)\s*[:xX\/]\s*(\d+(?:\.\d+)?)$/);
+    if (!match) return NaN;
+    const width = Number(match[1]);
+    const height = Number(match[2]);
+    return width > 0 && height > 0 ? width / height : NaN;
+  };
+  const normalized = String(ratio || "").trim();
+  const fallback = supported[0] || "16:9";
+  if (supported.includes(normalized)) return normalized;
+  const target = parseRatioValue(normalized);
+  if (!isFinite(target)) return fallback;
+  let best = fallback;
+  let bestDistance = Infinity;
+  for (const candidate of supported) {
+    const value = parseRatioValue(candidate);
+    if (!isFinite(value)) continue;
+    const distance = Math.abs(Math.log(value / target));
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
 export function normalizeVideoAspectRatioValue(input: any, fallbackSize = "1280x720"): string {
   const rawRatio = String(input || "").trim();
   let parsed = rawRatio.match(/^(\d+(?:\.\d+)?)\s*[:xX\/]\s*(\d+(?:\.\d+)?)$/);
