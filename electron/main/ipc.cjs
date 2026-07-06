@@ -594,21 +594,19 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:import-extension-tool-pack");
     if (blocked) return blocked;
     try {
-      let sourcePath = String(payload?.path || "").trim();
-      if (!sourcePath) {
-        const win = BrowserWindow.fromWebContents(event.sender);
-        const result = await dialog.showOpenDialog(win || undefined, {
-          title: "选择万卷灵境离线工具包",
-          buttonLabel: "导入工具包",
-          properties: ["openFile", "openDirectory"],
-          filters: [
-            { name: "万卷灵境离线工具包", extensions: ["zip"] },
-            { name: "所有文件", extensions: ["*"] }
-          ]
-        });
-        if (result.canceled || !result.filePaths?.[0]) return { ok: false, canceled: true };
-        sourcePath = result.filePaths[0];
-      }
+      // 安全：忽略渲染进程传入的任意路径（payload.path），一律由用户在系统对话框中选择。
+      const win = BrowserWindow.fromWebContents(event.sender);
+      const result = await dialog.showOpenDialog(win || undefined, {
+        title: "选择万卷灵境离线工具包",
+        buttonLabel: "导入工具包",
+        properties: ["openFile", "openDirectory"],
+        filters: [
+          { name: "万卷灵境离线工具包", extensions: ["zip"] },
+          { name: "所有文件", extensions: ["*"] }
+        ]
+      });
+      if (result.canceled || !result.filePaths?.[0]) return { ok: false, canceled: true };
+      const sourcePath = result.filePaths[0];
       return await importExtensionToolPack(sourcePath);
     } catch (error) {
       console.error("import-extension-tool-pack failed", error);
