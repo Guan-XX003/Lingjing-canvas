@@ -254,7 +254,9 @@ export const wanjuanTianjiRequest = async (
   }
   if (!response.ok)
     throw Error(json?.message || json?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
-  if (json?.code && json.code !== 200) throw Error(json.message || json.msg || `即梦天玑返回错误: ${json.code}`);
+  // code 为 0 等 falsy 值也必须视为错误，不能被 && 短路吞掉。
+  if (json?.code !== undefined && Number(json.code) !== 200)
+    throw Error(json.message || json.msg || `即梦天玑返回错误: ${json.code}`);
   return json;
 };
 
