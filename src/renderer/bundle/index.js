@@ -2845,7 +2845,7 @@ function WanJuanAppCanvas({
 	              imageSize = sourceNode?.data?.imageSize || `1K`,
 	              imageSizeMode = sourceNode?.data?.imageSizeMode || `quality`,
 	              imageResolutionValue = String(sourceNode?.data?.imageResolution || ``).trim(),
-	              imageResolutionOptions = parseSeedanceList(sourceNode?.data?.imageCompatResolutions || ``).filter((e) => /^\d{2,5}x\d{2,5}$/i.test(String(e || ``).trim())),
+	              imageResolutionOptions = parseSeedanceList(sourceNode?.data?.imageCompatResolutions || ``).filter((item) => /^\d{2,5}x\d{2,5}$/i.test(String(item || ``).trim())),
 	              selectedImageResolution =
 	                /^\d{2,5}x\d{2,5}$/i.test(imageResolutionValue) ?
 	                imageResolutionValue :
@@ -3641,7 +3641,7 @@ ${combinedPrompt}`,
 		                    seedreamResult?.task?.task_id,
 		                    seedreamResult?.task?.taskId,
 		                  );
-		                  return candidates.map((e) => String(e || ``).trim()).find(Boolean) || ``;
+		                  return candidates.map((item) => String(item || ``).trim()).find(Boolean) || ``;
 		                })(),
 		                imageProtocolResponsePaths =
 		                imageProtocolProfile.responseMapping &&
@@ -3654,7 +3654,7 @@ ${combinedPrompt}`,
 	                  imageProtocolResponsePaths ?
 	                  [imageProtocolResponsePaths] :
 	                  [])
-	                .map((e) => readImageProtocolResponsePath(seedreamResult, e))
+	                .map((item) => readImageProtocolResponsePath(seedreamResult, item))
 	                .map((value) => findImageProtocolResult(value))
 	                .find((value) => typeof value == `string` && value.trim()),
 	                seedreamPrimaryImage = seedreamResult?.data?.[0] || {},
@@ -3934,7 +3934,7 @@ ${combinedPrompt}`,
                   ),
                 );
               let suChuangReferenceUrls = new Set(
-                  suChuangUrls.map((e) => String(e || ``).replace(/[`\s]/g, ``)),
+                  suChuangUrls.map((item) => String(item || ``).replace(/[`\s]/g, ``)),
                 ),
                 suChuangIsReferenceUrl = (e) => {
                   let normalizedUrl = String(e || ``).replace(/[`\s]/g, ``);
@@ -4544,7 +4544,7 @@ ${combinedPrompt}`,
             normalizeVideoModelName = (modelName3) =>
 	            String(modelName3 || `grok-video-4.2`)
 	            .split(/[\n,，、]+/)
-	            .map((e) => e.trim())
+	            .map((item) => item.trim())
 	            .filter(Boolean)[0] || `grok-video-4.2`,
 	            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
 	            seedanceSourceNode = getNodes().find((node) => node.id === nodeId);
@@ -7568,7 +7568,7 @@ ${combinedPrompt}`,
                   let completedValueSet = (() => {
                     let rm = effectiveVideoRequestProfile?.responseMapping;
                     let cv = rm && typeof rm == `object` ? (rm.completedValues || rm.completed) : null;
-                    cv = Array.isArray(cv) ? cv.map((x) => normalizeGenericStatus(x)).filter(Boolean) : [];
+                    cv = Array.isArray(cv) ? cv.map((item) => normalizeGenericStatus(item)).filter(Boolean) : [];
                     return cv.length ? cv : [`completed`, `complete`, `success`, `succeeded`, `done`, `finished`, `ready`, `succeed`];
                   })();
                   if (((failureCount = 0), completedValueSet.includes(status) || genericDirectVideoUrl)) {
@@ -8504,7 +8504,7 @@ ${combinedPrompt}`,
 	                  textProtocolResponsePaths ?
 	                  [textProtocolResponsePaths] :
 	                  [])
-	                .map((e) => readTextProtocolResponsePath(responseData, e))
+	                .map((item) => readTextProtocolResponsePath(responseData, item))
 	                .find((value) => typeof value == `string` && value.trim()),
 	                geminiText =
 	                responseData?.candidates?.[0]?.content?.parts
@@ -10460,11 +10460,11 @@ ${combinedPrompt}`,
 	                    })).filter((edge) => edge.source && edge.target) :
 	                    [];
 	                  if (
-	                    (setNodes((nodes3) => nodes3.map((e) => ({
-	                        ...e,
+	                    (setNodes((nodes3) => nodes3.map((item) => ({
+	                        ...item,
 	                        selected: !1
 	                      })).concat(newNodes)),
-	                      setEdges((e) => e.map((e) => ({
+	                      setEdges((item) => item.map((e) => ({
 	                        ...e,
 	                        selected: !1
 	                      })).concat(newEdges, m)),
@@ -10612,19 +10612,19 @@ ${combinedPrompt}`,
         [menuPosition, screenToFlowPosition, generateImage, generateText, handleCrop, openImagePreview, setNodes, setEdges, showToast],
     ),
     jt = () => {
-      let e =
+      let item =
         nodesRef.current.filter((node) => node.selected).length > 0 ?
         nodesRef.current.filter((node) => node.selected).map((node) => node.id) :
         menuPosition?.nodeId ?
         [menuPosition.nodeId] :
         [];
-      (e.forEach((e) => stopGeneration(e, {
+      (item.forEach((e) => stopGeneration(e, {
           silent: !0
         })),
-        e.length > 0 &&
-        (setNodes((prevNodes) => prevNodes.filter((node) => !e.includes(node.id))),
+        item.length > 0 &&
+        (setNodes((prevNodes) => prevNodes.filter((node) => !item.includes(node.id))),
           setEdges((prevEdges) =>
-            prevEdges.filter((edge) => !e.includes(edge.source) && !e.includes(edge.target)),
+            prevEdges.filter((edge) => !item.includes(edge.source) && !item.includes(edge.target)),
           )),
         setMenuPosition(null));
     },
@@ -12537,7 +12537,7 @@ ${combinedPrompt}`,
                         }),
                         jsx(`div`, {
                           className: `absolute left-full top-0 ml-1 bg-[#2a2a2a] border border-[#333] rounded-lg shadow-xl p-1 min-w-[140px] hidden group-hover/custom:block z-50 before:content-[''] before:absolute before:-left-4 before:top-0 before:w-4 before:h-full wanjuan-context-submenu`,
-                          children: customNodeTemplates.map((e) =>
+                          children: customNodeTemplates.map((item) =>
                             jsxs(
                               `div`, {
                                 className: `group/item flex items-center justify-between hover:bg-[#333] rounded wanjuan-context-menu-row`,
@@ -12546,7 +12546,7 @@ ${combinedPrompt}`,
                                     className: `text-left px-3 py-2 text-sm text-gray-300 hover:text-white flex-1 wanjuan-context-menu-item-plain`,
                                     onClick: (event) => {
                                       event.stopPropagation();
-                                      let variables = e.config?.variables || {};
+                                      let variables = item.config?.variables || {};
                                       ($(
                                           `customNode`,
                                           screenToFlowPosition({
@@ -12558,8 +12558,8 @@ ${combinedPrompt}`,
                                               (wrapperRef.current?.getBoundingClientRect()
                                                 .top || 0),
                                           }), {
-                                            label: e.name,
-                                            config: e.config,
+                                            label: item.name,
+                                            config: item.config,
                                             configMode: !1,
                                             variables: variables,
                                           },
@@ -12567,15 +12567,15 @@ ${combinedPrompt}`,
                                         ),
                                         setMenuPosition(null));
                                     },
-                                    children: e.name,
+                                    children: item.name,
                                   }),
                                   jsx(`button`, {
                                     className: `p-1.5 text-red-400 hover:text-red-300 opacity-0 group-hover/item:opacity-100 transition-opacity wanjuan-context-menu-icon-action wanjuan-context-menu-item-danger`,
                                     onClick: (event) => {
                                       (event.stopPropagation(),
                                         window.confirm(
-                                          `确定要删除自定义节点 "${e.name}" 吗？`,
-                                        ) && deleteCustomNode?.(e.id));
+                                          `确定要删除自定义节点 "${item.name}" 吗？`,
+                                        ) && deleteCustomNode?.(item.id));
                                     },
                                     title: `删除`,
                                     children: jsx(Trash2, {
@@ -12584,7 +12584,7 @@ ${combinedPrompt}`,
                                   }),
                                 ],
                               },
-                              e.id,
+                              item.id,
                             ),
                           ),
                         }),
@@ -22107,7 +22107,7 @@ ${docText}`;
           },
           createAgent = () => {
             let defaultModel =
-              agentModelOptions[0] || textModels.split(/\r?\n/).map((e) => e.trim()).find(Boolean) || ``,
+              agentModelOptions[0] || textModels.split(/\r?\n/).map((item) => item.trim()).find(Boolean) || ``,
               newAgent = {
                 id: `agent-${Date.now()}`,
                 name: `新智能体`,
@@ -22666,12 +22666,12 @@ ${docText}`;
                 if (!String(responseText || ``).trim()) throw Error(`模型没有返回有效内容`);
                 setAgentConversations((prevConversations) => ({
                   ...prevConversations,
-                  [selectedAgent.id]: (prevConversations[selectedAgent.id] || []).map((e) =>
-                    e.id === assistantMessageId ? {
-                      ...e,
+                  [selectedAgent.id]: (prevConversations[selectedAgent.id] || []).map((item) =>
+                    item.id === assistantMessageId ? {
+                      ...item,
                       content: responseText,
                       createdAt: Date.now()
-                    } : e,
+                    } : item,
                   ),
                 }));
                 storeAgentLongTermMemory(selectedAgent, messageContent, responseText).catch((e) =>
@@ -22682,9 +22682,9 @@ ${docText}`;
                 let e = t?.message || `智能体回复失败`;
                 (console.error(t),
                   showToast2(e),
-                  setAgentConversations((t) => ({
-                    ...t,
-                    [selectedAgent.id]: (t[selectedAgent.id] || []).map((t) =>
+                  setAgentConversations((item) => ({
+                    ...item,
+                    [selectedAgent.id]: (item[selectedAgent.id] || []).map((t) =>
                       t.id === assistantMessageId ?
                       {
                         ...t,
@@ -22720,20 +22720,20 @@ ${docText}`;
 		                };
 		              [...e]
 		                .sort((e, t) => (t?.createdAt || 0) - (e?.createdAt || 0))
-		                .forEach((e) => {
-		                  if (!e || !e.id) return;
-		                  if (!e.nodeId) {
+		                .forEach((item) => {
+		                  if (!item || !item.id) return;
+		                  if (!item.nodeId) {
 		                    let t = r.get(`__unbound__`) || 0;
-		                    t < 100 && o(e);
+		                    t < 100 && o(item);
 		                    r.set(`__unbound__`, t + 1);
 		                    return;
 		                  }
-		                  let n = `${e.projectId || `default`}::${e.nodeId}`,
+		                  let n = `${item.projectId || `default`}::${item.nodeId}`,
 		                    s = r.get(n) || 0,
-		                    c = e.status === `running` || e.status === `pending`,
-		                    l = i(e) && a(e);
+		                    c = item.status === `running` || item.status === `pending`,
+		                    l = i(item) && a(item);
 		                  if (s < 20 || c || l) {
-		                    if (o(e)) r.set(n, s + 1);
+		                    if (o(item)) r.set(n, s + 1);
 		                  }
 		                });
 		              return t.slice(0, 1200).sort((e, t) => (t?.createdAt || 0) - (e?.createdAt || 0));
@@ -22892,8 +22892,8 @@ ${docText}`;
 		                r = normalizeModelCategory(n.type || n.customOutputType) || inferButlerCategoryFromModelName(n.modelName || ``),
 		                i =
 		                n.apiConfigId ?
-		                apiConfigs.find((e) => e.id === n.apiConfigId) :
-		                apiConfigs.find((e) => normalizeButlerBaseUrl(e.url).toLowerCase() === normalizeButlerBaseUrl(n.apiBaseUrl || ``).toLowerCase()),
+		                apiConfigs.find((item) => item.id === n.apiConfigId) :
+		                apiConfigs.find((item) => normalizeButlerBaseUrl(item.url).toLowerCase() === normalizeButlerBaseUrl(n.apiBaseUrl || ``).toLowerCase()),
 		                a = r === `text` ?
 		                textModelProtocolBindings?.[n.modelName] :
 		                r === `image` ?
@@ -22915,7 +22915,7 @@ ${docText}`;
 		              try {
 		                let l = ``,
 		                  u = null,
-		                  c = (storedGlobalConfigs || []).find((e) => e.id === activeStoredGlobalConfigId),
+		                  c = (storedGlobalConfigs || []).find((item) => item.id === activeStoredGlobalConfigId),
 		                  d = String(c?.apiDocUrl || c?.config?.apiDocUrl || c?.config?.configButlerDocUrl || configButlerDocUrl || ``).trim();
 		                if (d) {
 		                  l = await Promise.race([
@@ -23027,8 +23027,8 @@ ${String(l || ``).slice(0, 5e4)}`;
 			            maybeTriggerConfigButlerErrorDiagnosis = (e, t = [], n = {}) => {
 			              let r = new Set(
 			                (Array.isArray(t) ? t : [])
-			                .filter((e) => e?.status === `failed`)
-			                .map((e) => e.id),
+			                .filter((item) => item?.status === `failed`)
+			                .map((item) => item.id),
 			              ),
 			                o = Array.isArray(e) ? e : [],
 			                i = n?.manual === !0;
@@ -23038,8 +23038,8 @@ ${String(l || ``).slice(0, 5e4)}`;
 			                if (!a || a.status !== `failed` || a.stoppedByUser || !a.nodeId) continue;
 			                let t = getConfigButlerTaskFailureSignature(a);
 			                if (!t) continue;
-			                let s = o.filter((e) => e?.status === `failed` && !e.stoppedByUser && getConfigButlerTaskFailureSignature(e) === t);
-			                if (!i && r.size && !s.some((e) => !r.has(e.id))) continue;
+			                let s = o.filter((item) => item?.status === `failed` && !item.stoppedByUser && getConfigButlerTaskFailureSignature(item) === t);
+			                if (!i && r.size && !s.some((item) => !r.has(item.id))) continue;
 			                let c = `manual-latest::${a.id || Date.now()}::${t}`;
 			                if (!i && (configButlerErrorAssistantSeenRef.current.has(c) || configButlerErrorAssistantInFlightRef.current.has(c))) continue;
 			                (configButlerErrorAssistantSeenRef.current.add(c),
@@ -25008,7 +25008,7 @@ ${String(l || ``).slice(0, 5e4)}`;
             }) => {
               let s = Array.isArray(n) ? n : [],
                 c = Object.keys(r || {}),
-                l = s.filter((e) => !Object.prototype.hasOwnProperty.call(r || {}, e)),
+                l = s.filter((item) => !Object.prototype.hasOwnProperty.call(r || {}, item)),
                 u = Object.keys(i || {}),
                 d = Array.isArray(a) ? a.length : 0,
                 f = Object.values(o || {}).reduce(
@@ -26099,8 +26099,8 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                              (settings.seedanceVirtualPortraits = await wanjuanMakeSeedanceVirtualPortraitsPortable(settings.seedanceVirtualPortraits));
 	                            Array.isArray(settings.storedGlobalConfigs) &&
 	                              (settings.storedGlobalConfigs = await Promise.all(
-	                                settings.storedGlobalConfigs.map(async (e) => {
-	                                  let agent = cloneBackupValue(e);
+	                                settings.storedGlobalConfigs.map(async (item) => {
+	                                  let agent = cloneBackupValue(item);
 	                                  return (
 	                                    Array.isArray(agent?.config?.seedanceVirtualPortraits) &&
 	                                      (agent.config.seedanceVirtualPortraits = await wanjuanMakeSeedanceVirtualPortraitsPortable(agent.config.seedanceVirtualPortraits)),
