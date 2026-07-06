@@ -89,6 +89,10 @@ function openDesktopStorageDb() {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error("Failed to open desktop storage database"));
   });
+  // 打开失败时清空缓存的 promise，让下一次调用可以重试，而不是永久缓存 rejected promise。
+  storageDbPromise.catch(() => {
+    storageDbPromise = null;
+  });
   return storageDbPromise;
 }
 
