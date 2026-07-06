@@ -54,7 +54,7 @@ export const wanjuanTianjiAssetPagination = (result, fallbackPage = 1, fallbackP
   pageSize: wanjuanTianjiReadPositiveNumber(wanjuanTianjiFindDeep(result, [`PageSize`, `pageSize`, `page_size`, `limit`, `Limit`, `size`, `Size`]), fallbackPageSize),
 });
 
-export const wanjuanTianjiExtractGroups = (result, current = {}, preferredType = ``) => {
+export const wanjuanTianjiExtractGroups = (result: any, current: any = {}, preferredType = ``) => {
   let found = [],
     visit = (value, path = []) => {
       if (value === null || value === void 0) return;
