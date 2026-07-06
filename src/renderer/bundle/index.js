@@ -449,7 +449,7 @@ if (typeof globalThis.externalizeProjectCanvasState !== `function`) {
       value;
   };
 }
-var zr = Array.isArray(globalThis?.zr) ? globalThis.zr : [];
+var wanjuanGlobalPreloadRegistry = Array.isArray(globalThis?.zr) ? globalThis.zr : [];
 (function() {
   let relList = document.createElement(`link`).relList;
   if (relList && relList.supports && relList.supports(`modulepreload`)) return;
@@ -494,12 +494,12 @@ const { jsx, jsxs, Fragment } = jsxRuntimeModule;
 const { createRoot } = reactDomClientModule;
 var localforageModule = wanjuanToEsm(wanjuanLocalforageFactory(), 1);
 var reactDomModule = wanjuanReactDomFactory(),
-  Be = `modulepreload`,
-  Ve = function(url, baseUrl) {
+  WANJUAN_MODULEPRELOAD_REL = `modulepreload`,
+  wanjuanResolveModulePreloadUrl = function(url, baseUrl) {
     return new URL(url, baseUrl).href;
   },
-  He = {},
-  Ue = function(importFn, deps, importerUrl) {
+  wanjuanModulePreloadSeen = {},
+  wanjuanPreloadModuleDeps = function(importFn, deps, importerUrl) {
     let preloadPromise = Promise.resolve();
     if (deps && deps.length > 0) {
       let links = document.getElementsByTagName(`link`),
@@ -524,8 +524,8 @@ var reactDomModule = wanjuanReactDomFactory(),
       }
       preloadPromise = allSettled(
         deps.map((dep) => {
-          if (((dep = Ve(dep, importerUrl)), dep in He)) return;
-          He[dep] = !0;
+          if (((dep = wanjuanResolveModulePreloadUrl(dep, importerUrl)), dep in wanjuanModulePreloadSeen)) return;
+          wanjuanModulePreloadSeen[dep] = !0;
           let isCss = dep.endsWith(`.css`),
             relSelector = isCss ? `[rel="stylesheet"]` : ``;
           if (importerUrl)
@@ -536,7 +536,7 @@ var reactDomModule = wanjuanReactDomFactory(),
           else if (document.querySelector(`link[href="${dep}"]${relSelector}`)) return;
           let linkElement = document.createElement(`link`);
           if (
-            ((linkElement.rel = isCss ? `stylesheet` : Be),
+            ((linkElement.rel = isCss ? `stylesheet` : WANJUAN_MODULEPRELOAD_REL),
               isCss || (linkElement.as = `script`),
               (linkElement.crossOrigin = ``),
               (linkElement.href = dep),
