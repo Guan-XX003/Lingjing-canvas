@@ -85,10 +85,21 @@ function localPathFromFileUrl(value) {
   }
 }
 
-function localFileToDataUrl(filePath) {
+// dataURL 只适合小文件；超过阈值的直接拒绝，要求走 file:// 协议链接，避免同步读大文件冻结 UI。
+const LOCAL_FILE_DATA_URL_MAX_BYTES = 50 * 1024 * 1024;
+
+async function localFileToDataUrl(filePath) {
   const rawPath = String(filePath || "");
   const resolvedPath = localPathFromFileUrl(rawPath) || rawPath;
-  const buffer = fs.readFileSync(resolvedPath);
+  const stat = await fs.promises.stat(resolvedPath);
+  if (stat.size > LOCAL_FILE_DATA_URL_MAX_BYTES) {
+    return {
+      ok: false,
+      error: `文件过大（${Math.round(stat.size / 1024 / 1024)}MB > 50MB），请使用 file:// 链接而非 dataURL`,
+      size: stat.size
+    };
+  }
+  const buffer = await fs.promises.readFile(resolvedPath);
   const mime = mimeFromFilename(resolvedPath);
   return {
     ok: true,

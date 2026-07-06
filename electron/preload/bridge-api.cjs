@@ -270,7 +270,7 @@ exposeGlobal("wanjuanDesktop", {
 	    ipcRenderer.invoke("wanjuan:remove-project-assets", payload),
 	  readLocalFileAsDataUrl: async (payload = {}) => {
 	    try {
-	      return localFileToDataUrl(payload?.url || payload?.localPath || payload?.path || "");
+	      return await localFileToDataUrl(payload?.url || payload?.localPath || payload?.path || "");
 	    } catch (error) {
 	      return { ok: false, error: String(error?.message || error) };
 	    }
