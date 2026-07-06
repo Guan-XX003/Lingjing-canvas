@@ -2453,13 +2453,13 @@ function WanJuanAppCanvas({
             ctx.drawImage(image, colIndex * cellWidth, rowIndex * cellHeight, cellWidth, cellHeight, 0, 0, cellWidth, cellHeight);
             let dataUrl = canvas.toDataURL(`image/png`),
               node = getNodes().find((node2) => node2.id === nodeId),
-              _ = (node?.position.x || 0) + 400,
+              baseXPosition = (node?.position.x || 0) + 400,
               newY = (node?.position.y || 0) + 50,
               newNode = {
                 id: `split-one-${nodeId}-${sliceIndex}-${Date.now()}`,
                 type: `imageNode`,
                 position: {
-                  x: _,
+                  x: baseXPosition,
                   y: newY
                 },
                 style: {
@@ -2525,7 +2525,7 @@ function WanJuanAppCanvas({
               baseY = sourceNode?.position.y ?? 100,
               startX = baseX + 400,
               startY = baseY,
-              _ = [];
+              collectedNodes = [];
             for (let row = 0; row < gridSize; row++)
               for (let col = 0; col < gridSize; col++) {
                 (context.clearRect(0, 0, tileWidth, tileHeight),
@@ -2533,7 +2533,7 @@ function WanJuanAppCanvas({
                 let dataUrl = canvas.toDataURL(`image/png`),
                   tileNumber = row * gridSize + col + 1,
                   label = idTemplate.replace(`{num}`, tileNumber.toString());
-                _.push({
+                collectedNodes.push({
                   id: `split-${nodeId}-${row}-${col}-${Date.now()}`,
                   type: `imageNode`,
                   position: {
@@ -2553,8 +2553,8 @@ function WanJuanAppCanvas({
                   },
                 });
               }
-            setNodes((prevNodes) => prevNodes.concat(_));
-            let newEdges = _.map((node) => ({
+            setNodes((prevNodes) => prevNodes.concat(collectedNodes));
+            let newEdges = collectedNodes.map((node) => ({
               id: `e-${nodeId}-${node.id}`,
               source: nodeId,
               target: node.id,
@@ -2778,10 +2778,10 @@ function WanJuanAppCanvas({
                 text && textParts.push(text);
               }
             });
-            let _ = nodes2.find((node) => node.id === nodeId);
-            _ &&
-	              _.data.selectedContextResources &&
-	              _.data.selectedContextResources.forEach((resource) => {
+            let matchedNode = nodes2.find((node) => node.id === nodeId);
+            matchedNode &&
+	              matchedNode.data.selectedContextResources &&
+	              matchedNode.data.selectedContextResources.forEach((resource) => {
 	                wanjuanResourceKind(resource) === `image` ?
 	                  imageUrls.push(wanjuanNormalizeReferenceMediaUrl(resource, `image`)) :
 	                  wanjuanResourceKind(resource) === `video` ?
@@ -3699,8 +3699,8 @@ ${combinedPrompt}`,
 	                    directory: ``,
 		                  });
 		                  if (seedreamAsset?.ok && seedreamAsset.localPath) {
-		                    let seedreamSafeStorageSegment = (e) =>
-		                        String(e || `default`).replace(/[^a-zA-Z0-9_-]+/g, `_`).slice(0, 80) || `default`,
+		                    let seedreamSafeStorageSegment = (storageSegment) =>
+		                        String(storageSegment || `default`).replace(/[^a-zA-Z0-9_-]+/g, `_`).slice(0, 80) || `default`,
 		                      seedreamPortableRef = `project-asset-v2-${seedreamSafeStorageSegment(projectIdRef.current)}-${seedreamSafeStorageSegment(nodeId || `node`)}-${seedreamSafeStorageSegment(`media-imageUrl-portable`)}`;
 	                    seedreamDisplayImage =
 	                      typeof seedreamAsset.value == `string` &&
@@ -3936,8 +3936,8 @@ ${combinedPrompt}`,
               let suChuangReferenceUrls = new Set(
                   suChuangUrls.map((item) => String(item || ``).replace(/[`\s]/g, ``)),
                 ),
-                suChuangIsReferenceUrl = (e) => {
-                  let normalizedUrl = String(e || ``).replace(/[`\s]/g, ``);
+                suChuangIsReferenceUrl = (candidateUrl) => {
+                  let normalizedUrl = String(candidateUrl || ``).replace(/[`\s]/g, ``);
                   return (
                     suChuangReferenceUrls.has(normalizedUrl) || [...suChuangReferenceUrls].some(
                       (referenceUrl) => normalizedUrl && referenceUrl && (normalizedUrl === referenceUrl || normalizedUrl.includes(referenceUrl) || referenceUrl.includes(normalizedUrl)),
@@ -4537,8 +4537,8 @@ ${combinedPrompt}`,
             showToast(`今日额度已达上限 (${planLimits.dailyGenerations}次)，请明天再试`);
             return;
           }
-          let normalizeApiBase = (e) =>
-            String(e || ``)
+          let normalizeApiBase = (rawBaseUrl) =>
+            String(rawBaseUrl || ``)
             .replace(/\s+/g, ``)
             .replace(/\/$/, ``),
             normalizeVideoModelName = (modelName3) =>
@@ -4766,9 +4766,9 @@ ${combinedPrompt}`,
             ));
           try {
             showToast(`正在提交视频生成任务...`);
-            let l = getEdges(),
+            let edgesList = getEdges(),
               nodes2 = getNodes(),
-              incomingEdges = l.filter((edge) => edge.target === nodeId),
+              incomingEdges = edgesList.filter((edge) => edge.target === nodeId),
               imageReferences = [],
               promptParts = [],
               videoReferences = [],
@@ -4941,10 +4941,10 @@ ${combinedPrompt}`,
 	            let seedanceConnectedImageRefs = [...imageReferences],
 	              seedanceConnectedVideoRefs = [...videoReferences],
 	              seedanceConnectedAudioRefs = [...seedanceAudioRefs];
-	            let _ = nodes2.find((node) => node.id === nodeId);
-	            _ &&
-	              _.data.selectedContextResources &&
-	              _.data.selectedContextResources.forEach((resource) => {
+	            let matchedNodeForUpdate = nodes2.find((node) => node.id === nodeId);
+	            matchedNodeForUpdate &&
+	              matchedNodeForUpdate.data.selectedContextResources &&
+	              matchedNodeForUpdate.data.selectedContextResources.forEach((resource) => {
 	                wanjuanResourceKind(resource) === `image` ?
 	                  addVideoReferenceImage(resource) :
 	                  wanjuanResourceKind(resource) === `video` ?
@@ -5225,8 +5225,8 @@ ${combinedPrompt}`,
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
-                localStorage.setItem(dailyLimitKey, (l + 1).toString()),
-                setDailyGenerationCount(l + 1),
+                localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
+                setDailyGenerationCount(edgesList + 1),
                 showToast(`通义万相任务提交成功，正在生成中...`));
               let isDone = !1,
                 pollCount = 0,
@@ -5431,7 +5431,7 @@ ${combinedPrompt}`,
                   projectIdAtStart: projectIdAtStart,
                   persistVideoNodeState: persistVideoNodeState,
                   dailyKey: dailyLimitKey,
-                  dailyCount: l,
+                  dailyCount: edgesList,
                   setDailyCount: setDailyGenerationCount,
                 });
                 return;
@@ -5449,7 +5449,7 @@ ${combinedPrompt}`,
                     .split(`x`)
                     .map((size2) => parseInt(size2, 10));
                   if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) return `16:9`;
-                  let gcd = (e, t) => (t === 0 ? e : gcd(t, e % t)),
+                  let gcd = (gcdNumA, gcdNumB) => (gcdNumB === 0 ? gcdNumA : gcd(gcdNumB, gcdNumA % gcdNumB)),
                     gcd2 = gcd(width, height);
                   return `${width / gcd2}:${height / gcd2}`;
                 })(resolution),
@@ -5968,8 +5968,8 @@ ${combinedPrompt}`,
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
-	                localStorage.setItem(dailyLimitKey, (l + 1).toString()),
-                setDailyGenerationCount(l + 1),
+	                localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
+                setDailyGenerationCount(edgesList + 1),
                 showToast(`Seedance 任务提交成功，正在生成中...`));
               let done = !1,
                 pollCount = 0,
@@ -6717,7 +6717,7 @@ ${combinedPrompt}`,
                   value2.toUpperCase() :
                   value2;
               },
-              getVideoResolutionAdapterValue = (e) => {
+              getVideoResolutionAdapterValue = (resolutionValue) => {
                 let resolutionMode = String(
                   effectiveVideoRequestProfile?.resolutionValueMode ||
                   videoParameterAdapter.resolutionValueMode ||
@@ -6741,7 +6741,7 @@ ${combinedPrompt}`,
                   requestAspectRatioValue :
                   resolutionMode === `aspect-ratio-x` || resolutionMode === `ratio-x` ?
                   String(requestAspectRatioValue || ``).replace(`:`, `x`) :
-                  e;
+                  resolutionValue;
               },
               getVideoAspectRatioAdapterValue = () => {
                 let aspectRatioMode = String(
@@ -6999,8 +6999,8 @@ ${combinedPrompt}`,
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
-                localStorage.setItem(dailyLimitKey, (l + 1).toString()),
-                setDailyGenerationCount(l + 1),
+                localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
+                setDailyGenerationCount(edgesList + 1),
                 showToast(`任务提交成功，正在生成中...`));
               let done = !1,
                 pollCount = 0,
@@ -7415,18 +7415,18 @@ ${combinedPrompt}`,
                   // 数据驱动优先：若协议 responseMapping 配了视频结果路径(videoUrl/video_url/url/resultUrl 任一)，
                   // 先按协议路径取;取不到再回退下面的硬编码字段瀑布(保证未配协议的旧中转站仍可用)。
                   let readRespPath = (source, path) => {
-                    let p = String(path || ``).trim(); if (!p) return void 0;
-                    return p.split(`.`).reduce((cur, seg) => {
+                    let trimmedPath = String(path || ``).trim(); if (!trimmedPath) return void 0;
+                    return trimmedPath.split(`.`).reduce((cur, seg) => {
                       if (cur == null) return void 0;
-                      let am = seg.match(/^(.+)\[(\d+)\]$/);
-                      return am ? cur?.[am[1]]?.[Number(am[2])] : /^\d+$/.test(seg) ? cur?.[Number(seg)] : cur?.[seg];
+                      let arrayIndexMatch = seg.match(/^(.+)\[(\d+)\]$/);
+                      return arrayIndexMatch ? cur?.[arrayIndexMatch[1]]?.[Number(arrayIndexMatch[2])] : /^\d+$/.test(seg) ? cur?.[Number(seg)] : cur?.[seg];
                     }, source);
                   };
                   let videoRespMapping = effectiveVideoRequestProfile?.responseMapping && typeof effectiveVideoRequestProfile.responseMapping == `object` ? effectiveVideoRequestProfile.responseMapping : {};
                   let mappedVideoUrl = (() => {
                     let paths = videoRespMapping.videoUrl || videoRespMapping.video_url || videoRespMapping.url || videoRespMapping.resultUrl;
                     paths = Array.isArray(paths) ? paths : paths ? [paths] : [];
-                    for (let p of paths) { let v = readRespPath(taskResult, p); if (typeof v == `string` && v.trim()) return v.replace(/[`\s]/g, ``); }
+                    for (let responsePath of paths) { let resolvedValue = readRespPath(taskResult, responsePath); if (typeof resolvedValue == `string` && resolvedValue.trim()) return resolvedValue.replace(/[`\s]/g, ``); }
                     return ``;
                   })();
                   let videoUrl = mappedVideoUrl || (taskResult.video_url || taskResult.videoUrl || taskResult.data?.video_url || taskResult.data?.videoUrl || taskResult.output?.video_url || taskResult.output?.videoUrl || taskResult.result?.video_url || taskResult.result?.videoUrl || taskResult.video?.url || taskResult.artifact?.video?.url || taskResult.artifact?.video_raw?.url || taskResult.video || taskResult.result_url || taskResult.url)?.replace(
@@ -7517,8 +7517,8 @@ ${combinedPrompt}`,
 	              }, {
 	                clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	              }),
-              localStorage.setItem(dailyLimitKey, (l + 1).toString()),
-              setDailyGenerationCount(l + 1),
+              localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
+              setDailyGenerationCount(edgesList + 1),
               showToast(`任务提交成功，正在生成中...`));
             let isCompleted = !1,
               pollCount = 0,
@@ -7546,10 +7546,10 @@ ${combinedPrompt}`,
                     status = normalizeGenericStatus(
                       // 协议 responseMapping.status 配了状态路径就优先用,否则回退硬编码字段瀑布。
                       (() => {
-                        let rm = effectiveVideoRequestProfile?.responseMapping;
-                        let sp = rm && typeof rm == `object` ? (rm.status || rm.statusPath) : null;
-                        sp = Array.isArray(sp) ? sp : sp ? [sp] : [];
-                        for (let p of sp) { let v = String(p||``).trim().split(`.`).reduce((c,s)=>c==null?void 0:c[s], pollResult); if (v != null && v !== ``) return v; }
+                        let responseMapping = effectiveVideoRequestProfile?.responseMapping;
+                        let statusPathSpec = responseMapping && typeof responseMapping == `object` ? (responseMapping.status || responseMapping.statusPath) : null;
+                        statusPathSpec = Array.isArray(statusPathSpec) ? statusPathSpec : statusPathSpec ? [statusPathSpec] : [];
+                        for (let statusPathEntry of statusPathSpec) { let statusValue = String(statusPathEntry||``).trim().split(`.`).reduce((reduceAccumulator,pathSegment)=>reduceAccumulator==null?void 0:reduceAccumulator[pathSegment], pollResult); if (statusValue != null && statusValue !== ``) return statusValue; }
                         return pollResult.status || pollResult.data?.status || pollResult.output?.status || pollResult.result?.status || pollResult.task?.status;
                       })(),
                     ),
@@ -7566,10 +7566,10 @@ ${combinedPrompt}`,
                     pollResult.artifact?.video?.url ||
                     pollResult.artifact?.video_raw?.url;
                   let completedValueSet = (() => {
-                    let rm = effectiveVideoRequestProfile?.responseMapping;
-                    let cv = rm && typeof rm == `object` ? (rm.completedValues || rm.completed) : null;
-                    cv = Array.isArray(cv) ? cv.map((item) => normalizeGenericStatus(item)).filter(Boolean) : [];
-                    return cv.length ? cv : [`completed`, `complete`, `success`, `succeeded`, `done`, `finished`, `ready`, `succeed`];
+                    let videoResponseMapping = effectiveVideoRequestProfile?.responseMapping;
+                    let completedValuesSpec = videoResponseMapping && typeof videoResponseMapping == `object` ? (videoResponseMapping.completedValues || videoResponseMapping.completed) : null;
+                    completedValuesSpec = Array.isArray(completedValuesSpec) ? completedValuesSpec.map((item) => normalizeGenericStatus(item)).filter(Boolean) : [];
+                    return completedValuesSpec.length ? completedValuesSpec : [`completed`, `complete`, `success`, `succeeded`, `done`, `finished`, `ready`, `succeed`];
                   })();
                   if (((failureCount = 0), completedValueSet.includes(status) || genericDirectVideoUrl)) {
                     isCompleted = !0;
@@ -7984,7 +7984,7 @@ ${combinedPrompt}`,
 `)}\n${prompt}` :
                 prompt
               ).trim(),
-              _ = textModelName.toLowerCase(),
+              lowerModelName = textModelName.toLowerCase(),
               geminiRoutingHint = [
                 normalizedTextModelName,
                 textProtocolBindingName,
@@ -7998,9 +7998,9 @@ ${combinedPrompt}`,
               (textRequestProtocol === `gemini-generate-content` ||
                 /generatecontent/i.test(geminiRoutingHint)),
               isReasoningModel =
-              _.includes(`deepseek`) ||
-              _.includes(`o1-mini`) ||
-              _.includes(`o3-mini`),
+              lowerModelName.includes(`deepseek`) ||
+              lowerModelName.includes(`o1-mini`) ||
+              lowerModelName.includes(`o3-mini`),
               messages = [],
               textNodeVideoIsPublicUrl = (url) => {
                 try {
@@ -9129,8 +9129,8 @@ ${combinedPrompt}`,
             } catch (error) {
               console.warn(`Failed to parse polling headers`, error);
             }
-            let _ = config.method === `GET` ? void 0 : requestBody;
-            if (_ && headers[`Content-Type`] === `multipart/form-data`)
+            let requestPayload = config.method === `GET` ? void 0 : requestBody;
+            if (requestPayload && headers[`Content-Type`] === `multipart/form-data`)
               try {
                 let formFields = JSON.parse(requestBody),
                   formData = new FormData();
@@ -9154,7 +9154,7 @@ ${combinedPrompt}`,
                       typeof fieldValue == `object` ? JSON.stringify(fieldValue) : String(fieldValue),
                     );
                 }
-                ((_ = formData), delete headers[`Content-Type`]);
+                ((requestPayload = formData), delete headers[`Content-Type`]);
               } catch (error) {
                 throw (
                   console.warn(
@@ -9171,7 +9171,7 @@ ${combinedPrompt}`,
             let response = await fetch(apiUrl, {
               method: config.method,
               headers: headers,
-              body: _,
+              body: requestPayload,
               signal: abortController.signal,
             });
             if (!response.ok) throw Error(`API 请求失败: ${response.status}`);
@@ -9556,7 +9556,7 @@ ${combinedPrompt}`,
             !portraitAssetId &&
               targetNodeId &&
               void (async () => {
-                let sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+                let sleep = (durationMs) => new Promise((resolve) => setTimeout(resolve, durationMs)),
                   retryDelays = [2500, 4e3, 6e3, 8e3, 1e4, 12e3, 15e3, 18e3, 22e3, 25e3, 3e4, 3e4];
                 for (let attempt = 1; attempt <= retryDelays.length; attempt++) {
                   await sleep(retryDelays[attempt - 1]);
