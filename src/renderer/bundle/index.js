@@ -120,6 +120,7 @@ import {
   wanjuanTianjiPortraitToResource,
 } from "../lib/tianji-portrait";
 import {
+  wanjuanClearProjectAssetBindingsFromData,
   wanjuanResourceKind,
   wanjuanResourceSourceKind,
   wanjuanResourceMatchesFilter,
@@ -14442,29 +14443,6 @@ function wanjuanNewestNodeTask(tasks, node, projectId, currentTask) {
       .sort((taskA, taskB) => wanjuanTaskCreatedAt(taskB) - wanjuanTaskCreatedAt(taskA));
   if (!candidates.length) return null;
   return !currentTask || wanjuanTaskCreatedAt(candidates[0]) > currentTime ? candidates[0] : null;
-}
-function wanjuanClearProjectAssetBindingsFromData(data, fields = []) {
-  if (!data || typeof data != `object` || !Array.isArray(fields) || !fields.length) return data;
-  let bindings = data.projectAssetBindings;
-  if (!bindings || typeof bindings != `object`) return data;
-  let nextBindings = {
-      ...bindings
-    },
-    changed = !1;
-  fields.forEach((field) => {
-    if (Object.prototype.hasOwnProperty.call(nextBindings, field)) {
-      delete nextBindings[field];
-      changed = !0;
-    }
-  });
-  if (!changed) return data;
-  let nextData = {
-    ...data
-  };
-  Object.keys(nextBindings).length > 0 ?
-    (nextData.projectAssetBindings = nextBindings) :
-    delete nextData.projectAssetBindings;
-  return nextData;
 }
 function wanjuanResourceMediaUrl(resource) {
   let resourceKind = wanjuanResourceKind(resource);

@@ -100,6 +100,37 @@ export function wanjuanResourceMatchesFilter(
 }
 
 /**
+ * 从节点 data 中清除指定字段的工程素材绑定(projectAssetBindings)。
+ *
+ * 用于任务重新提交/结果覆盖前，把旧的 videoUrl / thumbnailUrl / resultData 等
+ * 字段绑定摘除；无任何命中时原样返回，绑定清空后删除整个 projectAssetBindings。
+ * 纯函数：不修改入参，返回新对象。
+ */
+export function wanjuanClearProjectAssetBindingsFromData(data: any, fields: string[] = []): any {
+  if (!data || typeof data != `object` || !Array.isArray(fields) || !fields.length) return data;
+  let bindings = data.projectAssetBindings;
+  if (!bindings || typeof bindings != `object`) return data;
+  let nextBindings: Record<string, any> = {
+      ...bindings,
+    },
+    changed = false;
+  fields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(nextBindings, field)) {
+      delete nextBindings[field];
+      changed = true;
+    }
+  });
+  if (!changed) return data;
+  let nextData = {
+    ...data,
+  };
+  Object.keys(nextBindings).length > 0
+    ? (nextData.projectAssetBindings = nextBindings)
+    : delete nextData.projectAssetBindings;
+  return nextData;
+}
+
+/**
  * 反序列化工程媒体绑定的可移植值(portableData)。
  *
  * 绑定不存在时返回 undefined；portableData 非字符串时原样返回；
