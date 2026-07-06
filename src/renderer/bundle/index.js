@@ -395,6 +395,14 @@ import { WanJuanFileToLinkNode } from "../components/file-to-link-node";
 import { WanJuanFlowEdge as et } from "../components/flow-edge";
 import { WanJuanImageAnnotateModal as nt } from "../components/image-annotate-modal";
 import {
+  WANJUAN_NODE_TYPES as at,
+  WANJUAN_EDGE_TYPES as ot,
+  wanjuanCreateStarterCanvas as st,
+  WANJUAN_STARTER_EDGES as ct,
+  wanjuanIsDefaultStarterCanvas as isDefaultStarterCanvas,
+  WANJUAN_PLAN_LIMITS as lt,
+} from "../components/canvas-node-registry";
+import {
   WANJUAN_MULTIWINDOW_SECRET_SALT as ft,
   WANJUAN_ACTIVATION_SERVER_URL as pt,
   wanjuanHashString as mt,
@@ -567,68 +575,6 @@ X.default.config({
   name: `mutiwindow`,
   storeName: `canvas_state`,
 	      });
-var at = {
-    imageNode: WanJuanWithRenderMode(Me, `imageNode`),
-    promptNode: WanJuanWithRenderMode(Ne, `promptNode`),
-    textNode: WanJuanWithRenderMode(Pe, `textNode`),
-    cropNode: Ie,
-    gridSplitNode: Le,
-    gridMergeNode: Re,
-    videoNode: WanJuanWithRenderMode(We, `videoNode`),
-    seedanceNode: WanJuanWithRenderMode(We, `seedanceNode`),
-    tongyiWanxiangNode: WanJuanWithRenderMode(We, `tongyiWanxiangNode`),
-    audioNode: WanJuanWithRenderMode(WanJuanUnifiedAudioNode, `audioNode`),
-    musicNode: WanJuanWithRenderMode(WanJuanTtsMusicNode, `musicNode`),
-    ttsMusicNode: WanJuanWithRenderMode(WanJuanTtsMusicNode, `ttsMusicNode`),
-    customNode: qe,
-	    videoExtractNode: WanJuanWithRenderMode(Je, `videoExtractNode`),
-	    textConcatNode: Qe,
-	    urlToImageNode: $e,
-	    fileToLinkNode: WanJuanFileToLinkNode,
-	    videoFaceBlurNode: WanJuanWithRenderMode(WanJuanVideoFaceBlurNode, `videoFaceBlurNode`),
-	    qwenTtsCloneNode: WanJuanWithRenderMode(WanJuanQwenTtsCloneNode, `qwenTtsCloneNode`),
-	    realEsrganVideoNode: WanJuanWithRenderMode(WanJuanRealEsrganVideoNode, `realEsrganVideoNode`),
-	  },
-	  ot = {
-	    default: et,
-	    custom: et,
-	  },
-  st = () => [{
-    id: `demo-prompt-1`,
-    type: `promptNode`,
-    position: {
-      x: 500,
-      y: 300
-    },
-    data: {
-      prompt: ``,
-      expanded: !0
-    },
-    style: {
-      width: 224,
-      height: 224
-    },
-  }, ],
-  ct = [],
-  isDefaultStarterCanvas = (nodes, t = []) => {
-    if (!Array.isArray(nodes) || nodes.length !== 1) return !1;
-    let firstNode = nodes[0];
-    return firstNode?.id === `demo-prompt-1` &&
-      firstNode?.type === `promptNode` &&
-      String(firstNode?.data?.prompt || ``).trim() === `` &&
-      (!Array.isArray(t) || t.length === 0);
-  },
-  lt = {
-    FREE: {
-      dailyGenerations: 999999
-    },
-    PRO: {
-      dailyGenerations: 999999
-    },
-    VIP: {
-      dailyGenerations: 999999
-    },
-  };
 
 function ut(props) {
   return jsxs(W, {
