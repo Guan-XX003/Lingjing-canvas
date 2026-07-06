@@ -343,6 +343,20 @@ const SKIP_ATTRIBUTE_SELECTOR = [
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
+// 记录自身 setAttribute 触发的 mutation 计数，observer 回调里逐条消费并跳过，避免自触发空转。
+const selfSetAttrCounts = new WeakMap();
+
+const markSelfSetAttr = (element) => {
+  selfSetAttrCounts.set(element, (selfSetAttrCounts.get(element) || 0) + 1);
+};
+
+const consumeSelfSetAttr = (element) => {
+  const count = selfSetAttrCounts.get(element) || 0;
+  if (!count) return false;
+  if (count === 1) selfSetAttrCounts.delete(element);
+  else selfSetAttrCounts.set(element, count - 1);
+  return true;
+};
 let currentLanguage = "zh-CN";
 let observer = null;
 let scheduled = false;
@@ -457,7 +471,10 @@ const translateElementAttributes = (element) => {
     if (!original) return;
     originalMap[attr] = original;
     const translated = t(original);
-    if (element.getAttribute(attr) !== translated) element.setAttribute(attr, translated);
+    if (element.getAttribute(attr) !== translated) {
+      markSelfSetAttr(element);
+      element.setAttribute(attr, translated);
+    }
   });
 };
 
@@ -516,7 +533,11 @@ const install = () => {
   }
   if (observer) return;
   observer = new MutationObserver((mutations) => {
-    if (mutations.some((mutation) => mutation.addedNodes.length || mutation.type === "attributes")) scheduleTranslate();
+    const relevant = mutations.some((mutation) => {
+      if (mutation.type === "attributes") return !consumeSelfSetAttr(mutation.target);
+      return mutation.addedNodes.length > 0;
+    });
+    if (relevant) scheduleTranslate();
   });
   const startObserver = () => {
     if (!document.body) return;
