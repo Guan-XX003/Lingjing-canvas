@@ -247,118 +247,25 @@ import {
   WanJuanIsTransientNetworkError,
   safeStringifyRequestForLog,
 } from "../lib/log-utils";
-const buildApiUrl = (base, path) => {
-  let normalizedBase = String(base || ``)
-    .replace(/\s+/g, ``)
-    .replace(/\/$/, ``),
-    trimmedPath = String(path || ``).trim();
-  return trimmedPath ?
-    /^https?:\/\//i.test(trimmedPath) ?
-    trimmedPath :
-    `${normalizedBase}${trimmedPath.startsWith(`/`) ? `` : `/`}${trimmedPath}` :
-    normalizedBase;
-};
-
-function normalizeModelBindingKeyHelper(e) {
-  return String(e || ``)
-    .trim()
-    .toLowerCase()
-    .replace(/[._/]+/g, `-`)
-    .replace(/\s+/g, `-`)
-    .replace(/-+/g, `-`)
-    .replace(/^-|-$/g, ``);
-}
-
-function getModelBindingCandidatesHelper(modelKey) {
-  let trimmedKey = String(modelKey || ``).trim();
-  if (!trimmedKey) return [];
-  let normalizedKey = normalizeModelBindingKeyHelper(trimmedKey),
-    candidates = new Set([trimmedKey, normalizedKey]),
-    aliasMap = {
-      "grok-video-3-10s": [`grok-videos`],
-      "grok-videos": [`grok-video-3-10s`],
-      "veo3-1-fast-components": [`veo-3-1-fast`, `veo_3_1-fast`],
-      "veo-3-1-fast": [`veo3-1-fast-components`, `veo_3_1-fast`],
-      "veo_3_1-fast": [`veo3-1-fast-components`, `veo-3-1-fast`],
-      "veo-3-1-fast-4k": [`veo_3_1-fast-4k`, `veo_3_1-fast-4K`],
-      "veo_3_1-fast-4k": [`veo-3-1-fast-4k`, `veo_3_1-fast-4K`],
-    },
-    addCandidate = (key) => {
-      let normalizedKey2 = normalizeModelBindingKeyHelper(key);
-      if (!normalizedKey2 || candidates.has(normalizedKey2)) return;
-      candidates.add(normalizedKey2), candidates.add(String(key).trim());
-      let aliases = aliasMap[normalizedKey2];
-      Array.isArray(aliases) && aliases.forEach(addCandidate);
-    };
-  return (addCandidate(trimmedKey), Array.from(candidates).filter(Boolean));
-}
-
-function resolveModelApiBindingIdHelper(obj, modelKey, fallback) {
-  if (!obj || typeof obj != `object`) return fallback;
-  let candidates = getModelBindingCandidatesHelper(modelKey);
-  for (let candidate of candidates)
-    if (obj[candidate]) return obj[candidate];
-  let candidateSet = new Set(candidates.map((candidate) => normalizeModelBindingKeyHelper(candidate)));
-  for (let [key, value] of Object.entries(obj))
-    if (candidateSet.has(normalizeModelBindingKeyHelper(key)) && value) return value;
-  return fallback;
-}
-
-function resolveModelProtocolBindingHelper(obj, modelKey, fallback = ``) {
-  if (!obj || typeof obj != `object`) return fallback;
-  let candidates = getModelBindingCandidatesHelper(modelKey);
-  for (let candidate of candidates)
-    if (obj[candidate]) return obj[candidate];
-  let candidateSet = new Set(candidates.map((candidate) => normalizeModelBindingKeyHelper(candidate)));
-  for (let [key, value] of Object.entries(obj))
-    if (candidateSet.has(normalizeModelBindingKeyHelper(key)) && value) return value;
-  return fallback;
-}
-
-function extractVideoTaskErrorHelper(result, fallbackMessage = `视频生成失败`) {
-  if (!result || typeof result != `object`) return fallbackMessage;
-  let errorItem = Array.isArray(result.items) ?
-    result.items.find((item) => item && typeof item == `object` && (item.error || item.message || item.status)) :
-    null,
-    error = errorItem?.error;
-  let errorMessage = [
-    typeof error == `string` ? error : ``,
-    error?.message,
-    error?.detail,
-    error?.code,
-    errorItem?.message,
-    errorItem?.detail,
-    result.error?.message,
-    result.error?.detail,
-    result.message,
-    result.detail,
-    result.base_resp?.status_msg,
-    result.base_resp?.message,
-    result.data?.error?.message,
-    result.data?.message,
-    result.data?.detail,
-    result.result?.error?.message,
-    result.result?.message,
-    result.output?.error?.message,
-    result.output?.message,
-  ].find((candidate) => typeof candidate == `string` && candidate.trim());
-  if (errorMessage) return errorMessage.trim();
-  let error2 = [error, result.error, result.data?.error, result.result?.error, result.output?.error].find(
-    (result2) => result2 && typeof result2 == `object`,
-  );
-  if (error2)
-    try {
-      return serializeErrorPreview(error2, 320);
-    } catch {}
-  return fallbackMessage;
-}
-
-function parseSeedanceList(input) {
-  return String(input || ``)
-    .split(/[\s,，、]+/)
-    .map((part) => part.trim())
-    .filter((input2) => input2 !== ``);
-}
+import {
+  buildApiUrl,
+  normalizeModelBindingKeyHelper,
+  getModelBindingCandidatesHelper,
+  resolveModelApiBindingIdHelper,
+  resolveModelProtocolBindingHelper,
+  extractVideoTaskErrorHelper,
+  parseSeedanceList,
+} from "../lib/model-binding";
+import {
+  localPathFromProjectFileUrl,
+  WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS,
+  wanjuanShouldSkipHydratedProjectAssetValue,
+  wanjuanResolveHydratedProjectAssetFileValue,
+  wanjuanGetDroppedFilePath,
+  wanjuanMediaKindFromFile,
+  wanjuanMimeFromMediaKind,
+  wanjuanBuildProjectAssetBinding,
+} from "../lib/project-asset-binding";
 
 if (typeof globalThis.hydrateProjectAssetContainer !== `function`) {
   globalThis.hydrateProjectAssetContainer = async function hydrateProjectAssetContainer(value) {
@@ -14449,62 +14356,6 @@ function videoEditorModal({
   );
 }
 
-function localPathFromProjectFileUrl(value) {
-  if (typeof value != `string` || !/^file:\/\//i.test(value)) return ``;
-  try {
-    const parsed = new URL(value);
-    const hostname = decodeURIComponent(parsed.hostname || ``);
-    const pathname = decodeURIComponent(parsed.pathname || ``);
-    if (hostname && hostname !== `localhost`) return `\\\\${hostname}${pathname.replace(/\//g, `\\`)}`;
-    if (/^\/[A-Za-z]:[\\/]/.test(pathname)) return pathname.slice(1).replace(/\//g, `\\`);
-    return pathname;
-  } catch {
-    return ``;
-  }
-}
-const WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS = 1500000;
-function wanjuanShouldSkipHydratedProjectAssetValue(value) {
-  return (
-    typeof value == `string` &&
-    value.length > WANJUAN_PROJECT_ASSET_HYDRATE_DATA_URL_MAX_CHARS &&
-    /^data:(?:image|video|audio)\//i.test(value)
-  );
-}
-function wanjuanResolveHydratedProjectAssetFileValue(container, baseKey) {
-  let binding = container?.projectAssetBindings?.[baseKey];
-  if (!binding?.localPath || typeof binding.localPath != `string`) return ``;
-  if (!/^(?:imageUrl|videoUrl|audioUrl|thumbnailUrl)$/i.test(baseKey)) return ``;
-  return buildProjectMediaFileUrl(binding.localPath);
-}
-function wanjuanGetDroppedFilePath(file) {
-  return typeof file?.path == `string` && file.path ? file.path : ``;
-}
-function wanjuanMediaKindFromFile(file) {
-  return file?.type?.startsWith?.(`video/`) ? `video` : file?.type?.startsWith?.(`audio/`) ? `audio` : `image`;
-}
-function wanjuanMimeFromMediaKind(kind, file) {
-  return file?.type || (kind === `video` ? `video/mp4` : kind === `audio` ? `audio/mpeg` : `image/png`);
-}
-function wanjuanBuildProjectAssetBinding(persisted, extras = {}) {
-  if (!persisted?.ok || !persisted.localPath) return null;
-  return {
-    ok: !0,
-    assetId: persisted.assetId,
-    localPath: persisted.localPath,
-    filename: persisted.filename,
-    mime: persisted.mime,
-    size: persisted.size,
-    sha256: persisted.sha256,
-    projectId: persisted.projectId,
-    nodeId: persisted.nodeId,
-    field: persisted.field,
-    kind: persisted.kind,
-    savedAt: persisted.savedAt,
-    valueFormat: persisted.valueFormat || `file-url`,
-    sourceOrigin: extras.sourceOrigin || `external-upload`,
-    sourceSignature: buildProjectMediaFileUrl(persisted.localPath),
-  };
-}
 function wanjuanRenderResourcePreview(resource, options = {}) {
   let resourceKind = wanjuanResourceKind(resource),
     mediaUrl = wanjuanResourceMediaUrl(resource),
