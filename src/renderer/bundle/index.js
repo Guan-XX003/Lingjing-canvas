@@ -188,6 +188,12 @@ import {
   wanjuanTianjiMediaUrl,
   wanjuanRunTianjiSeedanceVideo,
 } from "../lib/tianji-api";
+import {
+  wanjuanBrokenResourceImage,
+  wanjuanUseBrokenResourceImage,
+  wanjuanRenderResourceFilterTabs,
+  wanjuanRenderResourceSourceTabs,
+} from "../lib/resource-tabs";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -14390,7 +14396,6 @@ function videoEditorModal({
   );
 }
 
-const wanjuanBrokenResourceImage = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#151a22"/><stop offset="1" stop-color="#0b0f15"/></linearGradient></defs><rect width="96" height="96" rx="10" fill="url(#g)"/><rect x="16" y="18" width="64" height="44" rx="6" fill="#111827" stroke="#2f3847"/><circle cx="33" cy="33" r="5" fill="#4b5563"/><path d="M22 55l15-16 10 10 7-8 20 14H22z" fill="#334155"/><text x="48" y="78" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" fill="#9ca3af">素材失效</text></svg>`)}`;
 function localPathFromProjectFileUrl(value) {
   if (typeof value != `string` || !/^file:\/\//i.test(value)) return ``;
   try {
@@ -14446,13 +14451,6 @@ function wanjuanBuildProjectAssetBinding(persisted, extras = {}) {
     sourceOrigin: extras.sourceOrigin || `external-upload`,
     sourceSignature: buildProjectMediaFileUrl(persisted.localPath),
   };
-}
-function wanjuanUseBrokenResourceImage(event) {
-  let imageElement = event.currentTarget;
-  (imageElement.onerror = null,
-    (imageElement.src = wanjuanBrokenResourceImage),
-    imageElement.classList.add(`wanjuan-resource-image-broken`),
-    (imageElement.title = `素材图片无法加载，可能是链接已失效或本地文件不可访问`));
 }
 function wanjuanTaskCreatedAt(task) {
   let value = Number(task?.createdAt || task?.updatedAt || 0);
@@ -14750,62 +14748,6 @@ function wanjuanRenderResourcePreview(resource, options = {}) {
     },
     draggable: options.draggable === !0 ? `true` : void 0,
     onDragStart: options.onDragStart,
-  });
-}
-function wanjuanRenderResourceFilterTabs(selectedValue, onSelect, setPage) {
-  let activeValue = selectedValue || `all`;
-  return [
-    [`all`, `全部`],
-    [`image`, `图片`],
-    [`video`, `视频`],
-    [`audio`, `音频`],
-    [`text`, `文本`],
-  ].map(([optionValue, optionLabel]) =>
-    jsx(`button`, {
-      "aria-pressed": activeValue === optionValue,
-      "data-active": activeValue === optionValue ? `true` : void 0,
-      className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${activeValue === optionValue ? `wanjuan-resource-filter-tab-active` : `text-gray-400 hover:text-gray-200 hover:bg-white/5`}`,
-      onClick: () => {
-        (onSelect(optionValue), setPage(1));
-      },
-      children: optionLabel,
-    }, optionValue),
-	  );
-}
-function wanjuanRenderResourceSourceTabs(selectedValue, onSelect, favoriteActive, onToggle, setPage, a = !1) {
-  let activeValue = selectedValue || `all`;
-  return jsxs(`div`, {
-    className: `${a ? `mt-2 ` : ``}flex items-center gap-2 wanjuan-resource-source-filter`,
-    children: [
-      jsxs(`div`, {
-        className: `flex flex-1 min-w-0 bg-[#151a22] border border-[#343b46] rounded-lg p-0.5 wanjuan-resource-filter-group`,
-        children: [
-          [`all`, `全部来源`],
-          [`generated`, `AI生成`],
-          [`external`, `外部素材`],
-        ].map(([optionValue, optionLabel]) =>
-          jsx(`button`, {
-            "aria-pressed": activeValue === optionValue,
-            "data-active": activeValue === optionValue ? `true` : void 0,
-            className: `wanjuan-resource-filter-tab h-7 flex-1 min-w-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${activeValue === optionValue ? `wanjuan-resource-filter-tab-active` : `text-gray-400 hover:text-gray-200 hover:bg-white/5`}`,
-            onClick: () => {
-              (onSelect(optionValue), setPage(1));
-            },
-            children: optionLabel,
-          }, optionValue),
-        ),
-      }),
-      jsx(`button`, {
-        "aria-pressed": favoriteActive,
-        "data-active": favoriteActive ? `true` : void 0,
-        className: `wanjuan-resource-favorite-filter w-8 h-8 inline-flex items-center justify-center rounded-lg border transition-colors ${favoriteActive ? `wanjuan-resource-favorite-filter-active` : ``}`,
-        title: favoriteActive ? `显示全部收藏筛选` : `只看收藏`,
-        onClick: () => {
-          (onToggle(!favoriteActive), setPage(1));
-        },
-        children: favoriteActive ? `★` : `☆`,
-      }),
-    ],
   });
 }
 function wanjuanRenderResourcePickerHeader({
