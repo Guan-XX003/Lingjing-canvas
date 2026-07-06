@@ -142,6 +142,19 @@ function listIncompleteMigrations(payload = {}) {
       if (!name.endsWith(".json") || name.endsWith(".snapshot.json")) continue;
       try {
         const session = JSON.parse(fs.readFileSync(path.join(root, name), "utf8"));
+        if (session.status === "committed" && Array.isArray(session.references)) {
+          // 自愈：session 已 committed 但 manifest 缺失（崩溃在两个写入点之间），补写 manifest。
+          const manifestPath = path.join(manifestRoot(session.directory || directory), `${session.projectId}.json`);
+          if (!fs.existsSync(manifestPath)) {
+            atomicJson(manifestPath, {
+              version: 1,
+              projectId: session.projectId,
+              committedAt: session.updatedAt || new Date().toISOString(),
+              references: session.references
+            });
+          }
+          continue;
+        }
         if (!activeStatuses.has(session.status)) continue;
         const liveSession = sessions.get(session.id);
         if (liveSession && ["preparing", "archiving"].includes(liveSession.status)) continue;
@@ -208,10 +221,12 @@ function commitProjectMigration(payload = {}) {
     committedAt: new Date().toISOString(),
     references
   };
-  atomicJson(path.join(manifestRoot(session.directory), `${session.projectId}.json`), manifest);
+  // 提交顺序：先把 session 落盘为 committed（含 references），再写 manifest，最后释放锁。
+  // 若在两步之间崩溃，启动时可依据 committed session 重建 manifest（见 listIncompleteMigrations）。
   session.status = "committed";
   session.references = references;
   saveSession(session);
+  atomicJson(path.join(manifestRoot(session.directory), `${session.projectId}.json`), manifest);
   projectLocks.delete(session.lockKey);
   fs.rmSync(snapshotPath(session), { force: true });
   return { ok: true, session, manifest };
