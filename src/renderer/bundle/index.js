@@ -9,7 +9,7 @@ const __vite__mapDeps = (
   ]),
 ) => deps.map((index) => depFiles[index]);
 import {
-  r as e
+  r as wanjuanToEsm
 } from "./rolldown-runtime.js";
 import {
   $ as ArrowUp,
@@ -485,15 +485,15 @@ var zr = Array.isArray(globalThis?.zr) ? globalThis.zr : [];
     fetch(link.href, fetchOptions);
   }
 })();
-var je = wanjuanReactDomClientFactory(),
-  q = e(wanjuanReactFactory(), 1),
-  J = wanjuanJsxRuntimeFactory();
+var reactDomClientModule = wanjuanReactDomClientFactory(),
+  reactModule = wanjuanToEsm(wanjuanReactFactory(), 1),
+  jsxRuntimeModule = wanjuanJsxRuntimeFactory();
 // —— 可读化别名：从打包的 React / jsx-runtime / ReactDOM 取出常用成员（同一 React 实例，行为不变）——
-const { useState, useEffect, useRef, useCallback, useMemo, memo: reactMemo, StrictMode } = q;
-const { jsx, jsxs, Fragment } = J;
-const { createRoot } = je;
-var X = e(wanjuanLocalforageFactory(), 1);
-var ze = wanjuanReactDomFactory(),
+const { useState, useEffect, useRef, useCallback, useMemo, memo: reactMemo, StrictMode } = reactModule;
+const { jsx, jsxs, Fragment } = jsxRuntimeModule;
+const { createRoot } = reactDomClientModule;
+var localforageModule = wanjuanToEsm(wanjuanLocalforageFactory(), 1);
+var reactDomModule = wanjuanReactDomFactory(),
   Be = `modulepreload`,
   Ve = function(url, baseUrl) {
     return new URL(url, baseUrl).href;
@@ -567,11 +567,11 @@ var ze = wanjuanReactDomFactory(),
     });
   };
 
-var tt = e(wanjuanDagreFactory(), 1);
+var dagreModule = wanjuanToEsm(wanjuanDagreFactory(), 1);
 
 
-X.default.config({
-  driver: [X.default.INDEXEDDB, X.default.LOCALSTORAGE],
+localforageModule.default.config({
+  driver: [localforageModule.default.INDEXEDDB, localforageModule.default.LOCALSTORAGE],
   name: `mutiwindow`,
   storeName: `canvas_state`,
 	      });
@@ -1323,7 +1323,7 @@ function WanJuanAppCanvas({
 	          await globalThis.wanjuanProjectSafety.beforeCanvasSave({
 	            projectId: currentProjectId,
 	            state: canvasState,
-	            previousState: await X.default.getItem(storageKey),
+	            previousState: await localforageModule.default.getItem(storageKey),
 	          }) :
 	          null;
 	        if (safetyResult?.block) {
@@ -1350,7 +1350,7 @@ function WanJuanAppCanvas({
             console.warn(`Canvas save cancelled because storage maintenance started during persistence`, currentProjectId);
             return;
           }
-	        await X.default.setItem(storageKey, canvasState),
+	        await localforageModule.default.setItem(storageKey, canvasState),
           window.wanjuanDesktop?.syncProjectReferences &&
           (await window.wanjuanDesktop.syncProjectReferences({
             projectId: currentProjectId,
@@ -1426,7 +1426,7 @@ function WanJuanAppCanvas({
       if (
         !window.wanjuanDesktop?.chooseProjectAssetFile ||
         !window.wanjuanDesktop?.persistProjectAsset ||
-        !X.default
+        !localforageModule.default
       ) {
         window.alert(`当前桌面版本暂不支持重新链接素材`);
         return;
@@ -1474,7 +1474,7 @@ function WanJuanAppCanvas({
           entry.field === `text` || entry.field === `resultData` ?
           node.data[entry.field] :
           buildProjectMediaFileUrl(persistResult.localPath);
-        portableData !== void 0 && (await X.default.setItem(storageKey, portableData));
+        portableData !== void 0 && (await localforageModule.default.setItem(storageKey, portableData));
         let revivedValue = reviveProjectMediaBindingValue({
           portableData: portableData,
           valueFormat: persistResult.valueFormat || binding.valueFormat,
@@ -1647,7 +1647,7 @@ function WanJuanAppCanvas({
         !window.wanjuanDesktop?.chooseProjectAssetFolder ||
         !window.wanjuanDesktop?.findProjectAssetsInFolder ||
         !window.wanjuanDesktop?.persistProjectAsset ||
-        !X.default
+        !localforageModule.default
       ) {
         window.alert(`当前桌面版本暂不支持从文件夹自动链接素材`);
         return;
@@ -1731,7 +1731,7 @@ function WanJuanAppCanvas({
           entry.field === `text` || entry.field === `resultData` ?
           node.data[entry.field] :
           buildProjectMediaFileUrl(persistResult.localPath);
-        portableData !== void 0 && (await X.default.setItem(storageKey, portableData));
+        portableData !== void 0 && (await localforageModule.default.setItem(storageKey, portableData));
         let revivedValue = reviveProjectMediaBindingValue({
           portableData: portableData,
           valueFormat: persistResult.valueFormat || binding.valueFormat,
@@ -1793,7 +1793,7 @@ function WanJuanAppCanvas({
           if (initialEmptyProject) {
             (setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
             try {
-              await X.default.removeItem(storageKey);
+              await localforageModule.default.removeItem(storageKey);
               localStorage.removeItem(storageKey);
               typeof chrome < `u` &&
               chrome.storage &&
@@ -1811,10 +1811,10 @@ function WanJuanAppCanvas({
 	            return;
 	          }
           try {
-            let storedState = await X.default.getItem(storageKey);
+            let storedState = await localforageModule.default.getItem(storageKey);
             if (!storedState) {
               let rawValue = localStorage.getItem(storageKey);
-              rawValue && ((storedState = JSON.parse(rawValue)), await X.default.setItem(storageKey, storedState));
+              rawValue && ((storedState = JSON.parse(rawValue)), await localforageModule.default.setItem(storageKey, storedState));
             }
             if (
               !storedState &&
@@ -1827,7 +1827,7 @@ function WanJuanAppCanvas({
                   resolve(items?.[`${desktopCanvasMirrorPrefix}${storageKey.slice(canvasStateKeyPrefix.length)}`]),
                 );
               });
-              mirroredState && ((storedState = mirroredState), await X.default.setItem(storageKey, mirroredState));
+              mirroredState && ((storedState = mirroredState), await localforageModule.default.setItem(storageKey, mirroredState));
             }
             if (
               storedState &&
@@ -3717,8 +3717,8 @@ ${combinedPrompt}`,
 	                      sourceSignature: seedreamImage,
 	                      missing: !1,
 	                    };
-	                    X.default &&
-	                      (await X.default.setItem(
+	                    localforageModule.default &&
+	                      (await localforageModule.default.setItem(
 	                        seedreamPortableRef,
 	                        seedreamAsset.value !== void 0 ?
 	                        seedreamAsset.value :
@@ -4603,7 +4603,7 @@ ${combinedPrompt}`,
             persistVideoNodeState = async (styleUpdates = {}, dataUpdates = {}, options = {}) => {
               try {
                 let storageKey = `${canvasStateKeyPrefix}${projectIdAtStart}`,
-                  projectData = await X.default.getItem(storageKey);
+                  projectData = await localforageModule.default.getItem(storageKey);
                 projectData?.nodes &&
                   ((projectData = {
                       ...projectData,
@@ -4628,7 +4628,7 @@ ${combinedPrompt}`,
                         };
                       }),
                     }),
-                    await X.default.setItem(storageKey, projectData));
+                    await localforageModule.default.setItem(storageKey, projectData));
               } catch (error) {
                 console.warn(`Failed to persist background video node`, error);
               }
@@ -11326,7 +11326,7 @@ ${combinedPrompt}`,
       setEdges((edges2) => edges2.filter((edge) => edge.id !== `ghost-edge`)));
   }, [menuPosition, setNodes, setEdges]);
   let autoLayout = useCallback(() => {
-      let dagreGraph = new tt.default.graphlib.Graph({
+      let dagreGraph = new dagreModule.default.graphlib.Graph({
         compound: !0
       });
       (dagreGraph.setDefaultEdgeLabel(() => ({})),
@@ -11347,7 +11347,7 @@ ${combinedPrompt}`,
         edges2.forEach((edge) => {
           dagreGraph.setEdge(edge.source, edge.target);
         }),
-        tt.default.layout(dagreGraph),
+        dagreModule.default.layout(dagreGraph),
         setNodes((nodes3) =>
           nodes3.map((node) => {
             let layoutNode = dagreGraph.node(node.id);
@@ -13650,7 +13650,7 @@ ${combinedPrompt}`,
           ],
         }),
         previewImageUrl &&
-        ze.createPortal(
+        reactDomModule.createPortal(
           jsx(WjImageZoomModal, {
             imageUrl: previewImageUrl,
             onClose: () => setPreviewImageUrl(null)
@@ -15132,7 +15132,7 @@ time=${normalizedTtl}`,
       if (!missingResources.length) return resources;
       let updatedResources = [...missingResources, ...resources];
       return (
-        X.default.setItem(`transitResources`, updatedResources),
+        localforageModule.default.setItem(`transitResources`, updatedResources),
         _ && chrome.storage.local.set({
           transitResources: updatedResources
         }),
@@ -18817,7 +18817,7 @@ ${docText}`;
                 [`transitResources`, `transitGridCols`],
                 async (result2) => {
                   try {
-                    let storedResources = await X.default.getItem(`transitResources`);
+                    let storedResources = await localforageModule.default.getItem(`transitResources`);
                     if (storedResources && Array.isArray(storedResources) && storedResources.length > 0)
                       if (
                         result2.transitResources &&
@@ -18830,7 +18830,7 @@ ${docText}`;
                         if (newResources.length > 0) {
                           let mergedResources = [...newResources, ...storedResources];
                           (setTransitResources(mergedResources),
-                            X.default
+                            localforageModule.default
                             .setItem(`transitResources`, mergedResources)
                             .catch((e) => console.error(e)));
                         } else setTransitResources(storedResources);
@@ -18838,7 +18838,7 @@ ${docText}`;
                     else
                       result2.transitResources &&
                       (setTransitResources(result2.transitResources),
-                        X.default.setItem(
+                        localforageModule.default.setItem(
                           `transitResources`,
                           result2.transitResources,
                         ));
@@ -19329,7 +19329,7 @@ ${docText}`;
                       if (prevResources.find((resource) => resource.id === message.resource.id)) return prevResources;
                       let updatedResources = [message.resource, ...prevResources];
                       return (
-                        X.default
+                        localforageModule.default
                         .setItem(`transitResources`, updatedResources)
                         .catch((error) =>
                           console.error(`localforage save error`, error),
@@ -19622,7 +19622,7 @@ ${docText}`;
                 } : resource,
               );
               (setTransitResources(updatedResources),
-                await X.default.setItem(`transitResources`, updatedResources),
+                await localforageModule.default.setItem(`transitResources`, updatedResources),
                 _ && chrome.storage.local.set({
                   transitResources: updatedResources
                 }));
@@ -19631,7 +19631,7 @@ ${docText}`;
               if (confirm(`确定清空所有未收藏的资源吗？（收藏的资源将保留）`)) {
                 let favoritedResources = transitResources.filter((resource) => resource.isFavorite);
                 (setTransitResources(favoritedResources),
-                  await X.default.setItem(`transitResources`, favoritedResources),
+                  await localforageModule.default.setItem(`transitResources`, favoritedResources),
                   _ && chrome.storage.local.set({
                     transitResources: favoritedResources
                   }));
@@ -19712,7 +19712,7 @@ ${docText}`;
                 let updatedResources = transitResources.filter((resource) => !invalidIds.has(resource.id));
                 (setTransitResources(updatedResources),
                   setCurrentPage(1),
-                  await X.default.setItem(`transitResources`, updatedResources),
+                  await localforageModule.default.setItem(`transitResources`, updatedResources),
                   _ && chrome.storage.local.set({
                     transitResources: updatedResources
                   }),
@@ -19775,7 +19775,7 @@ ${docText}`;
       setTransitResources((prevResources) => {
         let updatedResources = [newResource, ...prevResources];
         return (
-          X.default.setItem(`transitResources`, updatedResources),
+          localforageModule.default.setItem(`transitResources`, updatedResources),
           _ && chrome.storage.local.set({
             transitResources: updatedResources
           }),
@@ -19853,7 +19853,7 @@ ${docText}`;
 	      setTransitResources((newResources) => {
 	        let mergedResources = [...externalUploads, ...newResources];
 	        return (
-	          X.default.setItem(`transitResources`, mergedResources),
+	          localforageModule.default.setItem(`transitResources`, mergedResources),
 	          _ && chrome.storage.local.set({
 	            transitResources: mergedResources
 	          }),
@@ -19933,7 +19933,7 @@ ${docText}`;
       setTransitResources((newResources) => {
         let mergedResources = [...audioResources, ...newResources];
         return (
-          X.default.setItem(`transitResources`, mergedResources),
+          localforageModule.default.setItem(`transitResources`, mergedResources),
           _ && chrome.storage.local.set({
             transitResources: mergedResources
           }),
@@ -20041,7 +20041,7 @@ ${docText}`;
             isFavorite: resource.isFavorite,
           } : resource);
           return (
-            X.default.setItem(`transitResources`, replaced),
+            localforageModule.default.setItem(`transitResources`, replaced),
             _ && chrome.storage.local.set({
               transitResources: replaced
             }),
@@ -20050,7 +20050,7 @@ ${docText}`;
         });
       });
       return (
-        X.default.setItem(`transitResources`, updatedResources),
+        localforageModule.default.setItem(`transitResources`, updatedResources),
         _ && chrome.storage.local.set({
           transitResources: updatedResources
         }),
@@ -20218,7 +20218,7 @@ ${docText}`;
           setTransitResources((resources) => {
             let updatedResources = resources.filter((resource) => resource.id !== resourceId);
             return (
-              X.default.setItem(`transitResources`, updatedResources),
+              localforageModule.default.setItem(`transitResources`, updatedResources),
               _ && chrome.storage.local.set({
                 transitResources: updatedResources
               }),
@@ -20380,24 +20380,24 @@ ${docText}`;
                 let canvasStorageKey = getProjectCanvasStorageKey(projectId),
                   assetRefs = new Set(),
                   portableDataRefs = new Set();
-                if (X.default)
+                if (localforageModule.default)
                   try {
-                    let canvasData = await X.default.getItem(canvasStorageKey);
+                    let canvasData = await localforageModule.default.getItem(canvasStorageKey);
                     (extractProjectAssetRefs(canvasData).forEach((assetRef) => assetRefs.add(assetRef)),
                       extractProjectPortableDataRefs(canvasData).forEach((dataRef) => portableDataRefs.add(dataRef)),
-                      await X.default.removeItem(canvasStorageKey));
+                      await localforageModule.default.removeItem(canvasStorageKey));
                   } catch (error) {
                     console.warn(`删除项目画布缓存失败`, error);
                   }
                 for (let assetRef of assetRefs)
                   try {
-                    await X.default.removeItem(assetRef);
+                    await localforageModule.default.removeItem(assetRef);
                   } catch (error) {
                     console.warn(`删除项目资产引用失败`, assetRef, error);
                   }
                 for (let dataRef of portableDataRefs)
                   try {
-                    assetRefs.has(dataRef) || (await X.default.removeItem(dataRef));
+                    assetRefs.has(dataRef) || (await localforageModule.default.removeItem(dataRef));
                   } catch (error) {
                     console.warn(`删除项目便携资产失败`, dataRef, error);
                   }
@@ -20462,7 +20462,7 @@ ${docText}`;
         buildCompleteStorageReferenceIndex = async () => {
           let indexedProjects = [];
           for (let project of projects) {
-            let state = await X.default?.getItem(getProjectCanvasStorageKey(project.id));
+            let state = await localforageModule.default?.getItem(getProjectCanvasStorageKey(project.id));
             indexedProjects.push({
               projectId: project.id,
               complete: !!state,
@@ -24822,7 +24822,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	              let portableString = await convertProjectAssetValueToPortableString(value),
 	                storageKey = buildProjectAssetStorageKey(projectId, nodeId, `${path}-${key}`);
               ((assetMap[storageKey] = portableString),
-                persist && X.default && (await X.default.setItem(storageKey, portableString)),
+                persist && localforageModule.default && (await localforageModule.default.setItem(storageKey, portableString)),
                 (result[`${key}${PROJECT_ASSET_REF_SUFFIX}`] = storageKey));
               continue;
             }
@@ -24867,9 +24867,9 @@ ${String(l || ``).slice(0, 5e4)}`;
 	              for (let [key, value] of Object.entries(container)) {
 	                if (typeof value == `string` && key.endsWith(PROJECT_ASSET_REF_SUFFIX)) {
 	                  let baseKey = key.slice(0, -PROJECT_ASSET_REF_SUFFIX.length);
-	                  if (baseKey && container[baseKey] === void 0 && X.default)
+	                  if (baseKey && container[baseKey] === void 0 && localforageModule.default)
 	                    try {
-	                      let storedValue = await X.default.getItem(value);
+	                      let storedValue = await localforageModule.default.getItem(value);
                       if (wanjuanShouldSkipHydratedProjectAssetValue(storedValue)) {
                         let fileValue = wanjuanResolveHydratedProjectAssetFileValue(container, baseKey);
                         fileValue && (result[baseKey] = fileValue);
@@ -25080,9 +25080,9 @@ ${String(l || ``).slice(0, 5e4)}`;
                   if (!binding || typeof binding != `object`) return void 0;
                   if (binding.portableData !== void 0 && binding.portableData !== null && binding.portableData !== ``)
                     return binding.portableData;
-                  if (typeof binding.portableDataRef == `string` && binding.portableDataRef && X.default)
+                  if (typeof binding.portableDataRef == `string` && binding.portableDataRef && localforageModule.default)
                     try {
-                      let storedValue = await X.default.getItem(binding.portableDataRef);
+                      let storedValue = await localforageModule.default.getItem(binding.portableDataRef);
                       if (storedValue !== void 0 && storedValue !== null && storedValue !== ``) return storedValue;
                     } catch {}
                   return void 0;
@@ -25388,7 +25388,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                   },
                   prepareProjectMediaStateForPersistence =
                   (globalThis.prepareProjectMediaStateForPersistence = async (canvasState, projectId, n, options = {}) => {
-                    if (!window.wanjuanDesktop?.persistProjectAsset || !X.default) return canvasState;
+                    if (!window.wanjuanDesktop?.persistProjectAsset || !localforageModule.default) return canvasState;
                     let clonedState = cloneBackupValue(canvasState || {});
                     if (!Array.isArray(clonedState.nodes) || !clonedState.nodes.length) return clonedState;
                     clonedState.nodes = await Promise.all(
@@ -25460,7 +25460,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                 let archivedFileUrl = buildProjectMediaFileUrl(archivedAsset.localPath);
                                 archivedFileUrl && (data[bindingKey] = archivedFileUrl);
                                 try {
-                                  binding.portableDataRef && (await X.default.removeItem(binding.portableDataRef));
+                                  binding.portableDataRef && (await localforageModule.default.removeItem(binding.portableDataRef));
                                 } catch {}
                                 bindings[bindingKey] = {
                                   ...binding,
@@ -25481,7 +25481,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           }
                           if (strippedBinding !== binding) {
                             try {
-                              binding.portableDataRef && (await X.default.removeItem(binding.portableDataRef));
+                              binding.portableDataRef && (await localforageModule.default.removeItem(binding.portableDataRef));
                             } catch {}
                             let localFileUrl = buildProjectMediaFileUrl(strippedBinding.localPath);
                             localFileUrl && (data[bindingKey] = localFileUrl);
@@ -25548,12 +25548,12 @@ ${String(l || ``).slice(0, 5e4)}`;
                             if (!persistedAsset?.ok) throw Error(persistedAsset?.error || `Project media persist failed`);
                             if (fileBacked) {
                               try {
-                                await X.default.removeItem(storageKey);
+                                await localforageModule.default.removeItem(storageKey);
                               } catch {}
                               let localFileUrl = buildProjectMediaFileUrl(persistedAsset.localPath);
                               localFileUrl && (data[bindingKey] = localFileUrl);
                             } else {
-                              await X.default.setItem(storageKey, payload.portableValue);
+                              await localforageModule.default.setItem(storageKey, payload.portableValue);
                             }
                             (bindings[bindingKey] = {
                                 ...binding,
@@ -25574,7 +25574,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           } catch (error) {
                             console.warn(`Project media persist skipped`, error);
                             try {
-                              await X.default.setItem(storageKey, payload.portableValue);
+                              await localforageModule.default.setItem(storageKey, payload.portableValue);
                             } catch {}
                             bindings[bindingKey] = {
                               ...binding,
@@ -25648,14 +25648,14 @@ ${String(l || ``).slice(0, 5e4)}`;
                   }),
                   runForcedArchiveMigration =
                   (globalThis.runForcedArchiveMigration = async (projectId, directory, options = {}) => {
-                    if (!X.default || !window.wanjuanDesktop?.beginProjectMigration)
+                    if (!localforageModule.default || !window.wanjuanDesktop?.beginProjectMigration)
                       throw Error(`Migration API unavailable`);
                     if (options.currentProjectId === projectId)
                       throw Error(`CURRENT_PROJECT_MUST_BE_CLOSED`);
                     if (projectMigrationLocks.has(projectId))
                       throw Error(`PROJECT_MIGRATION_LOCKED`);
                     let storageKey = getProjectCanvasStorageKey(projectId),
-                      originalState = await X.default.getItem(storageKey);
+                      originalState = await localforageModule.default.getItem(storageKey);
                     if (!originalState) throw Error(`PROJECT_STATE_NOT_FOUND`);
                     let originalReferences = [...collectProjectFileReferences(originalState)],
                       originalReferenceCheck = await window.wanjuanDesktop.checkProjectAssets(originalReferences),
@@ -25690,7 +25690,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                       let check = await window.wanjuanDesktop.checkProjectAssets(references);
                       let missing = (check?.assets || []).filter((asset) => !asset.exists);
                       if (missing.length) throw Error(`MIGRATION_REFERENCE_MISSING:${missing.length}`);
-                      await X.default.setItem(storageKey, migratedState);
+                      await localforageModule.default.setItem(storageKey, migratedState);
                       let committed = await window.wanjuanDesktop.commitProjectMigration({
                         migrationId: migrationId,
                         references: references,
@@ -25705,7 +25705,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                         session: committed.session,
                       };
                     } catch (error) {
-                      await X.default.setItem(storageKey, originalState);
+                      await localforageModule.default.setItem(storageKey, originalState);
                       await window.wanjuanDesktop.rollbackProjectMigration({
                         migrationId: migrationId,
                         error: String(error?.message || error),
@@ -25718,7 +25718,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                   }),
                   recoverInterruptedProjectMigrations =
                   (globalThis.recoverInterruptedProjectMigrations = async (directory = ``) => {
-                    if (!X.default || !window.wanjuanDesktop?.listIncompleteMigrations) return [];
+                    if (!localforageModule.default || !window.wanjuanDesktop?.listIncompleteMigrations) return [];
                     let result = await window.wanjuanDesktop.listIncompleteMigrations({
                         directory: directory
                       }),
@@ -25730,7 +25730,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           directory: directory,
                         });
                         if (!snapshot?.ok) throw Error(snapshot?.error || `Migration snapshot unavailable`);
-                        await X.default.setItem(getProjectCanvasStorageKey(session.projectId), snapshot.state);
+                        await localforageModule.default.setItem(getProjectCanvasStorageKey(session.projectId), snapshot.state);
                         await window.wanjuanDesktop.rollbackProjectMigration({
                           migrationId: session.id,
                           directory: directory,
@@ -26050,7 +26050,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                     },
                     collectSelectedLocalforageBackup = async (moduleSelection, options = {}, n = {}) => {
                       let canvasStates = {};
-                      if (!X.default) return canvasStates;
+                      if (!localforageModule.default) return canvasStates;
                       if (!normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]).includes(`projects`))
                         return canvasStates;
                       let projectIds = Array.isArray(options.projectIds) && options.projectIds.length ?
@@ -26065,7 +26065,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                         let storageKey = getProjectCanvasStorageKey(projectId),
                           canvasState = null;
                         try {
-                          canvasState = await X.default.getItem(storageKey);
+                          canvasState = await localforageModule.default.getItem(storageKey);
                         } catch {}
                         if (!canvasState && Object.prototype.hasOwnProperty.call(mirrorSource, getDesktopProjectMirrorStorageKey(projectId))) {
                           canvasState = mirrorSource[getDesktopProjectMirrorStorageKey(projectId)];
@@ -26077,7 +26077,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                       }
                       for (let storageKey of assetRefs)
                         try {
-                          let storedValue = await X.default.getItem(storageKey);
+                          let storedValue = await localforageModule.default.getItem(storageKey);
                           storedValue !== void 0 && (canvasStates[storageKey] = storedValue);
                         } catch {}
                       return canvasStates;
@@ -26616,52 +26616,52 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       persistStorage();
                                   });
                                 });
-                              if (restoreProjects && X.default) {
+                              if (restoreProjects && localforageModule.default) {
                                 let referencedAssetKeys = new Set(),
                                   referencedPortableDataKeys = new Set();
                                 for (let projectId of selectedProjectIds) {
                                   let canvasStorageKey = getProjectCanvasStorageKey(projectId);
                                   try {
-                                    let projectState = await X.default.getItem(canvasStorageKey);
+                                    let projectState = await localforageModule.default.getItem(canvasStorageKey);
                                     (extractProjectAssetRefs(projectState).forEach((assetRef) => referencedAssetKeys.add(assetRef)),
                                       extractProjectPortableDataRefs(projectState).forEach((portableDataRef) => referencedPortableDataKeys.add(portableDataRef)));
                                   } catch (error) {
                                     console.warn(`Failed to inspect existing project state`, error);
                                   }
                                   try {
-                                    await X.default.removeItem(canvasStorageKey);
+                                    await localforageModule.default.removeItem(canvasStorageKey);
                                   } catch (error) {
                                     console.warn(`Failed to clear existing project state`, error);
                                   }
                                 }
                                 for (let storageKey of referencedAssetKeys)
                                   try {
-                                    await X.default.removeItem(storageKey);
+                                    await localforageModule.default.removeItem(storageKey);
                                   } catch (error) {
                                     console.warn(`Failed to clear project asset ref`, storageKey, error);
                                   }
                                 for (let assetKey of referencedPortableDataKeys)
                                   try {
-                                    referencedAssetKeys.has(assetKey) || (await X.default.removeItem(assetKey));
+                                    referencedAssetKeys.has(assetKey) || (await localforageModule.default.removeItem(assetKey));
                                   } catch (error) {
                                     console.warn(`Failed to clear portable project asset`, assetKey, error);
                                   }
                                 for (let [projectId, canvasState] of Object.entries(selectedCanvasStates))
-                                  await X.default.setItem(getProjectCanvasStorageKey(projectId), canvasState);
+                                  await localforageModule.default.setItem(getProjectCanvasStorageKey(projectId), canvasState);
                                 for (let [storageKey, assetEntry] of Object.entries(assets)) {
                                   if (assetEntry && typeof assetEntry == `object` && assetEntry.__wanjuanExternalAssetFile && assetEntry.filePath) {
-                                    await X.default.setItem(storageKey, buildProjectMediaFileUrl(assetEntry.filePath) || assetEntry.filePath);
+                                    await localforageModule.default.setItem(storageKey, buildProjectMediaFileUrl(assetEntry.filePath) || assetEntry.filePath);
                                     continue;
                                   }
                                   if (typeof assetEntry == `string` && assetEntry.startsWith(PROJECT_ASSET_MANIFEST_STORAGE_PREFIX)) continue;
-                                  await X.default.setItem(storageKey, assetEntry);
+                                  await localforageModule.default.setItem(storageKey, assetEntry);
                                 }
                               }
                               (restoreResources || (restoreProjects && transitResources2 !== void 0)) &&
-                              X.default &&
+                              localforageModule.default &&
                                 (mergedTransitResources !== void 0 ?
-                                  await X.default.setItem(TRANSIT_RESOURCES_STORAGE_KEY, mergedTransitResources) :
-                                  restoreResources && (await X.default.removeItem(TRANSIT_RESOURCES_STORAGE_KEY)));
+                                  await localforageModule.default.setItem(TRANSIT_RESOURCES_STORAGE_KEY, mergedTransitResources) :
+                                  restoreResources && (await localforageModule.default.removeItem(TRANSIT_RESOURCES_STORAGE_KEY)));
                               let restoreReport = buildBackupRestoreReport({
                                 modules: selectedModules,
                                 settingsSections: selectedSections,
