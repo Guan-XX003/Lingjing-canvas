@@ -807,8 +807,8 @@ function WanJuanAppCanvas({
     [previewImageUrl, setPreviewImageUrl] = useState(null),
     [imageEditState, setImageEditState] = useState(null),
 	    [videoEditState, setVideoEditState] = useState(null),
-	    [ve, ye] = useState(!1),
-	    [xe, Ce] = useState(!1),
+	    [isResourceSubmenuOpen, setResourceSubmenuOpen] = useState(!1),
+	    [resourceSubmenuOpenAlt, setResourceSubmenuOpenAlt] = useState(!1),
 	    abortControllersRef = useRef(new Map()),
 	    wanjuanPrevEdgesRef = useRef([]),
 	    [multiConnectIds, setMultiConnectIds] = useState(null),
@@ -2321,7 +2321,7 @@ function WanJuanAppCanvas({
 	            menuOrigin: clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
 	            menuBottom: containerRect.height - (clientY - containerRect.top),
 	            type: `canvas`
-          }), ye(!1), Ce(!1));
+          }), setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
         }
       },
       [setMenuPosition],
@@ -2339,7 +2339,7 @@ function WanJuanAppCanvas({
               type: `node`,
               nodeId: t.id,
             }),
-            ye(!1), Ce(!1));
+            setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
       },
       [setMenuPosition],
     ),
@@ -2355,7 +2355,7 @@ function WanJuanAppCanvas({
               menuBottom: containerRect.height - (event.clientY - containerRect.top),
               type: `selection`,
             }),
-            ye(!1), Ce(!1));
+            setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
       },
       [setMenuPosition],
     ),
@@ -2372,7 +2372,7 @@ function WanJuanAppCanvas({
                   menuBottom: containerRect.height - (event.clientY - containerRect.top),
                   type: `selection`,
                 }),
-                ye(!1), Ce(!1));
+                setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
           }
         }, 50);
       },
@@ -2406,7 +2406,7 @@ function WanJuanAppCanvas({
       [multiConnectIds, setEdges, showToast],
     ),
     handleCancel = useCallback(() => {
-      (setMenuPosition(null), ye(!1), Ce(!1), multiConnectIds && (setMultiConnectIds(null), showToast(`已取消多项连接`)));
+      (setMenuPosition(null), setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1), multiConnectIds && (setMultiConnectIds(null), showToast(`已取消多项连接`)));
     }, [setMenuPosition, multiConnectIds, showToast]),
     _t = useCallback((e, t) => {}, []),
     handleCancel2 = useCallback((e) => {}, []),
@@ -10831,7 +10831,7 @@ ${combinedPrompt}`,
                           dropPosition: position,
                         },
                       }),
-                      ye(!1), Ce(!1));
+                      setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
                   }, 50);
               }
             },
@@ -13167,8 +13167,8 @@ ${combinedPrompt}`,
                           className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item justify-between`,
                           onClick: (event) => {
                             event.stopPropagation();
-                            let nextValue = !ve;
-                            (Ce(nextValue), ye(nextValue));
+                            let nextValue = !isResourceSubmenuOpen;
+                            (setResourceSubmenuOpenAlt(nextValue), setResourceSubmenuOpen(nextValue));
                           },
                           children: [
                             jsxs(`span`, {
@@ -13189,7 +13189,7 @@ ${combinedPrompt}`,
                             }),
                           ],
                         }),
-                        ve &&
+                        isResourceSubmenuOpen &&
                         jsx(`div`, {
                           className: `absolute left-full top-0 ml-1 z-50 wanjuan-context-submenu wanjuan-resource-submenu`,
                           style: {
@@ -13246,12 +13246,12 @@ ${combinedPrompt}`,
                                   },
                                   void 0,
                                 ),
-                                ye(!1),
-                                Ce(!1),
+                                setResourceSubmenuOpen(!1),
+                                setResourceSubmenuOpenAlt(!1),
                                 setMenuPosition(null));
                             },
                             onClose: () => {
-                              (ye(!1), Ce(!1));
+                              (setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
                             },
                           }),
                         }),
