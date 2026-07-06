@@ -58,6 +58,13 @@ function projectLockKey(directory, projectId) {
   return `${path.resolve(directory)}\0${projectId}`;
 }
 
+// migrationId 由 beginProjectMigration 生成，格式固定；不匹配的一律视为非法（防路径拼接注入）。
+const MIGRATION_ID_PATTERN = /^migration-\d{10,16}-[0-9a-f]{8}$/;
+
+function isValidMigrationId(migrationId) {
+  return MIGRATION_ID_PATTERN.test(String(migrationId || ""));
+}
+
 function saveSession(session) {
   session.updatedAt = new Date().toISOString();
   sessions.set(session.id, session);
@@ -120,6 +127,7 @@ function loadProjectMigrationSnapshot(payload = {}) {
 
 function getProjectMigration(payload = {}) {
   const migrationId = String(payload.migrationId || "");
+  if (!isValidMigrationId(migrationId)) return { ok: false, error: "MIGRATION_NOT_FOUND" };
   let session = sessions.get(migrationId);
   if (!session && payload.directory) {
     const filePath = path.join(migrationRoot(payload.directory), `${migrationId}.json`);
@@ -172,6 +180,7 @@ function listIncompleteMigrations(payload = {}) {
 
 function assertActiveMigration(migrationId, projectId) {
   if (!migrationId) return null;
+  if (!isValidMigrationId(migrationId)) throw new Error("MIGRATION_NOT_FOUND");
   const session = sessions.get(String(migrationId));
   if (!session || session.projectId !== projectId) throw new Error("MIGRATION_NOT_FOUND");
   if (session.status === "cancelled") throw new Error("MIGRATION_CANCELLED");
