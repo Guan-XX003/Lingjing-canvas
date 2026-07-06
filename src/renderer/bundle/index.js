@@ -148,6 +148,11 @@ import {
   WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
   wanjuanMergeModelText,
 } from "../lib/jixin-catalog";
+import {
+  WanJuanNormalizeModelId,
+  WanJuanSameModelId,
+  WanJuanParseModelList,
+} from "../lib/model-id";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -798,28 +803,6 @@ var TongyiWanxiangLogo = ({
 	      });
 	      localStorage.setItem(WanJuanFavoriteModelStoreKey, JSON.stringify(normalizedItems));
 	    } catch {}
-	  },
-	  WanJuanNormalizeModelId = (input) => {
-	    let modelName = String(input || ``).split(/[\n,，、]+/).map((part) => part.trim()).filter(Boolean)[0] || String(input || ``).trim();
-	    try {
-	      modelName = modelName.normalize(`NFKC`);
-	    } catch {}
-	    return modelName.replace(/[\u200B-\u200D\uFEFF]/g, ``).replace(/[\u2010-\u2015\u2212]/g, `-`).trim();
-	  },
-	  WanJuanSameModelId = (firstModel, secondModel) =>
-	    WanJuanNormalizeModelId(firstModel).toLowerCase() === WanJuanNormalizeModelId(secondModel).toLowerCase(),
-	  WanJuanParseModelList = (input) => {
-	    let seen = new Set(),
-	      models = [];
-	    String(input || ``)
-	      .split(/[\n,，、]+/)
-	      .map((model) => model.trim())
-	      .filter(Boolean)
-	      .forEach((model) => {
-	        let normalizedModel = WanJuanNormalizeModelId(model).toLowerCase();
-	        normalizedModel && !seen.has(normalizedModel) && (seen.add(normalizedModel), models.push(model));
-	      });
-	    return models;
 	  },
 	  WanJuanSortModelsByFavorites = (models, favorites = WanJuanReadFavoriteModels()) => {
 	    let favoriteRank = new Map();
