@@ -129,30 +129,51 @@ function moveUnreferencedToTrash(payload = {}) {
     const location = roots(payload.directory);
     const cleanupId = `cleanup-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
     const cleanupRoot = path.join(location.trash, cleanupId);
-    const entries = [];
-    for (const candidate of scan.candidates) {
-      const relative = path.relative(location.blobs, candidate.path);
-      const target = path.join(cleanupRoot, "files", relative);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.renameSync(candidate.path, target);
-      entries.push({
-        originalPath: candidate.path,
-        trashPath: target,
-        size: candidate.size,
-        hash: path.basename(candidate.path).split(".")[0],
-        deletedAt: new Date().toISOString()
-      });
-    }
+    // 事务化：先写 pending 清单（记录待移动列表），移动完成后写 final manifest 再删 pending。
+    // 中途崩溃时由 reconcilePendingCleanups 依据 pending 清单补齐 manifest，文件不会“蒸发”。
+    const entries = scan.candidates.map((candidate) => ({
+      originalPath: candidate.path,
+      trashPath: path.join(cleanupRoot, "files", path.relative(location.blobs, candidate.path)),
+      size: candidate.size,
+      hash: path.basename(candidate.path).split(".")[0],
+      deletedAt: new Date().toISOString()
+    }));
     const manifest = { version: 1, cleanupId, createdAt: new Date().toISOString(), entries };
+    atomicJson(path.join(cleanupRoot, "pending.json"), manifest);
+    for (const entry of entries) {
+      fs.mkdirSync(path.dirname(entry.trashPath), { recursive: true });
+      fs.renameSync(entry.originalPath, entry.trashPath);
+    }
     atomicJson(path.join(cleanupRoot, "manifest.json"), manifest);
+    fs.rmSync(path.join(cleanupRoot, "pending.json"), { force: true });
     return { ok: true, cleanupId, movedCount: entries.length, movedBytes: entries.reduce((sum, item) => sum + item.size, 0), manifest };
   } finally {
     maintenanceLock = "";
   }
 }
 
+// 崩溃自愈：发现残留 pending.json 时，按“文件已到 trash 即视为已移动”补齐 manifest。
+function reconcilePendingCleanups(location) {
+  if (!fs.existsSync(location.trash)) return;
+  for (const name of fs.readdirSync(location.trash)) {
+    const cleanupRoot = path.join(location.trash, name);
+    const pendingPath = path.join(cleanupRoot, "pending.json");
+    if (!fs.existsSync(pendingPath)) continue;
+    try {
+      const manifestPath = path.join(cleanupRoot, "manifest.json");
+      if (!fs.existsSync(manifestPath)) {
+        const pending = JSON.parse(fs.readFileSync(pendingPath, "utf8"));
+        const entries = (pending.entries || []).filter((entry) => fs.existsSync(entry.trashPath));
+        atomicJson(manifestPath, { ...pending, entries, reconciledAt: new Date().toISOString() });
+      }
+      fs.rmSync(pendingPath, { force: true });
+    } catch {}
+  }
+}
+
 function listTrash(payload = {}) {
   const location = roots(payload.directory);
+  reconcilePendingCleanups(location);
   const cleanups = [];
   if (fs.existsSync(location.trash)) {
     for (const name of fs.readdirSync(location.trash)) {
