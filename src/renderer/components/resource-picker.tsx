@@ -85,7 +85,7 @@ export function wanjuanRenderResourcePickerHeader({
   setPage,
   onClose,
   closeContent = `×`,
-}) {
+}: any) {
   return jsxs(`div`, {
     className: `p-3 border-b border-[#333b46] bg-[#20252c] wanjuan-mention-picker-header`,
     children: [
