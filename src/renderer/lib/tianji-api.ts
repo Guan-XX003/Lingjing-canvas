@@ -14,6 +14,16 @@
 // normalizeVideoAspectRatioValue 是 bundle 内的通用视频比例归一化工具（原 bundle line 3522），
 // 非本组函数，从兄弟模块引入。
 import { normalizeVideoAspectRatioValue, snapVideoAspectRatioToSupported } from "./video-aspect-ratio";
+import {
+  WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
+  WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
+  wanjuanMergeModelText,
+} from "./jixin-catalog";
+import { WanJuanSameModelId } from "./model-id";
+import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "./upload-defaults";
+import { wanjuanClearProjectAssetBindingsFromData } from "./resource";
 
 /** chrome 扩展运行时（仅在浏览器扩展环境存在）。 */
 declare const chrome: any;
@@ -28,6 +38,10 @@ declare global {
 export const WANJUAN_TIANJI_DEFAULT_BASE_URL = `https://jixing.guancn.uk`;
 export const WANJUAN_TIANJI_SYNC_SOURCE_JIXIN = `jixin-default`;
 export const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
+/** 天玑配置在 localStorage 的镜像 key（chrome.storage 不可用或 token 缺失时兜底）。 */
+export const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
+/** 极心默认 API 配置在 apiConfigs 列表中的固定 id。 */
+const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 
 /** 即梦天玑配置结构（字段较动态，使用宽松类型）。 */
 export interface TianjiSeedanceConfig {
@@ -75,7 +89,11 @@ interface RunTianjiSeedanceVideoOptions {
   updateEdges: (updater: (edges: any[]) => any[]) => void;
   updateGlobalTasks?: (updater: (tasks: any[]) => any[]) => void;
   addTransitResource?: (url: string, kind: string, origin: string) => void;
-  persistVideoNodeState: (style: Record<string, any>, data: Record<string, any>) => Promise<any>;
+  persistVideoNodeState: (
+    style: Record<string, any>,
+    data: Record<string, any>,
+    options?: { clearProjectAssetBindings?: string[] },
+  ) => Promise<any>;
 }
 
 /** 即梦天玑默认配置（base 地址、可选模型 / 时长 / 分辨率 / 画幅比例等）。 */
@@ -85,23 +103,77 @@ export const wanjuanTianjiSeedanceDefaults: TianjiSeedanceConfig = {
   syncSource: WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
   sassId: `1`,
   platform: `web`,
-  models: ``,
-  durations: `5\n10`,
-  resolutions: `720p\n1080p`,
-  ratios: `16:9\n9:16\n1:1\n4:3\n3:4\n21:9`,
+  models: wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS),
+  durations: WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
+  resolutions: WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
+  ratios: WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
   generateAudio: true,
   watermark: false,
 };
 
-/** 从 chrome 扩展本地存储读取指定 key，读取失败或非扩展环境时返回空对象。 */
-export const wanjuanTianjiStorageGet = (keys: string[]): Promise<Record<string, any>> =>
+/**
+ * 从 chrome 扩展本地存储读取指定 key。
+ * 若读取的 tianjiSeedanceConfig 缺 token，或 chrome.storage 不可用，
+ * 回退到 localStorage 镜像（WANJUAN_TIANJI_CONFIG_MIRROR_KEY）。
+ */
+export const wanjuanTianjiStorageGet = (keys: string[] | string): Promise<Record<string, any>> =>
   new Promise((resolve) => {
+    const resolveFromMirror = () => {
+      let result: Record<string, any> = {};
+      try {
+        let keyList = Array.isArray(keys) ? keys : [keys],
+          mirrored = JSON.parse(window.localStorage?.getItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY) || `null`);
+        if (keyList.includes(`tianjiSeedanceConfig`) && mirrored && typeof mirrored == `object`)
+          result.tianjiSeedanceConfig = mirrored;
+      } catch {}
+      resolve(result);
+    };
     try {
       typeof chrome < `u` && chrome.storage?.local
-        ? chrome.storage.local.get(keys, (result: any) => resolve(result || {}))
-        : resolve({});
+        ? chrome.storage.local.get(keys, (items: any) => {
+            let result = items || {};
+            let keyList = Array.isArray(keys) ? keys : [keys];
+            if (keyList.includes(`tianjiSeedanceConfig`) && !String(result.tianjiSeedanceConfig?.token || ``).trim()) {
+              try {
+                let mirrored = JSON.parse(window.localStorage?.getItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY) || `null`);
+                if (mirrored && typeof mirrored == `object` && String(mirrored.token || ``).trim()) {
+                  result.tianjiSeedanceConfig = {
+                    ...(result.tianjiSeedanceConfig && typeof result.tianjiSeedanceConfig == `object`
+                      ? result.tianjiSeedanceConfig
+                      : {}),
+                    ...mirrored,
+                  };
+                }
+              } catch {}
+            }
+            resolve(result);
+          })
+        : resolveFromMirror();
     } catch {
-      resolve({});
+      resolveFromMirror();
+    }
+  });
+
+/**
+ * 写入 chrome 扩展本地存储；tianjiSeedanceConfig 同时镜像到 localStorage。
+ * chrome.storage 不可用时返回 false。
+ */
+export const wanjuanTianjiStorageSet = (items: Record<string, any>): Promise<boolean> =>
+  new Promise((resolve) => {
+    try {
+      if (items?.tianjiSeedanceConfig) {
+        try {
+          window.localStorage?.setItem(
+            WANJUAN_TIANJI_CONFIG_MIRROR_KEY,
+            JSON.stringify(wanjuanNormalizeTianjiSeedanceConfig(items.tianjiSeedanceConfig)),
+          );
+        } catch {}
+      }
+      typeof chrome < `u` && chrome.storage?.local
+        ? chrome.storage.local.set(items || {}, () => resolve(true))
+        : resolve(false);
+    } catch {
+      resolve(false);
     }
   });
 
@@ -120,6 +192,10 @@ export const wanjuanNormalizeTianjiSeedanceConfig = (config: any = {}): TianjiSe
       : WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
   sassId: String(config?.sassId || `1`).trim() || `1`,
   platform: String(config?.platform || `web`).trim() || `web`,
+  models: String(config?.models || ``).trim() || wanjuanTianjiSeedanceDefaults.models,
+  durations: String(config?.durations || ``).trim() || wanjuanTianjiSeedanceDefaults.durations,
+  resolutions: String(config?.resolutions || ``).trim() || wanjuanTianjiSeedanceDefaults.resolutions,
+  ratios: String(config?.ratios || ``).trim() || wanjuanTianjiSeedanceDefaults.ratios,
   generateAudio: config?.generateAudio !== false,
   watermark: config?.watermark === true,
 });
@@ -155,6 +231,78 @@ export const wanjuanMarkTianjiConfigManual = (config: any = {}): TianjiSeedanceC
     ...(config && typeof config === `object` ? config : {}),
     syncSource: WANJUAN_TIANJI_SYNC_SOURCE_MANUAL,
   });
+
+/** 判断某个 API 配置是否是极心默认配置（按固定 id 或 base 地址）。 */
+export const wanjuanIsJixinApiConfig = (config: any): boolean =>
+  config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID ||
+  wanjuanNormalizeTianjiApiBaseUrl(config?.url) === wanjuanNormalizeTianjiApiBaseUrl(WANJUAN_TIANJI_DEFAULT_BASE_URL);
+
+/** 从旧版设置字段（apiKey / textApiKey / …）里找第一个非空的极心 API key。 */
+export const wanjuanFindLegacyJixinApiKey = (settings: any = {}): string =>
+  [`apiKey`, `textApiKey`, `imageApiKey`, `videoApiKey`, `audioApiKey`]
+    .map((key) => String(settings?.[key] || ``).trim())
+    .find(Boolean) || ``;
+
+/**
+ * 解析出用于天玑同步的极心 API 配置。
+ * 优先用传入的候选配置，其次是 apiConfigs 里的极心配置；
+ * key 缺失时回退到旧版散落的 apiKey 字段；两者皆无时返回 null。
+ */
+export const wanjuanResolveJixinApiConfigForTianji = (candidateConfig: any = null, stored: any = {}): any => {
+  let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],
+    storedJixinConfig = storedApiConfigs.find(wanjuanIsJixinApiConfig) || null,
+    sourceConfig = candidateConfig || storedJixinConfig;
+  if (!sourceConfig && !wanjuanFindLegacyJixinApiKey(stored)) return null;
+  let sourceBaseUrl =
+      wanjuanNormalizeTianjiApiBaseUrl(sourceConfig?.url || storedJixinConfig?.url || WANJUAN_TIANJI_DEFAULT_BASE_URL) ||
+      WANJUAN_TIANJI_DEFAULT_BASE_URL,
+    sourceKey =
+      String(sourceConfig?.key || ``).trim() ||
+      String(storedJixinConfig?.key || ``).trim() ||
+      wanjuanFindLegacyJixinApiKey(stored);
+  return {
+    ...(storedJixinConfig && typeof storedJixinConfig == `object` ? storedJixinConfig : {}),
+    ...(sourceConfig && typeof sourceConfig == `object` ? sourceConfig : {}),
+    id: sourceConfig?.id || storedJixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+    name: sourceConfig?.name || storedJixinConfig?.name || `极鑫`,
+    url: sourceBaseUrl,
+    key: sourceKey,
+  };
+};
+
+/**
+ * 读取并返回与极心同步后的天玑配置。
+ * 无极心配置时返回当前配置；同步结果有变化时回写存储。
+ */
+export const wanjuanGetSyncedTianjiSeedanceConfig = async (
+  options: { force?: boolean } = {},
+): Promise<TianjiSeedanceConfig> => {
+  let stored = await wanjuanTianjiStorageGet([
+      `tianjiSeedanceConfig`,
+      `apiConfigs`,
+      `advancedSettingsUnlocked`,
+      `apiKey`,
+      `textApiKey`,
+      `imageApiKey`,
+      `videoApiKey`,
+      `audioApiKey`,
+    ]),
+    currentConfig = wanjuanNormalizeTianjiSeedanceConfig(stored.tianjiSeedanceConfig || {}),
+    jixinConfig = wanjuanResolveJixinApiConfigForTianji(
+      (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(wanjuanIsJixinApiConfig),
+      stored,
+    );
+  if (!jixinConfig) return currentConfig;
+  let nextConfig = wanjuanBuildSyncedTianjiConfigFromJixin(currentConfig, jixinConfig, {
+    ...options,
+    force: options.force === true,
+  });
+  JSON.stringify(currentConfig) !== JSON.stringify(nextConfig) &&
+    (await wanjuanTianjiStorageSet({
+      tianjiSeedanceConfig: nextConfig,
+    }));
+  return nextConfig;
+};
 
 /** 把以空白 / 逗号 / 顿号分隔的字符串拆为列表，返回首个非空项，无则返回 fallback。 */
 export const wanjuanTianjiFirstListValue = (list: any, fallback = ``): string =>
@@ -263,10 +411,10 @@ export const wanjuanTianjiRequest = async (
     json = { raw: text };
   }
   if (!response.ok)
-    throw Error(json?.message || json?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
+    throw Error(json?.message || json?.msg || json?.error?.message || json?.error?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
   // code 为 0 等 falsy 值也必须视为错误，不能被 && 短路吞掉。
   if (json?.code !== undefined && Number(json.code) !== 200)
-    throw Error(json.message || json.msg || `即梦天玑返回错误: ${json.code}`);
+    throw Error(json.message || json.msg || json?.error?.message || json?.error?.msg || `即梦天玑返回错误: ${json.code}`);
   return json;
 };
 
@@ -490,7 +638,7 @@ export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOp
   if (/^https?:\/\//i.test(raw)) return raw;
   if (!window.wanjuanDesktop?.uploadPublicMedia && !window.wanjuanDesktop?.uploadTosMedia && !window.wanjuanDesktop?.uploadCustomPublicMedia && !window.wanjuanDesktop?.uploadQiniuMedia)
     throw Error(`天玑模式参考${kind === `video` ? `视频` : kind === `audio` ? `音频` : `图片`}必须是公网 URL`);
-  let uploadMode = String(uploadOptions.uploadMode || uploadOptions.seedanceUploadMode || `public`).trim(),
+  let uploadMode = String(uploadOptions.uploadMode || uploadOptions.seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE).trim(),
     filename = `tianji-seedance-${kind}-${Date.now()}`;
   let uploadResult =
     uploadMode === `tos` && typeof window.wanjuanDesktop?.uploadTosMedia == `function`
@@ -532,25 +680,24 @@ export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOp
  * 按 pollingInterval 轮询历史接口，处理成功 / 失败 / 进行中三种状态，超时或取消时抛错。
  */
 export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVideoOptions): Promise<void> {
-  let stored = await wanjuanTianjiStorageGet([`tianjiSeedanceConfig`, `apiConfigs`, `advancedSettingsUnlocked`]),
-    currentConfig = wanjuanNormalizeTianjiSeedanceConfig(stored.tianjiSeedanceConfig || {}),
-    jixinConfig = (Array.isArray(stored.apiConfigs) ? stored.apiConfigs : []).find(
-      (config) =>
-        config?.id === `jixin-default` ||
-        wanjuanNormalizeTianjiApiBaseUrl(config?.url) === wanjuanNormalizeTianjiApiBaseUrl(WANJUAN_TIANJI_DEFAULT_BASE_URL),
-    ),
-    config = jixinConfig
-      ? wanjuanBuildSyncedTianjiConfigFromJixin(currentConfig, jixinConfig, {
-          force: stored.advancedSettingsUnlocked !== true,
-        })
-      : currentConfig,
+  let config = await wanjuanGetSyncedTianjiSeedanceConfig(),
     nodeData = options.sourceNode?.data || {},
+    tianjiModelText = nodeData.tianjiSeedanceModel || config.models,
+    tianjiModelCandidates = String(tianjiModelText || ``)
+      .split(/[\s,，、]+/)
+      .map((part) => part.trim())
+      .filter(Boolean),
+    explicitTianjiModel = String(nodeData.tianjiSelectedModel || nodeData.selectedModel || ``).trim(),
     prompt = (
       Array.isArray(options.extraPrompts) && options.extraPrompts.length > 0
         ? `${options.extraPrompts.join(`\n`)}\n${options.prompt || ``}`
         : options.prompt || ``
     ).trim(),
-    model = wanjuanTianjiFirstListValue(nodeData.tianjiSelectedModel || nodeData.selectedModel || nodeData.videoModel || config.models),
+    model =
+      explicitTianjiModel &&
+      tianjiModelCandidates.some((candidate) => WanJuanSameModelId(candidate, explicitTianjiModel))
+        ? explicitTianjiModel
+        : wanjuanTianjiFirstListValue(tianjiModelText || nodeData.videoModel || config.models),
     resolution = String(
       nodeData.selectedResolution ||
         wanjuanTianjiFirstListValue(nodeData.seedanceResolutions || config.resolutions, `720p`),
@@ -575,7 +722,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     ratio = snapVideoAspectRatioToSupported(ratio, supportedRatios.length ? supportedRatios : void 0);
   }
   if (!model) throw Error(`请先在设置中配置天玑 Seedance 模型`);
-  let generationMode = nodeData.tianjiSeedanceGenerationMode || `text-to-video`,
+  // 现版本天玑统一走参考素材模式；first-frame / first-last 分支保留以兼容旧数据结构。
+  let generationMode = `reference-media`,
     payload: any = {
       duration,
       ratio,
@@ -641,85 +789,65 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     }),
     taskId = wanjuanTianjiFindTaskId(submitResponse);
   if (!taskId) throw Error(`即梦天玑提交成功但未返回 execute_id`);
-
-  // 先更新 localStorage（最高优先级，无依赖）
-  try {
-    localStorage.setItem(options.dailyKey, (options.dailyCount + 1).toString());
-  } catch (storageError) {
-    console.warn(`Failed to update daily count in localStorage:`, storageError);
-  }
-
-  // 第 1 步：添加任务到清单（防重复）
-  if (options.updateGlobalTasks) {
-    options.updateGlobalTasks((tasks) => {
-      if (tasks.some((t) => t.id === taskId)) {
-        console.warn(`Task ${taskId} already exists, preventing duplicate`);
-        return tasks;
-      }
-      return [
-        ...tasks,
-        {
-          id: taskId,
-          type: `video`,
-          provider: `tianji-seedance`,
-          apiBaseUrl: config.baseUrl,
-          modelName: model,
-          projectId: options.projectIdAtStart,
-          nodeId: options.nodeId,
-          status: `pending`,
-          progress: 0,
-          createdAt: Date.now(),
-          prompt: options.prompt,
-          requestProfile: requestSummary,
-        },
-      ];
-    });
-  }
-
-  // 第 2 步：更新节点状态
-  options.updateNodes((nodes) =>
-    nodes.map((node) =>
-      node.id === options.nodeId
-        ? {
-            ...node,
-            data: {
-              ...node.data,
-              seedanceTaskId: taskId,
-              tianjiExecuteId: taskId,
-              videoUrl: void 0,
-              thumbnailUrl: void 0,
-              resultData: void 0,
-              loading: true,
-              progress: 1,
-              errorMessage: void 0,
-              loadingText: `任务已提交，等待查询...`,
-            },
-          }
-        : node,
+  (options.updateGlobalTasks &&
+    options.updateGlobalTasks((tasks) => [
+      ...tasks,
+      {
+        id: taskId,
+        type: `video`,
+        provider: `tianji-seedance`,
+        apiBaseUrl: config.baseUrl,
+        modelName: model,
+        projectId: options.projectIdAtStart,
+        nodeId: options.nodeId,
+        status: `pending`,
+        progress: 0,
+        createdAt: Date.now(),
+        prompt: options.prompt,
+        requestProfile: requestSummary,
+      },
+    ]),
+    options.updateNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === options.nodeId
+          ? {
+              ...node,
+              data: {
+                ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
+                seedanceTaskId: taskId,
+                tianjiExecuteId: taskId,
+                videoUrl: void 0,
+                thumbnailUrl: void 0,
+                resultData: void 0,
+                loading: true,
+                progress: 1,
+                errorMessage: void 0,
+                loadingText: `任务已提交，等待查询...`,
+              },
+            }
+          : node,
+      ),
     ),
-  );
-
-  // 第 3 步：持久化到存储
-  await options.persistVideoNodeState(
-    {},
-    {
-      seedanceTaskId: taskId,
-      tianjiExecuteId: taskId,
-      videoUrl: void 0,
-      thumbnailUrl: void 0,
-      resultData: void 0,
-      loading: true,
-      progress: 1,
-      errorMessage: void 0,
-      loadingText: `任务已提交，等待查询...`,
-    },
-  );
-
-  // 第 4 步：更新日期计数
-  options.setDailyCount(options.dailyCount + 1);
-
-  // 第 5 步：提示用户
-  options.showToast(`即梦天玑任务提交成功，正在生成中...`);
+    await options.persistVideoNodeState(
+      {},
+      {
+        seedanceTaskId: taskId,
+        tianjiExecuteId: taskId,
+        videoUrl: void 0,
+        thumbnailUrl: void 0,
+        resultData: void 0,
+        loading: true,
+        progress: 1,
+        errorMessage: void 0,
+        loadingText: `任务已提交，等待查询...`,
+      },
+      {
+        clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`],
+      },
+    ),
+    localStorage.setItem(options.dailyKey, (options.dailyCount + 1).toString()),
+    options.setDailyCount(options.dailyCount + 1),
+    options.showToast(`即梦天玑任务提交成功，正在生成中...`));
   let done = false,
     pollCount = 0,
     consecutiveErrors = 0,
@@ -732,7 +860,6 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     await new Promise((resolve) => setTimeout(resolve, options.pollingInterval));
     pollCount++;
     try {
-      if (abortController.signal.aborted) throw Error(`生成已取消`);
       let statusResponse = await wanjuanTianjiRequest(config, `/api/cut/model/coze-run-seedance-special-history`, {
           method: `GET`,
           query: {
@@ -794,7 +921,10 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
                       height: displayHeight + 24,
                     },
                     data: {
-                      ...node.data,
+                      ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
+                      taskId: void 0,
+                      seedanceTaskId: taskId,
+                      tianjiExecuteId: taskId,
                       videoUrl,
                       thumbnailUrl: thumbUrl,
                       videoAspectRatio: aspectRatioCss,
@@ -813,6 +943,9 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
               height: displayHeight + 24,
             },
             {
+              taskId: void 0,
+              seedanceTaskId: taskId,
+              tianjiExecuteId: taskId,
               videoUrl,
               thumbnailUrl: thumbUrl,
               videoAspectRatio: aspectRatioCss,
@@ -820,6 +953,9 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
               progress: 100,
               errorMessage: void 0,
               loadingText: void 0,
+            },
+            {
+              clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`],
             },
           ),
           options.updateEdges((edges) =>
@@ -928,9 +1064,6 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
       consecutiveErrors++;
       if (consecutiveErrors === 5) {
         options.showToast(`即梦天玑状态查询暂时失败，仍会继续重试...`);
-      }
-      if (consecutiveErrors >= 30) {
-        throw Error(`即梦天玑状态查询失败次数过多，已放弃重试`);
       }
     }
   }

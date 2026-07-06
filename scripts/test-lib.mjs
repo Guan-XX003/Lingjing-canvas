@@ -95,10 +95,10 @@ async function run() {
       syncSource: WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
       sassId: "1",
       platform: "web",
-      models: "",
-      durations: "5\n10",
-      resolutions: "720p\n1080p",
-      ratios: "16:9\n9:16\n1:1\n4:3\n3:4\n21:9",
+      models: "doubao-seedance-2-0-260128\ndoubao-seedance-2-0-fast-260128",
+      durations: "4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15",
+      resolutions: "480p\n720p\n1080p",
+      ratios: "21:9\n16:9\n4:3\n1:1\n3:4\n9:16",
       generateAudio: true,
       watermark: false
     }
@@ -123,10 +123,10 @@ async function run() {
       syncSource: WANJUAN_TIANJI_SYNC_SOURCE_MANUAL,
       sassId: "1",
       platform: "web",
-      models: "",
-      durations: "5\n10",
-      resolutions: "720p\n1080p",
-      ratios: "16:9\n9:16\n1:1\n4:3\n3:4\n21:9",
+      models: "doubao-seedance-2-0-260128\ndoubao-seedance-2-0-fast-260128",
+      durations: "4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15",
+      resolutions: "480p\n720p\n1080p",
+      ratios: "21:9\n16:9\n4:3\n1:1\n3:4\n9:16",
       generateAudio: true,
       watermark: false
     }
@@ -144,10 +144,10 @@ async function run() {
       syncSource: WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
       sassId: "1",
       platform: "web",
-      models: "",
-      durations: "5\n10",
-      resolutions: "720p\n1080p",
-      ratios: "16:9\n9:16\n1:1\n4:3\n3:4\n21:9",
+      models: "doubao-seedance-2-0-260128\ndoubao-seedance-2-0-fast-260128",
+      durations: "4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15",
+      resolutions: "480p\n720p\n1080p",
+      ratios: "21:9\n16:9\n4:3\n1:1\n3:4\n9:16",
       generateAudio: true,
       watermark: false
     }
