@@ -873,6 +873,7 @@ function installDesktopPatches() {
   let autoDownloadBaselineReady = false;
   let autoDownloadScanTimer = 0;
   let autoDownloadObserverInstalled = false;
+  let autoDownloadObserver = null;
 
   const isAutoDownloadEnabledValue = (value) => value === true || value === "true" || value === 1;
   const AUTO_DOWNLOAD_ACTIVE_TEXT_RE =
@@ -1028,13 +1029,27 @@ function installDesktopPatches() {
   const installAutoDownloadObserver = () => {
     if (autoDownloadObserverInstalled) return;
     autoDownloadObserverInstalled = true;
-    new MutationObserver(queueAutoDownloadScan).observe(document.documentElement, {
+    // 尽量收窄观察范围到画布容器；不监听 characterData（自动下载只关心节点/ src 变化）。
+    const observeRoot = document.querySelector(".react-flow") || document.body || document.documentElement;
+    autoDownloadObserver = new MutationObserver(queueAutoDownloadScan);
+    autoDownloadObserver.observe(observeRoot, {
       childList: true,
       subtree: true,
-      characterData: true,
       attributes: true,
       attributeFilter: ["src"]
     });
+  };
+
+  const disconnectAutoDownloadObserver = () => {
+    if (autoDownloadObserver) {
+      autoDownloadObserver.disconnect();
+      autoDownloadObserver = null;
+    }
+    autoDownloadObserverInstalled = false;
+    if (autoDownloadScanTimer) {
+      window.clearTimeout(autoDownloadScanTimer);
+      autoDownloadScanTimer = 0;
+    }
   };
 
   const setAutoDownloadEnabled = async (enabled) => {
@@ -1046,6 +1061,8 @@ function installDesktopPatches() {
       seedAutoDownloadBaseline();
       installAutoDownloadObserver();
       queueAutoDownloadScan();
+    } else {
+      disconnectAutoDownloadObserver();
     }
   };
 
@@ -1057,6 +1074,8 @@ function installDesktopPatches() {
       seedAutoDownloadBaseline();
       installAutoDownloadObserver();
       queueAutoDownloadScan();
+    } else {
+      disconnectAutoDownloadObserver();
     }
   });
 
