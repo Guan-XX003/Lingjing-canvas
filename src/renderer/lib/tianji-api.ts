@@ -851,7 +851,9 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
           options.updateEdges((edges) =>
             edges.map((edge) => (edge.target === options.nodeId ? { ...edge, animated: false } : edge)),
           ));
-        throw Error(failureMessage);
+        let failureError: any = Error(failureMessage);
+        failureError.terminal = true;
+        throw failureError;
       } else {
         let progress = wanjuanTianjiFindProgress(statusResponse),
           hasRealProgress = !isNaN(progress);
@@ -891,7 +893,13 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
             ));
       }
     } catch (error: any) {
-      if (error?.message && /生成已取消|失败|failed|error|expired|canceled|cancelled|rejected/i.test(error.message)) {
+      // 终止条件：显式 terminal 标志（业务失败）、用户取消、明确的终止关键词。
+      // 不再匹配裸 `error` / `失败`，避免 `network error`、`请求失败` 等瞬时错误被误杀（应进入重试）。
+      if (
+        error?.terminal === true ||
+        error?.name === `AbortError` ||
+        (error?.message && /生成已取消|expired|canceled|cancelled|rejected/i.test(error.message))
+      ) {
         throw error;
       }
       console.warn(`Tianji Seedance polling error:`, error);
