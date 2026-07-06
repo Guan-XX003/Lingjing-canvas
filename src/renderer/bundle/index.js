@@ -17924,14 +17924,25 @@ const wanjuanTianjiRequest = async (rawConfig, path, {
   }
   let response;
   if (window.wanjuanDesktop?.proxyFetch) {
-    let proxyResponse = await window.wanjuanDesktop.proxyFetch({
-      requestId: `tianji-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      url: url.toString(),
-      method: method,
-      headers: headers,
-      bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
-      requestTimeout: 18e4,
-    });
+    // 取消机制：AbortSignal 无法跨 contextBridge 传递，改用 requestId + abortProxyFetch。
+    let proxyRequestId = `tianji-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      abortProxyRequest = () => window.wanjuanDesktop?.abortProxyFetch?.(proxyRequestId);
+    if (signal?.aborted) throw Error(`生成已取消`);
+    signal?.addEventListener(`abort`, abortProxyRequest, { once: true });
+    let proxyResponse;
+    try {
+      proxyResponse = await window.wanjuanDesktop.proxyFetch({
+        requestId: proxyRequestId,
+        url: url.toString(),
+        method: method,
+        headers: headers,
+        bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
+        requestTimeout: 18e4,
+      });
+    } finally {
+      signal?.removeEventListener(`abort`, abortProxyRequest);
+    }
+    if (signal?.aborted) throw Error(`生成已取消`);
     if (!proxyResponse?.ok) throw Error(proxyResponse?.error || `即梦天玑请求失败`);
     response = {
       ok: proxyResponse.status >= 200 && proxyResponse.status < 300,
