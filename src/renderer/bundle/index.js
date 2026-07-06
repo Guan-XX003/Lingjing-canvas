@@ -242,6 +242,11 @@ import {
   WanJuanLoadSessionToastAppNotificationIds,
   WanJuanFetchAppNotifications,
 } from "../lib/app-notifications";
+import {
+  serializeErrorPreview,
+  WanJuanIsTransientNetworkError,
+  safeStringifyRequestForLog,
+} from "../lib/log-utils";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -52744,63 +52749,6 @@ ${String(l || ``).slice(0, 5e4)}`;
     });
 }
 
-function serializeErrorPreview(errorPayload, maxLength = 1200) {
-  let truncate = (text) =>
-    typeof text == `string` && text.length > maxLength ?
-    `${text.slice(0, maxLength)}...(truncated ${text.length} chars)` :
-    text;
-  try {
-    if (typeof errorPayload == `string`) return truncate(errorPayload);
-    let serialized = JSON.stringify(errorPayload);
-    return typeof serialized == `string` ?
-      truncate(serialized) :
-      `[unserializable error payload]`;
-  } catch (error) {
-    try {
-      let stringified = String(errorPayload);
-      if (stringified && stringified !== `[object Object]`) return truncate(stringified);
-    } catch {}
-    let messageSuffix = error && error.message ? `: ${error.message}` : ``;
-    return `[unserializable error payload${messageSuffix}]`;
-  }
-}
-
-function WanJuanIsTransientNetworkError(error) {
-  let message = String(
-      error?.message ||
-      error?.reason ||
-      error?.code ||
-      error?.name ||
-      error ||
-      ``,
-    ),
-    code = String(error?.code || error?.cause?.code || ``),
-    name = String(error?.name || ``),
-    combined = `${name} ${code} ${message}`;
-  return /socket hang up|ECONNRESET|ECONNABORTED|ETIMEDOUT|EPIPE|ENETUNREACH|EHOSTUNREACH|ECONNREFUSED|EAI_AGAIN|ENOTFOUND|network error|failed to fetch|load failed|fetch failed|Proxy fetch request timeout|request timeout|timed out|timeout|超时/i.test(
-    combined,
-  );
-}
-
-function safeStringifyRequestForLog(requestPayload, maxLength = 4000) {
-  try {
-    let serialized = JSON.stringify(
-      requestPayload,
-      (key, value) => {
-        if (
-          typeof value == `string` &&
-          (key === `data` || key === `bodyBase64` || /^data:image\//i.test(value) || value.length > 1200)
-        )
-          return `[omitted ${value.length} chars]`;
-        return value;
-      },
-      2,
-    );
-    return serialized.length > maxLength ? `${serialized.slice(0, maxLength)}...(truncated ${serialized.length} chars)` : serialized;
-  } catch (error) {
-    return `[unserializable request payload: ${error?.message || error}]`;
-  }
-}
 var Ct = console.error;
 ((console.error = (...args) => {
     (typeof args[0] == `string` && args[0].includes(`ResizeObserver loop`)) ||
