@@ -103,6 +103,9 @@ function enqueueStableFetch(rule, signal, run) {
     };
     const onAbort = () => {
       item.cancelled = true;
+      // 立即从等待队列移除，避免连续 abort 时已取消项在 items 中累积泄漏。
+      const index = queue.items.indexOf(item);
+      if (index !== -1) queue.items.splice(index, 1);
       reject(createAbortError());
     };
     if (signal) signal.addEventListener("abort", onAbort, { once: true });
