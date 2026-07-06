@@ -16647,6 +16647,7 @@ const WANJUAN_TIANJI_SYNC_SOURCE_MANUAL = `manual`;
 const WANJUAN_TIANJI_CONFIG_MIRROR_KEY = `wanjuan.tianjiSeedanceConfig.v1`;
 const WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID = `jixin-default`;
 const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
+const WANJUAN_JIXIN_DEFAULT_DOC_URL = `https://kcn07wr6x9xu.feishu.cn/wiki/RBPHwKfzhiq7Xuk06M8c3NgInKd`;
 const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
 const WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE = `custom`;
 const WANJUAN_DEFAULT_CUSTOM_PUBLIC_UPLOAD_CONFIG = Object.freeze({
@@ -16658,7 +16659,12 @@ time=1h`,
   resultPath: ``,
 });
 const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-04-jixing-gateway-models-v1`;
+const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-06-feishu-doc-url-v1`;
+const wanjuanIsLegacyJixinDocUrl = (url) => {
+  let normalizedUrl = String(url || ``).trim().replace(/\/+$/, ``);
+  return normalizedUrl === `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs` ||
+    normalizedUrl === `https://newapi.guancn.uk/docs`;
+};
 const WANJUAN_JIXIN_BUILTIN_TEXT_MODELS = [
   // OpenAI GPT 系列
   `gpt-5.5`,
@@ -17587,11 +17593,11 @@ const wanjuanBuildJixinBuiltinStoredGlobalConfig = (config) => ({
   name: `极鑫默认基础配置`,
   description: `内置基础配置 · 填入极鑫令牌后可直接使用`,
   source: `builtin-jixin`,
-  apiDocUrl: `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs`,
+  apiDocUrl: WANJUAN_JIXIN_DEFAULT_DOC_URL,
   updatedAt: 0,
   config: {
     ...(config || {}),
-    configButlerDocUrl: `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs`,
+    configButlerDocUrl: WANJUAN_JIXIN_DEFAULT_DOC_URL,
     configButlerMode: `batch`,
     configButlerTargetApiConfigId: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
   },
@@ -33402,7 +33408,7 @@ Suno 音乐生成`,
       return null;
     },
 	    WANJUAN_JIXIN_API_URL = WANJUAN_JIXIN_DEFAULT_API_URL,
-	    WANJUAN_JIXIN_DOC_URL = `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs`,
+	    WANJUAN_JIXIN_DOC_URL = WANJUAN_JIXIN_DEFAULT_DOC_URL,
     WANJUAN_CUSTOM_API_LIMIT = 3,
 	    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN = `jixin-default`,
 	    WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL = `manual`,
@@ -37732,6 +37738,16 @@ ${docText}`;
 	                      chrome.storage?.local?.set(storagePatch);
                     }
                   }
+                  let jixinDocUrlStoragePatch = {};
+                  wanjuanIsLegacyJixinDocUrl(settings.configButlerDocUrl) &&
+                    (settings = {
+                        ...settings,
+                        configButlerDocUrl: WANJUAN_JIXIN_DEFAULT_DOC_URL,
+                      },
+                      jixinDocUrlStoragePatch.configButlerDocUrl = WANJUAN_JIXIN_DEFAULT_DOC_URL);
+                  Object.keys(jixinDocUrlStoragePatch).length > 0 &&
+                    typeof chrome < `u` &&
+                    chrome.storage?.local?.set(jixinDocUrlStoragePatch);
 	                  let storedAdvancedSettingsUnlocked = !0;
                   (Array.isArray(settings.apiConfigs) &&
                     (() => {

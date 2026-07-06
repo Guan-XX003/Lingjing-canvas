@@ -184,19 +184,33 @@ function installBootStabilityStyle() {
             <div class="wanjuan-scroll-title">万卷灵境</div>
           </div>
         </div>`;
+      const mintVineHTML = `<span class="mint-halo h1"></span><span class="mint-halo h2"></span><span class="mint-thread t1"></span><span class="mint-thread t2"></span><span class="mint-thread t3"></span><span class="mint-dew d1"></span><span class="mint-dew d2"></span><span class="mint-dew d3"></span><span class="mint-dew d4"></span><svg class="mint-vine-scene" viewBox="0 0 620 270" aria-hidden="true"><path class="mint-vine-main vine-left" d="M166 136 C130 132 92 116 78 91 C66 70 82 49 106 57 C129 65 126 91 105 94 C88 96 78 87 77 74"/><path class="mint-vine-main vine-right" d="M454 136 C490 132 528 116 542 91 C554 70 538 49 514 57 C491 65 494 91 515 94 C532 96 542 87 543 74"/><path class="mint-vine-main vine-left-low" d="M168 142 C132 154 98 178 85 201 C73 224 94 241 116 228 C137 216 128 190 105 194 C90 197 84 208 89 219"/><path class="mint-vine-main vine-right-low" d="M452 142 C488 154 522 178 535 201 C547 224 526 241 504 228 C483 216 492 190 515 194 C530 197 536 208 531 219"/><path class="mint-vine-branch branch-left-top" d="M138 126 C126 103 136 82 158 72"/><path class="mint-vine-branch branch-right-top" d="M482 126 C494 103 484 82 462 72"/><path class="mint-vine-branch branch-left-bottom" d="M142 154 C126 171 126 193 144 209"/><path class="mint-vine-branch branch-right-bottom" d="M478 154 C494 171 494 193 476 209"/><path class="mint-vine-curl curl-top" d="M310 80 C304 55 332 42 346 62 C359 81 331 98 316 82"/><path class="mint-vine-curl curl-bottom" d="M310 190 C317 217 286 229 273 207 C263 188 291 174 306 191"/></svg>`;
+      const sandDawnHTML = `<span class="sand-sun-halo"></span><span class="sand-sun"></span><span class="sand-line l1"></span><span class="sand-line l2"></span><span class="sand-line l3"></span><span class="sand-hill h3"></span><span class="sand-hill h2"></span><span class="sand-hill h1"></span><span class="sand-hill h4"></span>`;
       const themeAnimHTML = {
         "graphite": `<div class="wanjuan-boot-atmosphere" aria-hidden="true"><div class="wanjuan-boot-scene scene-book"><span class="wanjuan-boot-orbit orbit-one"></span><span class="wanjuan-boot-orbit orbit-two"></span><span class="wanjuan-boot-orbit orbit-three"></span><span class="wanjuan-boot-book-core"></span></div></div>`,
         "chrome-rose": `<div class="wanjuan-boot-animation rose-bloom" aria-hidden="true"><span class="rose-pistil"></span><span class="rose-petal p1"></span><span class="rose-petal p2"></span><span class="rose-petal p3"></span><span class="rose-petal p4"></span><span class="rose-petal p5"></span><span class="rose-ring r1"></span><span class="rose-ring r2"></span></div>`,
         "chrome-blue": `<div class="wanjuan-boot-animation sky-scene" aria-hidden="true"><span class="sky-sun"></span><span class="sky-cloud c1"></span><span class="sky-cloud c2"></span><span class="sky-cloud c3"></span></div>`,
-        "sage-green": `<div class="wanjuan-boot-animation mint-vellum" aria-hidden="true"><span class="mint-halo h1"></span><span class="mint-halo h2"></span><span class="mint-leaf leaf-a"><span class="mint-vein v1"></span><span class="mint-vein v2"></span><span class="mint-vein v3"></span></span><span class="mint-leaf leaf-b"><span class="mint-vein v1"></span><span class="mint-vein v2"></span><span class="mint-vein v3"></span></span><span class="mint-dew d1"></span><span class="mint-dew d2"></span><span class="mint-dew d3"></span><span class="mint-thread t1"></span><span class="mint-thread t2"></span></div>`,
-        "chrome-sand": `<div class="wanjuan-boot-animation sand-vellum" aria-hidden="true"><span class="sand-sun-haze"></span><span class="sand-glow"></span><svg class="sand-landscape" viewBox="0 0 1440 520" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="wjSandDuneBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(238,196,126,0.40)"/><stop offset="1" stop-color="rgba(230,177,99,0.04)"/></linearGradient><linearGradient id="wjSandDuneMid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(223,159,74,0.46)"/><stop offset="0.58" stop-color="rgba(244,207,150,0.24)"/><stop offset="1" stop-color="rgba(255,248,235,0.02)"/></linearGradient><linearGradient id="wjSandDuneFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(207,132,46,0.34)"/><stop offset="0.62" stop-color="rgba(236,187,112,0.20)"/><stop offset="1" stop-color="rgba(255,250,243,0.02)"/></linearGradient></defs><g class="sand-dune-layer dune-back"><path class="sand-dune-fill" fill="url(#wjSandDuneBack)" d="M-180 328 C20 260 184 268 344 315 C548 375 710 268 900 230 C1108 188 1268 238 1620 162 L1620 560 L-180 560 Z"/><path class="sand-ridge ridge-a" d="M-180 328 C20 260 184 268 344 315 C548 375 710 268 900 230 C1108 188 1268 238 1620 162"/></g><g class="sand-dune-layer dune-mid"><path class="sand-dune-fill" fill="url(#wjSandDuneMid)" d="M-220 405 C-12 334 148 348 336 392 C536 438 706 343 920 305 C1128 268 1278 314 1660 236 L1660 560 L-220 560 Z"/><path class="sand-ridge ridge-b" d="M-220 405 C-12 334 148 348 336 392 C536 438 706 343 920 305 C1128 268 1278 314 1660 236"/></g><g class="sand-dune-layer dune-front"><path class="sand-dune-fill" fill="url(#wjSandDuneFront)" d="M-240 475 C-42 430 138 430 328 462 C522 494 694 430 882 400 C1098 366 1276 398 1680 324 L1680 560 L-240 560 Z"/><path class="sand-ridge ridge-c" d="M-240 475 C-42 430 138 430 328 462 C522 494 694 430 882 400 C1098 366 1276 398 1680 324"/><path class="sand-ridge ridge-d" d="M38 502 C194 480 356 486 520 507 C708 531 872 482 1068 454 C1224 432 1348 438 1494 408"/></g></svg><span class="sand-stream stream-a"></span><span class="sand-stream stream-b"></span><span class="sand-stream stream-c"></span><span class="sand-grain g1"></span><span class="sand-grain g2"></span><span class="sand-grain g3"></span><span class="sand-grain g4"></span><span class="sand-grain g5"></span><span class="sand-grain g6"></span><span class="sand-grain g7"></span><span class="sand-grain g8"></span></div>`,
+        "sage-green": `<div class="wanjuan-boot-animation mint-vellum" aria-hidden="true">${mintVineHTML}</div>`,
+        "chrome-sand": `<div class="wanjuan-boot-animation sand-vellum" aria-hidden="true">${sandDawnHTML}</div>`,
         "dark": `<div class="wanjuan-boot-animation dark-stars" aria-hidden="true">${buildBootParticleMarkup("dark-dust", 46, 120)}<svg class="star-lines" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet"><line x1="88" y1="86" x2="154" y2="132"/><line x1="154" y1="132" x2="225" y2="96"/><line x1="154" y1="132" x2="196" y2="214"/><line x1="196" y1="214" x2="296" y2="252"/><line x1="225" y1="96" x2="315" y2="158"/><line x1="315" y1="158" x2="296" y2="252"/><line x1="104" y1="278" x2="196" y2="214"/><line x1="104" y1="278" x2="58" y2="202"/><line x1="315" y1="158" x2="354" y2="92"/></svg><span class="dark-star s1"></span><span class="dark-star s2"></span><span class="dark-star s3"></span><span class="dark-star s4"></span><span class="dark-star s5"></span><span class="dark-star s6"></span><span class="dark-star s7"></span><span class="dark-star s8"></span><span class="dark-star s9"></span><span class="dark-star s10"></span><span class="dark-star s11"></span><span class="dark-star s12"></span></div>`
       };
       themeAnimHTML["light"] = themeAnimHTML["chrome-blue"];
       themeAnimHTML["warm-light"] = themeAnimHTML["chrome-sand"];
       themeAnimHTML["chrome-teal"] = themeAnimHTML["sage-green"];
-      const resolvedHTML = themeAnimHTML[initialTheme] || themeAnimHTML["graphite"];
-      splash.innerHTML = resolvedHTML + scrollStageHTML;
+      const initializeMintVines = () => {
+        splash.querySelectorAll(".mint-vine-scene path").forEach((path) => {
+          try {
+            const length = path.getTotalLength();
+            path.style.setProperty("--vine-length", String(Math.ceil(length * 100) / 100));
+          } catch {}
+        });
+      };
+      const renderSplashHTML = (theme) => {
+        const resolvedHTML = themeAnimHTML[theme] || themeAnimHTML["graphite"];
+        splash.innerHTML = resolvedHTML + scrollStageHTML;
+        initializeMintVines();
+      };
+      renderSplashHTML(initialTheme);
       if (!splash.parentElement) document.body.appendChild(splash);
       const applyThemeToSplash = (nextTheme) => {
         const nextClass = splashThemeClass(nextTheme);
@@ -204,9 +218,7 @@ function installBootStabilityStyle() {
         splash.classList.remove(activeThemeClass);
         splash.classList.add(nextClass);
         activeThemeClass = nextClass;
-        // Also rebuild HTML content for the new theme
-        const newHTML = themeAnimHTML[nextTheme] || themeAnimHTML["graphite"];
-        splash.innerHTML = newHTML + scrollStageHTML;
+        renderSplashHTML(nextTheme);
       };
       const syncThemeFromRoot = () => applyThemeToSplash(resolveBootThemeMode());
       const themeObserver = new MutationObserver(syncThemeFromRoot);
@@ -313,13 +325,13 @@ function installBootStabilityStyle() {
         #wanjuan-boot-splash.boot-theme-graphite {
           color: #f7f9fc;
           background:
-            radial-gradient(circle at 50% 36%, rgba(138,180,248,0.18), transparent 34%),
-            linear-gradient(180deg, #343a42 0%, #2a2f36 54%, #232830 100%);
+            radial-gradient(circle at 50% 36%, rgba(226,232,240,0.14), transparent 34%),
+            linear-gradient(180deg, #383838 0%, #2f2f2f 54%, #262626 100%);
         }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-boot-orbit {
           position: absolute; left: 50%; top: 43%; transform: translate(-50%,-50%);
           width: 68vmax; height: 68vmax; border-radius: 50%;
-          border: 1px solid rgba(138,180,248,0.14);
+          border: 1px solid rgba(226,232,240,0.12);
           animation: wjOrbit 18s linear infinite !important;
         }
         #wanjuan-boot-splash.boot-theme-graphite .orbit-two { width: 52vmax; height: 52vmax; animation-duration: 14s !important; animation-direction: reverse !important; }
@@ -411,61 +423,83 @@ function installBootStabilityStyle() {
         #wanjuan-boot-splash .sand-vellum {
           position: absolute; inset: 0; overflow: hidden;
         }
+        #wanjuan-boot-splash .mint-halo,
+        #wanjuan-boot-splash .mint-thread,
+        #wanjuan-boot-splash .mint-dew,
+        #wanjuan-boot-splash .mint-vine-scene {
+          position: absolute;
+        }
         #wanjuan-boot-splash .mint-halo {
-          position: absolute; left: 50%; top: 42%; border-radius: 999px;
-          transform: translate(-50%, -50%);
+          left: 50%; top: 50%; border-radius: 999px;
           border: 1px solid rgba(78,145,111,0.18);
-          background: radial-gradient(circle, rgba(188,235,213,0.22), transparent 66%);
+          background: radial-gradient(ellipse, rgba(188,235,213,0.18), transparent 66%);
           animation: wjMintHalo 6.8s ease-in-out infinite !important;
         }
-        #wanjuan-boot-splash .mint-halo.h1 { width: 280px; height: 280px; }
-        #wanjuan-boot-splash .mint-halo.h2 { width: 410px; height: 410px; animation-delay: -2.6s !important; opacity: 0.58; }
-        #wanjuan-boot-splash .mint-leaf {
-          position: absolute; left: 50%; top: 43%; width: 96px; height: 142px;
-          border-radius: 82% 10% 82% 12% / 72% 12% 78% 14%;
-          background:
-            radial-gradient(ellipse at 32% 28%, rgba(245,255,249,0.78), transparent 36%),
-            linear-gradient(135deg, rgba(183,232,202,0.96) 0%, rgba(105,184,141,0.94) 58%, rgba(61,137,100,0.86) 100%);
-          box-shadow: 0 22px 58px rgba(69,132,95,0.22), inset 0 1px 0 rgba(255,255,255,0.72);
-          transform-origin: 78% 88%;
-          animation: wjMintLeafA 5.6s cubic-bezier(.2,.72,.24,1) infinite !important;
+        #wanjuan-boot-splash .mint-halo.h1 { width: 620px; height: 250px; transform: translate(-50%, -50%); }
+        #wanjuan-boot-splash .mint-halo.h2 { width: 760px; height: 330px; transform: translate(-50%, -50%); animation-delay: -2.6s !important; opacity: 0.46; }
+        #wanjuan-boot-splash .mint-vine-scene {
+          left: 50%; top: 50%; z-index: 2;
+          width: min(620px, calc(100vw - 36px)); height: 270px;
+          overflow: visible;
+          transform: translate(-50%, -50%);
+          animation: wjMintVineFloat 5.2s 2.2s ease-in-out infinite !important;
         }
-        #wanjuan-boot-splash .mint-leaf.leaf-a { transform: translate(-76px, -82px) rotate(-32deg) scale(1); }
-        #wanjuan-boot-splash .mint-leaf.leaf-b {
-          width: 82px; height: 122px;
-          transform-origin: 22% 88%;
-          background:
-            radial-gradient(ellipse at 34% 28%, rgba(250,255,252,0.7), transparent 34%),
-            linear-gradient(135deg, rgba(211,244,222,0.95) 0%, rgba(124,201,159,0.92) 60%, rgba(72,154,116,0.82) 100%);
-          animation-name: wjMintLeafB !important;
+        #wanjuan-boot-splash .mint-vine-scene path {
+          fill: none;
+          stroke-dasharray: var(--vine-length, 1000);
+          stroke-dashoffset: var(--vine-length, 1000);
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          vector-effect: non-scaling-stroke;
+          animation: wjMintVineGrow 1200ms cubic-bezier(.45,.02,.25,1) forwards !important;
         }
-        #wanjuan-boot-splash .mint-vein {
-          position: absolute; left: 50%; top: 16%; width: 1.5px; height: 78%;
-          border-radius: 999px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(45,117,83,0.28));
-          transform-origin: 50% 100%;
-          opacity: 0.68;
+        #wanjuan-boot-splash .mint-vine-main {
+          stroke: rgba(54,132,84,0.74);
+          stroke-width: 4.5;
+          filter: drop-shadow(0 8px 14px rgba(44,112,70,0.13));
         }
-        #wanjuan-boot-splash .mint-vein.v1 { transform: translateX(-50%) rotate(0deg); }
-        #wanjuan-boot-splash .mint-vein.v2 { transform: translateX(-50%) rotate(-22deg); height: 48%; top: 29%; opacity: 0.42; }
-        #wanjuan-boot-splash .mint-vein.v3 { transform: translateX(-50%) rotate(24deg); height: 44%; top: 33%; opacity: 0.38; }
+        #wanjuan-boot-splash .mint-vine-branch {
+          stroke: rgba(80,160,108,0.58);
+          stroke-width: 3;
+          animation-duration: 950ms !important;
+        }
+        #wanjuan-boot-splash .mint-vine-curl {
+          stroke: rgba(104,178,128,0.52);
+          stroke-width: 2.4;
+          animation-duration: 1080ms !important;
+        }
+        #wanjuan-boot-splash .vine-left { animation-delay: 820ms !important; }
+        #wanjuan-boot-splash .vine-right { animation-delay: 960ms !important; }
+        #wanjuan-boot-splash .vine-left-low { animation-delay: 1100ms !important; }
+        #wanjuan-boot-splash .vine-right-low { animation-delay: 1240ms !important; }
+        #wanjuan-boot-splash .branch-left-top { animation-delay: 1780ms !important; }
+        #wanjuan-boot-splash .branch-right-top { animation-delay: 1880ms !important; }
+        #wanjuan-boot-splash .branch-left-bottom { animation-delay: 1980ms !important; }
+        #wanjuan-boot-splash .branch-right-bottom { animation-delay: 2080ms !important; }
+        #wanjuan-boot-splash .curl-top { animation-delay: 2160ms !important; }
+        #wanjuan-boot-splash .curl-bottom { animation-delay: 2300ms !important; }
         #wanjuan-boot-splash .mint-dew {
-          position: absolute; width: 9px; height: 9px; border-radius: 999px;
+          z-index: 2;
+          width: 12px; height: 12px; border-radius: 999px;
           background: radial-gradient(circle at 34% 28%, rgba(255,255,255,0.95), rgba(181,239,215,0.52) 52%, rgba(91,166,132,0.22) 100%);
-          box-shadow: 0 8px 18px rgba(60,128,96,0.14);
+          box-shadow: 0 10px 22px rgba(60,128,96,0.16);
           animation: wjMintDew 5.8s ease-in-out infinite !important;
         }
-        #wanjuan-boot-splash .mint-dew.d1 { left: calc(50% - 30px); top: calc(43% - 64px); }
-        #wanjuan-boot-splash .mint-dew.d2 { left: calc(50% + 48px); top: calc(43% - 24px); width: 7px; height: 7px; animation-delay: -1.8s !important; }
-        #wanjuan-boot-splash .mint-dew.d3 { left: calc(50% - 92px); top: calc(43% + 26px); width: 6px; height: 6px; animation-delay: -3.1s !important; }
+        #wanjuan-boot-splash .mint-dew.d1 { left: calc(50% - 150px); top: calc(50% - 74px); animation-delay: 660ms !important; }
+        #wanjuan-boot-splash .mint-dew.d2 { left: calc(50% + 154px); top: calc(50% - 82px); width: 9px; height: 9px; animation-delay: 760ms !important; }
+        #wanjuan-boot-splash .mint-dew.d3 { left: calc(50% + 206px); top: calc(50% + 38px); width: 11px; height: 11px; animation-delay: 860ms !important; }
+        #wanjuan-boot-splash .mint-dew.d4 { left: calc(50% - 214px); top: calc(50% + 62px); width: 8px; height: 8px; animation-delay: 960ms !important; }
         #wanjuan-boot-splash .mint-thread {
-          position: absolute; left: 50%; top: 43%; width: 260px; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(72,141,104,0.32), transparent);
+          z-index: 1;
+          left: 50%; top: 50%; width: 560px; height: 2px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, transparent, rgba(72,141,104,0.28), transparent);
           transform-origin: center;
           animation: wjMintThread 7.2s ease-in-out infinite !important;
         }
-        #wanjuan-boot-splash .mint-thread.t1 { transform: translate(-50%, 88px) rotate(-7deg); }
-        #wanjuan-boot-splash .mint-thread.t2 { transform: translate(-50%, -116px) rotate(9deg); animation-delay: -3.5s !important; opacity: 0.58; }
+        #wanjuan-boot-splash .mint-thread.t1 { transform: translate(-50%, 92px) rotate(-7deg); }
+        #wanjuan-boot-splash .mint-thread.t2 { transform: translate(-50%, -122px) rotate(9deg); animation-delay: -3.5s !important; opacity: 0.58; }
+        #wanjuan-boot-splash .mint-thread.t3 { transform: translate(-50%, -4px) rotate(2deg); animation-delay: -1.6s !important; opacity: 0.5; }
 
         /* ===== WARM-LIGHT/CHROME-SAND: Sand Vellum ===== */
         #wanjuan-boot-splash.boot-theme-chrome-sand,
@@ -476,6 +510,64 @@ function installBootStabilityStyle() {
             radial-gradient(ellipse 86% 44% at 50% 92%, rgba(214,149,70,0.22), transparent 62%),
             linear-gradient(180deg, #fffaf3 0%, #fbf0dd 48%, #ecd5b4 100%);
         }
+        #wanjuan-boot-splash .sand-sun-halo,
+        #wanjuan-boot-splash .sand-sun,
+        #wanjuan-boot-splash .sand-hill,
+        #wanjuan-boot-splash .sand-line {
+          position: absolute;
+        }
+        #wanjuan-boot-splash .sand-sun-halo {
+          left: 50%; top: 50%; z-index: 0;
+          width: 520px; height: 520px; border-radius: 999px;
+          background: radial-gradient(circle, rgba(255,238,185,0.45), rgba(220,153,70,0.12) 58%, transparent 72%);
+          transform: translate(-50%, -50%);
+          animation: wjSandSunHaloRise 5.6s cubic-bezier(.2,.72,.18,1) infinite !important;
+        }
+        #wanjuan-boot-splash .sand-sun {
+          left: 50%; top: 48%; z-index: 0;
+          width: min(232px, 36vw); height: min(232px, 36vw); border-radius: 999px;
+          background: radial-gradient(circle at 38% 32%, #fff6d2 0 18%, #f0be5f 52%, #d88b35 100%);
+          box-shadow: 0 24px 70px rgba(206,130,46,0.26);
+          transform: translate(-50%, -50%);
+          animation: wjSandSunRise 5.6s cubic-bezier(.2,.72,.18,1) infinite !important;
+        }
+        #wanjuan-boot-splash .sand-hill {
+          left: 50%; bottom: 0; z-index: 2;
+          width: 118%; height: 284px;
+          border-radius: 52% 48% 0 0 / 58% 54% 0 0;
+          background: linear-gradient(180deg, rgba(225,175,101,0.74), rgba(197,126,50,0.10));
+          border-top: 2px solid rgba(151,94,37,0.20);
+          transform-origin: center bottom;
+          animation: wjSandHillRise 5.8s cubic-bezier(.2,.72,.18,1) infinite !important;
+        }
+        #wanjuan-boot-splash .sand-hill.h2 {
+          z-index: 1;
+          bottom: 62px; width: 126%; height: 292px; opacity: 0.64;
+          background: linear-gradient(180deg, rgba(244,205,145,0.64), rgba(210,146,70,0.08));
+          animation-delay: 100ms !important;
+        }
+        #wanjuan-boot-splash .sand-hill.h3 {
+          z-index: 1;
+          bottom: 128px; width: 112%; height: 260px; opacity: 0.48;
+          background: linear-gradient(180deg, rgba(255,230,181,0.52), rgba(230,177,99,0.06));
+          animation-delay: 200ms !important;
+        }
+        #wanjuan-boot-splash .sand-hill.h4 {
+          z-index: 2;
+          bottom: -34px; width: 92%; height: 216px; opacity: 0.82;
+          background: linear-gradient(180deg, rgba(238,190,116,0.70), rgba(195,124,50,0.14));
+          animation-delay: 320ms !important;
+        }
+        #wanjuan-boot-splash .sand-line {
+          left: 50%; top: 50%; z-index: 0;
+          width: min(850px, 112vw); height: 2px; border-radius: 999px;
+          background: linear-gradient(90deg, transparent, rgba(190,120,49,0.24), transparent);
+          transform-origin: center;
+          animation: wjSandLineSweep 5.8s ease-in-out infinite !important;
+        }
+        #wanjuan-boot-splash .sand-line.l1 { transform: translateX(-50%) rotate(-7deg); }
+        #wanjuan-boot-splash .sand-line.l2 { transform: translateX(-50%) rotate(5deg); animation-delay: 100ms !important; }
+        #wanjuan-boot-splash .sand-line.l3 { transform: translateX(-50%) rotate(-2deg); animation-delay: 220ms !important; }
         #wanjuan-boot-splash .sand-sun-haze {
           position: absolute; left: 54%; top: 25%; width: min(560px, 76vw); height: min(260px, 38vw);
           border-radius: 999px;
@@ -656,6 +748,12 @@ function installBootStabilityStyle() {
           display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 8px 0;
           animation: wjStageIn 520ms cubic-bezier(.2,.8,.2,1) both !important;
         }
+        #wanjuan-boot-splash.boot-theme-sage-green .wanjuan-scroll-stage,
+        #wanjuan-boot-splash.boot-theme-chrome-teal .wanjuan-scroll-stage,
+        #wanjuan-boot-splash.boot-theme-chrome-sand .wanjuan-scroll-stage,
+        #wanjuan-boot-splash.boot-theme-warm-light .wanjuan-scroll-stage {
+          z-index: 3;
+        }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-stage {
           position: absolute;
           left: 0;
@@ -665,7 +763,54 @@ function installBootStabilityStyle() {
           margin: 0 auto;
         }
         #wanjuan-boot-splash .wanjuan-scroll { position: relative; width: 372px; max-width: calc(100vw - 80px); height: 142px; display: flex; align-items: center; justify-content: center; }
-        #wanjuan-boot-splash:not(.boot-theme-graphite) .wanjuan-scroll { opacity: 0; height: 0; overflow: hidden; pointer-events: none; }
+        #wanjuan-boot-splash:not(.boot-theme-graphite):not(.boot-theme-sage-green):not(.boot-theme-chrome-teal):not(.boot-theme-chrome-sand):not(.boot-theme-warm-light) .wanjuan-scroll {
+          opacity: 0; height: 0; overflow: hidden; pointer-events: none;
+        }
+        #wanjuan-boot-splash .wanjuan-scroll-paper {
+          position: relative; z-index: 1; width: 294px; height: 112px; overflow: hidden;
+          border: 1px solid rgba(56,111,83,0.18); border-left: 0; border-right: 0;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,0.34), #eef8f2 15%, #d5ecdf 50%, #eef8f2 85%, rgba(255,255,255,0.28)),
+            repeating-linear-gradient(0deg, rgba(56,111,83,0.08) 0 1px, transparent 1px 12px);
+          box-shadow: 0 24px 58px rgba(31,86,55,0.14);
+          transform-origin: center;
+          animation: wjPaperOpen 980ms cubic-bezier(.2,.78,.18,1) both !important;
+        }
+        #wanjuan-boot-splash .wanjuan-scroll-roll {
+          position: relative; z-index: 2; width: 34px; height: 126px; border-radius: 18px;
+          background: linear-gradient(90deg, rgba(255,255,255,0.82), #9dccb4 42%, #5f9f7e 64%, rgba(244,255,250,0.50));
+          box-shadow: 0 16px 38px rgba(43,112,75,0.20);
+          animation: wjRollSettle 980ms cubic-bezier(.2,.78,.18,1) both !important;
+        }
+        #wanjuan-boot-splash .wanjuan-scroll-roll.left { margin-right: -2px; }
+        #wanjuan-boot-splash .wanjuan-scroll-roll.right { margin-left: -2px; }
+        #wanjuan-boot-splash .wanjuan-scroll-ink {
+          position: absolute; left: 54px; height: 3px; border-radius: 999px;
+          background: linear-gradient(90deg, rgba(35,86,61,0.90), rgba(91,169,126,0.42));
+          transform-origin: left center; transform: scaleX(0); opacity: 0.9;
+          animation: wjInkWrite 1.9s ease-in-out infinite !important;
+        }
+        #wanjuan-boot-splash .wanjuan-scroll-ink.ink-one { top: 34px; width: 168px; animation-delay: 720ms !important; }
+        #wanjuan-boot-splash .wanjuan-scroll-ink.ink-two { top: 55px; width: 118px; animation-delay: 920ms !important; }
+        #wanjuan-boot-splash .wanjuan-scroll-ink.ink-three { top: 76px; width: 146px; animation-delay: 1120ms !important; }
+        #wanjuan-boot-splash .wanjuan-scroll-pen { display: none; }
+        #wanjuan-boot-splash.boot-theme-chrome-sand .wanjuan-scroll-paper,
+        #wanjuan-boot-splash.boot-theme-warm-light .wanjuan-scroll-paper {
+          border-color: rgba(146,92,39,0.20);
+          background:
+            linear-gradient(90deg, rgba(255,250,236,0.30), #fff4dd 15%, #edd5ad 50%, #fff4dd 85%, rgba(255,250,236,0.28)),
+            repeating-linear-gradient(0deg, rgba(123,77,31,0.08) 0 1px, transparent 1px 12px);
+          box-shadow: 0 24px 58px rgba(95,57,24,0.14);
+        }
+        #wanjuan-boot-splash.boot-theme-chrome-sand .wanjuan-scroll-roll,
+        #wanjuan-boot-splash.boot-theme-warm-light .wanjuan-scroll-roll {
+          background: linear-gradient(90deg, rgba(255,250,238,0.82), #e0b878 42%, #a36629 64%, rgba(255,244,218,0.44));
+          box-shadow: 0 16px 38px rgba(95,57,24,0.20);
+        }
+        #wanjuan-boot-splash.boot-theme-chrome-sand .wanjuan-scroll-ink,
+        #wanjuan-boot-splash.boot-theme-warm-light .wanjuan-scroll-ink {
+          background: linear-gradient(90deg, rgba(112,68,28,0.92), rgba(209,138,59,0.44));
+        }
         #wanjuan-boot-splash .wanjuan-scroll-copy { text-align: center; }
         #wanjuan-boot-splash .wanjuan-scroll-title {
           font-size: 20px !important;
@@ -686,22 +831,22 @@ function installBootStabilityStyle() {
         /* Graphite scroll visuals */
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-paper {
           position: relative; z-index: 1; width: 294px; height: 112px; overflow: hidden;
-          border: 1px solid rgba(188,202,220,0.42); border-left: 0; border-right: 0;
-          background: linear-gradient(90deg, rgba(138,180,248,0.1), #d8e0ea 13%, #c4ceda 50%, #d8e0ea 87%, rgba(138,180,248,0.1)), repeating-linear-gradient(0deg, rgba(36,43,54,0.1) 0 1px, transparent 1px 9px);
-          box-shadow: 0 1px 0 rgba(255,255,255,0.52) inset, 0 -1px 0 rgba(31,38,48,0.2) inset, 0 18px 42px rgba(10,14,20,0.24);
+          border: 1px solid rgba(214,220,228,0.38); border-left: 0; border-right: 0;
+          background: linear-gradient(90deg, rgba(232,234,237,0.08), #dedede 13%, #cfcfcf 50%, #dedede 87%, rgba(232,234,237,0.08)), repeating-linear-gradient(0deg, rgba(45,45,45,0.09) 0 1px, transparent 1px 9px);
+          box-shadow: 0 1px 0 rgba(255,255,255,0.46) inset, 0 -1px 0 rgba(32,32,32,0.2) inset, 0 18px 42px rgba(8,8,8,0.26);
           animation: wjPaperOpen 980ms cubic-bezier(.2,.78,.18,1) both !important;
         }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-roll {
           position: relative; z-index: 2; width: 34px; height: 126px; border-radius: 18px;
-          background: linear-gradient(90deg, rgba(239,245,252,0.56), #8aa0ba 42%, #4f5c6d 64%, rgba(238,244,250,0.34));
-          box-shadow: 0 14px 30px rgba(8,12,18,0.3), 0 0 0 1px rgba(244,248,252,0.32) inset;
+          background: linear-gradient(90deg, rgba(244,244,244,0.54), #9a9a9a 42%, #5a5a5a 64%, rgba(238,238,238,0.32));
+          box-shadow: 0 14px 30px rgba(8,8,8,0.32), 0 0 0 1px rgba(246,246,246,0.28) inset;
           animation: wjRollSettle 980ms cubic-bezier(.2,.78,.18,1) both !important;
         }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-roll.left { margin-right: -2px; }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-roll.right { margin-left: -2px; }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-ink {
           position: absolute; left: 54px; height: 3px; border-radius: 999px;
-          background: linear-gradient(90deg, rgba(36,45,58,0.92), rgba(84,118,168,0.58));
+          background: linear-gradient(90deg, rgba(42,42,42,0.92), rgba(96,96,96,0.58));
           transform-origin: left center; transform: scaleX(0); opacity: 0.9;
           animation: wjInkWrite 1.9s ease-in-out infinite !important;
         }
@@ -709,20 +854,21 @@ function installBootStabilityStyle() {
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-ink.ink-two { top: 55px; width: 118px; animation-delay: 920ms !important; }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-ink.ink-three { top: 76px; width: 146px; animation-delay: 1120ms !important; }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-pen {
+          display: block;
           position: absolute; z-index: 3; top: 25px; left: 58px; width: 86px; height: 13px; border-radius: 999px;
-          background: linear-gradient(90deg, #d9e8ff, #7f98ba 42%, #2f3948);
-          box-shadow: 0 6px 14px rgba(7,10,15,0.26), 0 0 0 1px rgba(255,255,255,0.28) inset;
+          background: linear-gradient(90deg, #eeeeee, #979797 42%, #343434);
+          box-shadow: 0 6px 14px rgba(7,7,7,0.28), 0 0 0 1px rgba(255,255,255,0.24) inset;
           transform-origin: 88% 50%;
           animation: wjPenWrite 1.9s ease-in-out infinite !important; animation-delay: 720ms !important;
         }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-pen::before {
           content: ""; position: absolute; left: -13px; top: 50%; width: 0; height: 0;
           border-top: 7px solid transparent; border-bottom: 7px solid transparent;
-          border-right: 16px solid #d2dceb; transform: translateY(-50%);
+          border-right: 16px solid #dddddd; transform: translateY(-50%);
         }
         #wanjuan-boot-splash.boot-theme-graphite .wanjuan-scroll-pen::after {
           content: ""; position: absolute; left: -18px; top: 50%; width: 6px; height: 6px;
-          border-radius: 50%; background: rgba(23,31,43,0.86); transform: translateY(-50%);
+          border-radius: 50%; background: rgba(31,31,31,0.86); transform: translateY(-50%);
         }
 
         /* ===== KEYFRAMES ===== */
@@ -766,17 +912,14 @@ function installBootStabilityStyle() {
           0%,100% { opacity: 0.34; transform: translate(-50%, -50%) scale(0.92); }
           48% { opacity: 0.78; transform: translate(-50%, -50%) scale(1.08); }
         }
-        @keyframes wjMintLeafA {
-          0%,100% { opacity: 0.72; transform: translate(-76px, -82px) rotate(-37deg) scale(0.94); }
-          18% { opacity: 0.98; transform: translate(-76px, -82px) rotate(-29deg) scale(1.02); }
-          58% { opacity: 0.94; transform: translate(-78px, -84px) rotate(-25deg) scale(1.05); }
-          82% { opacity: 0.8; transform: translate(-76px, -82px) rotate(-33deg) scale(0.98); }
+        @keyframes wjMintVineGrow {
+          from { stroke-dashoffset: var(--vine-length, 1000); opacity: 0.2; }
+          12% { opacity: 1; }
+          to { stroke-dashoffset: 0; opacity: 1; }
         }
-        @keyframes wjMintLeafB {
-          0%,100% { opacity: 0.62; transform: translate(10px, -70px) rotate(41deg) scale(0.9); }
-          22% { opacity: 0.96; transform: translate(12px, -72px) rotate(35deg) scale(1); }
-          62% { opacity: 0.9; transform: translate(14px, -74px) rotate(31deg) scale(1.04); }
-          84% { opacity: 0.72; transform: translate(10px, -70px) rotate(39deg) scale(0.96); }
+        @keyframes wjMintVineFloat {
+          0%,100% { transform: translate(-50%, -50%) translateY(0); }
+          50% { transform: translate(-50%, -50%) translateY(-4px); }
         }
         @keyframes wjMintDew {
           0%,100% { opacity: 0.24; transform: translate3d(0, 9px, 0) scale(0.72); }
@@ -791,6 +934,30 @@ function installBootStabilityStyle() {
         }
 
         /* Sand keyframes */
+        @keyframes wjSandSunRise {
+          0% { opacity: 0; transform: translate(-50%, calc(-50% + 188px)) scale(0.62); }
+          24% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          72% { opacity: 1; transform: translate(-50%, calc(-50% - 54px)) scale(1.04); }
+          100% { opacity: 0.86; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes wjSandSunHaloRise {
+          0% { opacity: 0; transform: translate(-50%, calc(-50% + 134px)) scale(0.66); }
+          26% { opacity: 0.72; transform: translate(-50%, -50%) scale(1); }
+          74% { opacity: 0.84; transform: translate(-50%, -50%) scale(1.14); }
+          100% { opacity: 0.54; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes wjSandHillRise {
+          0% { opacity: 0; transform: translate(-50%, 86px) scaleY(0.08); }
+          28% { opacity: 1; transform: translate(-50%, 0) scaleY(1); }
+          72% { opacity: 1; transform: translate(-50%, -18px) scaleY(1); }
+          100% { opacity: 0.86; transform: translate(-50%, 0) scaleY(1); }
+        }
+        @keyframes wjSandLineSweep {
+          0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+          24% { opacity: 0.5; clip-path: inset(0 18% 0 18%); }
+          68% { opacity: 0.32; clip-path: inset(0 0 0 0); }
+          100% { opacity: 0; clip-path: inset(0 0 0 100%); }
+        }
         @keyframes wjSandHaze {
           0%,100% { opacity: 0.56; transform: translate(-51%, -50%) scale(0.96); }
           48% { opacity: 0.86; transform: translate(-49%, -51%) scale(1.06); }
