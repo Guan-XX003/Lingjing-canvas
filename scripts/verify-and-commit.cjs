@@ -46,9 +46,16 @@ verdict.changedFiles = diff.split('\n').length;
 
 // 三道机器闸门
 const tc = run('npx tsc --noEmit');
-verdict.steps.typecheck = { code: tc.code, errors: (tc.out.match(/error TS\d+/g) || []).length };
+verdict.steps.typecheck = {
+  code: tc.code,
+  errors: (tc.out.match(/error TS\d+/g) || []).length,
+  sample: (tc.out.match(/^src\/.+\(\d+,\d+\): error TS\d+: .+$/gm) || []).slice(0, 15),
+};
 const build = run('npm run build:web');
-verdict.steps.build = { code: build.code };
+verdict.steps.build = {
+  code: build.code,
+  sample: build.code !== 0 ? build.out.split('\n').filter((l) => /error|Error|✗/.test(l)).slice(0, 10) : [],
+};
 const test = run('npm run test:lib');
 verdict.steps.test = { code: test.code, tail: test.out.trim().split('\n').slice(-1)[0] };
 
