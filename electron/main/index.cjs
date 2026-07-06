@@ -78,12 +78,13 @@ if (!gotSingleInstanceLock) {
   process.exit(0);
 }
 
-registerDesktopIpc();
-
 app.whenReady().then(async () => {
   installApplicationMenu();
   const desktopBaseUrl = await createStaticServer();
   setDesktopBaseUrl(desktopBaseUrl);
+  // IPC 注册放在 baseUrl 就绪之后，确保 isTrustedIpcEvent 始终有校验依据；
+  // 注册仍先于 createMainWindow，渲染进程调用时 handler 均已就位。
+  registerDesktopIpc();
   appendDesktopLog("test-build-info", {
     name: TEST_BUILD_NAME,
     userData: app.getPath("userData"),

@@ -92,7 +92,8 @@ function getIpcSenderUrl(event) {
 
 function isTrustedIpcEvent(event) {
   const desktopBaseUrl = getDesktopBaseUrl();
-  if (!desktopBaseUrl) return true;
+  // 静态服务器就绪前默认拒绝所有 IPC（fail closed）。
+  if (!desktopBaseUrl) return false;
   const senderUrl = getIpcSenderUrl(event);
   return senderUrl === desktopBaseUrl || senderUrl.startsWith(`${desktopBaseUrl}/`);
 }
