@@ -12,83 +12,83 @@ import {
   r as e
 } from "./rolldown-runtime.js";
 import {
-  $ as t,
-  A as n,
-  B as r,
-  C as i,
-  Ct as a,
-  D as o,
-  E as s,
-  F as c,
-  G as l,
-  H as u,
-  I as d,
-  J as f,
-  K as p,
-  L as m,
-  M as h,
-  N as g,
-  O as _,
-  P as v,
-  Q as y,
-  R as b,
-  S as x,
-  St as S,
-  T as C,
-  U as w,
-  V as T,
-  W as E,
-  X as D,
-  Y as O,
-  Z as ee,
-  _ as k,
-  _t as A,
-  a as j,
-  at as M,
-  b as N,
-  bt as P,
-  c as F,
-  ct as I,
-  d as L,
-  dt as te,
-  et as R,
-  f as ne,
-  ft as z,
-  g as re,
-  gt as B,
-  h as ie,
-  ht as ae,
-  i as V,
-  it as H,
-  j as U,
-  k as oe,
-  l as se,
-  lt as W,
-  m as ce,
-  mt as le,
-  n as G,
-  nt as K,
-  o as ue,
-  ot as de,
-  p as fe,
-  pt as pe,
-  q as me,
-  r as he,
-  rt as ge,
-  s as _e,
-  st as ve,
-  t as ye,
-  tt as be,
-  u as xe,
-  ut as Se,
-  v as Ce,
-  vt as we,
-  w as Te,
-  x as Ee,
-  xt as De,
-  y as Oe,
-  yt as ke,
-  z as Ae,
+  $ as ArrowUp,
+  A as Palette,
+  B as Inbox,
+  C as Redo2,
+  Ct as wanjuanReactFactory,
+  D as Pencil,
+  E as Pipette,
+  F as Maximize2,
+  G as FileText,
+  H as Hash,
+  I as ListPlus,
+  J as Copy,
+  K as Download,
+  L as Link,
+  M as MonitorPlay,
+  N as Minimize2,
+  O as Pen,
+  P as Mic,
+  Q as Check,
+  R as Link2,
+  S as RefreshCw,
+  St as wanjuanReactDomFactory,
+  T as Play,
+  U as FolderOpen,
+  V as Image,
+  W as Film,
+  X as CirclePlay,
+  Y as Circle,
+  Z as CircleAlert,
+  _ as Sparkles,
+  _t as Position,
+  a as wanjuanLocalforageFactory,
+  at as Handle,
+  b as Send,
+  bt as wanjuanJsxRuntimeFactory,
+  c as CloseX,
+  ct as Panel,
+  d as Undo2,
+  dt as useNodesState,
+  et as Background,
+  f as Type,
+  ft as useNodeConnections,
+  g as Square,
+  gt as useUpdateNodeInternals,
+  h as Star,
+  ht as useReactFlow,
+  i as ReactCrop,
+  it as NodeToolbar,
+  j as Music,
+  k as PenLine,
+  l as Upload,
+  lt as ReactFlowProvider,
+  m as Trash2,
+  mt as useEdgesState,
+  n as makeAspectCrop,
+  nt as BaseEdge,
+  o as ZoomIn,
+  ot as MiniMap,
+  p as Trash,
+  pt as useNodesData,
+  q as Crop,
+  r as centerCrop,
+  rt as Controls,
+  s as Zap,
+  st as NodeResizer,
+  t as wanjuanDagreFactory,
+  tt as BackgroundVariant,
+  u as Undo,
+  ut as ReactFlow,
+  v as Settings,
+  vt as addEdge,
+  w as Puzzle,
+  x as Save,
+  xt as wanjuanReactDomClientFactory,
+  y as Settings2,
+  yt as getBezierPath,
+  z as LayoutGrid,
 } from "./vendor.js";
 // —— 可读源码接线：以下模块已反混淆至 src/renderer/lib/，bundle 内联副本已删除 ——
 import {
@@ -485,15 +485,15 @@ var zr = Array.isArray(globalThis?.zr) ? globalThis.zr : [];
     fetch(link.href, fetchOptions);
   }
 })();
-var je = De(),
-  q = e(a(), 1),
-  J = P();
+var je = wanjuanReactDomClientFactory(),
+  q = e(wanjuanReactFactory(), 1),
+  J = wanjuanJsxRuntimeFactory();
 // —— 可读化别名：从打包的 React / jsx-runtime / ReactDOM 取出常用成员（同一 React 实例，行为不变）——
 const { useState, useEffect, useRef, useCallback, useMemo, memo: reactMemo, StrictMode } = q;
 const { jsx, jsxs, Fragment } = J;
 const { createRoot } = je;
-var X = e(j(), 1);
-var ze = S(),
+var X = e(wanjuanLocalforageFactory(), 1);
+var ze = wanjuanReactDomFactory(),
   Be = `modulepreload`,
   Ve = function(url, baseUrl) {
     return new URL(url, baseUrl).href;
@@ -567,7 +567,7 @@ var ze = S(),
     });
   };
 
-var tt = e(ye(), 1);
+var tt = e(wanjuanDagreFactory(), 1);
 
 
 X.default.config({
@@ -577,7 +577,7 @@ X.default.config({
 	      });
 
 function WanJuanCanvasShell(props) {
-  return jsxs(W, {
+  return jsxs(ReactFlowProvider, {
     children: [
       jsx(`style`, {
         children: `
@@ -787,8 +787,8 @@ function WanJuanAppCanvas({
   initialEmptyProject: initialEmptyProject = !1,
   onInitialEmptyProjectReady: onInitialEmptyProjectReady,
 	}) {
-  let [nodes, setNodes, onNodesChange] = le([]),
-		    [edges, setEdges, onEdgesChange] = te(WANJUAN_STARTER_EDGES),
+  let [nodes, setNodes, onNodesChange] = useEdgesState([]),
+		    [edges, setEdges, onEdgesChange] = useNodesState(WANJUAN_STARTER_EDGES),
 		    [shouldFitView, setShouldFitView] = useState(!1),
 		    [menuPosition, setMenuPosition] = useState(null),
 		    lastCanvasMenuPositionRef = useRef(null),
@@ -803,7 +803,7 @@ function WanJuanAppCanvas({
       getNodes: getNodes,
       getEdges: getEdges,
       fitView: fitView
-    } = ae(),
+    } = useReactFlow(),
     [previewImageUrl, setPreviewImageUrl] = useState(null),
     [imageEditState, setImageEditState] = useState(null),
 	    [videoEditState, setVideoEditState] = useState(null),
@@ -2284,7 +2284,7 @@ function WanJuanAppCanvas({
               return (
                 selectedNodes.forEach((selectedNode) => {
                   selectedNode.id !== connection.target &&
-	                    (updatedEdges = we({
+	                    (updatedEdges = addEdge({
 	                      ...connection,
 	                      source: selectedNode.id,
 	                      type: `custom`
@@ -2300,7 +2300,7 @@ function WanJuanAppCanvas({
           ...connection,
           type: `custom`
         };
-        setEdges((prevEdges) => we(newEdge, prevEdges));
+        setEdges((prevEdges) => addEdge(newEdge, prevEdges));
       },
       [setEdges, getNodes],
     ),
@@ -2388,7 +2388,7 @@ function WanJuanAppCanvas({
               return (
                 multiConnectIds.forEach((sourceId) => {
                   sourceId !== targetNode.id &&
-                    (updatedEdges = we({
+                    (updatedEdges = addEdge({
                         source: sourceId,
                         target: targetNode.id,
                         type: `default`,
@@ -11761,7 +11761,7 @@ ${combinedPrompt}`,
           accept: `image/*,video/*,audio/*,text/plain`,
           onChange: handleFileChange,
         }),
-        jsxs(Se, {
+        jsxs(ReactFlow, {
 	          nodes: wanjuanCanvasNodes,
           edges: edges,
           onNodesChange: onNodesChange,
@@ -11816,7 +11816,7 @@ ${combinedPrompt}`,
             hideAttribution: !0
           },
           children: [
-	            jsxs(I, {
+	            jsxs(Panel, {
 	              position: `top-right`,
 	              className: `wanjuan-canvas-top-tools flex items-center gap-3 mt-2 mr-2`,
 	              style: {
@@ -11831,7 +11831,7 @@ ${combinedPrompt}`,
 	                      onClick: autoLayout,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors text-gray-300 hover:text-white hover:bg-[#444]`,
 	                      title: `一键自动排版`,
-	                      children: jsx(Ae, {
+	                      children: jsx(LayoutGrid, {
 	                        size: 16
 	                      }),
 	                    }),
@@ -11843,7 +11843,7 @@ ${combinedPrompt}`,
 	                      disabled: historyIndex <= 0,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors ${historyIndex <= 0 ? `text-gray-600 cursor-not-allowed` : `text-gray-300 hover:text-white hover:bg-[#444]`}`,
 	                      title: `撤销 (Ctrl+Z)`,
-	                      children: jsx(L, {
+	                      children: jsx(Undo2, {
 	                        size: 16
 	                      }),
 	                    }),
@@ -11855,7 +11855,7 @@ ${combinedPrompt}`,
 	                      disabled: historyIndex >= history.length - 1,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors ${historyIndex >= history.length - 1 ? `text-gray-600 cursor-not-allowed` : `text-gray-300 hover:text-white hover:bg-[#444]`}`,
 	                      title: `重做 (Ctrl+Y)`,
-	                      children: jsx(i, {
+	                      children: jsx(Redo2, {
 	                        size: 16
 	                      }),
 	                    }),
@@ -11864,7 +11864,7 @@ ${combinedPrompt}`,
                 jsxs(`div`, {
                   className: `hidden`,
                   children: [
-                    jsx(_e, {
+                    jsx(Zap, {
                       size: 14,
                       className: `wanjuan-tier-icon ${membership.type === `VIP` ? `wanjuan-tier-icon-vip` : membership.type === `PRO` ? `wanjuan-tier-icon-pro` : `wanjuan-tier-icon-free`}`,
                     }),
@@ -11876,7 +11876,7 @@ ${combinedPrompt}`,
                 }),
               ],
             }),
-            jsx(ge, {
+            jsx(Controls, {
               className: `wanjuan-canvas-controls`,
             }),
             jsxs(`div`, {
@@ -11884,7 +11884,7 @@ ${combinedPrompt}`,
               children: [
                 jsx(`div`, {
                   className: `pointer-events-auto transition-all duration-300 origin-bottom-right ${isVisible ? `scale-100 opacity-100` : `scale-90 opacity-0 pointer-events-none absolute bottom-0 right-0`}`,
-                  children: jsx(de, {
+                  children: jsx(MiniMap, {
                     className: `wanjuan-canvas-minimap !m-0 !relative !bottom-0 !right-0 shadow-2xl rounded overflow-hidden`,
                     nodeColor: `#444`,
                   }),
@@ -11916,8 +11916,8 @@ ${combinedPrompt}`,
                 }),
               ],
             }),
-            jsx(R, {
-              variant: be.Dots,
+            jsx(Background, {
+              variant: BackgroundVariant.Dots,
               gap: 20,
               size: 1,
               color: `#333`,
@@ -12286,7 +12286,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(ne, {
+                        jsx(Type, {
                           size: 16,
                           className: `text-green-500`,
                         }),
@@ -12317,7 +12317,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(T, {
+                        jsx(Image, {
                           size: 16,
                           className: `text-blue-400`,
                         }),
@@ -12348,7 +12348,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(h, {
+                        jsx(MonitorPlay, {
                           size: 16,
                           className: `text-purple-400`,
                         }),
@@ -12446,7 +12446,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(v, {
+                        jsx(Mic, {
                           size: 16,
                           className: `text-yellow-500`,
                         }),
@@ -12505,7 +12505,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(Te, {
+                        jsx(Puzzle, {
                           size: 16,
                           className: `text-pink-400`,
                         }),
@@ -12525,7 +12525,7 @@ ${combinedPrompt}`,
                           children: jsxs(`span`, {
                             className: `flex items-center gap-2`,
                             children: [
-                              jsx(Te, {
+                              jsx(Puzzle, {
                                 size: 16,
                                 className: `text-pink-400`,
                               }),
@@ -12578,7 +12578,7 @@ ${combinedPrompt}`,
                                         ) && deleteCustomNode?.(e.id));
                                     },
                                     title: `删除`,
-                                    children: jsx(ce, {
+                                    children: jsx(Trash2, {
                                       size: 14,
                                     }),
                                   }),
@@ -12617,7 +12617,7 @@ ${combinedPrompt}`,
 	                            jsxs(`span`, {
 	                              className: `flex items-center gap-2`,
 	                              children: [
-	                                jsx(d, {
+	                                jsx(ListPlus, {
 	                                  size: 16,
 	                                  className: `text-orange-400`,
 	                                }),
@@ -12654,7 +12654,7 @@ ${combinedPrompt}`,
 	                                  menuPosition.connection,
 	                                ),
 	                              children: [
-	                                jsx(d, {
+	                                jsx(ListPlus, {
 	                                  size: 16,
 	                                  className: `text-green-400`,
 	                                }),
@@ -12679,7 +12679,7 @@ ${combinedPrompt}`,
 	                                  menuPosition.connection,
 	                                ),
 	                              children: [
-	                                jsx(b, {
+	                                jsx(Link2, {
 	                                  size: 16,
 	                                  className: `text-blue-400`,
 	                                }),
@@ -12835,7 +12835,7 @@ ${combinedPrompt}`,
 	                                  menuPosition.connection,
 	                                ),
 	                              children: [
-	                                jsx(Te, {
+	                                jsx(Puzzle, {
 	                                  size: 16,
 	                                  className: `text-green-400`,
 	                                }),
@@ -12860,7 +12860,7 @@ ${combinedPrompt}`,
 	                                  menuPosition.connection,
 	                                ),
 	                              children: [
-	                                jsx(Ae, {
+	                                jsx(LayoutGrid, {
 	                                  size: 16,
 	                                  className: `text-orange-400`,
 	                                }),
@@ -12885,7 +12885,7 @@ ${combinedPrompt}`,
 	                                  menuPosition.connection,
 	                                ),
 	                              children: [
-	                                jsx(h, {
+	                                jsx(MonitorPlay, {
 	                                  size: 16,
 	                                  className: `text-purple-400`,
 	                                }),
@@ -13151,7 +13151,7 @@ ${combinedPrompt}`,
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () => fileInputRef.current?.click(),
                       children: [
-                        jsx(se, {
+                        jsx(Upload, {
                           size: 16,
                           className: `text-green-400`,
                         }),
@@ -13174,7 +13174,7 @@ ${combinedPrompt}`,
                             jsxs(`span`, {
                               className: `flex items-center gap-2`,
                               children: [
-                                jsx(T, {
+                                jsx(Image, {
                                   size: 16,
                                   className: `text-blue-400`,
                                 }),
@@ -13261,7 +13261,7 @@ ${combinedPrompt}`,
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: Mt,
                       children: [
-                        jsx(f, {
+                        jsx(Copy, {
                           size: 16,
                           className: `text-purple-400`,
                         }),
@@ -13303,7 +13303,7 @@ ${combinedPrompt}`,
                             (event.stopPropagation(), copySelectedNodes(), setMenuPosition(null));
                           },
                           children: [
-                            jsx(f, {
+                            jsx(Copy, {
                               size: 16,
                               className: `text-gray-400`,
                             }),
@@ -13318,7 +13318,7 @@ ${combinedPrompt}`,
                             (event.stopPropagation(), groupSelectedNodes(), setMenuPosition(null));
                           },
                           children: [
-                            jsx(Ae, {
+                            jsx(LayoutGrid, {
                               size: 16,
                               className: `text-gray-400`,
                             }),
@@ -13370,7 +13370,7 @@ ${combinedPrompt}`,
                             (event.stopPropagation(), jt(), setMenuPosition(null));
                           },
                           children: [
-                            jsx(ce, {
+                            jsx(Trash2, {
                               size: 16,
                               className: `text-red-400`,
                             }),
@@ -13398,7 +13398,7 @@ ${combinedPrompt}`,
                                   setMenuPosition(null));
                               },
                               children: [
-                                jsx(Ae, {
+                                jsx(LayoutGrid, {
                                   size: 16,
                                   className: `text-gray-400`,
                                 }),
@@ -13475,7 +13475,7 @@ ${combinedPrompt}`,
 	                          className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                          onClick: copySelectedNodes,
                           children: [
-                            jsx(f, {
+                            jsx(Copy, {
                               size: 16,
                               className: `text-gray-400`,
                             }),
@@ -13504,7 +13504,7 @@ ${combinedPrompt}`,
 	                                ), setMenuPosition(null));
 	                              },
 	                              children: [
-	                                jsx(h, {
+	                                jsx(MonitorPlay, {
 	                                  size: 16,
 	                                  className: `text-gray-400`,
 	                                }),
@@ -13530,7 +13530,7 @@ ${combinedPrompt}`,
                                 ), setMenuPosition(null));
                               },
                               children: [
-                                jsx(h, {
+                                jsx(MonitorPlay, {
                                   size: 16,
                                   className: `text-red-400`,
                                 }),
@@ -13546,7 +13546,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: copySelectedNodes,
 	                              children: [
-	                                jsx(f, {
+	                                jsx(Copy, {
 	                                  size: 16,
 	                                  className: `text-gray-400`,
 	                                }),
@@ -13564,7 +13564,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: copyNodeImage,
 	                              children: [
-	                                jsx(T, {
+	                                jsx(Image, {
                                   size: 16,
                                   className: `text-gray-400`,
                                 }),
@@ -13619,7 +13619,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: addGridSplitNode,
                               children: [
-                                jsx(Ae, {
+                                jsx(LayoutGrid, {
                                   size: 16,
                                   className: `text-gray-400`,
                                 }),
@@ -13634,7 +13634,7 @@ ${combinedPrompt}`,
                           className: `text-left px-3 py-2 text-sm text-red-400 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item-danger`,
                           onClick: jt,
                           children: [
-                            jsx(ce, {
+                            jsx(Trash2, {
                               size: 16,
                               className: `text-red-400`,
                             }),
@@ -23381,7 +23381,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             ),
                           ),
                           task.nodeId &&
-                          N((nodes) =>
+                          Send((nodes) =>
                             nodes.map((node) =>
                               node.id === task.nodeId ?
                               {
@@ -23465,7 +23465,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                   task2,
                                 ),
                               ),
-                              N((nodes) =>
+                              Send((nodes) =>
                                 nodes.map((node) =>
                                   matchesTaskNode(node) ?
                                   {
@@ -23507,7 +23507,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                 task2,
                               ),
                             );
-                            N((nodes) =>
+                            Send((nodes) =>
                               nodes.map((node) =>
                                 matchesTaskNode(node) ?
                                 {
@@ -23639,7 +23639,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 		                                task2,
 		                              ),
 		                            ),
-		                            N((nodes) =>
+		                            Send((nodes) =>
 		                              nodes.map((node) =>
 		                                node.id === task.nodeId ?
 		                                {
@@ -23690,7 +23690,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                         ),
                       ),
                       task.nodeId &&
-                      N((nodes) =>
+                      Send((nodes) =>
                         nodes.map((node) =>
                           node.id === task.nodeId ?
                           {
@@ -23815,7 +23815,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               ),
                             ),
                             task.nodeId &&
-                            N((nodes) =>
+                            Send((nodes) =>
                               nodes.map((node) =>
                                 node.id === task.nodeId ?
                                 {
@@ -27141,7 +27141,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           className: `flex items-center gap-1.5 bg-[#2a2a2a] hover:bg-[#333] border border-[#333] rounded px-3 py-1.5 text-gray-300 hover:text-white transition-colors`,
                           title: wanjuanT(`打开下载目录`),
                           children: [
-                            jsx(w, {
+                            jsx(FolderOpen, {
                               size: 14
                             }),
                             jsx(`span`, {
@@ -27269,7 +27269,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           },
                                           className: `p-1.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded`,
                                           title: resource.type.startsWith(`video`) ? `全屏播放` : `全屏查看`,
-                                          children: jsx(c, {
+                                          children: jsx(Maximize2, {
                                             size: 14,
                                           }),
                                         }),
@@ -27296,7 +27296,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           },
                                           className: `p-1.5 text-gray-700 hover:text-black hover:bg-gray-200 rounded`,
                                           title: `下载`,
-                                          children: jsx(p, {
+                                          children: jsx(Download, {
                                             size: 14,
                                           }),
                                         }),
@@ -27304,7 +27304,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           onClick: () => copyResource(resource),
                                           className: `p-1.5 text-gray-700 hover:text-black hover:bg-gray-200 rounded`,
                                           title: `复制`,
-                                          children: jsx(f, {
+                                          children: jsx(Copy, {
                                             size: 14,
                                           }),
                                         }),
@@ -27312,7 +27312,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           onClick: () => Ht(resource.id),
                                           className: `wanjuan-danger-icon-action p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded`,
                                           title: `删除`,
-                                          children: jsx(fe, {
+                                          children: jsx(Trash, {
                                             size: 14,
                                           }),
                                         }),
@@ -27324,7 +27324,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           title: resource.isFavorite ?
                                             `取消收藏` :
                                             `收藏`,
-                                          children: jsx(ie, {
+                                          children: jsx(Star, {
                                             size: 14,
                                             fill: resource.isFavorite ?
                                               `currentColor` :
@@ -27411,7 +27411,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               disabled: resourceCleanupBusy,
                               className: `wanjuan-danger-text-action text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/40 whitespace-nowrap flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait`,
                               children: [
-                                jsx(fe, {
+                                jsx(Trash, {
                                   size: 12
                                 }),
                                 resourceCleanupBusy ? wanjuanT(`检查中...`) : wanjuanT(`清理失效素材`),
@@ -27421,7 +27421,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               onClick: handleClearUnfavorited,
                               className: `wanjuan-danger-text-action text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded hover:bg-[#333] transition-colors border border-transparent hover:border-red-900/50 whitespace-nowrap flex items-center gap-1`,
                               children: [
-                                jsx(fe, {
+                                jsx(Trash, {
                                   size: 12
                                 }),
                                 wanjuanT(`清空全部`),
@@ -27517,7 +27517,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                           onClick: () => handleDeleteProject(activeProjectId),
                           className: `wanjuan-canvas-model-toolbar-icon is-delete text-red-400 hover:text-red-300 p-1`,
                           title: `删除当前项目`,
-                          children: jsx(ce, {
+                          children: jsx(Trash2, {
                             size: 16
                           }),
                         }),
@@ -27737,7 +27737,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                                              className: canManuallyRefreshGlobalTask(task) ? `text-blue-400 hover:text-blue-300 wanjuan-task-card-icon-action is-refresh` : `text-gray-600 cursor-not-allowed wanjuan-task-card-icon-action is-disabled`,
 	                                              title: canManuallyRefreshGlobalTask(task) ? `刷新状态` : `当前任务状态不可刷新`,
 	                                              children: (0,
-	                                                jsx)(x, {
+	                                                jsx)(RefreshCw, {
                                                 size: 12,
                                               }),
                                             }),
@@ -27752,7 +27752,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                               className: `text-red-400 hover:text-red-300 wanjuan-task-card-icon-action is-delete`,
                                               title: `删除记录`,
                                               children: jsx(
-                                                fe, {
+                                                Trash, {
                                                   size: 12
                                                 },
                                               ),
@@ -28975,7 +28975,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                       },
                                       className: `wanjuan-danger-icon-action p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 transition-colors`,
                                       title: `删除智能体`,
-                                      children: jsx(ce, {
+                                      children: jsx(Trash2, {
                                         size: 14,
                                       }),
                                     }),
@@ -29101,7 +29101,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               onClick: deleteSelectedAgent,
                               className: `wanjuan-danger-icon-action p-2 text-red-400 hover:text-red-300 transition-colors rounded-xl hover:bg-red-500/10 border border-transparent hover:border-red-400/30`,
                               title: `删除智能体`,
-                              children: jsx(ce, {
+                              children: jsx(Trash2, {
                                 size: 16
                               }),
                             }),
@@ -31181,7 +31181,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(t),
                                               className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
-                                              children: jsx(ce, {
+                                              children: jsx(Trash2, {
                                                 size: 14,
                                               }),
                                             }),
@@ -32271,7 +32271,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             jsx(`button`, {
                                               onClick: () => handleRemovePreset(index),
                                               className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
-                                              children: jsx(ce, {
+                                              children: jsx(Trash2, {
                                                 size: 14,
                                               }),
                                             }),
@@ -32769,7 +32769,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                             },
                                             className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity`,
                                             title: `删除配置`,
-                                            children: jsx(ce, {
+                                            children: jsx(Trash2, {
                                               size: 14,
                                             }),
                                           }),
@@ -35296,7 +35296,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           className: `w-full flex items-center justify-center gap-2 text-sm bg-[#222] text-gray-300 border border-[#333] py-2.5 rounded-lg hover:bg-[#2a2a2a] hover:text-white hover:border-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed wanjuan-settings-button wanjuan-settings-button-block`,
                                           disabled: !backupExportSelection.filter((item) => [`settings`, `projects`, `agents`].includes(item)).length,
                                           children: [
-                                            jsx(se, {
+                                            jsx(Upload, {
                                               size: 16,
                                               className: `text-orange-400`,
                                             }),
@@ -35346,7 +35346,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           onClick: handleBackupImportFile,
                                           className: `w-full flex items-center justify-center gap-2 text-sm bg-[#222] text-gray-300 border border-[#333] py-2.5 rounded-lg hover:bg-[#2a2a2a] hover:text-white hover:border-gray-500 transition-all text-center cursor-pointer wanjuan-settings-button wanjuan-settings-button-block`,
                                           children: [
-                                            jsx(p, {
+                                            jsx(Download, {
                                               size: 16,
                                               className: `text-blue-400`,
                                             }),
