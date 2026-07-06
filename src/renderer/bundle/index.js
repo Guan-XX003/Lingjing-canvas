@@ -4142,6 +4142,30 @@ var Le = reactMemo(({
       divisor = gcd(Math.round(ratioWidth * 100), Math.round(ratioHeight * 100));
     return `${Math.round(ratioWidth * 100) / divisor}:${Math.round(ratioHeight * 100) / divisor}`;
   },
+  // 上游只接受固定几个画幅；任意比例（如 2.35:1）按对数距离就近吸附到候选列表。
+  snapVideoAspectRatioToSupported = (ratioText, supportedRatios = [`16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`]) => {
+    let parseRatioValue = (value) => {
+        let ratioMatch = String(value || ``).trim().match(/^(\d+(?:\.\d+)?)\s*[:xX\/]\s*(\d+(?:\.\d+)?)$/);
+        if (!ratioMatch) return NaN;
+        let ratioWidth = Number(ratioMatch[1]),
+          ratioHeight = Number(ratioMatch[2]);
+        return ratioWidth > 0 && ratioHeight > 0 ? ratioWidth / ratioHeight : NaN;
+      },
+      normalized = String(ratioText || ``).trim(),
+      fallback = supportedRatios[0] || `16:9`;
+    if (supportedRatios.includes(normalized)) return normalized;
+    let target = parseRatioValue(normalized);
+    if (!isFinite(target)) return fallback;
+    let best = fallback,
+      bestDistance = Infinity;
+    for (let candidate of supportedRatios) {
+      let value = parseRatioValue(candidate);
+      if (!isFinite(value)) continue;
+      let distance = Math.abs(Math.log(value / target));
+      distance < bestDistance && ((bestDistance = distance), (best = candidate));
+    }
+    return best;
+  },
   We = reactMemo(({
     id: nodeId,
     data: nodeData,
@@ -17968,7 +17992,8 @@ const wanjuanTianjiRequest = async (rawConfig, path, {
   }
   if (!response.ok)
     throw Error(responseData?.message || responseData?.msg || responseData?.error?.message || responseData?.error?.msg || `即梦天玑请求失败: ${response.status} ${response.statusText}`);
-  if (responseData?.code && responseData.code !== 200)
+  // code 为 0 等 falsy 值也必须视为错误，不能被 && 短路吞掉。
+  if (responseData?.code !== void 0 && Number(responseData.code) !== 200)
     throw Error(responseData.message || responseData.msg || responseData?.error?.message || responseData?.error?.msg || `即梦天玑返回错误: ${responseData.code}`);
   return responseData;
 };
@@ -18603,6 +18628,14 @@ async function wanjuanRunTianjiSeedanceVideo(options) {
     ).trim(),
     aspectRatio = String(sourceData.size || options.selectedSize || wanjuanTianjiFirstListValue(sourceData.seedanceRatios || sourceData.videoResolutions || config.ratios, `16:9`)).trim();
   if (!aspectRatio.includes(`:`)) aspectRatio = normalizeVideoAspectRatioValue(aspectRatio, `1280x720`);
+  // 上游只接受固定几个画幅，浮点比例（如 2.35:1）就近吸附到配置的候选列表。
+  {
+    let supportedRatioList = String(sourceData.seedanceRatios || sourceData.videoResolutions || config.ratios || ``)
+      .split(/[\s,，、]+/)
+      .map((item) => item.trim())
+      .filter((item) => item.includes(`:`));
+    aspectRatio = snapVideoAspectRatioToSupported(aspectRatio, supportedRatioList.length ? supportedRatioList : void 0);
+  }
   if (!model) throw Error(`请先在设置中配置天玑 Seedance 模型`);
   let generationMode = `reference-media`,
     requestParams = {
@@ -18743,7 +18776,8 @@ async function wanjuanRunTianjiSeedanceVideo(options) {
         thumbnailUrl = wanjuanTianjiFindThumbUrl(response2),
         statusLabel = wanjuanTianjiStatusLabel(status);
       errorCount = 0;
-      if ([`succeeded`, `completed`, `complete`, `success`, `done`].includes(status) || videoUrl) {
+      // 只按 status 判定完成；不再用 videoUrl 兜底，避免预览片段被当成最终结果。
+      if ([`succeeded`, `completed`, `complete`, `success`, `done`].includes(status)) {
         if (!videoUrl) throw Error(`即梦天玑任务已完成，但未返回视频地址`);
         let width = 320,
           height = 320,
@@ -18877,7 +18911,9 @@ async function wanjuanRunTianjiSeedanceVideo(options) {
               animated: !1
             } : edge)),
           ));
-        throw Error(failureMessage);
+        let failureError = Error(failureMessage);
+        failureError.terminal = true;
+        throw failureError;
       }
       else {
         let progress = wanjuanTianjiFindProgress(response2),
@@ -18918,7 +18954,13 @@ async function wanjuanRunTianjiSeedanceVideo(options) {
           ));
       }
     } catch (error) {
-      if (error?.message && /失败|failed|error|expired|canceled|cancelled|rejected/i.test(error.message))
+      // 终止条件：显式 terminal 标志（业务失败）、用户取消、明确的终止关键词。
+      // 不再匹配裸 `error` / `失败`，避免 `network error`、`请求失败` 等瞬时错误被误杀（应进入重试）。
+      if (
+        error?.terminal === true ||
+        error?.name === `AbortError` ||
+        (error?.message && /生成已取消|expired|canceled|cancelled|rejected/i.test(error.message))
+      )
         throw error;
       (console.warn(`Tianji Seedance polling error:`, error),
         errorCount++,
