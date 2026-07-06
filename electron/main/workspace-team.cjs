@@ -1,4 +1,5 @@
 // 工作空间团队服务：跨 macOS / Windows 的局域网只读模板共享 HTTP 服务。
+const crypto = require("node:crypto");
 const http = require("node:http");
 const os = require("node:os");
 const fs = require("node:fs");
@@ -21,7 +22,25 @@ let teamServerState = {
   templates: [],
   startedAt: 0,
   lastError: "",
+  token: "",
 };
+
+// 访问令牌：分享链接自带 ?token=xxx，无令牌或令牌错误的请求一律 401，防止端口扫描直接拉取内容。
+function isValidWorkspaceToken(candidate) {
+  const expected = String(teamServerState.token || "");
+  const provided = String(candidate || "");
+  if (!expected || !provided) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(provided);
+  if (expectedBuffer.length !== providedBuffer.length) return false;
+  return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
+function withWorkspaceToken(url) {
+  const token = String(teamServerState.token || "");
+  if (!url || !token) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}token=${token}`;
+}
 
 function normalizeTeamTemplate(template = {}) {
   const id = String(template.id || "").trim();
@@ -98,9 +117,10 @@ function getWorkspaceManifest() {
     addressEntries,
     allAddressEntries,
     preferredAddress,
-    preferredUrl: preferredAddress ? `http://${preferredAddress}:${port}` : "",
-    urls: addresses.map((address) => `http://${address}:${port}`),
-    allUrls: allAddresses.map((address) => `http://${address}:${port}`),
+    preferredUrl: preferredAddress ? withWorkspaceToken(`http://${preferredAddress}:${port}`) : "",
+    urls: addresses.map((address) => withWorkspaceToken(`http://${address}:${port}`)),
+    allUrls: allAddresses.map((address) => withWorkspaceToken(`http://${address}:${port}`)),
+    token: teamServerState.token || "",
     templateCount: teamServerState.templates.length,
     startedAt: teamServerState.startedAt || 0,
   };
@@ -231,7 +251,7 @@ function mediaUrlForTemplate(req, template, kind) {
   const baseUrl = requestBaseUrl(req);
   if (!baseUrl) return "";
   const filename = encodeURIComponent(path.basename(localPath) || `${kind}.bin`);
-  return `${baseUrl}/workspace/media/${encodeURIComponent(template.id)}/${kind}/${filename}`;
+  return withWorkspaceToken(`${baseUrl}/workspace/media/${encodeURIComponent(template.id)}/${kind}/${filename}`);
 }
 
 function templateForResponse(req, template) {
@@ -315,6 +335,10 @@ function createWorkspaceTeamServer() {
     }
 
     const parsedUrl = new URL(req.url || "/", "http://127.0.0.1");
+    if (!isValidWorkspaceToken(parsedUrl.searchParams.get("token"))) {
+      sendJson(res, 401, { ok: false, error: "缺少或错误的访问令牌，请使用应用内显示的完整分享链接" });
+      return;
+    }
     const pathname = parsedUrl.pathname.replace(/\/+$/, "") || "/";
     if (pathname === "/") {
       sendHtml(res, 200, renderWorkspaceHomePage());
@@ -394,6 +418,8 @@ async function startWorkspaceTeamServer(options = {}) {
   await stopWorkspaceTeamServer();
   teamServerState.port = port;
   teamServerState.templates = normalizeTeamTemplates(options.templates || teamServerState.templates);
+  // 每次启动生成新的访问令牌，通过分享链接（?token=xxx）分发给团队成员。
+  teamServerState.token = crypto.randomBytes(16).toString("hex");
 
   teamServer = createWorkspaceTeamServer();
   return new Promise((resolve) => {
@@ -574,7 +600,10 @@ async function fetchWorkspaceTeamMember(address, timeoutMs = 12000) {
       fetchedAt: Date.now(),
     };
   }
-  const endpoint = `${baseUrl}/workspace/templates`;
+  // 地址中携带的访问令牌（normalizeMemberAddress 会剥掉 query，这里单独提取）。
+  const memberTokenMatch = String(address || "").match(/[?&]token=([A-Za-z0-9_-]+)/);
+  const memberToken = memberTokenMatch ? memberTokenMatch[1] : "";
+  const endpoint = `${baseUrl}/workspace/templates${memberToken ? `?token=${memberToken}` : ""}`;
   const controller = new AbortController();
   const probeTimeoutMs = Math.max(1000, Number(timeoutMs || 12000));
   const timeout = setTimeout(() => controller.abort(), probeTimeoutMs);
