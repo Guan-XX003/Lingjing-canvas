@@ -706,8 +706,8 @@ function WanJuanAppCanvas({
   imageApiKey: propImageApiKey,
   videoApiUrl: videoApiUrl,
   videoApiKey: videoApiKey,
-  audioApiUrl: c,
-	  audioApiKey: l,
+  audioApiUrl: audioApiUrl,
+	  audioApiKey: audioApiKey,
 	  textModel: textModel = ``,
 	  drawingModel: drawingModel = ``,
 	  imageCompatResolutions: imageCompatResolutions = `1024x1024
@@ -719,9 +719,9 @@ function WanJuanAppCanvas({
 3840x2160
 2160x3840`,
 	  videoModel: videoModel = ``,
-  videoDurations: g = `10
+  videoDurations: videoDurations = `10
 15`,
-  videoResolutions: Rr = `1280x720
+  videoResolutions: videoResolutions = `1280x720
 	720x1280
 	1080x720
 	720x1080
@@ -747,12 +747,12 @@ function WanJuanAppCanvas({
   tongyiWanxiangDurations: tongyiWanxiangDurations = WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_DURATIONS,
   tongyiWanxiangResolutions: tongyiWanxiangResolutions = WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RESOLUTIONS,
   tongyiWanxiangRatios: tongyiWanxiangRatios = WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_RATIOS,
-  audioModel: _ = ``,
+  audioModel: audioModel = ``,
   ttsMusicModel: ttsMusicModel = ``,
   showToast: showToast,
   transitResources: resources = [],
   addTransitResource: addGeneratedAsset,
-  presetPrompts: C = [],
+  presetPrompts: presetPrompts = [],
   membership: membership = {
     type: `FREE`,
     expiry: 0
@@ -760,7 +760,7 @@ function WanJuanAppCanvas({
   globalTasks: GlobalTasks = [],
   updateGlobalTasks: updateTaskList,
   onSendToActiveTab: sendToActiveTab,
-	  customNodeTemplates: O = [],
+	  customNodeTemplates: customNodeTemplates = [],
 	  onAddCustomNodeTemplate: addCustomNode,
 	  onDeleteCustomNodeTemplate: deleteCustomNode,
   globalPollingInterval: pollIntervalMs = 3e3,
@@ -2235,8 +2235,8 @@ function WanJuanAppCanvas({
             data: {
               ...node.data,
               videoModel: videoModel,
-              videoDurations: g,
-              videoResolutions: Rr,
+              videoDurations: videoDurations,
+              videoResolutions: videoResolutions,
               videoAspectRatios: videoAspectRatios,
             },
           } :
@@ -2262,9 +2262,9 @@ function WanJuanAppCanvas({
             ...node,
             data: {
               ...node.data,
-              audioModel: _,
-              audioApiUrl: c,
-              audioApiKey: l,
+              audioModel: audioModel,
+              audioApiUrl: audioApiUrl,
+              audioApiKey: audioApiKey,
               projectId: projectIdRef.current,
               updateGlobalTasks: updateTaskList,
             },
@@ -2272,7 +2272,7 @@ function WanJuanAppCanvas({
           node,
         ),
       );
-	    }, [videoModel, g, Rr, videoAspectRatios, drawingModel, imageCompatResolutions, textModel, _, c, l, setNodes]));
+	    }, [videoModel, videoDurations, videoResolutions, videoAspectRatios, drawingModel, imageCompatResolutions, textModel, audioModel, audioApiUrl, audioApiKey, setNodes]));
   let handleConnect = useCallback(
       (connection) => {
         let nodes2 = getNodes();
@@ -3519,7 +3519,7 @@ ${combinedPrompt}`,
                 throw Error(errorMessage);
               }
 		              let seedreamResult = await seedreamResponse.json();
-		              (localStorage.setItem(apiBindingId, (l + 1).toString()), setDailyGenerationCount(l + 1));
+		              (localStorage.setItem(apiBindingId, (audioApiKey + 1).toString()), setDailyGenerationCount(audioApiKey + 1));
 		              let readImageProtocolResponsePath = (source, path) => {
 		                  let trimmedPath = String(path || ``).trim();
 		                  if (!trimmedPath) return void 0;
@@ -4276,7 +4276,7 @@ ${combinedPrompt}`,
               throw Error(errorMessage);
             }
             let responseData = await response.json();
-            (localStorage.setItem(apiBindingId, (l + 1).toString()), setDailyGenerationCount(l + 1));
+            (localStorage.setItem(apiBindingId, (audioApiKey + 1).toString()), setDailyGenerationCount(audioApiKey + 1));
             let candidate = responseData.candidates?.[0];
             if (!candidate) throw Error(`API 返回格式错误：找不到 candidates`);
             let imagePart = candidate.content?.parts?.find((part) => part.inlineData),
@@ -6769,7 +6769,7 @@ ${combinedPrompt}`,
               },
 	              durationValue =
 	              duration ||
-	              (g || `10`)
+	              (videoDurations || `10`)
 	              .split(
 	                `
 		`,
@@ -7818,7 +7818,7 @@ ${combinedPrompt}`,
           videoApiKey,
           videoApiUrl,
           videoModel,
-          g,
+          videoDurations,
           apiConfigs,
           videoModelApiBindings,
           videoModelProtocolBindings,
@@ -8690,7 +8690,7 @@ ${combinedPrompt}`,
                           label: title,
                           expanded: !1,
                           onGenerateText: generateText,
-                          presetPrompts: C,
+                          presetPrompts: presetPrompts,
                           splitSourceId: nodeId,
                         },
                       };
@@ -10148,7 +10148,7 @@ ${combinedPrompt}`,
               nodeType === `qwenTtsCloneNode` ?
               showToast :
               void 0,
-            presetPrompts: C,
+            presetPrompts: presetPrompts,
             onSendToActiveTab: nodeType === `promptNode` || nodeType === `imageNode` ? sendToActiveTab : void 0,
             onTianjiPortraitReview: nodeType === `promptNode` || nodeType === `imageNode` ? handleTianjiPortraitReview : void 0,
             seedanceNode: nodeType === `seedanceNode` ? !0 : void 0,
@@ -10170,7 +10170,7 @@ ${combinedPrompt}`,
               nodeType === `videoNode` ?
               videoModel :
               void 0,
-            videoDurations: nodeType === `seedanceNode` ? seedanceDurations : nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : nodeType === `videoNode` ? g : void 0,
+            videoDurations: nodeType === `seedanceNode` ? seedanceDurations : nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : nodeType === `videoNode` ? videoDurations : void 0,
             seedanceModel: nodeType === `seedanceNode` ? seedanceModel : void 0,
             tianjiSeedanceModel: nodeType === `seedanceNode` ? tianjiSeedanceModel : void 0,
             videoResolutions: nodeType === `seedanceNode` ?
@@ -10178,7 +10178,7 @@ ${combinedPrompt}`,
               nodeType === `tongyiWanxiangNode` ?
               tongyiWanxiangRatios :
               nodeType === `videoNode` ?
-              Rr :
+              videoResolutions :
               void 0,
             videoAspectRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : nodeType === `videoNode` ? videoAspectRatios : void 0,
             seedanceResolutions: nodeType === `seedanceNode` ? seedanceResolutions : void 0,
@@ -10222,9 +10222,9 @@ ${combinedPrompt}`,
               void 0,
             drawingModel: nodeType === `promptNode` ? drawingModel : void 0,
             textModel: nodeType === `textNode` ? textModel : void 0,
-	            audioApiUrl: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? c : void 0,
-	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? l : void 0,
-	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? _ : void 0,
+	            audioApiUrl: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiUrl : void 0,
+	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiKey : void 0,
+	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModel : void 0,
 	            audioModelApiBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelApiBindings : void 0,
 	            apiConfigs: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? apiConfigs : void 0,
 	            ttsMusicModels: nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `audioNode` ? ttsMusicModel : void 0,
@@ -10918,8 +10918,8 @@ ${combinedPrompt}`,
             node.type === `videoNode` ||
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode`) &&
-          nodeData.presetPrompts !== C &&
-          ((nodeData.presetPrompts = C), (hasChanged = !0)),
+          nodeData.presetPrompts !== presetPrompts &&
+          ((nodeData.presetPrompts = presetPrompts), (hasChanged = !0)),
           node.type === `videoExtractNode` &&
           (nodeData.onExtractFrames !== handleExtractFrames && ((nodeData.onExtractFrames = handleExtractFrames), (hasChanged = !0)),
             nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
@@ -11102,8 +11102,8 @@ ${combinedPrompt}`,
                     (hasChanged = !0)));
               })()) :
             (nodeData.videoModel !== videoModel && ((nodeData.videoModel = videoModel), (hasChanged = !0)),
-              nodeData.videoDurations !== g && ((nodeData.videoDurations = g), (hasChanged = !0)),
-              nodeData.videoResolutions !== Rr && ((nodeData.videoResolutions = Rr), (hasChanged = !0)),
+              nodeData.videoDurations !== videoDurations && ((nodeData.videoDurations = videoDurations), (hasChanged = !0)),
+              nodeData.videoResolutions !== videoResolutions && ((nodeData.videoResolutions = videoResolutions), (hasChanged = !0)),
               nodeData.videoAspectRatios !== videoAspectRatios &&
               ((nodeData.videoAspectRatios = videoAspectRatios), (hasChanged = !0))),
             nodeData.apiConfigs !== apiConfigs &&
@@ -11119,9 +11119,9 @@ ${combinedPrompt}`,
             ((nodeData.videoModelRequestProfiles = videoModelRequestProfiles),
               (hasChanged = !0))),
           node.type === `audioNode` &&
-          (nodeData.audioApiUrl !== c && ((nodeData.audioApiUrl = c), (hasChanged = !0)),
-            nodeData.audioApiKey !== l && ((nodeData.audioApiKey = l), (hasChanged = !0)),
-	            nodeData.audioModel !== _ && ((nodeData.audioModel = _), (hasChanged = !0)),
+          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = !0)),
+            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = !0)),
+	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = !0)),
 	            nodeData.audioModelApiBindings !== audioModelApiBindings &&
 	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = !0)),
 	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
@@ -11137,9 +11137,9 @@ ${combinedPrompt}`,
             nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = !0)),
             nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
           (node.type === `ttsMusicNode` || node.type === `musicNode`) &&
-          (nodeData.audioApiUrl !== c && ((nodeData.audioApiUrl = c), (hasChanged = !0)),
-            nodeData.audioApiKey !== l && ((nodeData.audioApiKey = l), (hasChanged = !0)),
-	            nodeData.audioModel !== _ && ((nodeData.audioModel = _), (hasChanged = !0)),
+          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = !0)),
+            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = !0)),
+	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = !0)),
 	            nodeData.audioModelApiBindings !== audioModelApiBindings &&
 	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = !0)),
 	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
@@ -11245,7 +11245,7 @@ ${combinedPrompt}`,
     _t,
     handleCancel2,
     setNodes,
-    C,
+    presetPrompts,
     createImageNode,
     openImagePreview,
     showToast,
@@ -11268,13 +11268,13 @@ ${combinedPrompt}`,
 	    ttsMusicModel,
 	    drawingModel,
     textModel,
-    _,
+    audioModel,
     videoModel,
-    g,
-    Rr,
+    videoDurations,
+    videoResolutions,
     videoAspectRatios,
-    c,
-    l,
+    audioApiUrl,
+    audioApiKey,
     updateTaskList,
     seedanceModel,
     tianjiSeedanceModel,
@@ -12514,8 +12514,8 @@ ${combinedPrompt}`,
                         }),
                       ],
                     }),
-                    O &&
-                    O.length > 0 &&
+                    customNodeTemplates &&
+                    customNodeTemplates.length > 0 &&
                     jsxs(`div`, {
                       className: `relative group/custom`,
                       children: [
@@ -12537,7 +12537,7 @@ ${combinedPrompt}`,
                         }),
                         jsx(`div`, {
                           className: `absolute left-full top-0 ml-1 bg-[#2a2a2a] border border-[#333] rounded-lg shadow-xl p-1 min-w-[140px] hidden group-hover/custom:block z-50 before:content-[''] before:absolute before:-left-4 before:top-0 before:w-4 before:h-full wanjuan-context-submenu`,
-                          children: O.map((e) =>
+                          children: customNodeTemplates.map((e) =>
                             jsxs(
                               `div`, {
                                 className: `group/item flex items-center justify-between hover:bg-[#333] rounded wanjuan-context-menu-row`,
