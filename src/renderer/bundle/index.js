@@ -131,6 +131,16 @@ import {
   wanjuanRunThemeTransitionFallback,
   wanjuanRunThemeTransition,
 } from "../lib/theme-transition";
+import {
+  wanjuanNormalizeSeedanceAssetId,
+  wanjuanSeedanceAssetUrl,
+  wanjuanBlobToDataUrl,
+  wanjuanPrepareSeedancePortraitPreview,
+  wanjuanPortableSeedancePortraitPreview,
+  wanjuanMakeSeedanceVirtualPortraitsPortable,
+  wanjuanNormalizeSeedanceVirtualPortraits,
+  wanjuanSeedancePortraitToResource,
+} from "../lib/seedance";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -14465,125 +14475,6 @@ function wanjuanClearProjectAssetBindingsFromData(data, fields = []) {
     (nextData.projectAssetBindings = nextBindings) :
     delete nextData.projectAssetBindings;
   return nextData;
-}
-function wanjuanNormalizeSeedanceAssetId(e) {
-  return String(e || ``)
-    .trim()
-    .replace(/^asset:\/\//i, ``)
-    .replace(/\s+/g, ``);
-}
-function wanjuanSeedanceAssetUrl(rawAssetId) {
-  let normalizedAssetId = wanjuanNormalizeSeedanceAssetId(rawAssetId);
-  return normalizedAssetId ? `asset://${normalizedAssetId}` : ``;
-}
-function wanjuanBlobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-    ((reader.onload = () => resolve(typeof reader.result == `string` ? reader.result : ``)),
-      (reader.onerror = () => reject(reader.error || Error(`blob read failed`))),
-      reader.readAsDataURL(blob));
-  });
-}
-function wanjuanPrepareSeedancePortraitPreview(source, options = {}) {
-  let dataUrl = String(source || ``);
-  if (!dataUrl || !/^data:image\//i.test(dataUrl) || typeof Image > `u` || typeof document > `u`) return Promise.resolve(dataUrl);
-  let maxSize = Number(options.maxSize || 256),
-    quality = Number(options.quality || .82);
-  return new Promise((resolve) => {
-    let image = new Image();
-    ((image.onload = () => {
-        try {
-          let imageWidth = image.naturalWidth || image.width || 0,
-            imageHeight = image.naturalHeight || image.height || 0;
-          if (!imageWidth || !imageHeight) {
-            resolve(dataUrl);
-            return;
-          }
-          let scale = Math.min(1, maxSize / Math.max(imageWidth, imageHeight)),
-            targetWidth = Math.max(1, Math.round(imageWidth * scale)),
-            targetHeight = Math.max(1, Math.round(imageHeight * scale)),
-            canvas = document.createElement(`canvas`);
-          ((canvas.width = targetWidth), (canvas.height = targetHeight));
-          let context = canvas.getContext(`2d`);
-          if (!context) {
-            resolve(dataUrl);
-            return;
-          }
-          context.drawImage(image, 0, 0, targetWidth, targetHeight);
-          let mimeType = /^data:(image\/[^;]+);/i.exec(dataUrl)?.[1] || `image/jpeg`,
-            outputMimeType = mimeType === `image/png` || mimeType === `image/webp` ? mimeType : `image/jpeg`;
-          resolve(canvas.toDataURL(outputMimeType, quality) || dataUrl);
-        } catch {
-          resolve(dataUrl);
-        }
-      }),
-      (image.onerror = () => resolve(dataUrl)),
-      (image.src = dataUrl));
-  });
-}
-async function wanjuanPortableSeedancePortraitPreview(value) {
-  let trimmedUrl = String(value || ``).trim();
-  if (!trimmedUrl || /^asset:\/\//i.test(trimmedUrl)) return ``;
-  if (/^data:image\//i.test(trimmedUrl)) return await wanjuanPrepareSeedancePortraitPreview(trimmedUrl);
-  if (/^(blob:|file:\/\/|https?:\/\/)/i.test(trimmedUrl))
-    try {
-      let response = await fetch(trimmedUrl);
-      if (!response.ok) throw Error(`preview fetch failed`);
-      return await wanjuanPrepareSeedancePortraitPreview(await wanjuanBlobToDataUrl(await response.blob()));
-    } catch (error) {
-      return (console.warn(`Seedance portrait preview portable fallback`, error), /^(blob:|file:\/\/)/i.test(trimmedUrl) ? `` : trimmedUrl);
-    }
-  return trimmedUrl;
-}
-async function wanjuanMakeSeedanceVirtualPortraitsPortable(portraits) {
-  let normalizedPortraits = wanjuanNormalizeSeedanceVirtualPortraits(portraits);
-  return await Promise.all(
-    normalizedPortraits.map(async (portrait) => ({
-      ...portrait,
-      imageUrl: ``,
-      previewUrl: await wanjuanPortableSeedancePortraitPreview(portrait.previewUrl || portrait.imageUrl || ``),
-    })),
-  );
-}
-function wanjuanNormalizeSeedanceVirtualPortraits(portraits) {
-  return Array.isArray(portraits) ?
-    portraits
-    .map((portrait, index) => {
-      let assetId = wanjuanNormalizeSeedanceAssetId(portrait?.assetId || portrait?.seedanceAssetId || portrait?.id);
-      if (!assetId) return null;
-      let previewUrl = String(portrait?.previewUrl || portrait?.imageUrl || portrait?.url || portrait?.thumbnailUrl || ``);
-      return {
-        id: String(portrait?.id || `portrait-${Date.now()}-${index}`),
-        name: String(portrait?.name || portrait?.label || `虚拟人像 ${index + 1}`),
-        assetId: assetId,
-        imageUrl: String(portrait?.imageUrl || ``),
-        previewUrl: previewUrl,
-        projectName: String(portrait?.projectName || ``),
-        notes: String(portrait?.notes || ``),
-        createdAt: Number(portrait?.createdAt || Date.now()),
-      };
-    })
-    .filter(Boolean) :
-    [];
-}
-function wanjuanSeedancePortraitToResource(portrait, index = 0) {
-  let assetId = wanjuanNormalizeSeedanceAssetId(portrait?.assetId);
-  if (!assetId) return null;
-  return {
-    id: `seedance-portrait-${portrait.id || assetId}`,
-    virtualPortraitId: portrait.id || ``,
-    seedanceAssetId: assetId,
-    url: wanjuanSeedanceAssetUrl(assetId),
-    thumbnailUrl: portrait.previewUrl || portrait.imageUrl || ``,
-    previewUrl: portrait.previewUrl || portrait.imageUrl || ``,
-    type: `image/virtual-portrait`,
-    pageTitle: portrait.name || `虚拟人像 ${index + 1}`,
-    label: portrait.name || `虚拟人像 ${index + 1}`,
-    name: portrait.name || `虚拟人像 ${index + 1}`,
-    projectName: portrait.projectName || ``,
-    source: `seedance-virtual-portrait`,
-    isSeedanceVirtualPortrait: !0,
-  };
 }
 function wanjuanResourceMediaUrl(resource) {
   let resourceKind = wanjuanResourceKind(resource);

@@ -125,7 +125,7 @@ export async function wanjuanPortableSeedancePortraitPreview(rawUrl: any): Promi
   if (/^(blob:|file:\/\/|https?:\/\/)/i.test(url))
     try {
       let response = await fetch(url);
-      if (!response.ok) throw Error(`preview fetch failed: ${response.status}`);
+      if (!response.ok) throw Error(`preview fetch failed`);
       return await wanjuanPrepareSeedancePortraitPreview(
         await wanjuanBlobToDataUrl(await response.blob()),
       );
@@ -149,24 +149,13 @@ export async function wanjuanMakeSeedanceVirtualPortraitsPortable(
 ): Promise<SeedanceVirtualPortrait[]> {
   let portraits = wanjuanNormalizeSeedanceVirtualPortraits(rawPortraits);
   return await Promise.all(
-    portraits.map(async (portrait) => {
-      try {
-        return {
-          ...portrait,
-          imageUrl: ``,
-          previewUrl: await wanjuanPortableSeedancePortraitPreview(
-            portrait.previewUrl || portrait.imageUrl || ``,
-          ),
-        };
-      } catch (error) {
-        console.warn(`Failed to make portrait portable:`, portrait.id, error);
-        return {
-          ...portrait,
-          imageUrl: ``,
-          previewUrl: portrait.previewUrl || portrait.imageUrl || ``,
-        };
-      }
-    }),
+    portraits.map(async (portrait) => ({
+      ...portrait,
+      imageUrl: ``,
+      previewUrl: await wanjuanPortableSeedancePortraitPreview(
+        portrait.previewUrl || portrait.imageUrl || ``,
+      ),
+    })),
   );
 }
 
