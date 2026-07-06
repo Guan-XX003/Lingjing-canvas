@@ -18,7 +18,6 @@ declare global {
   interface Window {
     gsap?: any;
     __wanjuanThemeTransitionActive?: boolean;
-    __wanjuanThemeTransitionTimeoutId?: number;
   }
 }
 
@@ -30,15 +29,15 @@ export function wanjuanThemeTransitionPalette(theme: string): [string, string] {
   return (
     {
       dark: [`#0b1020`, `rgba(138,180,248,0.34)`],
-      graphite: [`#20252c`, `rgba(138,180,248,0.34)`],
+      graphite: [`#171717`, `rgba(56,189,248,0.24)`],
       light: [`#f5fafb`, `rgba(108,140,163,0.32)`],
       "warm-light": [`#fbf7f1`, `rgba(186,141,90,0.30)`],
       "mist-blue": [`#f5f9fd`, `rgba(97,128,168,0.30)`],
       "chrome-blue": [`#f5f9ff`, `rgba(71,128,221,0.30)`],
       "chrome-rose": [`#fff8fa`, `rgba(210,109,145,0.30)`],
       "chrome-sand": [`#fbf8f2`, `rgba(188,153,106,0.30)`],
-      "chrome-teal": [`#eaf5f2`, `rgba(0,133,119,0.28)`],
-      "sage-green": [`#eaf3e7`, `rgba(15,122,53,0.28)`],
+      "chrome-teal": [`#f4fbf8`, `rgba(70,165,142,0.30)`],
+      "sage-green": [`#f7fbf7`, `rgba(99,149,112,0.30)`],
     } as Record<string, [string, string]>
   )[theme] || [`#20252c`, `rgba(138,180,248,0.34)`];
 }
@@ -206,15 +205,11 @@ export function wanjuanRunThemeTransition(
   const radius = Math.ceil(Math.hypot(viewportWidth, viewportHeight) / 2) + 96;
 
   window.__wanjuanThemeTransitionActive = true;
-  if (window.__wanjuanThemeTransitionTimeoutId) {
-    clearTimeout(window.__wanjuanThemeTransitionTimeoutId);
-  }
   const started = wanjuanRunThemeTransitionFallback(theme, applyTheme, radius);
 
   if (started) {
-    window.__wanjuanThemeTransitionTimeoutId = window.setTimeout(() => {
+    window.setTimeout(() => {
       window.__wanjuanThemeTransitionActive = false;
-      window.__wanjuanThemeTransitionTimeoutId = undefined;
     }, 760);
     return true;
   } else {

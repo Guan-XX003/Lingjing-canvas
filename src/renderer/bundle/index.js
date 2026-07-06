@@ -126,6 +126,11 @@ import {
   reviveProjectMediaBindingValue,
   buildProjectMediaFileUrl,
 } from "../lib/resource";
+import {
+  wanjuanThemeTransitionPalette,
+  wanjuanRunThemeTransitionFallback,
+  wanjuanRunThemeTransition,
+} from "../lib/theme-transition";
 const buildApiUrl = (base, path) => {
   let normalizedBase = String(base || ``)
     .replace(/\s+/g, ``)
@@ -14406,104 +14411,6 @@ function wanjuanBuildProjectAssetBinding(persisted, extras = {}) {
     sourceOrigin: extras.sourceOrigin || `external-upload`,
     sourceSignature: buildProjectMediaFileUrl(persisted.localPath),
   };
-}
-function wanjuanThemeTransitionPalette(themeName) {
-  return ({
-    dark: [`#0b1020`, `rgba(138,180,248,0.34)`],
-    graphite: [`#171717`, `rgba(56,189,248,0.24)`],
-    light: [`#f5fafb`, `rgba(108,140,163,0.32)`],
-    "warm-light": [`#fbf7f1`, `rgba(186,141,90,0.30)`],
-    "mist-blue": [`#f5f9fd`, `rgba(97,128,168,0.30)`],
-    "chrome-blue": [`#f5f9ff`, `rgba(71,128,221,0.30)`],
-    "chrome-rose": [`#fff8fa`, `rgba(210,109,145,0.30)`],
-    "chrome-sand": [`#fbf8f2`, `rgba(188,153,106,0.30)`],
-    "chrome-teal": [`#f4fbf8`, `rgba(70,165,142,0.30)`],
-    "sage-green": [`#f7fbf7`, `rgba(99,149,112,0.30)`],
-  })[themeName] || [`#20252c`, `rgba(138,180,248,0.34)`];
-}
-function wanjuanRunThemeTransitionFallback(themeName, callback, radius) {
-  let gsap = window.gsap;
-  if (!gsap) return !1;
-  let captureElement = document.getElementById(`wanjuan-theme-transition-capture`);
-  captureElement && gsap.killTweensOf?.(captureElement.querySelectorAll(`*`));
-  captureElement?.remove?.();
-  let [backgroundColor, accentColor] = wanjuanThemeTransitionPalette(themeName),
-    radius2 = radius || Math.ceil(Math.hypot(window.innerWidth || 1, window.innerHeight || 1) / 2) + 96,
-    l = Math.ceil(radius2 * 2 / 18) + 2,
-    oldBackground = getComputedStyle(document.documentElement).getPropertyValue(`--wj-bg`) ||
-    getComputedStyle(document.body).backgroundColor ||
-    `#20252c`,
-    viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1),
-    viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1),
-    maskId = `wanjuan-theme-transition-mask-${Date.now()}`;
-  captureElement = document.createElement(`div`);
-  captureElement.id = `wanjuan-theme-transition-capture`;
-  captureElement.style.setProperty(`--wanjuan-theme-transition-bg`, backgroundColor);
-  captureElement.style.setProperty(`--wanjuan-theme-transition-accent`, accentColor);
-  captureElement.style.setProperty(`--wanjuan-theme-transition-old-bg`, oldBackground);
-  captureElement.innerHTML = `<svg class="wanjuan-theme-transition-old" viewBox="0 0 ${viewportWidth} ${viewportHeight}" preserveAspectRatio="none" aria-hidden="true"><defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="${viewportWidth}" height="${viewportHeight}" fill="white"></rect><circle class="wanjuan-theme-transition-mask-circle" cx="${viewportWidth / 2}" cy="${viewportHeight / 2}" r="0" fill="black"></circle></mask></defs><rect width="${viewportWidth}" height="${viewportHeight}" fill="var(--wanjuan-theme-transition-old-bg, #20252c)" fill-opacity="0.92" mask="url(#${maskId})"></rect></svg><div class="wanjuan-theme-transition-ring"></div>`;
-  document.body.appendChild(captureElement);
-  let maskCircle = captureElement.querySelector(`.wanjuan-theme-transition-mask-circle`),
-    ringElement = captureElement.querySelector(`.wanjuan-theme-transition-ring`);
-  document.documentElement.classList.add(`wanjuan-theme-transitioning`);
-  gsap.set(captureElement, {
-    opacity: 1,
-  });
-  gsap.set(maskCircle, {
-    attr: {
-      r: 0,
-    },
-  });
-  gsap.set(ringElement, {
-    xPercent: -50,
-    yPercent: -50,
-    scale: 0.001,
-    opacity: 0.52,
-    force3D: !0,
-    transformOrigin: `50% 50%`,
-  });
-  typeof callback == `function` && callback();
-  let timeline = gsap.timeline({
-    defaults: {
-      ease: `sine.inOut`,
-    },
-    onComplete: () => {
-      captureElement?.remove?.();
-      document.documentElement.classList.remove(`wanjuan-theme-transitioning`);
-    },
-  }).to(maskCircle, {
-    attr: {
-      r: radius2,
-    },
-    duration: 0.58,
-  }, 0).to(ringElement, {
-    scale: l,
-    opacity: 0.2,
-    duration: 0.42,
-  }, 0.02).to(ringElement, {
-    opacity: 0,
-    duration: 0.12,
-    ease: `power1.out`,
-  }, 0.42).to(captureElement, {
-    opacity: 0,
-    duration: 0.12,
-    ease: `power1.out`,
-  }, 0.58);
-  return !0;
-}
-function wanjuanRunThemeTransition(themeName, callback) {
-  if (typeof document > `u`) return !1;
-  if (window.matchMedia?.(`(prefers-reduced-motion: reduce)`)?.matches) return !1;
-  let viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1),
-    viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1),
-    radius = Math.ceil(Math.hypot(viewportWidth, viewportHeight) / 2) + 96;
-  window.__wanjuanThemeTransitionActive = !0;
-  let fallbackResult = wanjuanRunThemeTransitionFallback(themeName, callback, radius);
-  return fallbackResult ?
-    (window.setTimeout(() => {
-      window.__wanjuanThemeTransitionActive = !1;
-    }, 760), !0) :
-    ((window.__wanjuanThemeTransitionActive = !1), !1);
 }
 function wanjuanUseBrokenResourceImage(event) {
   let imageElement = event.currentTarget;
