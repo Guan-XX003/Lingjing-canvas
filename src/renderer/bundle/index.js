@@ -24999,19 +24999,19 @@ ${String(l || ``).slice(0, 5e4)}`;
             buildBackupRestoreReport = ({
               modules: modules = [],
               settingsSections: settingsSections = [],
-              projectIds: n = [],
+              projectIds: projectIds = [],
               agentIds: agentIds = [],
-              canvasStates: r = {},
-              assets: i = {},
-              transitResources: a,
-              projectResources: o = {},
+              canvasStates: canvasStates = {},
+              assets: assets = {},
+              transitResources: transitResources,
+              projectResources: projectResources = {},
             }) => {
-              let s = Array.isArray(n) ? n : [],
-                c = Object.keys(r || {}),
-                l = s.filter((item) => !Object.prototype.hasOwnProperty.call(r || {}, item)),
-                u = Object.keys(i || {}),
-                d = Array.isArray(a) ? a.length : 0,
-                f = Object.values(o || {}).reduce(
+              let s = Array.isArray(projectIds) ? projectIds : [],
+                c = Object.keys(canvasStates || {}),
+                l = s.filter((item) => !Object.prototype.hasOwnProperty.call(canvasStates || {}, item)),
+                u = Object.keys(assets || {}),
+                d = Array.isArray(transitResources) ? transitResources.length : 0,
+                f = Object.values(projectResources || {}).reduce(
                   (e, t) => e + (Array.isArray(t) ? t.length : 0),
                   0,
                 );
