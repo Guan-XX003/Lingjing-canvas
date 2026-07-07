@@ -19580,17 +19580,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     }));
                 } else showToast2(`激活失败: ${verifyResult.error}`);
               };
-  useEffect(() => {
-    isReady &&
-      typeof chrome < `u` &&
-      chrome.storage &&
-      chrome.storage.local.set({
-        textApiConfigId: textApiConfigId,
-        imageApiConfigId: imageApiConfigId,
-        videoApiConfigId: videoApiConfigId,
-        audioApiConfigId: audioApiConfigId,
-      });
-  }, [textApiConfigId, imageApiConfigId, videoApiConfigId, audioApiConfigId, isReady]);
   let BACKUP_MODULE_LABELS = {
       settings: `设置参数`,
       projects: `画布项目`,
