@@ -4,6 +4,7 @@
  * 纯函数（不依赖 React state），自 WanJuanAppRoot 抽出，行为不变。
  */
 import { jsx, jsxs } from "react/jsx-runtime";
+import { Agent } from "./types";
 
 export const agentIconOptions = [{
             key: `bulb`,
@@ -199,7 +200,7 @@ export const agentMessagesScrollStyle = {
 		          padding: `32px ${agentChatOuterPadding} 250px`,
 	        };
 
-export const buildKnowledgeChunks = (text, chunkSize = 1200) => {
+export const buildKnowledgeChunks = (text: string, chunkSize = 1200) => {
           let normalizedText = String(text || ``)
             .replace(/\r\n/g, `\n`)
             .replace(/\n{3,}/g, `\n\n`)
@@ -461,7 +462,7 @@ export const readAgentAttachmentFileAsDataUrl = (attachment) =>
 export const sanitizeAgentConversationText = (conversationText) =>
 	            String(conversationText || ``).replace(/blob:https?:\/\/[^\\s'")，。；;]+/gi, `[本地临时视频地址]`);
 
-export const formatAgentTime = (timestamp) => {
+export const formatAgentTime = (timestamp: number | string) => {
               if (!timestamp) return `刚刚`;
               let elapsedMs = Date.now() - Number(timestamp);
               if (elapsedMs < 6e4) return `刚刚`;
@@ -470,7 +471,7 @@ export const formatAgentTime = (timestamp) => {
               return `${Math.max(1, Math.floor(elapsedMs / 864e5))}天前`;
             };
 
-export const getAgentOptionList = (agents) =>
+export const getAgentOptionList = (agents: Agent[]) =>
     Array.isArray(agents) ?
     agents
     .filter((item) => item && typeof item == `object` && item.id)

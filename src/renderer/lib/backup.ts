@@ -6,6 +6,7 @@
 import localforage from "localforage";
 // 复刻组件内 localforageModule（localforage 单例，config 全局生效）
 const localforageModule = { default: localforage } as any;
+import { CanvasNode } from "./types";
 
 export const cloneBackupValue = (value) => {
       if (Array.isArray(value)) return value.map((item) => cloneBackupValue(item));
@@ -151,7 +152,7 @@ export const isProjectMediaExternalReference = (value) =>
                 typeof value == `string` &&
                 (value.startsWith(`blob:`) || /^https?:\/\//i.test(value) || value.startsWith(`file://`));
 
-export const getProjectMediaBindingKind = (bindingKey, node) =>
+export const getProjectMediaBindingKind = (bindingKey: string, node: CanvasNode) =>
                 bindingKey === `imageUrl` ?
                 node?.data?.mediaKind === `video` ?
                 `video` :

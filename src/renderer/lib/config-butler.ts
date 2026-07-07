@@ -4,6 +4,7 @@
  * 全部为纯数据变换（不依赖 React state），自 WanJuanAppRoot 组件体抽出，行为不变。
  */
 import { buildApiUrl } from "./model-binding";
+import { GlobalTask, ProtocolConfig } from "./types";
 
 export const normalizeButlerBaseUrl = (value) =>
     String(value || ``)
@@ -2031,7 +2032,7 @@ export const stableConfigButlerTaskStringify = (value) => {
 		              }
 		            };
 
-export const getConfigButlerTaskFailureSignature = (task) => {
+export const getConfigButlerTaskFailureSignature = (task: GlobalTask) => {
 		              if (!task || !task.nodeId) return ``;
 		              let category = normalizeModelCategory(task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``);
 		              return stableConfigButlerTaskStringify({
@@ -2045,7 +2046,7 @@ export const getConfigButlerTaskFailureSignature = (task) => {
 		              });
 		            };
 
-export const buildLocalConfigButlerErrorDiagnosis = (task, errorText = ``) => {
+export const buildLocalConfigButlerErrorDiagnosis = (task: GlobalTask, errorText = ``) => {
 		              let errorMsgText = String(task?.errorMsg || ``),
 		                isClientErrorRegex = /\b(400|401|403|404|422)\b|format|schema|invalid|parameter|param|field|body|json|multipart|字段|参数|格式|请求体/i.test(errorMsgText),
 		                isServerErrorRegex = /\b(500|502|503|504|429)\b|timeout|temporar|overload|busy|rate limit|服务器|上游|繁忙|超时|限流/i.test(errorMsgText);
@@ -2067,7 +2068,7 @@ export const buildLocalConfigButlerErrorDiagnosis = (task, errorText = ``) => {
 			              };
 			            };
 
-export const normalizeConfigButlerDiagnosis = (diagnosis, task: any = {}, protocolBinding = null, protocolConfig = null) => {
+export const normalizeConfigButlerDiagnosis = (diagnosis: any, task: GlobalTask = {} as GlobalTask, protocolBinding: ProtocolConfig | null = null, protocolConfig: ProtocolConfig | null = null) => {
 				              let normalizedDiagnosis = diagnosis && typeof diagnosis == `object` ? {
 			                  ...diagnosis
 			                } : {},

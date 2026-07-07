@@ -5,6 +5,7 @@
  */
 import { jsx, jsxs } from "react/jsx-runtime";
 import { cloneBackupValue } from "./backup";
+import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 
 export const membershipLimits = {
@@ -271,7 +272,7 @@ export const fetchDocAsPlainText = async (rawUrl) => {
         }
       };
 
-export const getMem0Headers = (apiKey) => {
+export const getMem0Headers = (apiKey: string) => {
           let headers: any = {
               "Content-Type": `application/json`
             },
@@ -311,7 +312,7 @@ export const renderCopyGlyph = (size = 16) =>
           ],
         });
 
-export const compactGlobalTasks = (tasks) => {
+export const compactGlobalTasks = (tasks: GlobalTask[]) => {
 		              if (!Array.isArray(tasks)) return [];
 		              let itemB = [],
 		                seenTaskKeys = new Set(),
@@ -445,7 +446,7 @@ export const BACKUP_SETTINGS_SECTION_KEYS = {
       other: [],
     };
 
-export const getProjectOptionList = (items) =>
+export const getProjectOptionList = (items: Project[]) =>
     Array.isArray(items) ?
     items
     .filter((item) => item && typeof item == `object` && item.id)
@@ -462,7 +463,7 @@ export const getProjectOptionList = (items) =>
     })) :
     [];
 
-export const mergeTransitResourceEntries = (primaryList, secondaryList: any[] = []) => {
+export const mergeTransitResourceEntries = (primaryList: ResourceItem[], secondaryList: ResourceItem[] = []) => {
               let clonedPrimary = Array.isArray(primaryList) ? cloneBackupValue(primaryList) : [],
                 clonedSecondary = Array.isArray(secondaryList) ? cloneBackupValue(secondaryList) : [],
                 seenIds = new Set(),
@@ -480,7 +481,7 @@ export const mergeTransitResourceEntries = (primaryList, secondaryList: any[] = 
               return merged;
             };
 
-export const collectProjectResourceCandidates = (backup, refs = new Set()) => {
+export const collectProjectResourceCandidates = (backup: any, refs: Set<string> = new Set()) => {
               if (!backup || typeof backup != `object`) return [...refs];
               let nodes = backup?.nodes;
               if (!Array.isArray(nodes)) return [...refs];
@@ -534,7 +535,7 @@ export const buildProjectResourceMap = (groups: any = {}, entries: any[] = [], c
               return result;
             };
 
-export const collectProjectFileReferences = (value, references = new Set()) => {
+export const collectProjectFileReferences = (value: any, references: Set<string> = new Set()) => {
                     if (typeof value == `string` && value.startsWith(`file://`)) {
                       try {
                         references.add(localPathFromProjectFileUrl(value) || decodeURIComponent(new URL(value).pathname));
