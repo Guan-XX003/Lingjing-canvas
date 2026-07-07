@@ -13683,7 +13683,7 @@ function WanJuanAppRoot() {
   [selectedUser, setSelectedUser] = useState(null),
   [isLoading, setIsLoading] = useState(!1),
   [isPluginEnv, setIsPluginEnv] = useState(!0),
-	  [y, b] = useState(!1),
+	  [hasCurrentTab, setHasCurrentTab] = useState(!1),
 	  [transitResources, setTransitResources] = useState([]),
 	  [resourceTypeFilter, setResourceTypeFilter] = useState(`all`),
 	  [resourceSourceFilter, setResourceSourceFilter] = useState(`all`),
@@ -18752,8 +18752,8 @@ ${docText}`;
       let isExtension = typeof chrome < `u` && chrome.runtime && chrome.runtime.id;
       (setIsPluginEnv(!!isExtension),
         isExtension &&
-        chrome.tabs.getCurrent((e) => {
-          e && b(!0);
+        chrome.tabs.getCurrent((currentTab) => {
+          currentTab && setHasCurrentTab(!0);
         }));
       let deviceId2 = wanjuanGetOrCreateDeviceId();
       (setDeviceId(deviceId2),
