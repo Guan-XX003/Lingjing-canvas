@@ -18706,9 +18706,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		                        if (manualImageUrl) {
 		                          try {
 		                            (globalThis.__wanjuanManualRecoveredImageTaskIds ||= new Set()).add(task.id);
-		                            task.nodeId &&
-		                              setVideoApiUrl.current?.has(task.nodeId) &&
-		                              setVideoApiUrl.current.get(task.nodeId)?.abort();
 		                          } catch {}
 		                          (updateGlobalTasks((tasks) =>
 		                              tasks.map((task2) =>
