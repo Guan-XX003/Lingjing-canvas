@@ -25006,75 +25006,75 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               transitResources: transitResources,
               projectResources: projectResources = {},
             }) => {
-              let s = Array.isArray(projectIds) ? projectIds : [],
-                c = Object.keys(canvasStates || {}),
-                l = s.filter((item) => !Object.prototype.hasOwnProperty.call(canvasStates || {}, item)),
-                u = Object.keys(assets || {}),
-                d = Array.isArray(transitResources) ? transitResources.length : 0,
-                f = Object.values(projectResources || {}).reduce(
-                  (e, t) => e + (Array.isArray(t) ? t.length : 0),
+              let projectIdList = Array.isArray(projectIds) ? projectIds : [],
+                canvasStateKeys = Object.keys(canvasStates || {}),
+                missingProjectIds = projectIdList.filter((item) => !Object.prototype.hasOwnProperty.call(canvasStates || {}, item)),
+                assetKeys = Object.keys(assets || {}),
+                transitCount = Array.isArray(transitResources) ? transitResources.length : 0,
+                projectResourceCount = Object.values(projectResources || {}).reduce(
+                  (accumulator, resourceList) => accumulator + (Array.isArray(resourceList) ? resourceList.length : 0),
                   0,
                 );
               return {
                 modules: [...modules],
                 settingsSectionCount: Array.isArray(settingsSections) ? settingsSections.length : 0,
-                projectCount: s.length,
+                projectCount: projectIdList.length,
                 agentCount: Array.isArray(agentIds) ? agentIds.length : 0,
-                canvasStateCount: c.length,
-                assetCount: u.length,
-                resourceCount: d,
-                projectResourceCount: f,
-                missingCanvasProjectIds: l,
+                canvasStateCount: canvasStateKeys.length,
+                assetCount: assetKeys.length,
+                resourceCount: transitCount,
+                projectResourceCount: projectResourceCount,
+                missingCanvasProjectIds: missingProjectIds,
               };
             },
-            formatBackupRestoreReport = (e) => {
-              let t = [];
+            formatBackupRestoreReport = (backupReport) => {
+              let reportLines = [];
               return (
-                e.settingsSectionCount > 0 && t.push(`设置 ${e.settingsSectionCount} 项`),
-                e.projectCount > 0 &&
-                t.push(`项目 ${e.projectCount} 个 / 画布 ${e.canvasStateCount} 份`),
-                e.agentCount > 0 && t.push(`智能体 ${e.agentCount} 个`),
-                e.assetCount > 0 && t.push(`项目资产 ${e.assetCount} 项`),
-                e.resourceCount > 0 && t.push(`资源 ${e.resourceCount} 项`),
-                e.projectResourceCount > 0 && t.push(`项目资源映射 ${e.projectResourceCount} 项`),
-                e.missingCanvasProjectIds?.length > 0 &&
-                t.push(`缺少画布 ${e.missingCanvasProjectIds.length} 个项目`),
-                t.join(`，`)
+                backupReport.settingsSectionCount > 0 && reportLines.push(`设置 ${backupReport.settingsSectionCount} 项`),
+                backupReport.projectCount > 0 &&
+                reportLines.push(`项目 ${backupReport.projectCount} 个 / 画布 ${backupReport.canvasStateCount} 份`),
+                backupReport.agentCount > 0 && reportLines.push(`智能体 ${backupReport.agentCount} 个`),
+                backupReport.assetCount > 0 && reportLines.push(`项目资产 ${backupReport.assetCount} 项`),
+                backupReport.resourceCount > 0 && reportLines.push(`资源 ${backupReport.resourceCount} 项`),
+                backupReport.projectResourceCount > 0 && reportLines.push(`项目资源映射 ${backupReport.projectResourceCount} 项`),
+                backupReport.missingCanvasProjectIds?.length > 0 &&
+                reportLines.push(`缺少画布 ${backupReport.missingCanvasProjectIds.length} 个项目`),
+                reportLines.join(`，`)
               );
             },
             projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
-            blobToDataUrl = (e) =>
-            new Promise((t, n) => {
+            blobToDataUrl = (blob) =>
+            new Promise((resolvePromise, rejectPromise) => {
               let fileReader = new FileReader();
-              ((fileReader.onload = () => t(typeof fileReader.result == `string` ? fileReader.result : ``)),
-                (fileReader.onerror = () => n(fileReader.error || Error(`blob read failed`))),
-                fileReader.readAsDataURL(e));
+              ((fileReader.onload = () => resolvePromise(typeof fileReader.result == `string` ? fileReader.result : ``)),
+                (fileReader.onerror = () => rejectPromise(fileReader.error || Error(`blob read failed`))),
+                fileReader.readAsDataURL(blob));
             }),
             projectMediaFetchWarningCache = new Set(),
-            warnProjectMediaFetchOnce = (e, error) => {
-              let n =
-                typeof e == `string` ?
-                `${e.slice(0, 180)}:${error?.message || error}` :
+            warnProjectMediaFetchOnce = (mediaUrl, error) => {
+              let warnKey =
+                typeof mediaUrl == `string` ?
+                `${mediaUrl.slice(0, 180)}:${error?.message || error}` :
                 String(error?.message || error);
-              if (projectMediaFetchWarningCache.has(n)) return;
-              projectMediaFetchWarningCache.add(n);
+              if (projectMediaFetchWarningCache.has(warnKey)) return;
+              projectMediaFetchWarningCache.add(warnKey);
             },
-            projectMediaStringToPortableValue = async (e) => {
-                if (typeof e != `string` || !e) return e;
-                if (e.startsWith(`data:`)) return e;
+            projectMediaStringToPortableValue = async (mediaString) => {
+                if (typeof mediaString != `string` || !mediaString) return mediaString;
+                if (mediaString.startsWith(`data:`)) return mediaString;
                 if (
-                  e.startsWith(`blob:`) ||
-                  /^https?:\/\//i.test(e) ||
-                  e.startsWith(`file://`)
+                  mediaString.startsWith(`blob:`) ||
+                  /^https?:\/\//i.test(mediaString) ||
+                  mediaString.startsWith(`file://`)
                 )
                   try {
-                    let response = await fetch(e);
+                    let response = await fetch(mediaString);
                     if (!response.ok) throw Error(`media fetch failed`);
                     return await blobToDataUrl(await response.blob());
                   } catch (error) {
-                    return (warnProjectMediaFetchOnce(e, error), e);
+                    return (warnProjectMediaFetchOnce(mediaString, error), mediaString);
                   }
-                return e;
+                return mediaString;
               },
               getExistingProjectMediaPortableValue = async (binding) => {
                   if (!binding || typeof binding != `object`) return void 0;
@@ -25130,7 +25130,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   if (origin === `media` && hasExternalUploadLikeFileName(binding, data)) return !0;
                   return !1;
                 },
-                isProjectMediaFileBackedBinding = (binding, t, fallbackKind) => {
+                isProjectMediaFileBackedBinding = (binding, bindingKind, fallbackKind) => {
                   let mime = String(binding?.mime || ``).toLowerCase(),
                     kind = String(binding?.kind || fallbackKind || ``).toLowerCase();
                   return (
@@ -25140,9 +25140,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     /^image\//i.test(mime) ||
                     /^video\//i.test(mime) ||
                     /^audio\//i.test(mime) ||
-                    t === `imageUrl` ||
-                    t === `videoUrl` ||
-	                    t === `audioUrl`
+                    bindingKind === `imageUrl` ||
+                    bindingKind === `videoUrl` ||
+	                    bindingKind === `audioUrl`
 	                  );
 	                },
 	                shouldPromptProjectMediaRelink = (binding, bindingKey, data = {}) =>
@@ -25387,7 +25387,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     return result;
                   },
                   prepareProjectMediaStateForPersistence =
-                  (globalThis.prepareProjectMediaStateForPersistence = async (canvasState, projectId, n, options = {}) => {
+                  (globalThis.prepareProjectMediaStateForPersistence = async (canvasState, projectId, persistOptions, options = {}) => {
                     if (!window.wanjuanDesktop?.persistProjectAsset || !localforageModule.default) return canvasState;
                     let clonedState = cloneBackupValue(canvasState || {});
                     if (!Array.isArray(clonedState.nodes) || !clonedState.nodes.length) return clonedState;
@@ -25451,7 +25451,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     field: bindingKey,
                                     kind: kind,
                                     assetId: binding.assetId,
-                                    directory: n,
+                                    directory: persistOptions,
                                     forceArchiveExistingFile: !0,
                                     migrationId: options.migrationId,
                                   });
@@ -25540,7 +25540,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 field: bindingKey,
                                 kind: getProjectMediaBindingKind(bindingKey, node),
                                 assetId: binding.assetId,
-                                directory: n,
+                                directory: persistOptions,
                                 migrationId: options.migrationId,
                               }),
                               fileBacked = persistedAsset?.localPath &&
@@ -25589,7 +25589,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           (data = await forceRehomeProjectDataFileReferences(data, {
                             projectId: projectId,
                             nodeId: node.id,
-                            directory: n,
+                            directory: persistOptions,
                             migrationId: options.migrationId,
                           }));
                         return {
@@ -25746,10 +25746,10 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   scheduleInterruptedMigrationRecovery = setTimeout(() => {
                     globalThis.recoverInterruptedProjectMigrations?.(``).catch(console.error);
                   }, 1500),
-                  buildProjectLocalforagePayload = (e, projectIds = []) => {
+                  buildProjectLocalforagePayload = (projectState, projectIds = []) => {
                     let canvasStates = {},
                       assetRefs = new Set(),
-                      source = e || {};
+                      source = projectState || {};
                     for (let projectId of projectIds) {
                       if (!projectId) continue;
                       let storageKey = getProjectCanvasStorageKey(projectId);
@@ -25912,8 +25912,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         delete sanitized[key];
                     return sanitized;
                   },
-                  sanitizeProjectCanvasStateForExport = (e) => {
-                    let canvasState = cloneBackupValue(e || {});
+                  sanitizeProjectCanvasStateForExport = (exportCanvasState) => {
+                    let canvasState = cloneBackupValue(exportCanvasState || {});
                     return (
                       Array.isArray(canvasState.nodes) &&
                       (canvasState.nodes = canvasState.nodes.map((node) =>
@@ -25929,18 +25929,18 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       canvasState
                     );
                   },
-                  buildProjectLocalforageExportPayload = async (e, projectIds = [], n = {}) => {
+                  buildProjectLocalforageExportPayload = async (projectState, projectIds = [], exportOptions = {}) => {
                       let canvasStates = {},
                         assetRefs = new Set(),
                         assetMap = {},
-                        o = e || {};
+                        sourceState = projectState || {};
                       for (let projectId of projectIds) {
                         if (!projectId) continue;
                         let projectState =
-                          projectId === n.currentProjectId && n.currentProjectState ?
-                          sanitizeProjectCanvasStateForExport(n.currentProjectState) :
-                          Object.prototype.hasOwnProperty.call(o, getProjectCanvasStorageKey(projectId)) ?
-                          sanitizeProjectCanvasStateForExport(o[getProjectCanvasStorageKey(projectId)]) :
+                          projectId === exportOptions.currentProjectId && exportOptions.currentProjectState ?
+                          sanitizeProjectCanvasStateForExport(exportOptions.currentProjectState) :
+                          Object.prototype.hasOwnProperty.call(sourceState, getProjectCanvasStorageKey(projectId)) ?
+                          sanitizeProjectCanvasStateForExport(sourceState[getProjectCanvasStorageKey(projectId)]) :
                           null;
                         if (!projectState) continue;
                         projectState = await globalThis.prepareProjectMediaStateForPersistence(projectState, projectId, ``);
@@ -25951,9 +25951,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         ((canvasStates[projectId] = externalizedState), extractProjectAssetRefs(externalizedState).forEach((assetRef) => assetRefs.add(assetRef)));
                       }
                       for (let key of assetRefs)
-                        Object.prototype.hasOwnProperty.call(o, key) &&
+                        Object.prototype.hasOwnProperty.call(sourceState, key) &&
                         !Object.prototype.hasOwnProperty.call(assetMap, key) &&
-                        (assetMap[key] = cloneBackupValue(o[key]));
+                        (assetMap[key] = cloneBackupValue(sourceState[key]));
                       return {
                         canvasStates: canvasStates,
                         assets: assetMap
@@ -26001,23 +26001,23 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       }
                       return results;
                     },
-                    normalizeProjectLocalforagePayload = (e) => {
-                      let t = e && typeof e == `object` ? cloneBackupValue(e) : {};
+                    normalizeProjectLocalforagePayload = (payload) => {
+                      let normalizedPayload = payload && typeof payload == `object` ? cloneBackupValue(payload) : {};
                       return {
-                        canvasStates: t.canvasStates && typeof t.canvasStates == `object` ?
-                          cloneBackupValue(t.canvasStates) :
+                        canvasStates: normalizedPayload.canvasStates && typeof normalizedPayload.canvasStates == `object` ?
+                          cloneBackupValue(normalizedPayload.canvasStates) :
                           {},
-                        assets: t.assets && typeof t.assets == `object` ?
-                          cloneBackupValue(t.assets) :
+                        assets: normalizedPayload.assets && typeof normalizedPayload.assets == `object` ?
+                          cloneBackupValue(normalizedPayload.assets) :
                           {},
                       };
                     },
-                    normalizeResourceLocalforagePayload = (e) => {
-                      let t = e && typeof e == `object` ? cloneBackupValue(e) : {};
-                      return Object.prototype.hasOwnProperty.call(t, TRANSIT_RESOURCES_STORAGE_KEY) ?
+                    normalizeResourceLocalforagePayload = (payload) => {
+                      let normalizedPayload = payload && typeof payload == `object` ? cloneBackupValue(payload) : {};
+                      return Object.prototype.hasOwnProperty.call(normalizedPayload, TRANSIT_RESOURCES_STORAGE_KEY) ?
                         {
                           [TRANSIT_RESOURCES_STORAGE_KEY]: cloneBackupValue(
-                            t[TRANSIT_RESOURCES_STORAGE_KEY],
+                            normalizedPayload[TRANSIT_RESOURCES_STORAGE_KEY],
                           ),
                         } :
                         {};
@@ -26048,19 +26048,19 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       selectedModules.includes(`agents`) && AGENT_STORAGE_KEYS.forEach((storageKey) => storageKeys.add(storageKey));
                       return [...storageKeys];
                     },
-                    collectSelectedLocalforageBackup = async (moduleSelection, options = {}, n = {}) => {
+                    collectSelectedLocalforageBackup = async (moduleSelection, options = {}, backupOptions = {}) => {
                       let canvasStates = {};
                       if (!localforageModule.default) return canvasStates;
                       if (!normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]).includes(`projects`))
                         return canvasStates;
                       let projectIds = Array.isArray(options.projectIds) && options.projectIds.length ?
                           options.projectIds.filter(Boolean) :
-                          Array.isArray(n.projects) ?
-                          n.projects.map((project) => project.id).filter(Boolean) :
+                          Array.isArray(backupOptions.projects) ?
+                          backupOptions.projects.map((project) => project.id).filter(Boolean) :
                           [],
                         assetRefs = new Set(),
-                        o = [];
-                      let mirrorSource = n || {};
+                        collectedModules = [];
+                      let mirrorSource = backupOptions || {};
                       for (let projectId of projectIds) {
                         let storageKey = getProjectCanvasStorageKey(projectId),
                           canvasState = null;
@@ -26082,7 +26082,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         } catch {}
                       return canvasStates;
                     },
-                    buildBackupModules = async (chromeStorage, t, moduleSelection, selection = {}) => {
+                    buildBackupModules = async (chromeStorage, userData, moduleSelection, selection = {}) => {
                           let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
                             storageModules = splitChromeStorageModules(chromeStorage || {}),
                             modules = {};
@@ -26136,17 +26136,17 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               exportProjectGroups = selectedProjectIds.length === projects2.length ?
                               projectGroups2 :
                               projectGroups2.filter((projectGroup) => selectedProjectGroupIds.has(projectGroup.id));
-                            let u = {
-                              ...(t || {})
+                            let backupManifest = {
+                              ...(userData || {})
                             };
                             for (let projectId of selectedProjectIds) {
                               let canvasStorageKey = getProjectCanvasStorageKey(projectId),
                                 mirrorStorageKey = getDesktopProjectMirrorStorageKey(projectId);
-                              !Object.prototype.hasOwnProperty.call(u, canvasStorageKey) &&
+                              !Object.prototype.hasOwnProperty.call(backupManifest, canvasStorageKey) &&
                                 Object.prototype.hasOwnProperty.call(projects2 || {}, mirrorStorageKey) &&
-                                (u[canvasStorageKey] = cloneBackupValue(projects2[mirrorStorageKey]));
+                                (backupManifest[canvasStorageKey] = cloneBackupValue(projects2[mirrorStorageKey]));
                             }
-                            let projectPayload = await buildProjectLocalforageExportPayload(u, selectedProjectIds, {
+                            let projectPayload = await buildProjectLocalforageExportPayload(backupManifest, selectedProjectIds, {
                               currentProjectId: setEdges.current,
                               currentProjectState: apiConfigs.current ?
                                 {
@@ -26403,11 +26403,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           (acc, [moduleName, moduleData]) => (moduleHasBackupData(moduleName, moduleData) ? [...acc, moduleName] : acc),
                           [],
                         ),
-                        buildBackupPayload = async (e, t, n, r = {}) => ({
+                        buildBackupPayload = async (chromeStorage, userData, moduleSelection, backupOptions = {}) => ({
 				                            version: `1.3.6`,
                             backupFormat: `4`,
                             exportedAt: new Date().toISOString(),
-                            modules: await buildBackupModules(e, t, n, r),
+                            modules: await buildBackupModules(chromeStorage, userData, moduleSelection, backupOptions),
                           }),
                           restoreSelectedBackup = async (backup, moduleSelection, options = {}) => {
                               let modules = normalizeBackupModules(backup),
@@ -26492,9 +26492,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 cloneBackupValue(resourcePayload[TRANSIT_RESOURCES_STORAGE_KEY]) :
                                 void 0,
                                 mergedTransitResources = void 0,
-                                L = [];
+                                pendingWrites = [];
                               if (restoreSettings || restoreProjects || restoreResources || shouldRestoreAgents)
-                                await new Promise((e, reject) => {
+                                await new Promise((resolvePromise, reject) => {
                                   if (!(typeof chrome < `u` && chrome.storage && chrome.storage.local)) {
                                     reject(Error(`Chrome Storage API 不可用`));
                                     return;
@@ -26601,8 +26601,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                           (storage.lastOpenedProjectId ?
                                             localStorage.setItem(`lastOpenedProjectId`, storage.lastOpenedProjectId) :
                                             localStorage.removeItem(`lastOpenedProjectId`)),
-                                          (L = removedKeys),
-                                          e();
+                                          (pendingWrites = removedKeys),
+                                          resolvePromise();
                                       });
                                     };
                                     removedKeys.length ?
@@ -26677,7 +26677,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 settingsSections: selectedSections,
                                 projectIds: selectedProjectIds,
                                 agentIds: importedAgentIds,
-                                clearedChromeKeys: L,
+                                clearedChromeKeys: pendingWrites,
                                 report: restoreReport,
                               };
                             },
@@ -28006,11 +28006,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 color: configErrorAssistantTheme.textSecondary,
                                 WebkitTextFillColor: configErrorAssistantTheme.textSecondary,
                               },
-                              children: configButlerErrorAssistant.diagnosis.evidence.slice(0, 4).map((props, t) =>
+                              children: configButlerErrorAssistant.diagnosis.evidence.slice(0, 4).map((props, evidenceIndex) =>
                                 jsx(`div`, {
                                   className: `break-words`,
                                   children: `· ${props}`,
-                                }, t),
+                                }, evidenceIndex),
                               ),
                             }),
                             configButlerErrorAssistant.diagnosis.suggestedFix &&
@@ -31085,7 +31085,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 children: jsxs(`div`, {
                                   className: `space-y-3 custom-scrollbar`,
                                   children: [
-                                    presetPrompts.map((rule, t) =>
+                                    presetPrompts.map((rule, promptIndex) =>
                                       jsxs(
                                         `div`, {
                                           className: `flex gap-3 items-start bg-[#121212] p-3 rounded-lg border border-[#333] hover:border-[#444] transition-colors group/preset wanjuan-settings-list-card`,
@@ -31096,11 +31096,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                 `input`, {
                                                   type: `checkbox`,
                                                   checked: rule.enabled !== !1,
-                                                  onChange: (e) =>
+                                                  onChange: (event) =>
                                                     updatePresetField(
-                                                      t,
+                                                      promptIndex,
                                                       `enabled`,
-                                                      e.target.checked,
+                                                      event.target.checked,
                                                     ),
                                                   className: `cursor-pointer accent-blue-500 w-4 h-4`,
                                                   title: `启用/禁用`,
@@ -31117,11 +31117,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                       className: `w-full text-xs bg-[#1a1a1a] border border-[#333] rounded px-3 py-1.5 text-gray-300 focus:border-blue-500 outline-none transition-all wanjuan-settings-control`,
                                                       placeholder: `标题`,
                                                       value: rule.title,
-                                                      onChange: (e) =>
+                                                      onChange: (event) =>
                                                         updatePresetField(
-                                                          t,
+                                                          promptIndex,
                                                           `title`,
-                                                          e.target.value,
+                                                          event.target.value,
                                                         ),
                                                     }),
                                                     jsxs(
@@ -31130,7 +31130,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                         value: rule.type || `all`,
                                                         onChange: (event) =>
                                                           updatePresetField(
-                                                            t,
+                                                            promptIndex,
                                                             `type`,
                                                             event.target
                                                             .value,
@@ -31169,17 +31169,17 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                   className: `w-full text-xs bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 resize-none h-16 text-gray-400 focus:border-blue-500 outline-none transition-all wanjuan-settings-control`,
                                                   placeholder: `提示词内容`,
                                                   value: rule.prompt,
-                                                  onChange: (e) =>
+                                                  onChange: (event) =>
                                                     updatePresetField(
-                                                      t,
+                                                      promptIndex,
                                                       `prompt`,
-                                                      e.target.value,
+                                                      event.target.value,
                                                     ),
                                                 }),
                                               ],
                                             }),
                                             jsx(`button`, {
-                                              onClick: () => handleRemovePreset(t),
+                                              onClick: () => handleRemovePreset(promptIndex),
                                               className: `wanjuan-danger-icon-action text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover/preset:opacity-100`,
                                               children: jsx(Trash2, {
                                                 size: 14,
@@ -31187,7 +31187,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                             }),
                                           ],
                                         },
-                                        t,
+                                        promptIndex,
                                       ),
                                     ),
                                     false &&
@@ -36269,10 +36269,10 @@ ${String(promptText || ``).slice(0, 5e4)}`;
     });
 }
 
-var Ct = console.error;
+var originalConsoleError = console.error;
 ((console.error = (...args) => {
     (typeof args[0] == `string` && args[0].includes(`ResizeObserver loop`)) ||
-    Ct.call(console, ...args);
+    originalConsoleError.call(console, ...args);
   }),
   window.addEventListener(`error`, (event) => {
     (event.message.includes(`ResizeObserver loop limit exceeded`) ||
