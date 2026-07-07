@@ -318,6 +318,18 @@ import {
   normalizeUnifiedApiConfig,
   normalizeUnifiedApiConfigs,
 } from "../lib/unified-api-config";
+import {
+  normalizeThemeMode,
+  formatExtensionToolError,
+  extractJsonBlock,
+  formatStorageBytes,
+} from "../lib/app-utils";
+import {
+  normalizeProjectGroups,
+  normalizeModuleSelection,
+  normalizeProjectIdSelection,
+  normalizeProjectResourceMap,
+} from "../lib/project-normalize";
 import { WanJuanConfigButlerHelp } from "../components/config-butler-help";
 import {
   WanJuanRenderRuntime,
@@ -12184,18 +12196,18 @@ function WanJuanAppRoot() {
   [selectedUser, setSelectedUser] = useState(null),
   [isLoading, setIsLoading] = useState(false),
   [isPluginEnv, setIsPluginEnv] = useState(true),
-	  [hasCurrentTab, setHasCurrentTab] = useState(false),
-	  [transitResources, setTransitResources] = useState([]),
-	  [resourceTypeFilter, setResourceTypeFilter] = useState(`all`),
-	  [resourceSourceFilter, setResourceSourceFilter] = useState(`all`),
-	  [resourceFavoriteOnly, setResourceFavoriteOnly] = useState(false),
-	  [resourceCleanupBusy, setResourceCleanupBusy] = useState(false),
-	  [wjResourceFullscreen, setWjResourceFullscreen] = useState(null),
-	  [transitGridCols, setTransitGridCols] = useState(4),
+  [hasCurrentTab, setHasCurrentTab] = useState(false),
+  [transitResources, setTransitResources] = useState([]),
+  [resourceTypeFilter, setResourceTypeFilter] = useState(`all`),
+  [resourceSourceFilter, setResourceSourceFilter] = useState(`all`),
+  [resourceFavoriteOnly, setResourceFavoriteOnly] = useState(false),
+  [resourceCleanupBusy, setResourceCleanupBusy] = useState(false),
+  [wjResourceFullscreen, setWjResourceFullscreen] = useState(null),
+  [transitGridCols, setTransitGridCols] = useState(4),
   [currentPage, setCurrentPage] = useState(1),
   [activeView, setActiveView] = useState(`canvas`),
   [activeSettingsTab, setActiveSettingsTab] = useState(`oneStop`),
-	  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(true),
+  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(true),
   [settingsNavUnlockClicks, setSettingsNavUnlockClicks] = useState(0),
   [isAddingAccount, setIsAddingAccount] = useState(false),
   [accountNameInput, setAccountNameInput] = useState(``),
@@ -12386,18 +12398,18 @@ Suno 音乐生成`,
   "requestType": "gemini-generate-content"
 }`,
   ),
-	  [configButlerApiUrl, setConfigButlerApiUrl] = useState(``),
-	  [configButlerApiKey, setConfigButlerApiKey] = useState(``),
-	  [configButlerProtocol, setConfigButlerProtocol] = useState(
+  [configButlerApiUrl, setConfigButlerApiUrl] = useState(``),
+  [configButlerApiKey, setConfigButlerApiKey] = useState(``),
+  [configButlerProtocol, setConfigButlerProtocol] = useState(
 	    `openai`,
 	  ),
-	  [configButlerModel, setConfigButlerModel] = useState(``),
+  [configButlerModel, setConfigButlerModel] = useState(``),
   [configButlerDocUrl, setConfigButlerDocUrl] = useState(``),
   [configButlerTargetModel, setConfigButlerTargetModel] = useState(``),
   [configButlerTargetCategory, setConfigButlerTargetCategory] = useState(
     `text`,
   ),
-	  [configButlerTargetApiConfigId, setConfigButlerTargetApiConfigId] = useState(``),
+  [configButlerTargetApiConfigId, setConfigButlerTargetApiConfigId] = useState(``),
   [configButlerTargetApiUrl, setConfigButlerTargetApiUrl] = useState(
     ``,
   ),
@@ -12455,12 +12467,12 @@ Suno 音乐生成`,
 		1080x720
 		720x1080
 		720x720`),
-	  [videoAspectRatios, setVideoAspectRatios] = useState(`16:9
+  [videoAspectRatios, setVideoAspectRatios] = useState(`16:9
 		9:16
 		1:1
 		3:2
 		2:3`),
-	  [imageCompatResolutions, setImageCompatResolutions] = useState(`1024x1024
+  [imageCompatResolutions, setImageCompatResolutions] = useState(`1024x1024
 1280x720
 720x1280
 2048x2048
@@ -12468,7 +12480,7 @@ Suno 音乐生成`,
 1440x2560
 3840x2160
 2160x3840`),
-	  [videoModelRequestProfilesText, setVideoModelRequestProfilesText] = useState(`{}`),
+  [videoModelRequestProfilesText, setVideoModelRequestProfilesText] = useState(`{}`),
   [seedanceModel, setSeedanceModel] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS)),
   [tianjiSeedanceModel, setTianjiSeedanceModel] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS)),
   [seedanceDurations, setSeedanceDurations] = useState(wanjuanTianjiSeedanceDefaults.durations),
@@ -12533,7 +12545,7 @@ Suno 音乐生成`,
   [layeredRunMaxConcurrency, setLayeredRunMaxConcurrency] =
   useState(2),
   [edges, setEdges] = useState([]),
-	  [apiConfigs, setApiConfigs] = useState([{
+  [apiConfigs, setApiConfigs] = useState([{
 	    id: `jixin-default`,
 	    name: `极鑫`,
 	    url: WANJUAN_JIXIN_DEFAULT_API_URL,
@@ -12552,19 +12564,13 @@ Suno 音乐生成`,
   [imageModelProtocolBindings, setImageModelProtocolBindings] = useState(() => ({
     ...WANJUAN_JIXIN_BUILTIN_IMAGE_PROTOCOLS
   })),
-	  [videoModelProtocolBindings, setVideoModelProtocolBindings] = useState(() =>
+  [videoModelProtocolBindings, setVideoModelProtocolBindings] = useState(() =>
 	    wanjuanBuildJixinVideoProtocolBindings(), ),
-	  [audioModelProtocolBindings, setAudioModelProtocolBindings] = useState(() =>
+  [audioModelProtocolBindings, setAudioModelProtocolBindings] = useState(() =>
 	    wanjuanBuildJixinAudioProtocolBindings(), ),
-	  [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
-	  [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
-  [isReady, setIsReady] = useState(false),
-  normalizeThemeMode = (themeName) => ({
-    "mist-blue": `light`,
-    "chrome-blue": `light`,
-    "chrome-sand": `warm-light`,
-    "chrome-teal": `sage-green`,
-  } [themeName] || themeName || `graphite`);
+  [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
+  [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
+  [isReady, setIsReady] = useState(false);
   useEffect(() => {
     let textConfig = apiConfigs.find((config) => config.id === textApiConfigId) || apiConfigs[0];
     textConfig && (setTextApiUrl(textConfig.url), setTextApiKey(textConfig.key));
@@ -12763,12 +12769,7 @@ Suno 音乐生成`,
 	      setExtensionToolInstalling((prev) => ({ ...prev, toolpack: false }));
 	    }
 	  };
-	  const formatExtensionToolError = (status) => {
-	    let message = status?.error || ``,
-	      logPath = status?.logPath || ``;
-	    return logPath ? `${message}
-日志：${logPath}` : message;
-	  };
+	  
 	  useEffect(() => {
 	    activeSettingsTab === `extensions` &&
 	    (refreshExtensionToolStatus(`deface`),
@@ -13611,19 +13612,6 @@ time=${normalizedTtl}`,
     apiConfigs.find((config) => config.id === `vectorengine`) ||
     apiConfigs[0] ||
     null,
-  extractJsonBlock = (text) => {
-      let configText = String(text || ``).trim();
-      if (!configText) throw Error(`配置管家未返回内容`);
-      let codeBlockMatch = configText.match(/```json\s*([\s\S]*?)```/i) || configText.match(/```\s*([\s\S]*?)```/i);
-      if (codeBlockMatch && codeBlockMatch[1]) configText = codeBlockMatch[1].trim();
-      let jsonMatch = configText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) configText = jsonMatch[0];
-      try {
-        return JSON.parse(configText);
-      } catch {
-        throw Error(`配置管家返回的不是有效的JSON格式`);
-      }
-    },
   isXSeeVeoReferenceVideoModel = (modelName, apiUrl = ``) =>
     /^veo/i.test(String(modelName || ``).trim()) &&
     /(?:^|[-_])(portrait|landscape|fl|frame|reverse|gif|hd|4k|pro)(?:[-_]|$)/i.test(String(modelName || ``).trim()) &&
@@ -16475,18 +16463,6 @@ ${docText}`;
               projectGroups: normalizedGroupsForNewProject
             }));
         },
-  normalizeProjectGroups = (rawGroups) =>
-        Array.isArray(rawGroups) ?
-        rawGroups
-        .filter((group) => group && typeof group == `object`)
-        .map((group, index) => ({
-          id: String(group.id || `group-${Date.now()}-${index}`),
-          name: String(group.name || `未命名分组`).trim() || `未命名分组`,
-          collapsed: !!group.collapsed,
-          order: Number.isFinite(Number(group.order)) ? Number(group.order) : index,
-        }))
-        .sort((firstGroup, secondGroup) => (firstGroup.order || 0) - (secondGroup.order || 0)) :
-        [],
   persistProjectGroups = (groups, projects2 = projects) => {
           let normalizedGroups = normalizeProjectGroups(groups);
           (setProjectGroups(normalizedGroups),
@@ -16658,13 +16634,6 @@ ${docText}`;
           optimized: `已优化`,
           authorization: `需要授权`,
           failed: `迁移失败`,
-        },
-  formatStorageBytes = (value) => {
-          let bytes = Number(value || 0);
-          if (bytes < 1024) return `${bytes} B`;
-          if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-          if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
-          return `${(bytes / 1073741824).toFixed(2)} GB`;
         },
   persistProjectsWithStorageState = (projectId, storageStatus, storageDetail = ``) => {
           let updatedProjects = projects.map((project) => project.id === projectId ? {
@@ -19620,12 +19589,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
   PROJECT_ASSET_STORAGE_PREFIX = `project-asset-v2-`,
   EXTERNAL_PROJECT_ASSET_ORIGINS = new Set([`external-upload`, `uploaded`, `user-upload`, `user-media`, `local-file`, `relinked`]),
   GENERATED_PROJECT_ASSET_ORIGIN_PATTERN = /(generated|video-editor|ai|seedream|seedance|task|tts|music)/i,
-  normalizeModuleSelection = (list, allowedValues) => {
-      let filtered = Array.isArray(list) ?
-        list.filter((item) => allowedValues.includes(item)) :
-        [];
-      return filtered.length ? [...new Set(filtered)] : [...allowedValues];
-    },
   splitChromeStorageModules = (storageData) => {
       let settings = {},
         projects2 = {},
@@ -19666,10 +19629,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
           (section) => Object.keys(sections[section] || {}).length > 0,
         ),
       };
-    },
-  normalizeProjectIdSelection = (candidates, allowedValues) => {
-      let matches = Array.isArray(candidates) ? candidates.filter((value) => allowedValues.includes(value)) : [];
-      return matches.length ? [...new Set(matches)] : [...allowedValues];
     },
   getProjectCanvasStorageKey = (projectId) => `${PROJECT_CANVAS_STORAGE_PREFIX}${projectId}`,
   getDesktopProjectMirrorStorageKey = (projectId) =>
@@ -19791,16 +19750,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   refs.add(value),
                   extractProjectAssetRefs(value, refs));
               return [...refs];
-            },
-  normalizeProjectResourceMap = (input) => {
-              let source = input && typeof input == `object` ? input : {},
-                result = {};
-              for (let [key, value] of Object.entries(source))
-                key &&
-                Array.isArray(value) &&
-                value.length > 0 &&
-                (result[key] = mergeTransitResourceEntries(value));
-              return result;
             },
   projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
   blobToDataUrl = (blob) =>
