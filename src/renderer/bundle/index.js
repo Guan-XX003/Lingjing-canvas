@@ -13143,18 +13143,6 @@ Suno 音乐生成`,
       } catch {}
       showToast2(`高级设置已解锁`);
     },
-  lockAdvancedSettings = () => {
-	      (setAdvancedSettingsUnlocked(true),
-	        setSettingsNavUnlockClicks(0));
-	      try {
-	        localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
-	        typeof chrome < `u` &&
-	          chrome.storage?.local?.set?.({
-	            advancedSettingsUnlocked: true,
-	          });
-	      } catch {}
-	      showToast2(`高级设置已默认开放`);
-	    },
   handleSettingsNavClick = () => {
 	      setActiveView(`settings`);
 	      setSettingsNavUnlockClicks(0);
