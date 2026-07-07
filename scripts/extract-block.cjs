@@ -67,11 +67,14 @@ if (bundleInternal.size) throw new Error('block references bundle-internal top-l
 // 组件文件
 const importLines = Object.entries(importObj).map(([m, names]) => {
   // 依赖路径原相对 bundle/；组件在 components/（与 lib/、bundle/ 同级于 renderer/）
-  let path = m;
-  if (m === './vendor.js') path = '../bundle/vendor.js';
-  else if (m.startsWith('../components/')) path = './' + m.slice('../components/'.length);
+  let path = m, nameList = names.slice();
+  if (m === './vendor.js') {
+    // vendor 导出在 JSX 里出现的都是 lucide 图标；直接从 lucide-react 导入（去别名后本地名=lucide 真名，除 CloseX=X）
+    path = 'lucide-react';
+    nameList = nameList.map((n) => (n === 'CloseX' ? 'X as CloseX' : n));
+  } else if (m.startsWith('../components/')) path = './' + m.slice('../components/'.length);
   // ../lib/X 从 components/ 同样有效，保持不变
-  return `import { ${names.join(', ')} } from "${path}";`;
+  return `import { ${nameList.join(', ')} } from "${path}";`;
 }).join('\n');
 const bodyText = jsxNode.getText(sf);
 const moduleSrc = `${cfg.docComment || '/** 自 WanJuanAppRoot return 抽出的子组件，props 传入依赖，行为不变。 */'}
