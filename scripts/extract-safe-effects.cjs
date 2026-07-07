@@ -28,7 +28,7 @@ for(const ef of effs){ idx++;
   let fwd=null;
   for(const r of ef.refs){ if(declLine[r]!==undefined && declLine[r]>ef.line){ fwd=r; break; } }
   if(fwd){ console.log('  跳过 L'+ef.line+'('+(ef.e-ef.s)+'c): 前向引用组件级 '+fwd+'@L'+declLine[fwd]); continue; }
-  targets.push({...ef,name:'useSafeEffect'+idx});
+  targets.push({...ef,name:'useLateEffect'+ef.line});
 }
 [...targets].sort((a,b)=>b.s-a.s).forEach(t=>{
   const callText=src.slice(t.s,t.e);

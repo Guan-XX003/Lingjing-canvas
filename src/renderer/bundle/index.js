@@ -342,6 +342,21 @@ import { useVideoGeneration } from "../hooks/useVideoGeneration";
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { useCustomNodeGeneration } from "../hooks/useCustomNodeGeneration";
 import { useUngroupNode } from "../hooks/useUngroupNode";
+import { useLateEffect5880 } from "../hooks/useLateEffect5880";
+import { useLateEffect4760 } from "../hooks/useLateEffect4760";
+import { useLateEffect1120 } from "../hooks/useLateEffect1120";
+import { useLateEffect2670 } from "../hooks/useLateEffect2670";
+import { useLateEffect4727 } from "../hooks/useLateEffect4727";
+import { useLateEffect1076 } from "../hooks/useLateEffect1076";
+import { useLateEffect4703 } from "../hooks/useLateEffect4703";
+import { useLateEffect1184 } from "../hooks/useLateEffect1184";
+import { useLateEffect1095 } from "../hooks/useLateEffect1095";
+import { useLateEffect4766 } from "../hooks/useLateEffect4766";
+import { useLateEffect4737 } from "../hooks/useLateEffect4737";
+import { useLateEffect4717 } from "../hooks/useLateEffect4717";
+import { useLateEffect4743 } from "../hooks/useLateEffect4743";
+import { useLateEffect4712 } from "../hooks/useLateEffect4712";
+import { useLateEffect1886 } from "../hooks/useLateEffect1886";
 import { useSafeEffect47 } from "../hooks/useSafeEffect47";
 import { useSafeEffect46 } from "../hooks/useSafeEffect46";
 import { useSafeEffect42 } from "../hooks/useSafeEffect42";
@@ -1073,17 +1088,7 @@ function WanJuanAppCanvas({
         }
       );
     }, []),
-    useEffect(() => {
-      if (shouldFitView && nodes.length > 0) {
-        let _t = setTimeout(() => {
-          fitView({
-            padding: 0.2,
-            duration: 800
-          });
-        }, 100);
-        return () => clearTimeout(_t);
-      }
-    }, [shouldFitView, fitView]));
+    useLateEffect1076({ fitView, nodes, shouldFitView }));
   let [isVisible, setIsVisible] = useState(false),
   [history, setHistory] = useState([]),
   [historyIndex, setHistoryIndex] = useState(-1),
@@ -1092,10 +1097,7 @@ function WanJuanAppCanvas({
     [dailyGenerationCount, setDailyGenerationCount] = useState(0),
     LoadOnceRef = useRef(false),
     planLimits = WANJUAN_PLAN_LIMITS[membership.type] || WANJUAN_PLAN_LIMITS.FREE;
-  useEffect(() => {
-    let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
-    setDailyGenerationCount(parseInt(localStorage.getItem(dailyLimitKey) || `0`));
-  }, []);
+  useLateEffect1095({ setDailyGenerationCount });
 	  let nodesRef = useRef(nodes),
 	    edgesRef = useRef(edges),
 	    projectIdRef = useRef(projectId),
@@ -1117,10 +1119,7 @@ function WanJuanAppCanvas({
 	      edgesRef.current = edges;
 	    }, [edges]),
 	    useSafeEffect7({ setNodes, wanjuanResourceLocalUrlMap }),
-	    useEffect(() => {
-	      projectIdRef.current = projectId;
-	      try { globalThis.__wanjuanCurrentProjectId = projectId; } catch {}
-	    }, [projectId]),
+	    useLateEffect1120({ projectId, projectIdRef }),
     useEffect(() => {
       shouldFitViewRef.current = shouldFitView;
     }, [shouldFitView]),
@@ -1181,11 +1180,7 @@ function WanJuanAppCanvas({
     useGlobalTasksSyncEffect({ GlobalTasks, projectIdRef, resolveWanjuanPlayableTaskUrl, setNodes, shouldFitView }),
 	    useSafeEffect11({ nodes, setEdges, shouldFitView }),
 	    useSafeEffect12({ edges, setNodes, shouldFitView, wanjuanPrevEdgesRef }),
-		    useEffect(() => {
-		      if (!shouldFitView) return;
-		      let timeoutId = setTimeout(saveCanvasState, 2800);
-		      return () => clearTimeout(timeoutId);
-		    }, [nodes, edges, shouldFitView, saveCanvasState]),
+		    useLateEffect1184({ edges, nodes, saveCanvasState, shouldFitView }),
 		    useEffect(() => () => {
 		      shouldFitViewRef.current && saveCanvasState();
 	    }, [projectId, saveCanvasState]),
@@ -1883,11 +1878,7 @@ function WanJuanAppCanvas({
 	    [setEdges],
 	  ),
 	    wanjuanHandleEdgeClick = useHandleEdgeClick({ setEdges, setMenuPosition, setNodes }).wanjuanHandleEdgeClick;
-  useEffect(() => {
-    (!menuPosition || menuPosition.type !== `connection`) &&
-    (setNodes((nodes2) => nodes2.filter((node) => node.id !== `ghost-target`)),
-      setEdges((edges2) => edges2.filter((edge) => edge.id !== `ghost-edge`)));
-  }, [menuPosition, setNodes, setEdges]);
+  useLateEffect1886({ menuPosition, setEdges, setNodes });
   let autoLayout = useAutoLayout({ dagreModule, edgesRef, fitView, nodesRef, setNodes, showToast }).autoLayout,
     groupSelectedNodes = useGroupNodes({ nodesRef, setNodes, showToast }).groupSelectedNodes,
     ungroupNode = useUngroupNode({ setNodes, showToast }).ungroupNode;
@@ -2667,12 +2658,7 @@ Suno 音乐生成`,
 	    }
 	  };
 	  
-	  useEffect(() => {
-	    activeSettingsTab === `extensions` &&
-	    (refreshExtensionToolStatus(`deface`),
-	      refreshExtensionToolStatus(`qwen-tts`),
-	      refreshExtensionToolStatus(`real-esrgan`));
-	  }, [activeSettingsTab]);
+	  useLateEffect2670({ activeSettingsTab, refreshExtensionToolStatus });
 	  useEffect(() => {
 	    saveApiModelCloudSettings();
 	  }, [
@@ -4700,56 +4686,22 @@ ${docText}`;
             setConfigButlerLoading(false);
           }
         };
-	  useEffect(() => {
-	    try {
-	      localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
-	      typeof chrome < `u` &&
-	        chrome.storage?.local?.set?.({
-	          advancedSettingsUnlocked: true,
-	        });
-	    } catch {}
-	  }, []);
-  useEffect(() => {
-    if (!isReady || !settingsHydratedRef.current) return;
-    syncTianjiConfigFromJixinApi(apiConfigs).catch((error) => console.warn(`Sync Tianji config from Jixin API failed`, error));
-  }, [isReady, apiConfigs]);
+	  useLateEffect4703({});
+  useLateEffect4712({ apiConfigs, isReady, settingsHydratedRef, syncTianjiConfigFromJixinApi });
   useSafeEffect30({ isReady });
-  useEffect(() => {
-    if (!isReady || !settingsHydratedRef.current) return;
-    if (!configButlerDocUrl) setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
-  }, [isReady, configButlerDocUrl]);
+  useLateEffect4717({ WANJUAN_JIXIN_DOC_URL, configButlerDocUrl, isReady, setConfigButlerDocUrl, settingsHydratedRef });
   useEffect(() => {
     refreshSystemNotifications({
       source: `startup`,
       silent: true,
     });
   }, []);
-  useEffect(() => {
-    if (activeView !== `canvas` && activeView !== `settings`) return;
-    refreshSystemNotifications({
-      source: activeView,
-      silent: true,
-    });
-  }, [activeView]);
+  useLateEffect4727({ activeView, refreshSystemNotifications });
   useEffect(() => {
     systemNotificationDialog && setSystemNotificationDialog(null);
   }, [systemNotificationDialog]);
-  useEffect(() => {
-    if (activeView === `settings`) {
-      let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
-      setDailyUsageCount(parseInt(localStorage.getItem(dailyLimitKey) || `0`));
-    }
-  }, [activeView]);
-  (useEffect(() => {
-      isReady &&
-        activeProjectId &&
-        (localStorage.setItem(`lastOpenedProjectId`, activeProjectId),
-          typeof chrome < `u` &&
-          chrome.storage &&
-          chrome.storage.local.set({
-            lastOpenedProjectId: activeProjectId
-          }));
-    }, [activeProjectId, isReady]),
+  useLateEffect4737({ activeView, setDailyUsageCount });
+  (useLateEffect4743({ activeProjectId, isReady }),
     useSafeEffect37({ activeProjectId, isReady, projectHydratedRef, settingsHydratedRef, themeMode }),
     usePluginEnvEffect({ _e, localforageModule, normalizeStoredGlobalConfigs, projectHydratedRef, repairXSeeVeoReferenceVideoBindings, setActiveProjectId, setActiveStoredGlobalConfigId, setActiveView, setAdvancedSettingsUnlocked, setAgentConversations, setAgentItems, setApiConfigs, setAppLanguage, setAudioApiConfigId, setAudioApiKey, setAudioApiUrl, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setAutoDownloadGeneratedResults, setBackupExportSelection, setConfigButlerApiKey, setConfigButlerApiUrl, setConfigButlerDocUrl, setConfigButlerMode, setConfigButlerModel, setConfigButlerProtocol, setConfigButlerRepairHistory, setConfigButlerTargetApiConfigId, setConfigButlerTargetCategory, setCurrentPlatform, setCustomPublicUploadConfig, setDailyUsageCount, setDeviceId, setDownloadDirectory, setEdges, setGlobalTasks, setHasCurrentTab, setImageApiConfigId, setImageApiKey, setImageApiUrl, setImageCompatResolutions, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setIsLoading, setIsPluginEnv, setIsReady, setLayeredRunConcurrencyOptions, setLayeredRunMaxConcurrency, setMaxPollingDuration, setMembership, setModelProtocolRegistry, setPerformanceProfile, setPollingInterval, setPresetPrompts, setProjectGroups, setProjects, setQiniuConfig, setSeedanceDurations, setSeedanceEnableWebSearch, setSeedanceGenerateAudio, setSeedanceModel, setSeedanceRatios, setSeedanceResolutions, setSeedanceUploadMode, setSeedanceVirtualPortraits, setSeedanceWatermark, setSelectedAgentId, setStorageOptimizationEnabled, setStorageOptimizationPaused, setStoredGlobalConfigs, setTextApiConfigId, setTextApiKey, setTextApiUrl, setTextModelApiBindings, setTextModelProtocolBindings, setThemeMode, setTianjiSeedanceModel, setTianjiSeedanceSettingsMode, setTongyiWanxiangDurations, setTongyiWanxiangEditModels, setTongyiWanxiangImageModels, setTongyiWanxiangRatios, setTongyiWanxiangReferenceImageModels, setTongyiWanxiangResolutions, setTongyiWanxiangTextModels, setTosConfig, setTransitGridCols, setTransitResources, setTtsMusicModel, setUpdateInfo, setUsers, setVideoApiConfigId, setVideoApiKey, setVideoApiUrl, setVideoAspectRatios, setVideoDurations, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModelRequestProfilesText, setVideoModels, setVideoResolutions, settingsHydratedRef, showToast2 }),
     useSafeEffect38({ agentConversations, agentItems, appLanguage, autoDownloadGeneratedResults, backupExportSelection, downloadDirectory, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, performanceProfile, pollingInterval, presetPrompts, saveNonModelSettings, selectedAgentId, storageOptimizationEnabled, storageOptimizationPaused, themeMode }),
@@ -4757,18 +4709,9 @@ ${docText}`;
       globalThis.__wanjuanLastCanvasActivityAt = Date.now();
     }, [activeProjectId]),
     useSafeEffect40({ activeProjectId, globalTasks, storageOptimizationEnabled, storageOptimizationPaused }),
-    useEffect(() => {
-      activeSettingsTab === `data` && window.wanjuanDesktop?.getStorageOptimizationStatus?.({
-        directory: downloadDirectory
-      }).then((result) => result?.ok && setStorageOptimizationStatus(result)).catch(console.error);
-    }, [activeSettingsTab, downloadDirectory]),
+    useLateEffect4760({ activeSettingsTab, downloadDirectory, setStorageOptimizationStatus }),
     useSafeEffect42({ downloadDirectory, setStorageOptimizationLastResult, storageOptimizationEnabled }),
-	    useEffect(() => () => {
-	      nonModelSettingsSaveTimerRef.current &&
-	        clearTimeout(nonModelSettingsSaveTimerRef.current);
-	      apiModelCloudSettingsSaveTimerRef.current &&
-	        clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
-	    }, []));
+	    useLateEffect4766({ apiModelCloudSettingsSaveTimerRef, nonModelSettingsSaveTimerRef }));
   let saveUsers = (users2) => {
       if (
         (setUsers(users2), typeof chrome > `u` || !chrome.storage || !chrome.storage.local)
@@ -5877,14 +5820,7 @@ ${docText}`;
   selectedAgent =
         agentItems.find((agent) => agent.id === selectedAgentId) || agentItems[0] || null,
   selectedAgentMessages = agentConversations[selectedAgentId] || [],
-  agentMessagesAutoScrollEffect = useEffect(() => {
-          let scrollContainer = agentMessagesScrollRef.current;
-          if (!scrollContainer) return;
-          let animationFrameId = requestAnimationFrame(() => {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight;
-          });
-          return () => cancelAnimationFrame(animationFrameId);
-        }, [selectedAgentId, selectedAgentMessages]),
+  agentMessagesAutoScrollEffect = useLateEffect5880({ agentMessagesScrollRef, selectedAgentId, selectedAgentMessages }),
   updateSelectedAgent = (updates) => {
           selectedAgent &&
             setAgentItems((agents) =>
