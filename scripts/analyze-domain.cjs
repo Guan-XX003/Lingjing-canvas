@@ -15,7 +15,10 @@ for (const st of sf.statements) {
     const m = st.moduleSpecifier.getText(sf).replace(/['"]/g, '');
     for (const e of st.importClause.namedBindings.elements) top.set(e.name.text, m);
   } else if (ts.isFunctionDeclaration(st) && st.name) top.set(st.name.text, 'LOCAL-TOP');
-  else if (ts.isVariableStatement(st)) for (const d of st.declarationList.declarations) if (ts.isIdentifier(d.name)) top.set(d.name.text, 'LOCAL-TOP');
+  else if (ts.isVariableStatement(st)) for (const d of st.declarationList.declarations) {
+    const addTop = (nm) => { if (!nm) return; if (ts.isIdentifier(nm)) top.set(nm.text, 'LOCAL-TOP'); else if (ts.isObjectBindingPattern(nm) || ts.isArrayBindingPattern(nm)) for (const e of nm.elements) if (ts.isBindingElement(e)) addTop(e.name); };
+    addTop(d.name);
+  }
 }
 let comp = null;
 (function f(n) { if (ts.isFunctionDeclaration(n) && n.name?.text === compName) comp = n; ts.forEachChild(n, f); })(sf);
