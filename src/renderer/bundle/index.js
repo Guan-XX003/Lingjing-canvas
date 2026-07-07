@@ -13436,20 +13436,15 @@ time=${normalizedTtl}`,
       [];
     let generatedVideoResources = wanjuanBuildGeneratedVideoResourcesFromNodes(canvasNodesSnapshot, transitResources, activeProjectId);
     if (!generatedVideoResources.length) return;
-    setTransitResources((resources) => {
-      let existingSignatures = new Set();
-      resources.forEach((resource) => wanjuanCollectResourceSignatures(resource).forEach((signature) => existingSignatures.add(signature)));
-      let missingResources = generatedVideoResources.filter((resource) => !wanjuanCollectResourceSignatures(resource).some((signature) => existingSignatures.has(signature)));
-      if (!missingResources.length) return resources;
-      let updatedResources = [...missingResources, ...resources];
-      return (
-        localforageModule.default.setItem(`transitResources`, updatedResources),
-        isPluginEnv && chrome.storage.local.set({
-          transitResources: updatedResources
-        }),
-        updatedResources
-      );
-    });
+    // 把签名计算与持久化移出 setState updater（保持 updater 纯）；transitResources 在 effect 依赖里，是最新提交值
+    let existingSignatures = new Set();
+    transitResources.forEach((resource) => wanjuanCollectResourceSignatures(resource).forEach((signature) => existingSignatures.add(signature)));
+    let missingResources = generatedVideoResources.filter((resource) => !wanjuanCollectResourceSignatures(resource).some((signature) => existingSignatures.has(signature)));
+    if (!missingResources.length) return;
+    let updatedResources = [...missingResources, ...transitResources];
+    setTransitResources(updatedResources);
+    localforageModule.default.setItem(`transitResources`, updatedResources);
+    isPluginEnv && chrome.storage.local.set({ transitResources: updatedResources });
   }, [activeView, transitResources, activeProjectId]);
   let persistSeedanceVirtualPortraits = (portraits) => {
       let normalizedPortraits = wanjuanNormalizeSeedanceVirtualPortraits(portraits);
