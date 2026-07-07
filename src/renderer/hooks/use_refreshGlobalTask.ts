@@ -23,6 +23,7 @@ export function use_refreshGlobalTask(deps: any) {
     videoApiKey,
     videoApiUrl,
     videoModelApiBindings,
+    globalTasks,
   } = deps;
   const refreshGlobalTask = async (task, manualRefreshOptions = {}) => {
 	                let notify = manualRefreshOptions?.silent === true ? () => {} : showToast2;

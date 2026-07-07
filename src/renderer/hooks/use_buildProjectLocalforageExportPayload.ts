@@ -11,6 +11,7 @@ export function use_buildProjectLocalforageExportPayload(deps: any) {
     extractProjectAssetRefs,
     getProjectCanvasStorageKey,
     sanitizeProjectCanvasStateForExport,
+    prepareProjectMediaStateForPersistence,
   } = deps;
   const buildProjectLocalforageExportPayload = async (projectState, projectIds = [], exportOptions = {}) => {
                       let canvasStates = {},

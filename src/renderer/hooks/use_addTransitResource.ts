@@ -12,6 +12,7 @@ export function use_addTransitResource(deps: any) {
     persistTransitResource,
     setEdges,
     setTransitResources,
+    transitResources,
   } = deps;
   const addTransitResource = (url, resourceType = `image`, resourceName = `AI生成内容`, source = `generated`) => {
     if (!url || typeof url != `string`) return;

@@ -10,6 +10,7 @@ export function use_saveStoredGlobalConfigApiDocUrl(deps: any) {
     setConfigButlerDocUrl,
     showToast2,
     storedGlobalConfigs,
+    configButlerDocUrl,
   } = deps;
   const saveStoredGlobalConfigApiDocUrl = (configId, rawDocUrl) => {
       let apiDocUrl = String(rawDocUrl || ``).trim(),

@@ -7,7 +7,9 @@ import { backupExternalAssetMatchesBinding, buildBackupExternalAssetStorageValue
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
 export function use_applyExternalAssetBundleToBackupPayload(deps: any) {
-  const {} = deps;
+  const {
+    projects,
+  } = deps;
   const applyExternalAssetBundleToBackupPayload = (backup, importResult) => {
                     if (!importResult?.files?.length || !backup?.modules?.projects?.localforage) return backup;
                     let clonedBackup = cloneBackupValue(backup),

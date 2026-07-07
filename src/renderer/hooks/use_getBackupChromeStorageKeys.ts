@@ -11,6 +11,7 @@ export function use_getBackupChromeStorageKeys(deps: any) {
     AGENT_STORAGE_KEYS,
     PROJECT_STORAGE_KEYS,
     getDesktopProjectMirrorStorageKey,
+    projects,
   } = deps;
   const getBackupChromeStorageKeys = (moduleSelection, options = {}) => {
                       let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),

@@ -10,6 +10,7 @@ export function use_persistStoredGlobalConfigs(deps: any) {
     activeStoredGlobalConfigId,
     setActiveStoredGlobalConfigId,
     setStoredGlobalConfigs,
+    storedGlobalConfigs,
   } = deps;
   const persistStoredGlobalConfigs = (configs, activeConfigId = activeStoredGlobalConfigId) => {
       (setStoredGlobalConfigs(configs),

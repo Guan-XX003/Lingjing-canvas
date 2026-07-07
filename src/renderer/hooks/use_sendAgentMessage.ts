@@ -28,6 +28,10 @@ export function use_sendAgentMessage(deps: any) {
     textApiUrl,
     textModelApiBindings,
     textModelProtocolBindings,
+    customPublicUploadConfig,
+    qiniuConfig,
+    seedanceUploadMode,
+    tosConfig,
   } = deps;
   const sendAgentMessage = async () => {
               if (!selectedAgent || (!agentComposer.trim() && agentAttachments.length === 0))

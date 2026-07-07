@@ -12,6 +12,9 @@ export function use_redo(deps: any) {
     setEdges,
     setHistoryIndex,
     setNodes,
+    edges,
+    history,
+    nodes,
   } = deps;
   const redo = useCallback(() => {
       if (historyIndex < history.length - 1) {

@@ -9,6 +9,7 @@ import { wanjuanFindLegacyJixinApiKey } from "../lib/jixin-catalog";
 export function use_resolveJixinApiConfigForTianjiSettings(deps: any) {
   const {
     WANJUAN_JIXIN_API_URL,
+    apiConfigs,
   } = deps;
   const resolveJixinApiConfigForTianjiSettings = (candidateConfig = null, stored = {}) => {
       let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],

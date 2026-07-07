@@ -17,6 +17,10 @@ export function use_normalizeBackupModules(deps: any) {
     getBackupSettingsSectionMap,
     normalizeResourceLocalforagePayload,
     splitChromeStorageModules,
+    agentConversations,
+    projectGroups,
+    projects,
+    selectedAgentId,
   } = deps;
   const normalizeBackupModules = (backup) => {
                           if (backup?.modules && typeof backup.modules == `object`) {

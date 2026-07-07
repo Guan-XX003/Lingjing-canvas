@@ -9,6 +9,7 @@ export function use_handleRemoveTransitResource(deps: any) {
   const {
     isPluginEnv,
     setTransitResources,
+    transitResources,
   } = deps;
   const handleRemoveTransitResource = (resourceId) => {
           setTransitResources((resources) => {

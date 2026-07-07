@@ -11,6 +11,8 @@ export function use_applyLitterboxUploadPreset(deps: any) {
     setCustomUploadConfigExpanded,
     setSeedanceUploadMode,
     showToast2,
+    customPublicUploadConfig,
+    seedanceUploadMode,
   } = deps;
   const applyLitterboxUploadPreset = (ttl = `1h`) => {
       let normalizedTtl = [`1h`, `12h`, `24h`, `72h`].includes(String(ttl || ``)) ? String(ttl) : `1h`,

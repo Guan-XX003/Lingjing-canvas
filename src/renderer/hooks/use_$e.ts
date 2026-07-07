@@ -12,6 +12,9 @@ export function use_$e(deps: any) {
     setEdges,
     setHistoryIndex,
     setNodes,
+    edges,
+    history,
+    nodes,
   } = deps;
   const $e = useCallback(() => {
       if (historyIndex > 0) {

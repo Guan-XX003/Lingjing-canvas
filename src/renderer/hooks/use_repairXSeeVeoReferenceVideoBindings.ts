@@ -8,7 +8,11 @@ import { cloneBackupValue } from "../lib/backup";
 import { isXSeeVeoReferenceVideoModel } from "../lib/model-list-utils";
 
 export function use_repairXSeeVeoReferenceVideoBindings(deps: any) {
-  const {} = deps;
+  const {
+    modelProtocolRegistry,
+    videoApiUrl,
+    videoModelProtocolBindings,
+  } = deps;
   const repairXSeeVeoReferenceVideoBindings = (backup = {}, apiUrl = ``) => {
       let config = backup && typeof backup == `object` ? cloneBackupValue(backup) : {},
         protocolRegistry = {

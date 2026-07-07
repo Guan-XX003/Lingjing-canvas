@@ -7,6 +7,7 @@ import { useCallback, useMemo } from "react";
 export function use_normalizeStoredGlobalConfigs(deps: any) {
   const {
     normalizeStoredGlobalConfigBackup,
+    configButlerDocUrl,
   } = deps;
   const normalizeStoredGlobalConfigs = (items) =>
     Array.isArray(items) ?

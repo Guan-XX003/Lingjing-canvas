@@ -18,6 +18,11 @@ export function use_rollbackConfigButlerRepair(deps: any) {
     setVideoModelProtocolBindings,
     showToast2,
     storedGlobalConfigs,
+    audioModelProtocolBindings,
+    imageModelProtocolBindings,
+    modelProtocolRegistry,
+    textModelProtocolBindings,
+    videoModelProtocolBindings,
   } = deps;
   const rollbackConfigButlerRepair = (recordId) => {
 		              let repairRecord = (configButlerRepairHistory || []).find((record) => record.id === recordId);

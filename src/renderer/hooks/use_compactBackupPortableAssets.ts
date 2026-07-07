@@ -8,6 +8,7 @@ import { cloneBackupValue } from "../lib/backup";
 export function use_compactBackupPortableAssets(deps: any) {
   const {
     PROJECT_ASSET_MANIFEST_STORAGE_PREFIX,
+    projects,
   } = deps;
   const compactBackupPortableAssets = (backup = {}, bindings = []) => {
                     if (!backup?.modules?.projects?.localforage) return backup;

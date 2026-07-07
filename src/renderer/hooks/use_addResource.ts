@@ -9,6 +9,7 @@ export function use_addResource(deps: any) {
   const {
     isPluginEnv,
     setTransitResources,
+    transitResources,
   } = deps;
   const addResource = (url, resourceType, source = `pasted`) => {
 	      let newResource = {

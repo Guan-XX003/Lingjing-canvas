@@ -21,6 +21,11 @@ export function use_restoreSelectedBackup(deps: any) {
     getProjectCanvasStorageKey,
     normalizeBackupModules,
     normalizeResourceLocalforagePayload,
+    agentConversations,
+    projectGroups,
+    projects,
+    selectedAgentId,
+    transitResources,
   } = deps;
   const restoreSelectedBackup = async (backup, moduleSelection, options = {}) => {
                               let modules = normalizeBackupModules(backup),

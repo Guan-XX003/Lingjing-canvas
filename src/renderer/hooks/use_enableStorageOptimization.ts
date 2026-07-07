@@ -16,6 +16,8 @@ export function use_enableStorageOptimization(deps: any) {
     setStorageOptimizationLastResult,
     setStorageOptimizationPaused,
     showToast2,
+    storageOptimizationEnabled,
+    storageOptimizationPaused,
   } = deps;
   const enableStorageOptimization = async () => {
           let status = await refreshStorageOptimizationStatus();

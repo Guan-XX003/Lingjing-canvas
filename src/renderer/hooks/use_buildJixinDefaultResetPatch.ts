@@ -9,6 +9,23 @@ import { wanjuanTianjiSeedanceDefaults } from "../lib/tianji-api";
 export function use_buildJixinDefaultResetPatch(deps: any) {
   const {
     WANJUAN_JIXIN_DOC_URL,
+    activeStoredGlobalConfigId,
+    apiConfigs,
+    audioApiKey,
+    configButlerApiKey,
+    configButlerApiUrl,
+    configButlerDocUrl,
+    configButlerMode,
+    configButlerModel,
+    configButlerProtocol,
+    configButlerRepairHistory,
+    configButlerTargetApiConfigId,
+    configButlerTargetCategory,
+    imageApiKey,
+    storedGlobalConfigs,
+    textApiKey,
+    tianjiSeedanceSettingsMode,
+    videoApiKey,
   } = deps;
   const buildJixinDefaultResetPatch = () => {
       let baseConfig = wanjuanBuildJixinBuiltinBasePatch({

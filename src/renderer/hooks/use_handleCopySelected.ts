@@ -12,6 +12,8 @@ export function use_handleCopySelected(deps: any) {
     projectIdRef,
     setMenuPosition,
     showToast,
+    edges,
+    nodes,
   } = deps;
   const handleCopySelected = async () => {
         let nodes2 = nodesRef.current,

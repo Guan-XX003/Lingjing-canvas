@@ -11,6 +11,7 @@ export function use_collectSelectedLocalforageBackup(deps: any) {
     extractProjectAssetRefs,
     getDesktopProjectMirrorStorageKey,
     getProjectCanvasStorageKey,
+    projects,
   } = deps;
   const collectSelectedLocalforageBackup = async (moduleSelection, options = {}, backupOptions = {}) => {
                       let canvasStates = {};

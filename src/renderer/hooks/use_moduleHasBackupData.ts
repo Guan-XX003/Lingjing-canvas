@@ -7,6 +7,7 @@ import { useCallback, useMemo } from "react";
 export function use_moduleHasBackupData(deps: any) {
   const {
     TRANSIT_RESOURCES_STORAGE_KEY,
+    projects,
   } = deps;
   const moduleHasBackupData = (moduleName, moduleData) =>
                         moduleName === `resources` ?

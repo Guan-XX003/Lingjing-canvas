@@ -11,6 +11,7 @@ export function use_persistProjectGroups(deps: any) {
     isPluginEnv,
     projects,
     setProjectGroups,
+    projectGroups,
   } = deps;
   const persistProjectGroups = (groups, projects2 = projects) => {
           let normalizedGroups = normalizeProjectGroups(groups);

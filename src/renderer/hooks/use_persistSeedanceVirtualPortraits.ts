@@ -9,6 +9,7 @@ declare const chrome: any;
 export function use_persistSeedanceVirtualPortraits(deps: any) {
   const {
     setSeedanceVirtualPortraits,
+    seedanceVirtualPortraits,
   } = deps;
   const persistSeedanceVirtualPortraits = (portraits) => {
       let normalizedPortraits = wanjuanNormalizeSeedanceVirtualPortraits(portraits);

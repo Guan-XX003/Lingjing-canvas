@@ -12,6 +12,7 @@ export function use_splitChromeStorageModules(deps: any) {
     PROJECT_CANVAS_STORAGE_PREFIX,
     PROJECT_STORAGE_KEYS,
     TRANSIT_RESOURCES_STORAGE_KEY,
+    projects,
   } = deps;
   const splitChromeStorageModules = (storageData) => {
       let settings = {},

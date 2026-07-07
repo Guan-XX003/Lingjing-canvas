@@ -10,6 +10,7 @@ export function use_unlockAdvancedSettings(deps: any) {
     setAdvancedSettingsUnlocked,
     setSettingsNavUnlockClicks,
     showToast2,
+    advancedSettingsUnlocked,
   } = deps;
   const unlockAdvancedSettings = () => {
       (setAdvancedSettingsUnlocked(true),

@@ -5,7 +5,9 @@
 import { useCallback, useMemo } from "react";
 
 export function use_collectExternalUploadProjectAssetFiles(deps: any) {
-  const {} = deps;
+  const {
+    projects,
+  } = deps;
   const collectExternalUploadProjectAssetFiles = (backupData = {}) => {
                       let results = [],
                         canvasStates = backupData?.modules?.projects?.localforage?.canvasStates || {},

@@ -15,6 +15,7 @@ export function use_$t(deps: any) {
     getBackupChromeStorageKeys,
     readChromeStorageSnapshot,
     showToast2,
+    projects,
   } = deps;
   const $t = async (moduleSelection, options = {}) => {
     try {

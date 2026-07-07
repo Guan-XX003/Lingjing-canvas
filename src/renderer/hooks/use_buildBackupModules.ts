@@ -21,6 +21,12 @@ export function use_buildBackupModules(deps: any) {
     setEdges,
     setMaxPollingDuration,
     splitChromeStorageModules,
+    agentConversations,
+    projectGroups,
+    projects,
+    seedanceVirtualPortraits,
+    selectedAgentId,
+    storedGlobalConfigs,
   } = deps;
   const buildBackupModules = async (chromeStorage, userData, moduleSelection, selection = {}) => {
                           let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),

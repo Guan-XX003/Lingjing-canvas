@@ -9,6 +9,8 @@ import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 export function use_normalizeStoredGlobalConfigBackup(deps: any) {
   const {
     repairXSeeVeoReferenceVideoBindings,
+    apiConfigs,
+    videoApiUrl,
   } = deps;
   const normalizeStoredGlobalConfigBackup = (backup = {}) => {
       let config = backup && typeof backup == `object` ? cloneBackupValue(backup) : {};

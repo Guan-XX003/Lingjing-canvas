@@ -10,6 +10,7 @@ export function use_updateGlobalTasks(deps: any) {
   const {
     isPluginEnv,
     setGlobalTasks,
+    globalTasks,
   } = deps;
   const updateGlobalTasks = (updater) => {
 		              setGlobalTasks((prevTasks) => {

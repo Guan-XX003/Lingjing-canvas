@@ -15,6 +15,7 @@ export function use_handleBackupImportFile(deps: any) {
     setBackupDialogState,
     setBackupDialogTab,
     showToast2,
+    projects,
   } = deps;
   const handleBackupImportFile = async (event) => {
                                   if (window.wanjuanDesktop?.chooseBackupFile) {

@@ -8,6 +8,7 @@ declare const chrome: any;
 export function use_applyTianjiSeedanceSettingsMode(deps: any) {
   const {
     setTianjiSeedanceSettingsMode,
+    tianjiSeedanceSettingsMode,
   } = deps;
   const applyTianjiSeedanceSettingsMode = (mode) => {
 	      let normalizedMode = mode === `tianji` ? `tianji` : `official`;
