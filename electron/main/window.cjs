@@ -443,7 +443,11 @@ function createMainWindow(baseUrl) {
           chromeObj.runtime ||= {};
           chromeObj.runtime.id ||= 'desktop';
           chromeObj.runtime.sendMessage ||= async () => {};
-          chromeObj.runtime.getURL ||= (p) => 'file://' + p;
+          chromeObj.runtime.getURL ||= (p) => {
+            const s = String(p == null ? '' : p).replace(/\\/g, '/');
+            if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return s; // 已是绝对 URL
+            return 'file:///' + s.replace(/^\/+/, ''); // 空 host 的合法 file URL（Windows 盘符路径亦正确）
+          };
           window.chrome = chromeObj;
 
           const labels = ['开发模式：模拟进入', '模拟进入'];

@@ -166,7 +166,7 @@ export function buildProjectMediaFileUrl(filePath: any): string {
       ? `/${normalized}`
       : /^\/[A-Za-z]:\//.test(normalized) || normalized.startsWith(`//`)
         ? normalized
-        : filePath,
+        : normalized, // 兜底用已归一(反斜杠→正斜杠)的路径，避免 file:// 里残留字面 "\"
   ).replace(/#/g, `%23`);
   return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
 }

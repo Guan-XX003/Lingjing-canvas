@@ -17,7 +17,7 @@ export const wanjuanLooksLikeLocalMediaPath = (value) => {
       return !!(
         text &&
         (/^\/(?:Users|Volumes|private|var|tmp|opt|home)\//i.test(text) ||
-          /^[A-Za-z]:[\\/]/.test(text) ||
+          /^[A-Za-z]:(?!\/\/)/.test(text) || // 盘符路径 C:\ C:/ 以及盘符相对 C:foo（排除 c:// 避免误伤 scheme）
           /^\\\\[^\\]+\\/.test(text) ||
           /^\/\/[^/]+\//.test(text))
       );
