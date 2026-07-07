@@ -13682,7 +13682,7 @@ function WanJuanAppRoot() {
   [users, setUsers] = useState([]),
   [selectedUser, setSelectedUser] = useState(null),
   [isLoading, setIsLoading] = useState(!1),
-  [_, setIsPluginEnv] = useState(!0),
+  [isPluginEnv, setIsPluginEnv] = useState(!0),
 	  [y, b] = useState(!1),
 	  [transitResources, setTransitResources] = useState([]),
 	  [resourceTypeFilter, setResourceTypeFilter] = useState(`all`),
@@ -13713,7 +13713,7 @@ function WanJuanAppRoot() {
   [videoApiUrl, setVideoApiUrl] = useState(``),
   [videoApiKey, setVideoApiKey] = useState(``),
   [videoModels, setVideoModels] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS)),
-  [je, setVideoDurations] = useState(`5
+  [videoDurations, setVideoDurations] = useState(`5
 10
 11
 15`),
@@ -14057,7 +14057,7 @@ Suno 音乐生成`,
 	    wanjuanBuildJixinAudioProtocolBindings(), ),
 	  [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
 	  [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
-  [$, setIsReady] = useState(!1),
+  [isReady, setIsReady] = useState(!1),
   normalizeThemeMode = (themeName) => ({
     "mist-blue": `light`,
     "chrome-blue": `light`,
@@ -14289,7 +14289,7 @@ Suno 音乐生成`,
 	    imageModels,
 	    imageCompatResolutions,
 	    videoModels,
-	    je,
+	    videoDurations,
 	    videoResolutions,
 	    videoAspectRatios,
 	    videoModelRequestProfilesText,
@@ -14343,7 +14343,7 @@ Suno 音乐生成`,
 	  ]);
 	  useEffect(() => {
 	    if (
-	      !$ ||
+	      !isReady ||
       !settingsHydratedRef.current ||
       typeof chrome > `u` ||
       !chrome.storage ||
@@ -14365,7 +14365,7 @@ Suno 音乐生成`,
       audioApiConfigId: audioApiConfigId,
     });
   }, [
-    $,
+    isReady,
     textApiConfigId,
     imageApiConfigId,
     videoApiConfigId,
@@ -15047,7 +15047,7 @@ time=${normalizedTtl}`,
             drawingModel: imageModels,
             imageCompatResolutions: imageCompatResolutions,
             videoModel: videoModels,
-            videoDurations: je,
+            videoDurations: videoDurations,
             videoResolutions: videoResolutions,
             videoAspectRatios: videoAspectRatios,
             seedanceModel: seedanceModel,
@@ -15133,7 +15133,7 @@ time=${normalizedTtl}`,
       let updatedResources = [...missingResources, ...resources];
       return (
         localforageModule.default.setItem(`transitResources`, updatedResources),
-        _ && chrome.storage.local.set({
+        isPluginEnv && chrome.storage.local.set({
           transitResources: updatedResources
         }),
         updatedResources
@@ -15514,7 +15514,7 @@ time=${normalizedTtl}`,
 	                      videoModel: videoModels,
       audioModel: audioModels,
       ttsMusicModel: ttsMusicModel,
-      videoDurations: je,
+      videoDurations: videoDurations,
       videoResolutions: videoResolutions,
       videoAspectRatios: videoAspectRatios,
       videoModelRequestProfiles: videoModelRequestProfilesText,
@@ -18665,11 +18665,11 @@ ${docText}`;
 	    } catch {}
 	  }, []);
   useEffect(() => {
-    if (!$ || !settingsHydratedRef.current) return;
+    if (!isReady || !settingsHydratedRef.current) return;
     syncTianjiConfigFromJixinApi(apiConfigs).catch((error) => console.warn(`Sync Tianji config from Jixin API failed`, error));
-  }, [$, apiConfigs]);
+  }, [isReady, apiConfigs]);
   useEffect(() => {
-    if (!$) return;
+    if (!isReady) return;
     let handleTianjiConfigUpdated = (event) => {
       try {
         let config = wanjuanNormalizeTianjiSeedanceConfig(event?.detail?.config || {});
@@ -18683,11 +18683,11 @@ ${docText}`;
     };
     window.addEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
     return () => window.removeEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
-  }, [$]);
+  }, [isReady]);
   useEffect(() => {
-    if (!$ || !settingsHydratedRef.current) return;
+    if (!isReady || !settingsHydratedRef.current) return;
     if (!configButlerDocUrl) setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
-  }, [$, configButlerDocUrl]);
+  }, [isReady, configButlerDocUrl]);
   useEffect(() => {
     refreshSystemNotifications({
       source: `startup`,
@@ -18711,7 +18711,7 @@ ${docText}`;
     }
   }, [activeView]);
   (useEffect(() => {
-      $ &&
+      isReady &&
         activeProjectId &&
         (localStorage.setItem(`lastOpenedProjectId`, activeProjectId),
           typeof chrome < `u` &&
@@ -18719,9 +18719,9 @@ ${docText}`;
           chrome.storage.local.set({
             lastOpenedProjectId: activeProjectId
           }));
-    }, [activeProjectId, $]),
+    }, [activeProjectId, isReady]),
     useEffect(() => {
-      if (!$ || !settingsHydratedRef.current || !projectHydratedRef.current) return;
+      if (!isReady || !settingsHydratedRef.current || !projectHydratedRef.current) return;
       let markAppReady = () => {
         try {
           let rootElement = document.documentElement;
@@ -18733,9 +18733,9 @@ ${docText}`;
       typeof requestAnimationFrame == `function` ?
         requestAnimationFrame(() => requestAnimationFrame(markAppReady)) :
         setTimeout(markAppReady, 32);
-    }, [$, activeProjectId, themeMode]),
+    }, [isReady, activeProjectId, themeMode]),
     useEffect(() => {
-      if (!$ || !settingsHydratedRef.current || !projectHydratedRef.current) return;
+      if (!isReady || !settingsHydratedRef.current || !projectHydratedRef.current) return;
       let markAppReady = () => {
         try {
           let rootElement = document.documentElement;
@@ -19414,7 +19414,7 @@ ${docText}`;
         (setUsers(users2), typeof chrome > `u` || !chrome.storage || !chrome.storage.local)
       ) {
         (console.warn(`Chrome Storage API is not available.`),
-          _ &&
+          isPluginEnv &&
           alert(`保存失败：未检测到 Chrome Storage API。请检查插件权限。`));
         return;
       }
@@ -19435,7 +19435,7 @@ ${docText}`;
       }
     },
     restoreCookies = async (account) => {
-        if (_ && account.cookies && account.cookies.length > 0) {
+        if (isPluginEnv && account.cookies && account.cookies.length > 0) {
           let [activeTab] = await chrome.tabs.query({
             active: !0,
             currentWindow: !0
@@ -19467,7 +19467,7 @@ ${docText}`;
         }
       },
       openAccountSite = async (account) => {
-          if ((await restoreCookies(account), _ && account.siteUrl)) {
+          if ((await restoreCookies(account), isPluginEnv && account.siteUrl)) {
             let [activeTab] = await chrome.tabs.query({
               active: !0,
               currentWindow: !0
@@ -19535,7 +19535,7 @@ ${docText}`;
                     U(!1));
                   return;
                 }
-              else if (_) {
+              else if (isPluginEnv) {
                 let [activeTab] = await chrome.tabs.query({
                   active: !0,
                   currentWindow: !0
@@ -19623,7 +19623,7 @@ ${docText}`;
               );
               (setTransitResources(updatedResources),
                 await localforageModule.default.setItem(`transitResources`, updatedResources),
-                _ && chrome.storage.local.set({
+                isPluginEnv && chrome.storage.local.set({
                   transitResources: updatedResources
                 }));
             },
@@ -19632,7 +19632,7 @@ ${docText}`;
                 let favoritedResources = transitResources.filter((resource) => resource.isFavorite);
                 (setTransitResources(favoritedResources),
                   await localforageModule.default.setItem(`transitResources`, favoritedResources),
-                  _ && chrome.storage.local.set({
+                  isPluginEnv && chrome.storage.local.set({
                     transitResources: favoritedResources
                   }));
               }
@@ -19713,7 +19713,7 @@ ${docText}`;
                 (setTransitResources(updatedResources),
                   setCurrentPage(1),
                   await localforageModule.default.setItem(`transitResources`, updatedResources),
-                  _ && chrome.storage.local.set({
+                  isPluginEnv && chrome.storage.local.set({
                     transitResources: updatedResources
                   }),
                   showToast2(`已清理 ${invalidIds.size} 个失效素材`));
@@ -19776,7 +19776,7 @@ ${docText}`;
         let updatedResources = [newResource, ...prevResources];
         return (
           localforageModule.default.setItem(`transitResources`, updatedResources),
-          _ && chrome.storage.local.set({
+          isPluginEnv && chrome.storage.local.set({
             transitResources: updatedResources
           }),
           updatedResources
@@ -19854,7 +19854,7 @@ ${docText}`;
 	        let mergedResources = [...externalUploads, ...newResources];
 	        return (
 	          localforageModule.default.setItem(`transitResources`, mergedResources),
-	          _ && chrome.storage.local.set({
+	          isPluginEnv && chrome.storage.local.set({
 	            transitResources: mergedResources
 	          }),
 	          mergedResources
@@ -19934,7 +19934,7 @@ ${docText}`;
         let mergedResources = [...audioResources, ...newResources];
         return (
           localforageModule.default.setItem(`transitResources`, mergedResources),
-          _ && chrome.storage.local.set({
+          isPluginEnv && chrome.storage.local.set({
             transitResources: mergedResources
           }),
           mergedResources
@@ -20042,7 +20042,7 @@ ${docText}`;
           } : resource);
           return (
             localforageModule.default.setItem(`transitResources`, replaced),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               transitResources: replaced
             }),
             replaced
@@ -20051,7 +20051,7 @@ ${docText}`;
       });
       return (
         localforageModule.default.setItem(`transitResources`, updatedResources),
-        _ && chrome.storage.local.set({
+        isPluginEnv && chrome.storage.local.set({
           transitResources: updatedResources
         }),
         updatedResources
@@ -20060,7 +20060,7 @@ ${docText}`;
   };
   let
     sendToPlugin = async (resource) => {
-        if (!_) {
+        if (!isPluginEnv) {
           showToast2(`发送失败：非插件环境`);
           return;
         }
@@ -20219,7 +20219,7 @@ ${docText}`;
             let updatedResources = resources.filter((resource) => resource.id !== resourceId);
             return (
               localforageModule.default.setItem(`transitResources`, updatedResources),
-              _ && chrome.storage.local.set({
+              isPluginEnv && chrome.storage.local.set({
                 transitResources: updatedResources
               }),
               updatedResources
@@ -20243,7 +20243,7 @@ ${docText}`;
             setNewProjectName(``),
             setNewProjectGroupId(selectedNewProjectGroupId),
             setProjectMenuOpen(!1),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               projects: updatedProjects,
               projectGroups: normalizedGroupsForNewProject
             }));
@@ -20263,7 +20263,7 @@ ${docText}`;
         persistProjectGroups = (groups, projects2 = projects) => {
           let normalizedGroups = normalizeProjectGroups(groups);
           (setProjectGroups(normalizedGroups),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               projects: projects2,
               projectGroups: normalizedGroups
             }));
@@ -20333,7 +20333,7 @@ ${docText}`;
             groupId: groupId || ``
           } : project);
           (setProjects(updatedProjects),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               projects: updatedProjects,
               projectGroups: normalizeProjectGroups(projectGroups)
             }));
@@ -20357,7 +20357,7 @@ ${docText}`;
             } : project,
           );
           (setProjects(updatedProjects),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               projects: updatedProjects
             }),
             setRenameProjectId(null),
@@ -20373,7 +20373,7 @@ ${docText}`;
             let remainingProjects = projects.filter((project) => project.id !== projectId);
             (setProjects(remainingProjects),
               activeProjectId === projectId && setActiveProjectId(remainingProjects[0].id),
-              _ && chrome.storage.local.set({
+              isPluginEnv && chrome.storage.local.set({
                 projects: remainingProjects
               }),
               (async () => {
@@ -20401,7 +20401,7 @@ ${docText}`;
                   } catch (error) {
                     console.warn(`删除项目便携资产失败`, dataRef, error);
                   }
-                if (_) {
+                if (isPluginEnv) {
                   try {
                     chrome.storage.local.remove([
                       getDesktopProjectMirrorStorageKey(projectId),
@@ -20447,7 +20447,7 @@ ${docText}`;
             storageUpdatedAt: Date.now(),
           } : project);
           (setProjects(updatedProjects),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               projects: updatedProjects
             }));
           return updatedProjects;
@@ -20781,7 +20781,7 @@ ${docText}`;
           template.id ||= Date.now().toString();
           let updatedTemplates = [...edges, template];
           (setEdges(updatedTemplates),
-            _ && chrome.storage.local.set({
+            isPluginEnv && chrome.storage.local.set({
               customNodeTemplates: updatedTemplates
             }),
             showToast2(`已保存为自定义节点`));
@@ -20790,7 +20790,7 @@ ${docText}`;
           if (confirm(`确定要删除这个自定义节点模板吗？`)) {
             let updatedTemplates = edges.filter((template) => template.id !== templateId);
             (setEdges(updatedTemplates),
-              _ && chrome.storage.local.set({
+              isPluginEnv && chrome.storage.local.set({
                 customNodeTemplates: updatedTemplates
               }),
               showToast2(`已删除自定义节点`));
@@ -23341,7 +23341,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 		            updateGlobalTasks = (updater) => {
 		              setGlobalTasks((prevTasks) => {
 		                let nextTasks = compactGlobalTasks(updater(prevTasks));
-			                return (_ && chrome.storage.local.set({
+			                return (isPluginEnv && chrome.storage.local.set({
 			                  globalTasks: nextTasks
 			                }), nextTasks);
               });
@@ -24469,7 +24469,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                       showToast2(
                         `激活成功！会员有效期至 ${new Date(verifyResult.expiry).toLocaleDateString()}`,
                       ),
-                      _ && chrome.storage.local.set({
+                      isPluginEnv && chrome.storage.local.set({
                         membership: membership
                       }));
                     return;
@@ -24492,13 +24492,13 @@ ${String(l || ``).slice(0, 5e4)}`;
                     showToast2(
                       `激活成功（离线模式）！会员有效期至 ${new Date(verifyResult.expiry).toLocaleDateString()}`,
                     ),
-                    _ && chrome.storage.local.set({
+                    isPluginEnv && chrome.storage.local.set({
                       membership: membership
                     }));
                 } else showToast2(`激活失败: ${verifyResult.error}`);
               };
   useEffect(() => {
-    $ &&
+    isReady &&
       typeof chrome < `u` &&
       chrome.storage &&
       chrome.storage.local.set({
@@ -24507,7 +24507,7 @@ ${String(l || ``).slice(0, 5e4)}`;
         videoApiConfigId: videoApiConfigId,
         audioApiConfigId: audioApiConfigId,
       });
-  }, [textApiConfigId, imageApiConfigId, videoApiConfigId, audioApiConfigId, $]);
+  }, [textApiConfigId, imageApiConfigId, videoApiConfigId, audioApiConfigId, isReady]);
   let BACKUP_MODULE_LABELS = {
       settings: `设置参数`,
       projects: `画布项目`,
@@ -26928,7 +26928,7 @@ ${String(l || ``).slice(0, 5e4)}`;
       className: `flex items-center justify-center h-screen`,
       children: `Loading...`,
     }) :
-    _ ?
+    isPluginEnv ?
     jsxs(`div`, {
       className: `flex h-screen bg-[#121212] flex-col font-sans text-gray-200`,
       children: [
@@ -27123,7 +27123,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                               onChange: (event) => {
                                 let gridCols = parseInt(event.target.value);
                                 (setTransitGridCols(gridCols),
-                                  _ &&
+                                  isPluginEnv &&
                                   chrome.storage.local.set({
                                     transitGridCols: gridCols,
                                   }));
@@ -28298,7 +28298,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 	                      drawingModel: imageModels,
 	                      imageCompatResolutions: imageCompatResolutions,
 	                      videoModel: videoModels,
-                      videoDurations: je,
+                      videoDurations: videoDurations,
                       videoResolutions: videoResolutions,
                       videoAspectRatios: videoAspectRatios,
                       videoModelRequestProfiles: videoModelRequestProfilesText,
@@ -33936,7 +33936,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                         children: `可选时长 (秒数，换行分隔)`,
                                       }),
                                       jsx(`textarea`, {
-                                        value: je,
+                                        value: videoDurations,
                                         onChange: (event) =>
                                           setVideoDurations(event.target.value),
                                         className: `w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-all min-h-[80px] resize-y`,
