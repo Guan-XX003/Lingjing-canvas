@@ -13696,11 +13696,11 @@ function WanJuanAppRoot() {
   [activeSettingsTab, setActiveSettingsTab] = useState(`oneStop`),
 	  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(!0),
   [settingsNavUnlockClicks, setSettingsNavUnlockClicks] = useState(0),
-  [te, R] = useState(!1),
-  [ne, z] = useState(``),
-  [re, B] = useState(null),
+  [isAddingAccount, setIsAddingAccount] = useState(!1),
+  [accountNameInput, setAccountNameInput] = useState(``),
+  [editingAccountId, setEditingAccountId] = useState(null),
   [cookieInput, setCookieInput] = useState(``),
-  [H, U] = useState(!1),
+  [isAccountBusy, setIsAccountBusy] = useState(!1),
   [currentPlatform, setCurrentPlatform] = useState(null),
   [showToast, setShowToast] = useState(!1),
   [toastMessage, setToastMessage] = useState(``),
@@ -19485,11 +19485,11 @@ ${docText}`;
               );
               return;
             }
-            let nameInput = shouldClear ? `` : ne,
+            let nameInput = shouldClear ? `` : accountNameInput,
               cookieInput2 = shouldClear ? `` : cookieInput,
-              editingId = shouldClear ? null : re,
+              editingId = shouldClear ? null : editingAccountId,
               accountName = nameInput.trim();
-            (!accountName && currentPlatform && (accountName = currentPlatform.title), (accountName ||= `新建环境`), U(!0));
+            (!accountName && currentPlatform && (accountName = currentPlatform.title), (accountName ||= `新建环境`), setIsAccountBusy(!0));
             try {
               let cookies = [],
                 siteName = `未知网站`,
@@ -19532,7 +19532,7 @@ ${docText}`;
                   (alert(
                       `Cookie 格式错误，请输入有效的 JSON 数组或 key=value; 格式字符串`,
                     ),
-                    U(!1));
+                    setIsAccountBusy(!1));
                   return;
                 }
               else if (isPluginEnv) {
@@ -19561,7 +19561,7 @@ ${docText}`;
                 cookies.length === 0 &&
                 !confirm(`当前页面未检测到 Cookie，且未手动输入，确定要保存吗？`)
               ) {
-                U(!1);
+                setIsAccountBusy(!1);
                 return;
               }
               let cookieData = cookies.map((cookie) => ({
@@ -19600,11 +19600,11 @@ ${docText}`;
                 };
                 updatedUsers = [...users, newAccount];
               }
-              (saveUsers(updatedUsers), z(``), setCookieInput(``), B(null), R(!1));
+              (saveUsers(updatedUsers), setAccountNameInput(``), setCookieInput(``), setEditingAccountId(null), setIsAddingAccount(!1));
             } catch (error) {
               (console.error(error), alert(`添加失败，请重试`));
             } finally {
-              U(!1);
+              setIsAccountBusy(!1);
             }
           },
           [pendingDeleteId, setPendingDeleteId] = useState(null),
