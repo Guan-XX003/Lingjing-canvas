@@ -14,7 +14,6 @@ import { memo as reactMemo, useEffect, useRef, useState, type CSSProperties } fr
 import { Position, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { CircleAlert, RefreshCw, Download, Settings2 } from "lucide-react";
 import { resolveModelApiBindingIdHelper } from "../lib/model-binding";
-import { wanjuanMediaUrlToDataUrl } from "../lib/reference-media";
 import { WanJuanNodeHandle } from "./render-mode";
 import {
   SUNO_MV_MODELS,
@@ -24,19 +23,10 @@ import {
   buildSunoExtendBody,
   buildSunoReferenceBody,
   validateSunoGenerateParams,
-  submitSunoGenerate,
-  pollSunoFeed,
-  uploadSunoAudio,
+  submitSunoMusic,
+  pollSunoTask,
   type SunoClip,
 } from "../lib/suno-music-api";
-
-/** 把任意媒体 URL（含本地 file://、wanjuan-media://、http）转成可上传的 File */
-async function fetchAudioFile(url: string, name = "reference.mp3"): Promise<File> {
-  const dataUrl = await wanjuanMediaUrlToDataUrl(url);
-  const resp = await fetch(dataUrl);
-  const blob = await resp.blob();
-  return new File([blob], name, { type: blob.type || "audio/mpeg" });
-}
 
 declare const chrome: any;
 
@@ -159,25 +149,17 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       if (err) { updateNodeData(nodeId, { errorMessage: err }); data.onShowToast?.(err); return; }
       body = buildSunoGenerateBody(params);
     } else if (action === "cover") {
-      let refClipId = referenceClipId.trim();
-      if (!refClipId) {
-        // 无 clip_id：把上游音频节点/手填音频 URL 自动上传到 Suno 换 clip_id
-        const audioSrc = effectiveCoverAudio;
-        if (!audioSrc) { updateNodeData(nodeId, { errorMessage: "翻唱需要参考：连一个音频节点、或填音频 URL、或填已有 clip_id" }); return; }
-        runningRef.current = true;
-        try {
-          updateNodeData(nodeId, { loading: true, errorMessage: undefined, statusText: "上传参考音频…" });
-          const file = await fetchAudioFile(audioSrc, `${title || "reference"}.mp3`);
-          const uploaded = await uploadSunoAudio(url, key, file);
-          refClipId = uploaded.clipId;
-        } catch (error: any) {
-          updateNodeData(nodeId, { loading: false, statusText: undefined, errorMessage: `参考音频上传失败：${error?.message || error}` });
-          data.onShowToast?.("参考音频上传失败");
-          runningRef.current = false;
-          return;
-        }
+      const refClipId = referenceClipId.trim();
+      const refUrl = effectiveCoverAudio;
+      if (!refClipId && !refUrl) {
+        updateNodeData(nodeId, { errorMessage: "翻唱需要参考：填公网音频 URL、连一个输出公网音频的节点、或填已有 clip_id" });
+        return;
       }
-      body = buildSunoReferenceBody({ referenceClipId: refClipId, mv, prompt: effectivePrompt, tags, title, instrumental });
+      if (!refClipId && !/^https?:\/\//i.test(refUrl)) {
+        updateNodeData(nodeId, { errorMessage: "参考音频需公网 http(s) URL（此网关不支持本地文件上传）；或改填已有 clip_id" });
+        return;
+      }
+      body = buildSunoReferenceBody({ referenceClipId: refClipId, referenceUrl: refUrl, mv, prompt: effectivePrompt, tags, title, instrumental });
     } else {
       if (!continueClipId.trim()) { updateNodeData(nodeId, { errorMessage: "续写需要源音轨 clip_id（从已生成结果「续写」按钮带入，或填入）" }); return; }
       body = buildSunoExtendBody({ continueClipId: continueClipId.trim(), continueAt: continueAt === "" ? null : Number(continueAt), mv, prompt: effectivePrompt, tags, title });
@@ -198,12 +180,13 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
     ]);
 
     try {
-      const clipIds = await submitSunoGenerate(url, key, body);
-      updateNodeData(nodeId, { remoteTaskId: clipIds.join(",") });
-      const { clips: resultClips } = await pollSunoFeed(url, key, clipIds, {
-        onTick: (status) => {
-          updateNodeData(nodeId, { statusText: status });
-          data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, statusText: status } : t)));
+      const taskId = await submitSunoMusic(url, key, body);
+      updateNodeData(nodeId, { remoteTaskId: taskId });
+      const { clips: resultClips } = await pollSunoTask(url, key, taskId, {
+        onTick: (status, progress) => {
+          const s = progress ? `${status} ${progress}` : status;
+          updateNodeData(nodeId, { statusText: s });
+          data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, statusText: s } : t)));
         },
       });
       const first = resultClips.find((c) => c.audioUrl) || resultClips[0];
@@ -270,12 +253,15 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
           {action === "cover" && (
             <div style={uiPanel}>
-              <span style={uiLabel}>参考音频：连一个音频节点会自动上传；或填音频 URL / 已有 clip_id</span>
-              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游音频节点，将自动上传；也可填音频 URL 覆盖" : "音频 URL（本地/网络都行，生成时自动上传到 Suno）"} />
+              <span style={uiLabel}>参考音频：填公网音频 URL（如 Suno 生成的 cdn 链接），或连一个输出公网音频的节点</span>
+              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游音频；也可填公网音频 URL 覆盖" : "公网音频 URL（http/https）"} />
               {!coverAudioUrl && upstreamAudioUrl && (
-                <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将上传上游音频：{upstreamAudioUrl}</span>
+                <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将参考上游音频：{upstreamAudioUrl}</span>
               )}
-              <span style={{ fontSize: 10, color: COL.textFaint }}>或直接填 Suno 内已有的 clip_id（填了就跳过上传）：</span>
+              {!referenceClipId && effectiveCoverAudio && !/^https?:\/\//i.test(effectiveCoverAudio) && (
+                <span style={{ fontSize: 10, color: "#fbbf24" }}>⚠ 这不是公网 http(s) URL——此网关不支持本地文件上传，请用公网音频 URL 或已有 clip_id</span>
+              )}
+              <span style={{ fontSize: 10, color: COL.textFaint }}>或直接填 Suno 内已有的 clip_id（填了优先用它）：</span>
               <input className="nodrag" style={uiInput} value={referenceClipId} onChange={(e) => setReferenceClipId(e.target.value)} placeholder="reference_clip_id（可选）" />
             </div>
           )}
