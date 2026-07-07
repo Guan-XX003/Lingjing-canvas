@@ -558,7 +558,7 @@ export const coerceProtocolFieldValue = (fieldName, model, value) => {
         value;
     };
 
-export const getProtocolCategoryLabel = (category) =>
+export const getProtocolCategoryLabel = (category: string) =>
     category === `text` ?
     `文本` :
     category === `image` ?
@@ -598,7 +598,7 @@ export const inferProtocolDisplayName = (model) => {
       );
     };
 
-export const normalizeProtocolName = (protocolName, model) => {
+export const normalizeProtocolName = (protocolName: string, model: any) => {
       let requestType = String(model?.requestType || ``).trim(),
         category = String(model?.category || ``).trim(),
         labelMap = {
@@ -1322,7 +1322,7 @@ export const extractButlerModelsFromPayload = (payload) => {
 	          return collect(payload), results;
 	        };
 
-export const inferButlerCategoryFromModelName = (modelName) => {
+export const inferButlerCategoryFromModelName = (modelName: string) => {
 	          let normalized = String(modelName || ``).toLowerCase();
 	          return /suno|music|song|lyrics|concat|stems/.test(normalized) ?
 	            `music` :
