@@ -10,6 +10,7 @@ export function use_copyNodeImage(deps: any) {
     menuPosition,
     nodes,
     setMenuPosition,
+    showToast,
   } = deps;
   const copyNodeImage = async () => {
             if (menuPosition?.nodeId) {

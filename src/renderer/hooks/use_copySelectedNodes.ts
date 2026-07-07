@@ -12,6 +12,7 @@ export function use_copySelectedNodes(deps: any) {
     nodesRef,
     projectIdRef,
     setMenuPosition,
+    showToast,
   } = deps;
   const copySelectedNodes = async () => {
           let selectedNodes = nodesRef.current.filter((node) => node.selected),

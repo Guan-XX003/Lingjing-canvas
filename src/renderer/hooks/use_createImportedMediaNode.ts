@@ -11,6 +11,7 @@ export function use_createImportedMediaNode(deps: any) {
     createNodeAt,
     persistImportedMediaFile,
     setNodes,
+    addGeneratedAsset,
   } = deps;
   const createImportedMediaNode = (file, position, connection) => {
       let mediaKind = wanjuanMediaKindFromFile(file),

@@ -11,6 +11,7 @@ export function use_handleFileChange(deps: any) {
     menuPosition,
     screenToFlowPosition,
     wrapperRef,
+    addGeneratedAsset,
   } = deps;
   const handleFileChange = (event) => {
       !event.target.files ||

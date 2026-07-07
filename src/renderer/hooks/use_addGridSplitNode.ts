@@ -14,6 +14,7 @@ export function use_addGridSplitNode(deps: any) {
     setEdges,
     setMenuPosition,
     setNodes,
+    showToast,
   } = deps;
   const addGridSplitNode = () => {
             if (menuPosition?.nodeId) {

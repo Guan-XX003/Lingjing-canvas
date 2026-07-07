@@ -5,7 +5,11 @@
 import { useCallback, useMemo } from "react";
 
 export function use_resolveVideoRunModel(deps: any) {
-  const {} = deps;
+  const {
+    seedanceModel,
+    tianjiSeedanceModel,
+    videoModel,
+  } = deps;
   const resolveVideoRunModel = (nodeData = {}, nodeType = ``) => {
 	      let modelText =
 	          nodeType === `seedanceNode` ?

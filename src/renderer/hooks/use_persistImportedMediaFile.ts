@@ -9,6 +9,7 @@ import { wanjuanBuildProjectAssetBinding, wanjuanGetDroppedFilePath, wanjuanMime
 export function use_persistImportedMediaFile(deps: any) {
   const {
     projectIdRef,
+    projectId,
   } = deps;
   const persistImportedMediaFile = async (file, nodeId, field, mediaKind, mediaUrl = ``) => {
       if (!file || !window.wanjuanDesktop?.persistProjectAsset) return null;
