@@ -1768,10 +1768,9 @@ export const wanjuanButlerProviderToolsExposed = (() => {
 			          return true;
 			        })();
 
-export const buildButlerFallbackProtocol = (modelName: any, ...ignoredSecondArg: any[]) => {
-		          // 注意：原代码此处 arguments 位于箭头函数内，实际取到外层组件的 arguments，第二个入参一直被忽略、options 恒为 {}。保持原行为。
-          let options: any = {},
-		            providerPackage = matchWanJuanProviderProtocolPackage({
+export const buildButlerFallbackProtocol = (modelName: any, options: any = {}) => {
+		          // 修复(A)：原压缩代码在箭头函数里误用 arguments 使第二参一直被忽略；现正常接收 options，让兜底协议用上调用方传的 category/apiUrl。
+		            let providerPackage = matchWanJuanProviderProtocolPackage({
 		              modelName: modelName,
 		              category: options.category,
 		              apiUrl: options.apiUrl,
