@@ -330,6 +330,11 @@ import {
   normalizeProjectIdSelection,
   normalizeProjectResourceMap,
 } from "../lib/project-normalize";
+import {
+  isJixinDefaultApiConfig,
+  isXSeeVeoReferenceVideoModel,
+  ensureModelInList,
+} from "../lib/model-list-utils";
 import { WanJuanConfigButlerHelp } from "../components/config-butler-help";
 import {
   WanJuanRenderRuntime,
@@ -13083,8 +13088,6 @@ Suno 音乐生成`,
   WANJUAN_CUSTOM_API_LIMIT = 3,
   WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN = `jixin-default`,
   WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL = `manual`,
-  isJixinDefaultApiConfig = (config) =>
-	    config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
   resolveJixinApiConfigForTianjiSettings = (candidateConfig = null, stored = {}) => {
       let storedApiConfigs = Array.isArray(stored.apiConfigs) ? stored.apiConfigs : [],
         storedJixinConfig = storedApiConfigs.find(isJixinDefaultApiConfig) || null,
@@ -13612,10 +13615,6 @@ time=${normalizedTtl}`,
     apiConfigs.find((config) => config.id === `vectorengine`) ||
     apiConfigs[0] ||
     null,
-  isXSeeVeoReferenceVideoModel = (modelName, apiUrl = ``) =>
-    /^veo/i.test(String(modelName || ``).trim()) &&
-    /(?:^|[-_])(portrait|landscape|fl|frame|reverse|gif|hd|4k|pro)(?:[-_]|$)/i.test(String(modelName || ``).trim()) &&
-    /aigc\.x-see\.cn|x-see\.cn/i.test(String(apiUrl || ``)),
   repairXSeeVeoReferenceVideoBindings = (backup = {}, apiUrl = ``) => {
       let config = backup && typeof backup == `object` ? cloneBackupValue(backup) : {},
         protocolRegistry = {
@@ -13887,15 +13886,6 @@ time=${normalizedTtl}`,
         candidateName = `${protocolName}（${suffix}）`;
       for (; modelProtocolRegistry?.[candidateName];)((suffix += 1), (candidateName = `${protocolName}（${suffix}）`));
       return candidateName;
-    },
-  ensureModelInList = (existing, addition) => {
-      let lines = String(existing || ``)
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean),
-        trimmedLine = String(addition || ``).trim();
-      return trimmedLine && !lines.includes(trimmedLine) && lines.push(trimmedLine), lines.join(`
-`);
     },
   callConfigButlerModel = async (prompt, options = {}) => {
           let butlerApiUrl = String(options.apiUrl ?? configButlerApiUrl ?? ``),
