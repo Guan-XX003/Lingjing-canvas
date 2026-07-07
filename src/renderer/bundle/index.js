@@ -11047,13 +11047,14 @@ ${combinedPrompt}`,
           );
   useEffect(() => {
     WanJuanRenderRuntime.mark(`setNodes`);
-    setNodes((nodes2) =>
-      nodes2.map((node) => {
+    setNodes((nodes2) => {
+      let anySyncChanged = false;
+      let syncedNodes = nodes2.map((node) => {
         let nodeData = {
             ...WanJuanStripRuntimeNodeData(node.data || {})
           },
           hasChanged = false;
-        return (
+        let syncNodeResult = (
           (node.type === `promptNode` ||
             node.type === `textNode` ||
             node.type === `videoNode` ||
@@ -11370,8 +11371,11 @@ ${combinedPrompt}`,
             data: nodeData
           } : node
         );
-      }),
-    );
+        anySyncChanged = anySyncChanged || hasChanged;
+        return syncNodeResult;
+      });
+      return anySyncChanged ? syncedNodes : nodes2;
+    });
   }, [
     shouldFitView,
     generateImage,
