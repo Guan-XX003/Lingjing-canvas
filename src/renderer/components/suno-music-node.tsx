@@ -11,7 +11,7 @@
  * API 配置沿用「听音 API」绑定：把 suno 模型绑定到一个 url=https://api.sunoapi.org
  * 的配置即可（或设默认听音配置）。桌面端用轮询取结果（callBackUrl 传占位）。
  */
-import { memo as reactMemo, useEffect, useRef, useState } from "react";
+import { memo as reactMemo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Position, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { CircleAlert, RefreshCw, Download, Play, Sparkles, Settings2 } from "lucide-react";
 import { resolveModelApiBindingIdHelper } from "../lib/model-binding";
@@ -67,9 +67,26 @@ function resolveSunoApiConfig(data: any): { url: string; key: string; configId: 
   };
 }
 
-const inputCls =
-  "w-full bg-[#111] border border-[#333] rounded p-2 text-xs text-gray-200 placeholder-gray-500 focus:border-blue-500 outline-none nodrag select-text";
-const labelCls = "text-[11px] text-gray-400";
+// 全部内联样式：项目的 app.css 是固定的 Tailwind 产物、不随构建重新生成，
+// 新组件用的类会静默失效（间距塌陷=挤在一起），故这里不依赖 Tailwind。
+const COL = {
+  card: "#1c1c1c", panel: "#1a1a1a", input: "#111", border: "#333",
+  btnOff: "#2a2a2a", yellow: "#eab308", blue: "#3b82f6",
+  textMain: "#e5e7eb", textDim: "#9aa0aa", textFaint: "#6b7280",
+};
+const uiInput: CSSProperties = {
+  width: "100%", boxSizing: "border-box", background: COL.input, border: `1px solid ${COL.border}`,
+  borderRadius: 6, padding: "7px 9px", fontSize: 12, lineHeight: 1.4, color: COL.textMain,
+  outline: "none", userSelect: "text",
+};
+const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, whiteSpace: "nowrap" };
+const uiBtn = (active: boolean, activeColor = COL.yellow): CSSProperties => ({
+  padding: "6px 8px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: "none",
+  background: active ? activeColor : COL.btnOff, color: active ? "#fff" : "#d1d5db", whiteSpace: "nowrap",
+});
+const uiPanel: CSSProperties = {
+  display: "flex", flexDirection: "column", gap: 6, border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8,
+};
 
 export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: any) => {
   const { updateNodeData } = useReactFlow();
@@ -254,131 +271,101 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
     setAudioId(id);
   };
 
+  const textareaPlaceholder = upstreamText
+    ? "已连接文本节点作为输入；也可在此覆盖"
+    : customMode
+      ? (instrumental ? "纯伴奏自定义模式可留空歌词" : "输入歌词，或连接文本节点")
+      : "输入歌曲描述（AI 自动写词），或连接文本节点";
+
   return (
-    <div className={`flex flex-col group/node transition-all w-[380px] wanjuan-suno-node ${data.selected ? "ring-2 ring-yellow-500" : ""}`}>
-      <div className="relative bg-[#1c1c1c] rounded-xl overflow-visible border border-[#333] shadow-xl">
+    <div style={{ display: "flex", flexDirection: "column", width: 400 }}>
+      <div style={{ position: "relative", background: COL.card, borderRadius: 12, border: `1px solid ${data.selected ? COL.yellow : COL.border}`, boxShadow: "0 10px 25px rgba(0,0,0,0.4)" }}>
         <WanJuanNodeHandle type="target" position={Position.Left} />
         <WanJuanNodeHandle type="source" position={Position.Right} />
 
         {/* 头部 */}
-        <div className="flex justify-between items-center px-3 py-2 bg-[#222] border-b border-[#2a2a2a] rounded-t-xl">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
-            <span className="text-yellow-400">♫</span> 音乐节点 · Suno
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#222", borderBottom: "1px solid #2a2a2a", borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: COL.textMain }}>
+            <span style={{ color: COL.yellow }}>♫</span> 音乐节点 · Suno
           </div>
-          {data.loading && <RefreshCw size={14} className="animate-spin text-blue-400" />}
+          {data.loading && <RefreshCw size={14} className="animate-spin" style={{ color: "#60a5fa" }} />}
         </div>
 
         {/* 主体 */}
-        <div className="p-3 bg-[#1a1a1a] flex flex-col gap-2.5 nodrag nowheel rounded-b-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="nodrag nowheel" style={{ padding: 12, background: COL.panel, display: "flex", flexDirection: "column", gap: 10, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }} onClick={(e) => e.stopPropagation()}>
           {/* 动作 */}
-          <div className="grid grid-cols-3 gap-2">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {ACTIONS.map((a) => (
-              <button
-                key={a.key}
-                onClick={() => setAction(a.key)}
-                className={`px-2 py-1.5 rounded text-xs ${action === a.key ? "bg-yellow-600 text-white" : "bg-[#2a2a2a] text-gray-300"}`}
-              >
-                {a.label}
-              </button>
+              <button key={a.key} className="nodrag" onClick={() => setAction(a.key)} style={uiBtn(action === a.key)}>{a.label}</button>
             ))}
           </div>
 
           {action === "extend" && (
-            <div className="flex flex-col gap-1.5 border border-[#333] rounded p-2">
-              <span className={labelCls}>源音轨 audioId（从已生成结果「续写」按钮自动带入）</span>
-              <input className={inputCls} value={audioId} onChange={(e) => setAudioId(e.target.value)} placeholder="audioId" />
-              <label className="flex items-center gap-2 text-xs text-gray-300">
-                <input type="checkbox" checked={defaultParamFlag} onChange={(e) => setDefaultParamFlag(e.target.checked)} />
+            <div style={uiPanel}>
+              <span style={uiLabel}>源音轨 audioId（从已生成结果「续写」按钮自动带入）</span>
+              <input className="nodrag" style={uiInput} value={audioId} onChange={(e) => setAudioId(e.target.value)} placeholder="audioId" />
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#d1d5db" }}>
+                <input type="checkbox" className="nodrag" checked={defaultParamFlag} onChange={(e) => setDefaultParamFlag(e.target.checked)} />
                 自定义续写参数（否则沿用原曲）
               </label>
               {defaultParamFlag && (
-                <input className={inputCls} value={continueAt} onChange={(e) => setContinueAt(e.target.value)} placeholder="从第几秒开始续写 continueAt（秒）" />
+                <input className="nodrag" style={uiInput} value={continueAt} onChange={(e) => setContinueAt(e.target.value)} placeholder="从第几秒开始续写 continueAt（秒）" />
               )}
             </div>
           )}
 
           {action === "cover" && (
-            <div className="flex flex-col gap-1.5 border border-[#333] rounded p-2">
-              <span className={labelCls}>参考音频（公网 URL，≤8 分钟；可连上游音频节点自动带入）</span>
-              <input
-                className={inputCls}
-                value={uploadUrl}
-                onChange={(e) => setUploadUrl(e.target.value)}
-                placeholder={upstreamAudioUrl ? "已从上游音频节点带入；也可在此覆盖" : "https://.../reference.mp3"}
-              />
+            <div style={uiPanel}>
+              <span style={uiLabel}>参考音频（公网 URL，≤8 分钟；可连上游音频节点自动带入）</span>
+              <input className="nodrag" style={uiInput} value={uploadUrl} onChange={(e) => setUploadUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已从上游音频节点带入；也可在此覆盖" : "https://.../reference.mp3"} />
               {!uploadUrl && upstreamAudioUrl && (
-                <span className="text-[10px] text-gray-500 truncate">将使用上游音频：{upstreamAudioUrl}</span>
+                <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将使用上游音频：{upstreamAudioUrl}</span>
               )}
               {effectiveUploadUrl && /^file:|^blob:|localhost|127\.0\.0\.1|wanjuan-media:/i.test(effectiveUploadUrl) && (
-                <span className="text-[10px] text-amber-400">⚠ 这看起来是本地/私有地址，Suno 取不到——参考音频必须是公网可访问的 http(s) URL</span>
+                <span style={{ fontSize: 10, color: "#fbbf24" }}>⚠ 这看起来是本地/私有地址，Suno 取不到——参考音频必须是公网可访问的 http(s) URL</span>
               )}
             </div>
           )}
 
-          {/* 模式 + 模型 */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setCustomMode(false)}
-              className={`px-2 py-1.5 rounded text-xs ${!customMode ? "bg-blue-600 text-white" : "bg-[#2a2a2a] text-gray-300"}`}
-            >
-              灵感模式
-            </button>
-            <button
-              onClick={() => setCustomMode(true)}
-              className={`px-2 py-1.5 rounded text-xs ${customMode ? "bg-blue-600 text-white" : "bg-[#2a2a2a] text-gray-300"}`}
-            >
-              自定义
-            </button>
+          {/* 模式 */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button className="nodrag" onClick={() => setCustomMode(false)} style={uiBtn(!customMode, COL.blue)}>灵感模式</button>
+            <button className="nodrag" onClick={() => setCustomMode(true)} style={uiBtn(customMode, COL.blue)}>自定义</button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className={labelCls}>模型</span>
-            <select className={`${inputCls} flex-1`} value={model} onChange={(e) => setModel(e.target.value)}>
-              {SUNO_MODELS.map((m) => (
-                <option key={m} value={m}>{SUNO_MODEL_LABELS[m] || m}</option>
-              ))}
+          {/* 模型 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={uiLabel}>模型</span>
+            <select className="nodrag" style={{ ...uiInput, flex: 1, width: "auto" }} value={model} onChange={(e) => setModel(e.target.value)}>
+              {SUNO_MODELS.map((m) => (<option key={m} value={m}>{SUNO_MODEL_LABELS[m] || m}</option>))}
             </select>
-            <label className="flex items-center gap-1 text-xs text-gray-300 whitespace-nowrap">
-              <input type="checkbox" checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} />
-              纯伴奏
+            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#d1d5db", whiteSpace: "nowrap" }}>
+              <input type="checkbox" className="nodrag" checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} /> 纯伴奏
             </label>
           </div>
 
           {/* 歌词/描述 */}
-          <textarea
-            className={`${inputCls} h-24 resize-none`}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={
-              upstreamText
-                ? "已连接文本节点作为输入；也可在此覆盖"
-                : customMode
-                  ? (instrumental ? "纯伴奏自定义模式可留空歌词" : "输入歌词，或连接文本节点")
-                  : "输入歌曲描述（AI 自动写词），或连接文本节点"
-            }
-          />
+          <textarea className="nodrag" style={{ ...uiInput, height: 92, resize: "none" }} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={textareaPlaceholder} />
 
           {/* 自定义模式：风格 + 标题 */}
           {customMode && (
-            <div className="flex flex-col gap-2">
-              <input className={inputCls} value={style} onChange={(e) => setStyle(e.target.value)} placeholder="风格/曲风 style，如 citypop, jazz（必填）" />
-              <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="标题 title（必填）" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input className="nodrag" style={uiInput} value={style} onChange={(e) => setStyle(e.target.value)} placeholder="风格/曲风 style，如 citypop, jazz（必填）" />
+              <input className="nodrag" style={uiInput} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="标题 title（必填）" />
             </div>
           )}
 
           {/* 高级参数 */}
-          <button className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-200 self-start" onClick={() => setShowAdvanced((v) => !v)}>
+          <button className="nodrag" onClick={() => setShowAdvanced((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: COL.textDim, background: "none", border: "none", cursor: "pointer", alignSelf: "flex-start", padding: 0 }}>
             <Settings2 size={12} /> 高级参数 {showAdvanced ? "▲" : "▼"}
           </button>
           {showAdvanced && (
-            <div className="flex flex-col gap-2 border border-[#333] rounded p-2">
-              <input className={inputCls} value={negativeTags} onChange={(e) => setNegativeTags(e.target.value)} placeholder="负向标签 negativeTags（要排除的风格）" />
-              <div className="flex items-center gap-2">
-                <span className={labelCls}>人声</span>
-                <select className={`${inputCls} flex-1`} value={vocalGender} onChange={(e) => setVocalGender(e.target.value)}>
-                  <option value="">默认</option>
-                  <option value="m">男声</option>
-                  <option value="f">女声</option>
+            <div style={{ ...uiPanel, gap: 8 }}>
+              <input className="nodrag" style={uiInput} value={negativeTags} onChange={(e) => setNegativeTags(e.target.value)} placeholder="负向标签 negativeTags（要排除的风格）" />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={uiLabel}>人声</span>
+                <select className="nodrag" style={{ ...uiInput, flex: 1, width: "auto" }} value={vocalGender} onChange={(e) => setVocalGender(e.target.value)}>
+                  <option value="">默认</option><option value="m">男声</option><option value="f">女声</option>
                 </select>
               </div>
               <WeightSlider label="风格权重" value={styleWeight} onChange={setStyleWeight} />
@@ -388,36 +375,30 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
           )}
 
           {/* 生成按钮 */}
-          <button
-            onClick={run}
-            disabled={!!data.loading}
-            className={`px-3 py-2 rounded text-sm font-medium ${data.loading ? "bg-[#333] text-gray-500" : "bg-yellow-600 hover:bg-yellow-500 text-white"}`}
-          >
+          <button className="nodrag" onClick={run} disabled={!!data.loading} style={{ padding: "9px 12px", borderRadius: 6, fontSize: 14, fontWeight: 600, border: "none", cursor: data.loading ? "default" : "pointer", background: data.loading ? "#333" : COL.yellow, color: data.loading ? COL.textFaint : "#fff" }}>
             {data.loading ? (data.statusText ? `生成中… ${data.statusText}` : "生成中…") : action === "extend" ? "续写" : action === "cover" ? "翻唱生成" : "生成音乐"}
           </button>
 
           {/* 错误 */}
           {data.errorMessage && (
-            <div className="flex items-start gap-1.5 text-xs text-red-400">
-              <CircleAlert size={13} className="mt-0.5 shrink-0" /> <span>{data.errorMessage}</span>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "#f87171" }}>
+              <CircleAlert size={13} style={{ marginTop: 2, flexShrink: 0 }} /> <span>{data.errorMessage}</span>
             </div>
           )}
 
           {/* 结果 */}
           {tracks.length > 0 && (
-            <div className="flex flex-col gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {tracks.map((t, i) => (
-                <div key={t.id || i} className="border border-[#333] rounded p-2 flex flex-col gap-1.5 bg-[#151515]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-gray-200 truncate">{t.title || `曲目 ${i + 1}`}{t.duration ? ` · ${Math.round(t.duration)}s` : ""}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button title="用作续写源" className="text-[10px] text-yellow-400 hover:text-yellow-300" onClick={() => useAsExtendSource(t.id)}>续写</button>
-                      {t.audioUrl && (
-                        <a title="下载" href={t.audioUrl} download className="text-gray-400 hover:text-gray-200"><Download size={13} /></a>
-                      )}
+                <div key={t.id || i} style={{ border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8, display: "flex", flexDirection: "column", gap: 6, background: "#151515" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontSize: 12, color: COL.textMain, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || `曲目 ${i + 1}`}{t.duration ? ` · ${Math.round(t.duration)}s` : ""}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <button className="nodrag" title="用作续写源" onClick={() => useAsExtendSource(t.id)} style={{ fontSize: 10, color: COL.yellow, background: "none", border: "none", cursor: "pointer" }}>续写</button>
+                      {t.audioUrl && (<a title="下载" href={t.audioUrl} download style={{ color: COL.textDim, display: "flex" }}><Download size={13} /></a>)}
                     </div>
                   </div>
-                  {t.audioUrl && <audio controls src={t.audioUrl} className="w-full h-8 nodrag" />}
+                  {t.audioUrl && <audio controls src={t.audioUrl} className="nodrag" style={{ width: "100%", height: 32 }} />}
                 </div>
               ))}
             </div>
@@ -430,17 +411,18 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
 function WeightSlider({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className={`${labelCls} w-14 shrink-0`}>{label}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ ...uiLabel, width: 56, flexShrink: 0 }}>{label}</span>
       <input
         type="range" min={0} max={1} step={0.05}
         value={value === "" ? 0.5 : Number(value)}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 nodrag"
+        className="nodrag"
+        style={{ flex: 1, minWidth: 0 }}
       />
-      <span className="text-[11px] text-gray-400 w-16 text-right">{value === "" ? "默认" : Number(value).toFixed(2)}</span>
+      <span style={{ fontSize: 11, color: COL.textDim, width: 40, textAlign: "right" }}>{value === "" ? "默认" : Number(value).toFixed(2)}</span>
       {value !== "" && (
-        <button className="text-[10px] text-gray-500 hover:text-gray-300" onClick={() => onChange("")}>清</button>
+        <button className="nodrag" onClick={() => onChange("")} style={{ fontSize: 10, color: COL.textFaint, background: "none", border: "none", cursor: "pointer" }}>清</button>
       )}
     </div>
   );
