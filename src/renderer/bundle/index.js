@@ -336,6 +336,7 @@ import {
   ensureModelInList,
 } from "../lib/model-list-utils";
 import { useMediaEditors } from "../hooks/useMediaEditors";
+import { useCanvasContextMenu } from "../hooks/useCanvasContextMenu";
 import { WanJuanConfigButlerHelp } from "../components/config-butler-help";
 import {
   WanJuanRenderRuntime,
@@ -1272,6 +1273,12 @@ function WanJuanAppCanvas({
     openVideoEditor,
     handleCropComplete,
   } = useMediaEditors({ setNodes });
+  let {
+    handleContextMenu,
+    handleNodeContextMenu,
+    handleSelectionContextMenu,
+    handleDelayedSelectionMenu,
+  } = useCanvasContextMenu({ wrapperRef, lastCanvasMenuPositionRef, nodesRef, setMenuPosition, setResourceSubmenuOpen, setResourceSubmenuOpenAlt });
   let saveEditedVideo = useCallback(
       async (videoResult) => {
           if (!videoEditState || !videoResult?.url) return;
@@ -2469,80 +2476,6 @@ function WanJuanAppCanvas({
         setEdges((prevEdges) => addEdge(newEdge, prevEdges));
       },
       [setEdges, getNodes],
-    ),
-    handleContextMenu = useCallback(
-      (event) => {
-        event.preventDefault();
-        let containerRect = wrapperRef.current?.getBoundingClientRect();
-        if (containerRect) {
-          let clientX = event.clientX || event.clientX,
-            clientY = event.clientY || event.clientY;
-	          (lastCanvasMenuPositionRef.current = {
-	            x: clientX - containerRect.left,
-	            y: clientY - containerRect.top,
-	          },
-	          setMenuPosition({
-	            x: clientX - containerRect.left,
-	            y: clientY - containerRect.top,
-	            menuOrigin: clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
-	            menuBottom: containerRect.height - (clientY - containerRect.top),
-	            type: `canvas`
-          }), setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
-        }
-      },
-      [setMenuPosition],
-    ),
-    handleNodeContextMenu = useCallback(
-      (event, contextNode) => {
-        event.preventDefault();
-        let containerRect = wrapperRef.current?.getBoundingClientRect();
-        containerRect &&
-          (setMenuPosition({
-              x: event.clientX - containerRect.left,
-              y: event.clientY - containerRect.top,
-              menuOrigin: event.clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
-              menuBottom: containerRect.height - (event.clientY - containerRect.top),
-              type: `node`,
-              nodeId: contextNode.id,
-            }),
-            setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
-      },
-      [setMenuPosition],
-    ),
-    handleSelectionContextMenu = useCallback(
-      (event, contextSelectionNode) => {
-        event.preventDefault();
-        let containerRect = wrapperRef.current?.getBoundingClientRect();
-        containerRect &&
-          (setMenuPosition({
-              x: event.clientX - containerRect.left,
-              y: event.clientY - containerRect.top,
-              menuOrigin: event.clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
-              menuBottom: containerRect.height - (event.clientY - containerRect.top),
-              type: `selection`,
-            }),
-            setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
-      },
-      [setMenuPosition],
-    ),
-    handleDelayedSelectionMenu = useCallback(
-      (event) => {
-        setTimeout(() => {
-          if (nodesRef.current.filter((node) => node.selected).length > 1) {
-            let containerRect = wrapperRef.current?.getBoundingClientRect();
-            containerRect &&
-              (setMenuPosition({
-                  x: event.clientX - containerRect.left,
-                  y: event.clientY - containerRect.top,
-                  menuOrigin: event.clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
-                  menuBottom: containerRect.height - (event.clientY - containerRect.top),
-                  type: `selection`,
-                }),
-                setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
-          }
-        }, 50);
-      },
-      [setMenuPosition],
     ),
     handleMultiConnectToTarget = useCallback(
       (event, targetNode) => {
