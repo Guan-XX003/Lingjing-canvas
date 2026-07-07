@@ -8,8 +8,9 @@ const FILE = 'src/renderer/bundle/index.js';
 const src = fs.readFileSync(FILE, 'utf8');
 const sf = ts.createSourceFile('i.js', src, ts.ScriptTarget.ES2022, true, ts.ScriptKind.JS);
 const ln = (p) => sf.getLineAndCharacterOfPosition(p).line + 1;
+const HOST = cfg.hostComponent || 'WanJuanAppRoot';
 let comp = null;
-(function f(n) { if (ts.isFunctionDeclaration(n) && n.name?.text === 'WanJuanAppRoot') comp = n; ts.forEachChild(n, f); })(sf);
+(function f(n) { if (ts.isFunctionDeclaration(n) && n.name?.text === HOST) comp = n; ts.forEachChild(n, f); })(sf);
 
 // 顶层符号表（含解构）
 const top = new Map();

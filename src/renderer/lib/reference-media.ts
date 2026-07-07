@@ -65,7 +65,7 @@ export const wanjuanNodeTextValue = (node) =>
     String(node.data.prompt) :
     String(node.data.text) :
     ``;
-export const wanjuanCollectNodeReferenceMedia = (node, handleId) => {
+export const wanjuanCollectNodeReferenceMedia = (node, handleId?) => {
       let images = [],
         videos = [];
       if (!node?.data) return {
