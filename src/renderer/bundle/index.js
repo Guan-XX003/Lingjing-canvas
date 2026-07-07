@@ -4668,7 +4668,7 @@ ${combinedPrompt}`,
               ));
           }
         },
-        [propImageApiKey, propImageApiUrl, drawingModel, apiConfigs, imageModelApiBindings, imageModelProtocolBindings, planLimits, showToast, getNodes, getEdges, setNodes, addGeneratedAsset, membership, updateTaskList],
+        [propImageApiKey, propImageApiUrl, drawingModel, apiConfigs, imageModelApiBindings, imageModelProtocolBindings, planLimits, showToast, getNodes, getEdges, setNodes, addGeneratedAsset, membership, updateTaskList, modelProtocolRegistry, propTextApiUrl, propTextApiKey, textModel],
     ),
     generateVideo = useCallback(
       async (nodeId, prompt, resolution = `1280x720`, modelName2, duration, apiBindingId, aspectRatioOverride) => {
