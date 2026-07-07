@@ -22823,23 +22823,23 @@ ${docText}`;
 			                errorMsg = String(task?.errorMsg || ``),
 				                submitPath = String(requestProfile.submitPath || protocolConfig?.submitPath || ``),
 			                submitUrl = String(requestProfile.submitUrl || ``),
-			                c = String(requestProfile.pollUrl || ``),
-			                d = String(task?.apiBaseUrl || ``),
-			                f = /^https?:\/\//i.test(submitUrl) ?
+			                pollUrl = String(requestProfile.pollUrl || ``),
+			                apiBaseUrl = String(task?.apiBaseUrl || ``),
+			                resolvedSubmitUrl = /^https?:\/\//i.test(submitUrl) ?
 			                submitUrl :
-			                d && submitPath ?
-			                buildApiUrl(d, submitPath) :
+			                apiBaseUrl && submitPath ?
+			                buildApiUrl(apiBaseUrl, submitPath) :
 			                ``,
-			                l = /invalid url\s*\(\s*post\s+\/[^)]+\)/i.test(errorMsg),
-			                u = /^https?:\/\//i.test(f);
-			              if (l && u) {
-			                let e = `任务记录可还原实际提交 URL 为 ${f}，不是单独请求 ${submitPath || `相对路径`}。`;
+			                isInvalidUrlError = /invalid url\s*\(\s*post\s+\/[^)]+\)/i.test(errorMsg),
+			                isAbsoluteSubmitUrl = /^https?:\/\//i.test(resolvedSubmitUrl);
+			              if (isInvalidUrlError && isAbsoluteSubmitUrl) {
+			                let diagnosisMessage = `任务记录可还原实际提交 URL 为 ${resolvedSubmitUrl}，不是单独请求 ${submitPath || `相对路径`}。`;
 			                normalizedDiagnosis.classification === `model_code` && (normalizedDiagnosis.classification = `request_config`);
 			                normalizedDiagnosis.confidence = Math.max(Number(normalizedDiagnosis.confidence) || 0, 0.86);
 			                normalizedDiagnosis.summary = `上游拒绝了当前视频提交路径，问题更像 endpoint/平台路由不匹配，不是前端没有拼接 baseUrl。`;
 			                normalizedDiagnosis.evidence = butlerUniquePaths(normalizedDiagnosis.evidence, [
-			                  e,
-			                  c ? `轮询 URL 记录为 ${c}` : ``,
+			                  diagnosisMessage,
+			                  pollUrl ? `轮询 URL 记录为 ${pollUrl}` : ``,
 			                  errorMsg,
 			                ]).slice(0, 5);
 			                normalizedDiagnosis.suggestedFix =
@@ -22854,18 +22854,18 @@ ${docText}`;
 			              }
 			              if (normalizedDiagnosis.suggestedProtocol?.config) {
 			                try {
-			                  let e = normalizeModelCategory(normalizedDiagnosis.suggestedProtocol.config.category || task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``),
-			                    i = validateAndRepairConfigButlerResult({
+			                  let suggestedCategory = normalizeModelCategory(normalizedDiagnosis.suggestedProtocol.config.category || task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``),
+			                    repairedResult = validateAndRepairConfigButlerResult({
 			                      modelName: task.modelName,
-			                      category: e,
+			                      category: suggestedCategory,
 			                      protocol: normalizedDiagnosis.suggestedProtocol,
 			                    }, {
 			                      modelName: task.modelName,
-			                      category: e,
+			                      category: suggestedCategory,
 			                      apiUrl: task.apiBaseUrl || ``,
 			                      toolContext: protocolBinding,
 			                    });
-			                  normalizedDiagnosis.suggestedProtocol = i.protocol;
+			                  normalizedDiagnosis.suggestedProtocol = repairedResult.protocol;
 			                } catch {}
 			              }
 			              if (
@@ -22887,48 +22887,48 @@ ${docText}`;
 			              }
 			              return normalizedDiagnosis;
 			            },
-			            runConfigButlerErrorDiagnosis = async (e, t) => {
-		              let n = e?.task || {},
-		                r = normalizeModelCategory(n.type || n.customOutputType) || inferButlerCategoryFromModelName(n.modelName || ``),
-		                i =
-		                n.apiConfigId ?
-		                apiConfigs.find((item) => item.id === n.apiConfigId) :
-		                apiConfigs.find((item) => normalizeButlerBaseUrl(item.url).toLowerCase() === normalizeButlerBaseUrl(n.apiBaseUrl || ``).toLowerCase()),
-		                a = r === `text` ?
-		                textModelProtocolBindings?.[n.modelName] :
-		                r === `image` ?
-		                imageModelProtocolBindings?.[n.modelName] :
-		                r === `video` ?
-		                videoModelProtocolBindings?.[n.modelName] :
-		                r === `audio` || r === `music` || r === `tts-music` ?
-		                audioModelProtocolBindings?.[n.modelName] :
+			            runConfigButlerErrorDiagnosis = async (diagnosisContext, diagnosisOptions) => {
+		              let task = diagnosisContext?.task || {},
+		                modelCategory = normalizeModelCategory(task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``),
+		                protocolDefinition =
+		                task.apiConfigId ?
+		                apiConfigs.find((item) => item.id === task.apiConfigId) :
+		                apiConfigs.find((item) => normalizeButlerBaseUrl(item.url).toLowerCase() === normalizeButlerBaseUrl(task.apiBaseUrl || ``).toLowerCase()),
+		                protocolCategory = modelCategory === `text` ?
+		                textModelProtocolBindings?.[task.modelName] :
+		                modelCategory === `image` ?
+		                imageModelProtocolBindings?.[task.modelName] :
+		                modelCategory === `video` ?
+		                videoModelProtocolBindings?.[task.modelName] :
+		                modelCategory === `audio` || modelCategory === `music` || modelCategory === `tts-music` ?
+		                audioModelProtocolBindings?.[task.modelName] :
 		                ``,
-		                o = a ? modelProtocolRegistry?.[a] : null,
-		                s = `` + Date.now();
+		                protocolConfig = protocolCategory ? modelProtocolRegistry?.[protocolCategory] : null,
+		                requestId = `` + Date.now();
 		              setConfigButlerErrorAssistant({
-		                ...e,
-		                id: s,
+		                ...diagnosisContext,
+		                id: requestId,
 		                status: `checking`,
 			                title: `配置管家正在排查最新失败`,
 		                diagnosis: null,
 		              });
 		              try {
-		                let l = ``,
-		                  u = null,
-		                  c = (storedGlobalConfigs || []).find((item) => item.id === activeStoredGlobalConfigId),
-		                  d = String(c?.apiDocUrl || c?.config?.apiDocUrl || c?.config?.configButlerDocUrl || configButlerDocUrl || ``).trim();
-		                if (d) {
-		                  l = await Promise.race([
-		                    fetchDocAsPlainText(d),
-		                    new Promise((e) => setTimeout(() => e(``), 6e4)),
+		                let promptText = ``,
+		                  suggestedConfig = null,
+		                  activeGlobalConfig = (storedGlobalConfigs || []).find((item) => item.id === activeStoredGlobalConfigId),
+		                  apiDocUrl = String(activeGlobalConfig?.apiDocUrl || activeGlobalConfig?.config?.apiDocUrl || activeGlobalConfig?.config?.configButlerDocUrl || configButlerDocUrl || ``).trim();
+		                if (apiDocUrl) {
+		                  promptText = await Promise.race([
+		                    fetchDocAsPlainText(apiDocUrl),
+		                    new Promise((resolvePromise) => setTimeout(() => resolvePromise(``), 6e4)),
 		                  ]);
-		                  u = buildConfigButlerToolContext(l, d, {
-		                    modelName: n.modelName,
-		                    category: r,
-		                    apiUrl: n.apiBaseUrl || i?.url || ``,
+		                  suggestedConfig = buildConfigButlerToolContext(promptText, apiDocUrl, {
+		                    modelName: task.modelName,
+		                    category: modelCategory,
+		                    apiUrl: task.apiBaseUrl || protocolDefinition?.url || ``,
 		                  });
 		                }
-			                let f = `你是万卷灵境的配置管家故障诊断器。用户手动点击错误查询，需要排查任务清单中最新一次失败任务。
+			                let systemPrompt = `你是万卷灵境的配置管家故障诊断器。用户手动点击错误查询，需要排查任务清单中最新一次失败任务。
 
 请基于任务上下文、当前软件协议配置、错误信息、API 文档摘要和万卷灵境工作流判断原因。
 只输出 JSON，不要解释。字段：
@@ -22955,107 +22955,107 @@ ${docText}`;
 
 任务上下文：
 ${JSON.stringify({
-  taskId: n.id,
-  projectId: n.projectId,
-  nodeId: n.nodeId,
-  category: r,
-  modelName: n.modelName,
-  apiBaseUrl: n.apiBaseUrl || i?.url || ``,
-  apiConfigName: i?.name || ``,
-  prompt: n.prompt,
-  requestProfile: n.requestProfile || {},
-  errorMsg: n.errorMsg,
+  taskId: task.id,
+  projectId: task.projectId,
+  nodeId: task.nodeId,
+  category: modelCategory,
+  modelName: task.modelName,
+  apiBaseUrl: task.apiBaseUrl || protocolDefinition?.url || ``,
+  apiConfigName: protocolDefinition?.name || ``,
+  prompt: task.prompt,
+  requestProfile: task.requestProfile || {},
+  errorMsg: task.errorMsg,
 }, null, 2)}
 
-当前绑定协议名：${a || `未绑定`}
+当前绑定协议名：${protocolCategory || `未绑定`}
 当前协议配置：
-${JSON.stringify(o || n.requestProfile || {}, null, 2)}
+${JSON.stringify(protocolConfig || task.requestProfile || {}, null, 2)}
 
 工具解析结果：
-${u ? formatConfigButlerToolContext(u) : `未配置或未读取 API 文档`}
+${suggestedConfig ? formatConfigButlerToolContext(suggestedConfig) : `未配置或未读取 API 文档`}
 
 API 文档摘要：
-${String(l || ``).slice(0, 5e4)}`;
-		                let p = await Promise.race([
-		                    callConfigButlerModel(f),
-		                    new Promise((e, t) => setTimeout(() => t(Error(`配置管家诊断超时，已切换本地规则诊断`)), 12e4)),
+${String(promptText || ``).slice(0, 5e4)}`;
+		                let diagnosisRaw = await Promise.race([
+		                    callConfigButlerModel(systemPrompt),
+		                    new Promise((resolvePromise, rejectPromise) => setTimeout(() => rejectPromise(Error(`配置管家诊断超时，已切换本地规则诊断`)), 12e4)),
 		                  ]),
-		                  m = extractJsonBlock(p),
-		                  h = m?.suggestedProtocol?.config ?
+		                  jsonBlock = extractJsonBlock(diagnosisRaw),
+		                  suggestedConfigFromModel = jsonBlock?.suggestedProtocol?.config ?
 		                  validateAndRepairConfigButlerResult({
-		                    modelName: n.modelName,
-		                    category: r,
-		                    protocol: m.suggestedProtocol,
+		                    modelName: task.modelName,
+		                    category: modelCategory,
+		                    protocol: jsonBlock.suggestedProtocol,
 		                  }, {
-		                    modelName: n.modelName,
-		                    category: r,
-		                    apiUrl: n.apiBaseUrl || i?.url || ``,
-		                    toolContext: u,
+		                    modelName: task.modelName,
+		                    category: modelCategory,
+		                    apiUrl: task.apiBaseUrl || protocolDefinition?.url || ``,
+		                    toolContext: suggestedConfig,
 		                  }) :
 		                  null,
-			                  g = {
-			                    classification: m.classification || `unknown`,
-			                    confidence: Number(m.confidence) || 0,
-			                    summary: m.summary || `诊断完成`,
-			                    evidence: Array.isArray(m.evidence) ? m.evidence.slice(0, 5) : [],
-			                    suggestedFix: m.suggestedFix || ``,
-			                    shouldApplyPatch: m.shouldApplyPatch === !0,
-			                    suggestedProtocol: h?.protocol || m.suggestedProtocol || null,
+			                  repairedDiagnosis = {
+			                    classification: jsonBlock.classification || `unknown`,
+			                    confidence: Number(jsonBlock.confidence) || 0,
+			                    summary: jsonBlock.summary || `诊断完成`,
+			                    evidence: Array.isArray(jsonBlock.evidence) ? jsonBlock.evidence.slice(0, 5) : [],
+			                    suggestedFix: jsonBlock.suggestedFix || ``,
+			                    shouldApplyPatch: jsonBlock.shouldApplyPatch === !0,
+			                    suggestedProtocol: suggestedConfigFromModel?.protocol || jsonBlock.suggestedProtocol || null,
 			                  };
-			                g = normalizeConfigButlerDiagnosis(g, n, u, o);
-			                setConfigButlerErrorAssistant((e) =>
-			                  e?.id === s ? {
-		                    ...e,
+			                repairedDiagnosis = normalizeConfigButlerDiagnosis(repairedDiagnosis, task, suggestedConfig, protocolConfig);
+			                setConfigButlerErrorAssistant((prevAssistant) =>
+			                  prevAssistant?.id === requestId ? {
+		                    ...prevAssistant,
 		                    status: `ready`,
-		                    diagnosis: g,
-		                  } : e,
+		                    diagnosis: repairedDiagnosis,
+		                  } : prevAssistant,
 		                );
 		              } catch (error) {
-			                let i = normalizeConfigButlerDiagnosis(buildLocalConfigButlerErrorDiagnosis(n, error?.message || error), n, null, o);
-		                setConfigButlerErrorAssistant((e) =>
-		                  e?.id === s ? {
-		                    ...e,
+			                let localDiagnosis = normalizeConfigButlerDiagnosis(buildLocalConfigButlerErrorDiagnosis(task, error?.message || error), task, null, protocolConfig);
+		                setConfigButlerErrorAssistant((prevAssistant) =>
+		                  prevAssistant?.id === requestId ? {
+		                    ...prevAssistant,
 		                    status: `ready`,
-		                    diagnosis: i,
+		                    diagnosis: localDiagnosis,
 		                    diagnosticError: error?.message || String(error),
-		                  } : e,
+		                  } : prevAssistant,
 		                );
 		              } finally {
-		                configButlerErrorAssistantInFlightRef.current.delete(t);
+		                configButlerErrorAssistantInFlightRef.current.delete(diagnosisOptions);
 		              }
 		            },
-			            maybeTriggerConfigButlerErrorDiagnosis = (e, t = [], n = {}) => {
-			              let r = new Set(
-			                (Array.isArray(t) ? t : [])
+			            maybeTriggerConfigButlerErrorDiagnosis = (tasksInput, existingSignatures = [], triggerOptions = {}) => {
+			              let knownSignatures = new Set(
+			                (Array.isArray(existingSignatures) ? existingSignatures : [])
 			                .filter((item) => item?.status === `failed`)
 			                .map((item) => item.id),
 			              ),
-			                o = Array.isArray(e) ? e : [],
-			                i = n?.manual === !0;
-			              if (!i) return !1;
-			              if (!i && configButlerErrorAssistant?.status === `checking`) return;
-			              for (let a of [...o].sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))) {
-			                if (!a || a.status !== `failed` || a.stoppedByUser || !a.nodeId) continue;
-			                let t = getConfigButlerTaskFailureSignature(a);
-			                if (!t) continue;
-			                let s = o.filter((item) => item?.status === `failed` && !item.stoppedByUser && getConfigButlerTaskFailureSignature(item) === t);
-			                if (!i && r.size && !s.some((item) => !r.has(item.id))) continue;
-			                let c = `manual-latest::${a.id || Date.now()}::${t}`;
-			                if (!i && (configButlerErrorAssistantSeenRef.current.has(c) || configButlerErrorAssistantInFlightRef.current.has(c))) continue;
-			                (configButlerErrorAssistantSeenRef.current.add(c),
-			                  configButlerErrorAssistantInFlightRef.current.add(c),
+			                tasksArray = Array.isArray(tasksInput) ? tasksInput : [],
+			                isManualTrigger = triggerOptions?.manual === !0;
+			              if (!isManualTrigger) return !1;
+			              if (!isManualTrigger && configButlerErrorAssistant?.status === `checking`) return;
+			              for (let failedTask of [...tasksArray].sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))) {
+			                if (!failedTask || failedTask.status !== `failed` || failedTask.stoppedByUser || !failedTask.nodeId) continue;
+			                let failureSignature = getConfigButlerTaskFailureSignature(failedTask);
+			                if (!failureSignature) continue;
+			                let failedTasks = tasksArray.filter((item) => item?.status === `failed` && !item.stoppedByUser && getConfigButlerTaskFailureSignature(item) === failureSignature);
+			                if (!isManualTrigger && knownSignatures.size && !failedTasks.some((item) => !knownSignatures.has(item.id))) continue;
+			                let dedupeKey = `manual-latest::${failedTask.id || Date.now()}::${failureSignature}`;
+			                if (!isManualTrigger && (configButlerErrorAssistantSeenRef.current.has(dedupeKey) || configButlerErrorAssistantInFlightRef.current.has(dedupeKey))) continue;
+			                (configButlerErrorAssistantSeenRef.current.add(dedupeKey),
+			                  configButlerErrorAssistantInFlightRef.current.add(dedupeKey),
 			                  runConfigButlerErrorDiagnosis({
-			                    task: a,
-		                    failures: s.slice(0, 3),
-		                    signature: t,
+			                    task: failedTask,
+		                    failures: failedTasks.slice(0, 3),
+		                    signature: failureSignature,
 		                    triggeredAt: Date.now(),
-		                  }, c));
+		                  }, dedupeKey));
 		                return !0;
 		              }
 		              return !1;
 		            },
 		            runManualConfigButlerErrorQuery = () => {
-		              let t = `manual-scan-${Date.now()}`;
+		              let scanId = `manual-scan-${Date.now()}`;
 		              if (configButlerErrorAssistant && configButlerErrorAssistantMinimized) {
 		                setConfigButlerErrorAssistantMinimized(!1);
 		                return;
@@ -23063,7 +23063,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 		              showToast2(`配置管家正在查询最近错误`);
 		              setConfigButlerErrorAssistantMinimized(!1);
 		              setConfigButlerErrorAssistant({
-		                id: t,
+		                id: scanId,
 		                status: `checking`,
 		                manualScan: !0,
 			                title: `配置管家正在扫描最新错误`,
@@ -23077,13 +23077,13 @@ ${String(l || ``).slice(0, 5e4)}`;
 		                diagnosis: null,
 		              });
 		              window.setTimeout(() => {
-		                let n = maybeTriggerConfigButlerErrorDiagnosis(globalTasks, [], {
+		                let triggerResult = maybeTriggerConfigButlerErrorDiagnosis(globalTasks, [], {
 		                  manual: !0,
 		                });
-		                n ||
-		                  setConfigButlerErrorAssistant((e) =>
-		                    e?.id === t ? {
-		                      ...e,
+		                triggerResult ||
+		                  setConfigButlerErrorAssistant((prevAssistant) =>
+		                    prevAssistant?.id === scanId ? {
+		                      ...prevAssistant,
 			                      status: `ready`,
 			                      task: {
 			                        modelName: `最近任务扫描`,
@@ -23100,12 +23100,12 @@ ${String(l || ``).slice(0, 5e4)}`;
 			                        suggestedFix: `如果刚刚的节点已经报错，请先确认任务清单里出现失败记录，然后再次点击错误查询。`,
 			                        shouldApplyPatch: !1,
 		                      },
-		                    } : e,
+		                    } : prevAssistant,
 		                  );
 		              }, 800);
 		            },
-		            getConfigButlerRepairContext = (e = null) => {
-		              let task = e || configButlerErrorAssistant?.task || {},
+		            getConfigButlerRepairContext = (diagnosisTask = null) => {
+		              let task = diagnosisTask || configButlerErrorAssistant?.task || {},
 		                category = normalizeModelCategory(task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``),
 		                protocolKey =
 		                category === `text` ?
@@ -23163,10 +23163,10 @@ ${String(l || ``).slice(0, 5e4)}`;
 		                setConfigButlerManualProblemPart(inferConfigButlerProblemPart(errorAssistant)),
 		                setConfigButlerManualProtocolOpen(!0));
 		            },
-		            applyConfigButlerProtocolRepair = (n, repairLabel = `配置管家修复`) => {
+		            applyConfigButlerProtocolRepair = (protocolBinding, repairLabel = `配置管家修复`) => {
 		              let errorAssistant = configButlerErrorAssistant,
 		                task = errorAssistant?.task || {},
-		                repairProtocol = n;
+		                repairProtocol = protocolBinding;
 		              if (!repairProtocol?.config || !task.modelName) return;
 		              let category = normalizeModelCategory(repairProtocol.config.category || task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName),
 		                finalizedConfig = finalizeButlerProtocolConfig(normalizeProtocolConfig(repairProtocol.config, category), {
@@ -23987,7 +23987,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                       task.modelName && videoModelApiBindings?.[task.modelName] ?
                       apiConfigs.find((apiConfig) => apiConfig.id === videoModelApiBindings[task.modelName]) :
                       null,
-                      normalizeApiBaseUrl = (e) => String(e || ``).replace(/\s+/g, ``).replace(/\/+$/, ``).toLowerCase(),
+                      normalizeApiBaseUrl = (baseUrl) => String(baseUrl || ``).replace(/\s+/g, ``).replace(/\/+$/, ``).toLowerCase(),
                       apiBaseMatchedConfig = task.apiBaseUrl ?
                       apiConfigs.find((apiConfig) => normalizeApiBaseUrl(apiConfig.url) === normalizeApiBaseUrl(task.apiBaseUrl)) :
                       null,
@@ -24452,7 +24452,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                 }]);
               },
               handleRemovePreset = (index) => {
-                setPresetPrompts(presetPrompts.filter((t, index2) => index2 !== index));
+                setPresetPrompts(presetPrompts.filter((promptRule, index2) => index2 !== index));
               },
               handleServerVerify = async () => {
                 try {
