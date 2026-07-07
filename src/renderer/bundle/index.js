@@ -18422,9 +18422,12 @@ ${String(promptText || ``).slice(0, 5e4)}`;
   updateGlobalTasks = (updater) => {
 		              setGlobalTasks((prevTasks) => {
 		                let nextTasks = compactGlobalTasks(updater(prevTasks));
-			                return (isPluginEnv && chrome.storage.local.set({
-			                  globalTasks: nextTasks
-			                }), nextTasks);
+			                // 防抖持久化：不再每次更新都同步写 chrome.storage（原写在 updater 内→StrictMode 双写且无节流，自动刷新每 tick 触发）
+			                clearTimeout(globalThis.__wanjuanGlobalTasksPersistTimer);
+			                globalThis.__wanjuanGlobalTasksPersistTimer = setTimeout(() => {
+			                  isPluginEnv && chrome.storage.local.set({ globalTasks: nextTasks });
+			                }, 400);
+			                return nextTasks;
               });
             },
   configButlerDiagnosticsTestHook = (() => {
