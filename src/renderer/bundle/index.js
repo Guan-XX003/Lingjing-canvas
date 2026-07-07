@@ -22678,9 +22678,9 @@ ${docText}`;
                   (console.warn(`Mem0 memory store failed`, e),
                     showToast2(e?.message || `Mem0 记忆写入失败`)),
                 );
-              } catch (t) {
-                let e = t?.message || `智能体回复失败`;
-                (console.error(t),
+              } catch (error) {
+                let e = error?.message || `智能体回复失败`;
+                (console.error(error),
                   showToast2(e),
                   setAgentConversations((item) => ({
                     ...item,
@@ -22708,7 +22708,7 @@ ${docText}`;
             },
 		            compactGlobalTasks = (e) => {
 		              if (!Array.isArray(e)) return [];
-		              let t = [],
+		              let itemB = [],
 		                n = new Set(),
 		                r = new Map(),
 		                i = (e) => e?.type === `image` || e?.customOutputType === `image`,
@@ -22716,10 +22716,10 @@ ${docText}`;
 		                !!(e?.remoteTaskId || e?.asyncImageDetailUrl || e?.customResultData || e?.resultUrl),
 		                o = (e) => {
 		                  if (!e || !e.id || n.has(e.id)) return !1;
-		                  return (n.add(e.id), t.push(e), !0);
+		                  return (n.add(e.id), itemB.push(e), !0);
 		                };
 		              [...e]
-		                .sort((e, t) => (t?.createdAt || 0) - (e?.createdAt || 0))
+		                .sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))
 		                .forEach((item) => {
 		                  if (!item || !item.id) return;
 		                  if (!item.nodeId) {
@@ -22736,7 +22736,7 @@ ${docText}`;
 		                    if (o(item)) r.set(n, s + 1);
 		                  }
 		                });
-		              return t.slice(0, 1200).sort((e, t) => (t?.createdAt || 0) - (e?.createdAt || 0));
+		              return itemB.slice(0, 1200).sort((itemA, t) => (t?.createdAt || 0) - (itemA?.createdAt || 0));
 		            },
 		            canManuallyRefreshGlobalTask = (e) => {
 		              return !!e && [`running`, `pending`, `failed`, `completed`].includes(e.status);
@@ -23010,14 +23010,14 @@ ${String(l || ``).slice(0, 5e4)}`;
 		                    diagnosis: g,
 		                  } : e,
 		                );
-		              } catch (r) {
-			                let i = normalizeConfigButlerDiagnosis(buildLocalConfigButlerErrorDiagnosis(n, r?.message || r), n, null, o);
+		              } catch (error) {
+			                let i = normalizeConfigButlerDiagnosis(buildLocalConfigButlerErrorDiagnosis(n, error?.message || error), n, null, o);
 		                setConfigButlerErrorAssistant((e) =>
 		                  e?.id === s ? {
 		                    ...e,
 		                    status: `ready`,
 		                    diagnosis: i,
-		                    diagnosticError: r?.message || String(r),
+		                    diagnosticError: error?.message || String(error),
 		                  } : e,
 		                );
 		              } finally {
@@ -23034,7 +23034,7 @@ ${String(l || ``).slice(0, 5e4)}`;
 			                i = n?.manual === !0;
 			              if (!i) return !1;
 			              if (!i && configButlerErrorAssistant?.status === `checking`) return;
-			              for (let a of [...o].sort((e, t) => (t?.createdAt || 0) - (e?.createdAt || 0))) {
+			              for (let a of [...o].sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))) {
 			                if (!a || a.status !== `failed` || a.stoppedByUser || !a.nodeId) continue;
 			                let t = getConfigButlerTaskFailureSignature(a);
 			                if (!t) continue;
