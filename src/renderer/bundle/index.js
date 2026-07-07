@@ -36,7 +36,7 @@ import {
   St as wanjuanReactDomFactory,
   T as Play,
   U as FolderOpen,
-  V as Image,
+  V as ImageIcon,
   W as Film,
   X as CirclePlay,
   Y as Circle,
@@ -12414,7 +12414,7 @@ ${combinedPrompt}`,
                           menuPosition.connection,
                         ),
                       children: [
-                        jsx(Image, {
+                        jsx(ImageIcon, {
                           size: 16,
                           className: `text-blue-400`,
                         }),
@@ -13271,7 +13271,7 @@ ${combinedPrompt}`,
                             jsxs(`span`, {
                               className: `flex items-center gap-2`,
                               children: [
-                                jsx(Image, {
+                                jsx(ImageIcon, {
                                   size: 16,
                                   className: `text-blue-400`,
                                 }),
@@ -13661,7 +13661,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: copyNodeImage,
 	                              children: [
-	                                jsx(Image, {
+	                                jsx(ImageIcon, {
                                   size: 16,
                                   className: `text-gray-400`,
                                 }),
