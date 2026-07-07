@@ -69,10 +69,21 @@ function resolveSunoApiConfig(data: any): { url: string; key: string; configId: 
 
 // 全部内联样式：项目的 app.css 是固定的 Tailwind 产物、不随构建重新生成，
 // 新组件用的类会静默失效（间距塌陷=挤在一起），故这里不依赖 Tailwind。
+// 颜色一律用主题 CSS 变量（--wanjuan-theme-*），跟随「石墨灰」等主题；带深色兜底。
+const v = (name: string, fallback: string) => `var(--wanjuan-theme-${name}, ${fallback})`;
 const COL = {
-  card: "#1c1c1c", panel: "#1a1a1a", input: "#111", border: "#333",
-  btnOff: "#2a2a2a", yellow: "#eab308", blue: "#3b82f6",
-  textMain: "#e5e7eb", textDim: "#9aa0aa", textFaint: "#6b7280",
+  card: v("surface", "#1c1c1c"),
+  panel: v("bg", "#181818"),
+  header: v("surface-2", "#222"),
+  input: v("bg", "#111"),
+  border: v("border", "#333"),
+  btnOff: v("surface-3", "#2a2a2a"),
+  yellow: v("accent", "#8a8f98"),
+  blue: v("accent-2", "var(--wanjuan-theme-accent, #8a8f98)"),
+  textMain: v("text", "#e5e7eb"),
+  textDim: v("muted", "#9aa0aa"),
+  textFaint: v("muted", "#6b7280"),
+  resultBg: v("surface-3", "#151515"),
 };
 const uiInput: CSSProperties = {
   width: "100%", boxSizing: "border-box", background: COL.input, border: `1px solid ${COL.border}`,
@@ -284,11 +295,11 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
         <WanJuanNodeHandle type="source" position={Position.Right} />
 
         {/* 头部 */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#222", borderBottom: "1px solid #2a2a2a", borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: COL.header, borderBottom: `1px solid ${COL.border}`, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: COL.textMain }}>
             <span style={{ color: COL.yellow }}>♫</span> 音乐节点 · Suno
           </div>
-          {data.loading && <RefreshCw size={14} className="animate-spin" style={{ color: "#60a5fa" }} />}
+          {data.loading && <RefreshCw size={14} className="animate-spin" style={{ color: COL.yellow }} />}
         </div>
 
         {/* 主体 */}
@@ -390,7 +401,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
           {tracks.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {tracks.map((t, i) => (
-                <div key={t.id || i} style={{ border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8, display: "flex", flexDirection: "column", gap: 6, background: "#151515" }}>
+                <div key={t.id || i} style={{ border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8, display: "flex", flexDirection: "column", gap: 6, background: COL.resultBg }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ fontSize: 12, color: COL.textMain, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || `曲目 ${i + 1}`}{t.duration ? ` · ${Math.round(t.duration)}s` : ""}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
