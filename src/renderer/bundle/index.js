@@ -335,6 +335,7 @@ import {
   isXSeeVeoReferenceVideoModel,
   ensureModelInList,
 } from "../lib/model-list-utils";
+import { useMediaEditors } from "../hooks/useMediaEditors";
 import { WanJuanConfigButlerHelp } from "../components/config-butler-help";
 import {
   WanJuanRenderRuntime,
@@ -967,9 +968,6 @@ function WanJuanAppCanvas({
       getEdges: getEdges,
       fitView: fitView
     } = useReactFlow(),
-    [previewImageUrl, setPreviewImageUrl] = useState(null),
-    [imageEditState, setImageEditState] = useState(null),
-	    [videoEditState, setVideoEditState] = useState(null),
 	    [isResourceSubmenuOpen, setResourceSubmenuOpen] = useState(false),
 	    [resourceSubmenuOpenAlt, setResourceSubmenuOpenAlt] = useState(false),
 	    abortControllersRef = useRef(new Map()),
@@ -1262,42 +1260,19 @@ function WanJuanAppCanvas({
         () => window.removeEventListener(`resize`, updateViewportSize)
       );
     }, []));
-  let openImagePreview = useCallback((imageUrl) => {
-      setPreviewImageUrl(imageUrl);
-    }, []),
-    openImageEditor = useCallback((nodeId, imageUrl, initialTool) => {
-      setImageEditState({
-        id: nodeId,
-        url: imageUrl,
-        initialTool: initialTool
-      });
-    }, []),
-    openVideoEditor = useCallback((nodeId, videoUrl, label) => {
-      setVideoEditState({
-        id: nodeId,
-        url: videoUrl,
-        label: label
-      });
-    }, []),
-    handleCropComplete = useCallback(
-      (imageUrl) => {
-        (imageEditState &&
-          setNodes((nodes2) =>
-            nodes2.map((node) =>
-              node.id === imageEditState.id ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  imageUrl: imageUrl
-                }
-              } : node,
-            ),
-          ),
-          setImageEditState(null));
-      },
-      [imageEditState, setNodes],
-    ),
-    saveEditedVideo = useCallback(
+  let {
+    previewImageUrl,
+    setPreviewImageUrl,
+    imageEditState,
+    setImageEditState,
+    videoEditState,
+    setVideoEditState,
+    openImagePreview,
+    openImageEditor,
+    openVideoEditor,
+    handleCropComplete,
+  } = useMediaEditors({ setNodes });
+  let saveEditedVideo = useCallback(
       async (videoResult) => {
           if (!videoEditState || !videoResult?.url) return;
           let clipNodeId = `${videoEditState.id}-clip-${Date.now()}`,
