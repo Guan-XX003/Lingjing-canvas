@@ -68,7 +68,7 @@ function resolveSunoApiConfig(data: any): { url: string; key: string; configId: 
 }
 
 const inputCls =
-  "w-full bg-[#111] border border-[#333] rounded p-2 text-xs text-gray-200 placeholder-gray-500 focus:border-blue-500 outline-none";
+  "w-full bg-[#111] border border-[#333] rounded p-2 text-xs text-gray-200 placeholder-gray-500 focus:border-blue-500 outline-none nodrag select-text";
 const labelCls = "text-[11px] text-gray-400";
 
 export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: any) => {
@@ -417,7 +417,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
                       )}
                     </div>
                   </div>
-                  {t.audioUrl && <audio controls src={t.audioUrl} className="w-full h-8" />}
+                  {t.audioUrl && <audio controls src={t.audioUrl} className="w-full h-8 nodrag" />}
                 </div>
               ))}
             </div>
@@ -436,7 +436,7 @@ function WeightSlider({ label, value, onChange }: { label: string; value: string
         type="range" min={0} max={1} step={0.05}
         value={value === "" ? 0.5 : Number(value)}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1"
+        className="flex-1 nodrag"
       />
       <span className="text-[11px] text-gray-400 w-16 text-right">{value === "" ? "默认" : Number(value).toFixed(2)}</span>
       {value !== "" && (
