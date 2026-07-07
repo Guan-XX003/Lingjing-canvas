@@ -95,7 +95,7 @@ const uiInput: CSSProperties = {
 const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, whiteSpace: "nowrap" };
 const uiBtn = (active: boolean, activeColor = COL.yellow): CSSProperties => ({
   padding: "6px 8px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: "none",
-  background: active ? activeColor : COL.btnOff, color: active ? COL.onAccent : "#d1d5db", whiteSpace: "nowrap",
+  background: active ? activeColor : COL.btnOff, color: active ? COL.onAccent : COL.textMain, whiteSpace: "nowrap",
   fontWeight: active ? 600 : 400,
 });
 const uiPanel: CSSProperties = {
@@ -293,7 +293,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: 400 }}>
-      <div style={{ position: "relative", background: COL.card, borderRadius: 12, border: `1px solid ${data.selected ? COL.yellow : COL.border}`, boxShadow: "0 10px 25px rgba(0,0,0,0.4)" }}>
+      <div style={{ position: "relative", background: COL.card, borderRadius: 12, border: `1px solid ${data.selected ? COL.yellow : COL.border}`, boxShadow: "var(--wanjuan-theme-shadow, 0 10px 25px rgba(0,0,0,0.4))" }}>
         <WanJuanNodeHandle type="target" position={Position.Left} />
         <WanJuanNodeHandle type="source" position={Position.Right} />
 
@@ -318,8 +318,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
             <div style={uiPanel}>
               <span style={uiLabel}>源音轨 audioId（从已生成结果「续写」按钮自动带入）</span>
               <input className="nodrag" style={uiInput} value={audioId} onChange={(e) => setAudioId(e.target.value)} placeholder="audioId" />
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#d1d5db" }}>
-                <input type="checkbox" className="nodrag" checked={defaultParamFlag} onChange={(e) => setDefaultParamFlag(e.target.checked)} />
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: COL.textMain }}>
+                <input type="checkbox" className="nodrag" style={{ accentColor: COL.yellow }} checked={defaultParamFlag} onChange={(e) => setDefaultParamFlag(e.target.checked)} />
                 自定义续写参数（否则沿用原曲）
               </label>
               {defaultParamFlag && (
@@ -353,8 +353,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
             <select className="nodrag" style={{ ...uiInput, flex: 1, width: "auto" }} value={model} onChange={(e) => setModel(e.target.value)}>
               {SUNO_MODELS.map((m) => (<option key={m} value={m}>{SUNO_MODEL_LABELS[m] || m}</option>))}
             </select>
-            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#d1d5db", whiteSpace: "nowrap" }}>
-              <input type="checkbox" className="nodrag" checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} /> 纯伴奏
+            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: COL.textMain, whiteSpace: "nowrap" }}>
+              <input type="checkbox" className="nodrag" style={{ accentColor: COL.yellow }} checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} /> 纯伴奏
             </label>
           </div>
 
@@ -432,7 +432,7 @@ function WeightSlider({ label, value, onChange }: { label: string; value: string
         value={value === "" ? 0.5 : Number(value)}
         onChange={(e) => onChange(e.target.value)}
         className="nodrag"
-        style={{ flex: 1, minWidth: 0 }}
+        style={{ flex: 1, minWidth: 0, accentColor: COL.yellow }}
       />
       <span style={{ fontSize: 11, color: COL.textDim, width: 40, textAlign: "right" }}>{value === "" ? "默认" : Number(value).toFixed(2)}</span>
       {value !== "" && (
