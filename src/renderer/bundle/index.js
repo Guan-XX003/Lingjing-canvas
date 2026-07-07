@@ -14971,20 +14971,6 @@ ${docText}`;
         setTimeout(markAppReady, 32);
     }, [isReady, activeProjectId, themeMode]),
     useEffect(() => {
-      if (!isReady || !settingsHydratedRef.current || !projectHydratedRef.current) return;
-      let markAppReady = () => {
-        try {
-          let rootElement = document.documentElement;
-          ((rootElement.dataset.wanjuanAppReady = `true`),
-            (rootElement.dataset.wanjuanProjectId = activeProjectId || `default`),
-            (rootElement.dataset.wanjuanThemeMode = themeMode || ``));
-        } catch {}
-      };
-      typeof requestAnimationFrame == `function` ?
-        requestAnimationFrame(() => requestAnimationFrame(markAppReady)) :
-        setTimeout(markAppReady, 32);
-    }),
-    useEffect(() => {
       let isExtension = typeof chrome < `u` && chrome.runtime && chrome.runtime.id;
       (setIsPluginEnv(!!isExtension),
         isExtension &&
