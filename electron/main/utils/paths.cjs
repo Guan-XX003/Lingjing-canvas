@@ -5,21 +5,28 @@ const { fileURLToPath, pathToFileURL } = require("url");
 const { app } = require("../electron-refs.cjs");
 const { appendDesktopLog } = require("../logging.cjs");
 
+// Windows 保留设备名（不分大小写，带或不带扩展名都非法）：CON/PRN/AUX/NUL/COM1-9/LPT1-9
+const WIN_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+
 function sanitizeFilename(filename) {
   const fallback = `wanjuan-${Date.now()}`;
-  const clean = String(filename || fallback)
+  let clean = String(filename || fallback)
     .replace(/[\\/:*?"<>|]+/g, "-")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/[. ]+$/, ""); // Windows 会丢弃文件名末尾的点/空格，先去掉避免写入名不一致
+  if (WIN_RESERVED_NAME.test(clean)) clean = `_${clean}`; // 避开保留设备名，否则 Windows 写入失败
   return clean || fallback;
 }
 
 function sanitizePathSegment(value, fallback = "asset") {
-  const clean = String(value || fallback)
+  let clean = String(value || fallback)
     .replace(/[\\/:*?"<>|]+/g, "-")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/^\.+/, "");
+    .replace(/^\.+/, "")
+    .replace(/[. ]+$/, "");
+  if (WIN_RESERVED_NAME.test(clean)) clean = `_${clean}`;
   return clean || fallback;
 }
 

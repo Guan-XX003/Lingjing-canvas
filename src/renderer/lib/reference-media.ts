@@ -168,8 +168,20 @@ export const wanjuanUploadMediaToPublicUrl = async (
   onStatus?: (msg: string) => void,
 ): Promise<string> => {
   if (!desktop) throw new Error("需要桌面端上传服务（当前环境无法把本地文件转公网直链）");
+  // 归一化本地形态：裸路径（含 Windows 盘符 C:\ / 反斜杠）先转成 file:// URL，并附 localPath，
+  // 避免主进程把 `C:\..` 当作 URL scheme 解析（对齐 mediaUrlToDataUrl 的成熟契约）。
+  let src = String(url || "");
+  let localPath: string | undefined;
+  if (/^file:/i.test(src)) {
+    localPath = localPathFromProjectFileUrl(src) || undefined;
+  } else if (wanjuanLooksLikeLocalMediaPath(src)) {
+    const fileUrl = buildProjectMediaFileUrl(src) || src;
+    localPath = localPathFromProjectFileUrl(fileUrl) || undefined;
+    src = fileUrl;
+  }
   const mode = configs.uploadMode || "public";
   const filename = `suno-reference-${kind}-${Date.now()}`;
+  const mediaPayload = (extra: Record<string, any>) => ({ url: src, localPath, kind, filename, ...extra });
   const tos = configs.tosConfig || {};
   const qiniu = configs.qiniuConfig || {};
   const custom = configs.customPublicUploadConfig || {};
@@ -181,28 +193,28 @@ export const wanjuanUploadMediaToPublicUrl = async (
   const tryCustom = async () => {
     if (typeof desktop.uploadCustomPublicMedia !== "function") throw new Error("无自定义公网直链上传能力");
     onStatus?.("上传参考音频到自定义公网直链…");
-    const r = await desktop.uploadCustomPublicMedia({ url, kind, filename, customUpload: custom });
+    const r = await desktop.uploadCustomPublicMedia(mediaPayload({ customUpload: custom }));
     if (r?.ok && r.url) return r.url as string;
     throw new Error(r?.error || "自定义公网直链上传失败");
   };
   const tryTos = async () => {
     if (typeof desktop.uploadTosMedia !== "function") throw new Error("无火山 TOS 上传能力");
     onStatus?.("上传参考音频到火山 TOS…");
-    const r = await desktop.uploadTosMedia({ url, kind, filename, tos });
+    const r = await desktop.uploadTosMedia(mediaPayload({ tos }));
     if (r?.ok && r.url) return r.url as string;
     throw new Error(r?.error || "火山 TOS 上传失败");
   };
   const tryQiniu = async () => {
     if (typeof desktop.uploadQiniuMedia !== "function") throw new Error("无七牛云上传能力");
     onStatus?.("上传参考音频到七牛云…");
-    const r = await desktop.uploadQiniuMedia({ url, kind, filename, qiniu });
+    const r = await desktop.uploadQiniuMedia(mediaPayload({ qiniu }));
     if (r?.ok && r.url) return r.url as string;
     throw new Error(r?.error || "七牛云上传失败");
   };
   const tryPublic = async () => {
     if (typeof desktop.uploadPublicMedia !== "function") throw new Error("无公网临时链接上传能力");
     onStatus?.("上传参考音频到公网临时链接…");
-    const r = await desktop.uploadPublicMedia({ url, kind, filename });
+    const r = await desktop.uploadPublicMedia(mediaPayload({}));
     if (r?.ok && r.url) return r.url as string;
     throw new Error(r?.error || "公网临时链接上传失败");
   };
