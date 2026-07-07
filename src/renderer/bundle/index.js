@@ -19939,34 +19939,6 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       valueFormat: `data-url`,
                     };
                   },
-  buildProjectMediaFileUrl = (value) =>
-                  typeof value != `string` || !value ?
-                  `` :
-                  /^file:\/\//i.test(value) ?
-                  value :
-                  (() => {
-                    let normalized = value.replace(/\\/g, `/`),
-                      encoded = encodeURI(
-                        /^[A-Za-z]:\//.test(normalized) ?
-                        `/${normalized}` :
-                        /^\/[A-Za-z]:\//.test(normalized) || normalized.startsWith(`//`) ?
-                        normalized :
-                        value
-                      ).replace(/#/g, `%23`);
-                    return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
-                  })(),
-  reviveProjectMediaBindingValue = (binding) => {
-                    if (!binding) return undefined;
-                    let portableData = binding.portableData;
-                    if (typeof portableData != `string`) return portableData;
-                    if (binding.valueFormat === `json`)
-                      try {
-                        return JSON.parse(portableData);
-                      } catch {
-                        return portableData;
-                      }
-                    return portableData;
-                  },
   applyProjectMediaBindingsToNode =
                   (globalThis.applyProjectMediaBindingsToNode = (node, presenceMap = new Map()) => {
                     let bindings = node?.data?.projectAssetBindings;
