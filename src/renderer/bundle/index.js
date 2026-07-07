@@ -9117,7 +9117,7 @@ ${combinedPrompt}`,
             aiContent
           );
         },
-        [propTextApiKey, propTextApiUrl, textModel],
+        [propTextApiKey, propTextApiUrl, textModel, apiConfigs, textModelApiBindings, textModelProtocolBindings, modelProtocolRegistry],
     ),
     handleGenerateCustom = useCallback(
       async (nodeId) => {
@@ -15919,14 +15919,16 @@ ${docText}`;
                   return;
                 }
                 if (!confirm(`检测到 ${invalidIds.size} 个失效素材，确定从资源库移除吗？`)) return;
-                let updatedResources = transitResources.filter((resource) => !invalidIds.has(resource.id));
-                (setTransitResources(updatedResources),
-                  setCurrentPage(1),
-                  await localforageModule.default.setItem(`transitResources`, updatedResources),
-                  isPluginEnv && chrome.storage.local.set({
-                    transitResources: updatedResources
-                  }),
-                  showToast2(`已清理 ${invalidIds.size} 个失效素材`));
+                setCurrentPage(1);
+                // 用函数式更新拿最新 transitResources：扫描期间(每素材最长 6s 串行探活)可能有 paste/消息/画布同步新增素材，
+                // 基于最新 prev 过滤并持久化，避免用陈旧闭包的旧数组覆盖、把新素材静默抹掉。
+                setTransitResources((prev) => {
+                  let next = prev.filter((resource) => !invalidIds.has(resource.id));
+                  localforageModule.default.setItem(`transitResources`, next);
+                  isPluginEnv && chrome.storage.local.set({ transitResources: next });
+                  return next;
+                });
+                showToast2(`已清理 ${invalidIds.size} 个失效素材`);
               } catch (error) {
                 (console.error(`Clean invalid resources failed`, error), showToast2(`清理失败，请稍后重试`));
               } finally {
