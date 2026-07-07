@@ -2069,7 +2069,7 @@ export const WanJuanVideoNode = reactMemo(({
                           }),
                         ],
                       }),
-                      isSeedanceOrWanxiang &&
+                      isSeedanceOrWanxiang && !isTongyiWanxiang &&
                       jsxs(`div`, {
                         className: `relative nodrag flex items-center`,
                         ref: seedancePortraitPickerRef,

@@ -11211,12 +11211,14 @@ ${combinedPrompt}`,
               ((nodeData.selectedAspectRatio =
                   parseSeedanceList(tongyiWanxiangRatios)[0] || `16:9`),
                 (hasChanged = true)),
+              parseSeedanceList(tongyiWanxiangRatios).length > 0 &&
               (!nodeData.size ||
                 !parseSeedanceList(tongyiWanxiangRatios).includes(nodeData.size)) &&
               ((nodeData.size =
                   parseSeedanceList(tongyiWanxiangRatios)[0] ||
                   `16:9`),
                 (hasChanged = true)),
+              parseSeedanceList(tongyiWanxiangResolutions).length > 0 &&
               (!nodeData.selectedResolution ||
                 !parseSeedanceList(tongyiWanxiangResolutions).includes(
                   nodeData.selectedResolution,
