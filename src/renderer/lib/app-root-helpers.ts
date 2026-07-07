@@ -317,10 +317,10 @@ export const compactGlobalTasks = (tasks: GlobalTask[]) => {
 		              let itemB = [],
 		                seenTaskKeys = new Set(),
 		                taskCountByKey = new Map(),
-		                isImageTask = (task) => task?.type === `image` || task?.customOutputType === `image`,
-		                hasImageOutput = (task) =>
+		                isImageTask = (task: GlobalTask) => task?.type === `image` || task?.customOutputType === `image`,
+		                hasImageOutput = (task: GlobalTask) =>
 		                !!(task?.remoteTaskId || task?.asyncImageDetailUrl || task?.customResultData || task?.resultUrl),
-		                registerTask = (task) => {
+		                registerTask = (task: GlobalTask) => {
 		                  if (!task || !task.id || seenTaskKeys.has(task.id)) return false;
 		                  return (seenTaskKeys.add(task.id), itemB.push(task), true);
 		                };

@@ -8,6 +8,7 @@
  * 自 bundle 反混淆迁入，行为保持一致。
  */
 import { jsx, jsxs } from "react/jsx-runtime";
+import { CanvasNode } from "./types";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 import { buildProjectMediaFileUrl, wanjuanResourceMediaUrl } from "../lib/resource";
 
@@ -51,7 +52,7 @@ export const wanjuanPushReferenceMediaUrl = (images, videos, value, kindHint = `
         videos.push(mediaUrl);
       else images.push(mediaUrl);
     };
-export const wanjuanNodeTextValue = (node) =>
+export const wanjuanNodeTextValue = (node: CanvasNode) =>
     node?.data ?
     node.data.text === void 0 ?
     node.data.prompt === void 0 ?
@@ -65,7 +66,7 @@ export const wanjuanNodeTextValue = (node) =>
     String(node.data.prompt) :
     String(node.data.text) :
     ``;
-export const wanjuanCollectNodeReferenceMedia = (node, handleId?) => {
+export const wanjuanCollectNodeReferenceMedia = (node: CanvasNode, handleId?: string) => {
       let images = [],
         videos = [];
       if (!node?.data) return {

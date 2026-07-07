@@ -198,7 +198,7 @@ export const buildProjectMediaSourceSignature = (value) =>
                   String(value ?? ``);
 
 export const collectProjectMediaBindingPaths =
-                  (globalThis.collectProjectMediaBindingPaths = (node) => {
+                  (globalThis.collectProjectMediaBindingPaths = (node: CanvasNode) => {
                     let bindings = node?.data?.projectAssetBindings || {},
                       localPaths = [];
                     for (let binding of Object.values(bindings) as any[])
