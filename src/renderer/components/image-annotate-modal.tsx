@@ -109,8 +109,8 @@ export function WanJuanImageAnnotateModal({
     },
     handlePointerDown = (event: any) => {
       let {
-        canvasX,
-        canvasY
+        x: canvasX,
+        y: canvasY
       } = getCanvasCoords(event),
         canvas = canvasRef.current,
         ctx = canvas?.getContext(`2d`);
@@ -212,8 +212,8 @@ export function WanJuanImageAnnotateModal({
     handlePointerMove = (event) => {
       if (!isDrawing) return;
       let {
-        canvasX,
-        canvasY
+        x: canvasX,
+        y: canvasY
       } = getCanvasCoords(event),
         canvas = canvasRef.current,
         ctx = canvas?.getContext(`2d`);
@@ -423,6 +423,7 @@ export function WanJuanImageAnnotateModal({
                           height: Math.max(1, cropHeight),
                         }),
                         ctx.putImageData(croppedData, 0, 0),
+                        pushHistory(),
                         setCrop(undefined),
                         setCompletedCrop(undefined),
                         setZoomLevel(1),

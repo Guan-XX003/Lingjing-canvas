@@ -15,6 +15,7 @@ export const WjImageZoomModal = ({
     x: 0,
     y: 0
   }),
+  [dragging, setDragging] = useState(!1),
   isDragging = useRef(!1),
     dragStart = useRef({
       x: 0,
@@ -35,7 +36,7 @@ export const WjImageZoomModal = ({
       setScale((prev) => Math.min(Math.max(0.1, prev + delta), 10));
     },
     handlePointerDown = (event) => {
-      ((isDragging.current = !0), (dragStart.current = {
+      ((isDragging.current = !0), setDragging(!0), (dragStart.current = {
         x: event.clientX,
         y: event.clientY
       }));
@@ -54,7 +55,7 @@ export const WjImageZoomModal = ({
         }));
     },
     handlePointerUp = () => {
-      isDragging.current = !1;
+      ((isDragging.current = !1), setDragging(!1));
     };
   return jsxs(`div`, {
     className: `fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 overflow-hidden`,
@@ -218,7 +219,7 @@ export const WjImageZoomModal = ({
           display: `flex`,
           alignItems: `center`,
           justifyContent: `center`,
-          cursor: isDragging.current ? `grabbing` : `grab`,
+          cursor: dragging ? `grabbing` : `grab`,
           userSelect: `none`,
           touchAction: `none`,
           WebkitAppRegion: `no-drag`,
@@ -243,7 +244,7 @@ export const WjImageZoomModal = ({
             objectFit: `contain`,
             pointerEvents: `none`,
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-            transition: isDragging.current ? `none` : `transform 0.1s ease-out`,
+            transition: dragging ? `none` : `transform 0.1s ease-out`,
             transformOrigin: `center center`,
           },
           draggable: !1,

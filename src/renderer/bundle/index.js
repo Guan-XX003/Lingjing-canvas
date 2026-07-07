@@ -8008,8 +8008,8 @@ ${combinedPrompt}`,
             ).trim(),
             normalizedTextModelName = String(textModelName || ``).trim(),
             selectedTextApiConfigId =
-            resolveModelApiBindingIdHelper(textModelApiBindings, textModelName, openImageEditor) ||
-            openImageEditor,
+            resolveModelApiBindingIdHelper(textModelApiBindings, textModelName, ``) ||
+            ``,
             textConfig = apiConfigs.find(
               (config) => config.id === selectedTextApiConfigId,
             ),
