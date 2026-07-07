@@ -313,6 +313,11 @@ import {
   wanjuanMimeFromMediaKind,
   wanjuanBuildProjectAssetBinding,
 } from "../lib/project-asset-binding";
+import {
+  guessApiConfigName,
+  normalizeUnifiedApiConfig,
+  normalizeUnifiedApiConfigs,
+} from "../lib/unified-api-config";
 import { WanJuanConfigButlerHelp } from "../components/config-butler-help";
 import {
   WanJuanRenderRuntime,
@@ -13619,15 +13624,6 @@ time=${normalizedTtl}`,
         throw Error(`配置管家返回的不是有效的JSON格式`);
       }
     },
-  guessApiConfigName = (name, url) => {
-      if (name) return name;
-      try {
-        let hostname = new URL(url).host.replace(/^www\./, ``);
-        return hostname || `新配置`;
-      } catch {
-        return `新配置`;
-      }
-    },
   isXSeeVeoReferenceVideoModel = (modelName, apiUrl = ``) =>
     /^veo/i.test(String(modelName || ``).trim()) &&
     /(?:^|[-_])(portrait|landscape|fl|frame|reverse|gif|hd|4k|pro)(?:[-_]|$)/i.test(String(modelName || ``).trim()) &&
@@ -13663,15 +13659,6 @@ time=${normalizedTtl}`,
         videoModelProtocolBindings: videoProtocolBindings,
       };
     },
-  normalizeUnifiedApiConfig = (config) =>
-    config && typeof config == `object` ?
-    {
-      ...config,
-      protocolFormat: String(config.protocolFormat || ``).trim() || `auto`,
-    } :
-    config,
-  normalizeUnifiedApiConfigs = (configs) =>
-    Array.isArray(configs) ? configs.map(normalizeUnifiedApiConfig) : configs,
   normalizeStoredGlobalConfigBackup = (backup = {}) => {
       let config = backup && typeof backup == `object` ? cloneBackupValue(backup) : {};
       Array.isArray(config.apiConfigs) && (config.apiConfigs = normalizeUnifiedApiConfigs(config.apiConfigs));
