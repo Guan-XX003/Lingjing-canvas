@@ -342,6 +342,70 @@ import { useVideoGeneration } from "../hooks/useVideoGeneration";
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { useCustomNodeGeneration } from "../hooks/useCustomNodeGeneration";
 import { useUngroupNode } from "../hooks/useUngroupNode";
+import { use_redo } from "../hooks/use_redo";
+import { use_handleCopySelected } from "../hooks/use_handleCopySelected";
+import { use_addResource } from "../hooks/use_addResource";
+import { use_handleSeedancePortraitFile } from "../hooks/use_handleSeedancePortraitFile";
+import { use_blobToDataUrl } from "../hooks/use_blobToDataUrl";
+import { use_handleDeleteClick } from "../hooks/use_handleDeleteClick";
+import { use_readChromeStorage } from "../hooks/use_readChromeStorage";
+import { use_normalizeResourceLocalforagePayload } from "../hooks/use_normalizeResourceLocalforagePayload";
+import { use_applyLitterboxUploadPreset } from "../hooks/use_applyLitterboxUploadPreset";
+import { use_renameProjectGroup } from "../hooks/use_renameProjectGroup";
+import { use_createProjectGroup } from "../hooks/use_createProjectGroup";
+import { use_extractMem0Results } from "../hooks/use_extractMem0Results";
+import { use_resetJixinDefaultConfiguration } from "../hooks/use_resetJixinDefaultConfiguration";
+import { use_moveProjectToGroup } from "../hooks/use_moveProjectToGroup";
+import { use_saveCurrentToStoredGlobalConfig } from "../hooks/use_saveCurrentToStoredGlobalConfig";
+import { use_getShortcutNodePosition } from "../hooks/use_getShortcutNodePosition";
+import { use_$e } from "../hooks/use_$e";
+import { use_handleClearUnfavorited } from "../hooks/use_handleClearUnfavorited";
+import { use_readChromeStorageSnapshot } from "../hooks/use_readChromeStorageSnapshot";
+import { use_resolveVideoRunModel } from "../hooks/use_resolveVideoRunModel";
+import { use_sanitizeProjectCanvasStateForExport } from "../hooks/use_sanitizeProjectCanvasStateForExport";
+import { use_persistProjectsWithStorageState } from "../hooks/use_persistProjectsWithStorageState";
+import { use_shouldReuseProjectMediaBinding } from "../hooks/use_shouldReuseProjectMediaBinding";
+import { use_extractProjectAssetRefs } from "../hooks/use_extractProjectAssetRefs";
+import { use_persistSeedanceVirtualPortraits } from "../hooks/use_persistSeedanceVirtualPortraits";
+import { use_addKeyboardNode } from "../hooks/use_addKeyboardNode";
+import { use_buildBackupPayload } from "../hooks/use_buildBackupPayload";
+import { use_stripLargeProjectMediaPortablePayload } from "../hooks/use_stripLargeProjectMediaPortablePayload";
+import { use_mergeStoredGlobalApiConfigs } from "../hooks/use_mergeStoredGlobalApiConfigs";
+import { use_updateGlobalTasks } from "../hooks/use_updateGlobalTasks";
+import { use_updateSelectedAgent } from "../hooks/use_updateSelectedAgent";
+import { use_restoreStorageOptimizationTrash } from "../hooks/use_restoreStorageOptimizationTrash";
+import { use_resolveWanjuanPlayableTaskUrl } from "../hooks/use_resolveWanjuanPlayableTaskUrl";
+import { use_manageStorageOptimizationTrash } from "../hooks/use_manageStorageOptimizationTrash";
+import { use_clearSelectedAgentConversation } from "../hooks/use_clearSelectedAgentConversation";
+import { use_normalizeStoredGlobalConfigs } from "../hooks/use_normalizeStoredGlobalConfigs";
+import { use_unlockAdvancedSettings } from "../hooks/use_unlockAdvancedSettings";
+import { use_splitChromeStorageModules } from "../hooks/use_splitChromeStorageModules";
+import { use_persistStoredGlobalConfigs } from "../hooks/use_persistStoredGlobalConfigs";
+import { use_editSeedancePortrait } from "../hooks/use_editSeedancePortrait";
+import { use_purgeStorageOptimizationTrash } from "../hooks/use_purgeStorageOptimizationTrash";
+import { use_toggleFavorite } from "../hooks/use_toggleFavorite";
+import { use_getBackupSettingsSectionMap } from "../hooks/use_getBackupSettingsSectionMap";
+import { use_addCustomNodeTemplate } from "../hooks/use_addCustomNodeTemplate";
+import { use_deleteProjectGroup } from "../hooks/use_deleteProjectGroup";
+import { use_normalizeMem0MemoryText } from "../hooks/use_normalizeMem0MemoryText";
+import { use_deleteCustomNodeTemplate } from "../hooks/use_deleteCustomNodeTemplate";
+import { use_persistProjectGroups } from "../hooks/use_persistProjectGroups";
+import { use_clipboardHasPastePayload } from "../hooks/use_clipboardHasPastePayload";
+import { use_confirmProjectGroupRename } from "../hooks/use_confirmProjectGroupRename";
+import { use_ConfirmRenameProject } from "../hooks/use_ConfirmRenameProject";
+import { use_handleRemoveTransitResource } from "../hooks/use_handleRemoveTransitResource";
+import { use_warnProjectMediaFetchOnce } from "../hooks/use_warnProjectMediaFetchOnce";
+import { use_openAccountSite } from "../hooks/use_openAccountSite";
+import { use_dismissSystemNotificationDialog } from "../hooks/use_dismissSystemNotificationDialog";
+import { use_normalizeStoredGlobalConfigBackup } from "../hooks/use_normalizeStoredGlobalConfigBackup";
+import { use_removeAgentAttachment } from "../hooks/use_removeAgentAttachment";
+import { use_saveCurrentAsStoredGlobalConfig } from "../hooks/use_saveCurrentAsStoredGlobalConfig";
+import { use_removeAgentKnowledgeFile } from "../hooks/use_removeAgentKnowledgeFile";
+import { use_handleDeleteSelected } from "../hooks/use_handleDeleteSelected";
+import { use_handleAddPreset } from "../hooks/use_handleAddPreset";
+import { use_setAllAdvancedModelSettings } from "../hooks/use_setAllAdvancedModelSettings";
+import { use_deleteSelectedAgent } from "../hooks/use_deleteSelectedAgent";
+import { use_ensureUniqueProtocolName } from "../hooks/use_ensureUniqueProtocolName";
 import { use_buildSyncedTianjiConfigFromJixinApi } from "../hooks/use_buildSyncedTianjiConfigFromJixinApi";
 import { use_enableStorageOptimization } from "../hooks/use_enableStorageOptimization";
 import { use_applyExternalAssetBundleToBackupPayload } from "../hooks/use_applyExternalAssetBundleToBackupPayload";
@@ -1188,14 +1252,7 @@ function WanJuanAppCanvas({
 	    projectIdRef = useRef(projectId),
 	    shouldFitViewRef = useRef(shouldFitView);
 	  let wanjuanResourceLocalUrlMap = useResourceLocalUrlMap({ resources, useMemo }).wanjuanResourceLocalUrlMap,
-	    resolveWanjuanPlayableTaskUrl = (currentValue, taskValue) => {
-	      let current = typeof currentValue == `string` ? currentValue : ``,
-	        task = typeof taskValue == `string` ? taskValue : ``,
-	        localTaskUrl = task ? wanjuanResourceLocalUrlMap.get(task)?.url || `` : ``;
-	      if (localTaskUrl) return localTaskUrl;
-	      if (task) return task;
-	      return current;
-	    };
+	    resolveWanjuanPlayableTaskUrl = use_resolveWanjuanPlayableTaskUrl({ wanjuanResourceLocalUrlMap }).resolveWanjuanPlayableTaskUrl;
 	  (useEffect(() => {
 	      nodesRef.current = nodes;
 	      try { globalThis.__wanjuanCanvasNodesSnapshot = nodes; } catch {}
@@ -1232,32 +1289,8 @@ function WanJuanAppCanvas({
     canvasStateKeyPrefix = `canvas-state-v1-`,
     desktopCanvasMirrorPrefix = `desktop-canvas-state-v1-`,
 	    saveCanvasState = useSaveCanvasState({ WanJuanStripRuntimeNodeData, canvasStateKeyPrefix, desktopCanvasMirrorPrefix, edgesRef, externalizeProjectCanvasState, historyIndexRef, isRestoringRef, localforageModule, nodesRef, projectIdRef, setHistory, setHistoryIndex, shouldFitViewRef, showToast }).saveCanvasState,
-    $e = useCallback(() => {
-      if (historyIndex > 0) {
-        isRestoringRef.current = true;
-        let previousSnapshot = history[historyIndex - 1];
-        (setNodes(previousSnapshot.nodes),
-          setEdges(previousSnapshot.edges),
-          setHistoryIndex(historyIndex - 1),
-          (historyIndexRef.current = historyIndex - 1),
-          setTimeout(() => {
-            isRestoringRef.current = false;
-          }, 600));
-      }
-    }, [history, historyIndex, setNodes, setEdges]),
-    redo = useCallback(() => {
-      if (historyIndex < history.length - 1) {
-        isRestoringRef.current = true;
-        let nextSnapshot = history[historyIndex + 1];
-        (setNodes(nextSnapshot.nodes),
-          setEdges(nextSnapshot.edges),
-          setHistoryIndex(historyIndex + 1),
-          (historyIndexRef.current = historyIndex + 1),
-          setTimeout(() => {
-            isRestoringRef.current = false;
-          }, 600));
-      }
-    }, [history, historyIndex, setNodes, setEdges]),
+    $e = use_$e({ historyIndex, historyIndexRef, isRestoringRef, setEdges, setHistoryIndex, setNodes }).$e,
+    redo = use_redo({ historyIndex, historyIndexRef, isRestoringRef, setEdges, setHistoryIndex, setNodes }).redo,
     relinkMissingProjectAssets = useRelinkMissingAssets({ localforageModule, nodesRef, projectIdRef, saveCanvasState, setNodes }).relinkMissingProjectAssets,
     showProjectAssetCandidateDialog = useAssetCandidateDialog({}).showProjectAssetCandidateDialog,
     relinkMissingProjectAssetsFromFolder = useRelinkFromFolder({ localforageModule, nodesRef, projectIdRef, saveCanvasState, setNodes, showProjectAssetCandidateDialog }).relinkMissingProjectAssetsFromFolder;
@@ -1418,30 +1451,7 @@ function WanJuanAppCanvas({
 	        },
 	        [getNodes],
 	    ),
-	    resolveVideoRunModel = (nodeData = {}, nodeType = ``) => {
-	      let modelText =
-	          nodeType === `seedanceNode` ?
-	          nodeData.seedanceMode === `tianji` ?
-	          nodeData.tianjiSeedanceModel || nodeData.videoModel :
-	          nodeData.seedanceModel || nodeData.videoModel :
-	          nodeData.videoModel,
-	        currentModel =
-	          nodeType === `seedanceNode` ?
-	          nodeData.seedanceMode === `tianji` ?
-	          nodeData.tianjiSelectedModel || nodeData.selectedModel :
-	          nodeData.seedanceSelectedModel || nodeData.selectedModel :
-	          nodeData.selectedModel;
-	      return currentModel ?
-	        currentModel :
-	        modelText ?
-	        String(modelText)
-	        .split(
-	          `
-		`,
-	        )[0]
-	        .trim() :
-	        undefined;
-	    },
+	    resolveVideoRunModel = use_resolveVideoRunModel({}).resolveVideoRunModel,
 	    runNodeChain = useRunNodeChain({ generateImage, generateText, generateVideo, getEdges, getNodes, handleGenerateCustom, resolveVideoRunModel, showToast }).runNodeChain,
     layeredRunDownstream = useLayeredRun({ generateImage, generateText, generateVideo, getEdges, getNodes, handleGenerateCustom, layeredRunMaxConcurrency, resolveVideoRunModel, showToast }).layeredRunDownstream,
     createNodeAt = use_createNodeAt({ createImageNode, generateImage, generateText, generateVideo, handleAIAssist, handleCrop, handleGenerateCustom, handleSplit, handleSplitOne, handleTianjiPortraitReview, nodesRef, openImageEditor, openImagePreview, openVideoEditor, projectIdRef, setEdges, setMenuPosition, setNodes, stopGeneration }).createNodeAt,
@@ -1449,45 +1459,8 @@ function WanJuanAppCanvas({
     createImportedMediaNode = use_createImportedMediaNode({ createNodeAt, persistImportedMediaFile, setNodes }).createImportedMediaNode,
     handleFileChange = use_handleFileChange({ createImportedMediaNode, createNodeAt, menuPosition, screenToFlowPosition, wrapperRef }).handleFileChange,
     handlePaste = useHandlePaste({ createNodeAt, generateImage, generateText, handleCrop, menuPosition, openImagePreview, projectIdRef, screenToFlowPosition, setEdges, setMenuPosition, setNodes, showToast, wrapperRef }).handlePaste,
-    handleDeleteSelected = () => {
-      let item =
-        nodesRef.current.filter((node) => node.selected).length > 0 ?
-        nodesRef.current.filter((node) => node.selected).map((node) => node.id) :
-        menuPosition?.nodeId ?
-        [menuPosition.nodeId] :
-        [];
-      (item.forEach((selectedNodeId) => stopGeneration(selectedNodeId, {
-          silent: true
-        })),
-        item.length > 0 &&
-        (setNodes((prevNodes) => prevNodes.filter((node) => !item.includes(node.id))),
-          setEdges((prevEdges) =>
-            prevEdges.filter((edge) => !item.includes(edge.source) && !item.includes(edge.target)),
-          )),
-        setMenuPosition(null));
-    },
-    handleCopySelected = async () => {
-        let nodes2 = nodesRef.current,
-          edges2 = edgesRef.current;
-        if (nodes2.length > 0) {
-          let clipboardData = {
-            type: `canvas-clipboard-nodes`,
-            sourceProjectId: projectIdRef.current,
-            nodes: nodes2.map((node) => ({
-              ...node,
-              data: wanjuanCloneNodeDataForClipboard(node.data)
-            })),
-            edges: edges2,
-          };
-          try {
-            (await navigator.clipboard.writeText(JSON.stringify(clipboardData)),
-              showToast(`已复制画布中所有 ${nodes2.length} 个节点`));
-          } catch (error) {
-            (console.error(`Copy failed`, error), showToast(`复制失败，请检查浏览器权限`));
-          }
-        } else showToast(`画布为空`);
-        setMenuPosition(null);
-      },
+    handleDeleteSelected = use_handleDeleteSelected({ menuPosition, nodesRef, setEdges, setMenuPosition, setNodes, stopGeneration }).handleDeleteSelected,
+    handleCopySelected = use_handleCopySelected({ edgesRef, nodesRef, projectIdRef, setMenuPosition }).handleCopySelected,
       copySelectedNodes = use_copySelectedNodes({ edgesRef, menuPosition, nodesRef, projectIdRef, setMenuPosition }).copySelectedNodes,
         copyNodeImage = use_copyNodeImage({ menuPosition, nodes, setMenuPosition }).copyNodeImage,
           addGridSplitNode = use_addGridSplitNode({ handleSplit, handleSplitOne, menuPosition, nodes, setEdges, setMenuPosition, setNodes }).addGridSplitNode,
@@ -1519,45 +1492,9 @@ function WanJuanAppCanvas({
     ungroupNode = useUngroupNode({ setNodes, showToast }).ungroupNode;
 	  let wanjuanSelectedReferenceSourcesByTarget = useSelectedRefSources({ edges, nodes, useMemo }).wanjuanSelectedReferenceSourcesByTarget,
 		    wanjuanCanvasNodes = useCanvasNodes({ WanJuanComputeNodeRenderMode, nodes, useMemo, wanjuanSelectedReferenceSourcesByTarget, wanjuanViewport, wanjuanViewportSize }).wanjuanCanvasNodes;
-		  const getShortcutNodePosition = () => {
-		      let rect = wrapperRef.current?.getBoundingClientRect(),
-		        activeMenu =
-		        menuPosition &&
-		        (menuPosition.type === `canvas` || menuPosition.type === `connection`) ?
-		        menuPosition :
-		        null,
-		        anchor = activeMenu || lastCanvasMenuPositionRef.current;
-		      return rect && anchor ?
-		        screenToFlowPosition({
-		          x: rect.left + anchor.x,
-		          y: rect.top + anchor.y,
-		        }) :
-		        rect ?
-		        screenToFlowPosition({
-		          x: rect.left + rect.width / 2,
-		          y: rect.top + rect.height / 2,
-		        }) :
-		        {
-		          x: 0,
-		          y: 0
-		        };
-		    },
-		    addKeyboardNode = (nodeType, nodeData = {}) => {
-		      let activeMenu =
-		        menuPosition &&
-		        (menuPosition.type === `canvas` || menuPosition.type === `connection`) ?
-		        menuPosition :
-		        null;
-		      createNodeAt(nodeType, getShortcutNodePosition(), nodeData, activeMenu?.connection);
-		    },
-			    clipboardHasPastePayload = async () => {
-			      let text = await navigator.clipboard?.readText?.().catch(() => ``);
-			      if (text && text.trim()) return true;
-			      let items = await navigator.clipboard?.read?.().catch(() => []);
-			      return Array.isArray(items) && items.some((item) =>
-			        Array.from(item.types || []).some((type) => /^image\//i.test(type) || type === `text/plain`),
-			      );
-			    };
+		  const getShortcutNodePosition = use_getShortcutNodePosition({ lastCanvasMenuPositionRef, menuPosition, screenToFlowPosition, wrapperRef }).getShortcutNodePosition,
+		    addKeyboardNode = use_addKeyboardNode({ createNodeAt, getShortcutNodePosition, menuPosition }).addKeyboardNode,
+			    clipboardHasPastePayload = use_clipboardHasPastePayload({}).clipboardHasPastePayload;
 			  useWorkspaceTemplateEffect({ createNodeAt, getNodes, projectId, projectIdRef, screenToFlowPosition, showToast, wrapperRef });
 			  return (
 	    useSafeEffect18({ $e, addKeyboardNode, autoLayout, clipboardHasPastePayload, copySelectedNodes, groupSelectedNodes, handlePaste, menuPosition, nodesRef, redo, setEdges, setNodes, stopGeneration }),
@@ -2481,13 +2418,7 @@ Suno 音乐生成`,
         pageNotifications = unreadNotifications.filter((notification) => notification.display_type === `page`);
       return pageNotifications.length ? pageNotifications : unreadNotifications;
     },
-  dismissSystemNotificationDialog = (notification) => {
-      if (notification?.id) {
-        let nextIds = Array.from(new Set([...systemNotificationDismissedIds, notification.id]));
-        (setSystemNotificationDismissedIds(nextIds), WanJuanSaveDismissedAppNotificationIds(nextIds));
-      }
-      setSystemNotificationDialog(null);
-    },
+  dismissSystemNotificationDialog = use_dismissSystemNotificationDialog({ setSystemNotificationDialog, setSystemNotificationDismissedIds, systemNotificationDismissedIds }).dismissSystemNotificationDialog,
   refreshSystemNotifications = use_refreshSystemNotifications({ setSettingsNotificationChecking, setSystemNotificationError, setSystemNotifications, showToast2, systemNotificationFetchRef }).refreshSystemNotifications,
   openSystemNotificationPanel = async () => {
       (setSystemNotificationPanelOpen(true),
@@ -2542,18 +2473,7 @@ Suno 音乐生成`,
     },
   getCustomApiConfigCount = (configs = apiConfigs) =>
     (Array.isArray(configs) ? configs : []).filter((config) => !isJixinDefaultApiConfig(config)).length,
-  unlockAdvancedSettings = () => {
-      (setAdvancedSettingsUnlocked(true),
-        setSettingsNavUnlockClicks(0));
-      try {
-        localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
-        typeof chrome < `u` &&
-          chrome.storage?.local?.set?.({
-            advancedSettingsUnlocked: true,
-          });
-      } catch {}
-      showToast2(`高级设置已解锁`);
-    },
+  unlockAdvancedSettings = use_unlockAdvancedSettings({ setAdvancedSettingsUnlocked, setSettingsNavUnlockClicks, showToast2 }).unlockAdvancedSettings,
   handleSettingsNavClick = () => {
 	      setActiveView(`settings`);
 	      setSettingsNavUnlockClicks(0);
@@ -2563,56 +2483,13 @@ Suno 音乐生成`,
   nonModelSettingsSaveTimerRef = useRef(null),
   apiModelCloudSettingsSaveTimerRef = useRef(null),
   saveNonModelSettings = use_saveNonModelSettings({ agentConversations, agentItems, appLanguage, autoDownloadGeneratedResults, backupExportSelection, downloadDirectory, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, nonModelSettingsSaveTimerRef, performanceProfile, pollingInterval, presetPrompts, selectedAgentId, settingsHydratedRef, storageOptimizationEnabled, storageOptimizationPaused, themeMode }).saveNonModelSettings,
-  applyLitterboxUploadPreset = (ttl = `1h`) => {
-      let normalizedTtl = [`1h`, `12h`, `24h`, `72h`].includes(String(ttl || ``)) ? String(ttl) : `1h`,
-        nextConfig = {
-          endpoint: `https://litterbox.catbox.moe/resources/internals/api.php`,
-          fileField: `fileToUpload`,
-          fields: `reqtype=fileupload
-time=${normalizedTtl}`,
-          headers: ``,
-          resultPath: ``,
-        };
-      (setCustomPublicUploadConfig(nextConfig),
-        setSeedanceUploadMode(`custom`),
-        setCustomUploadConfigExpanded(true),
-        typeof chrome < `u` &&
-        chrome.storage?.local?.set?.({
-          customPublicUploadConfig: nextConfig,
-          seedanceUploadMode: `custom`,
-        }),
-        showToast2(`已应用 Litterbox 临时直链 ${normalizedTtl} 预设`));
-    },
+  applyLitterboxUploadPreset = use_applyLitterboxUploadPreset({ setCustomPublicUploadConfig, setCustomUploadConfigExpanded, setSeedanceUploadMode, showToast2 }).applyLitterboxUploadPreset,
   buildJixinDefaultResetPatch = use_buildJixinDefaultResetPatch({ WANJUAN_JIXIN_DOC_URL }).buildJixinDefaultResetPatch,
   applyJixinDefaultResetPatch = use_applyJixinDefaultResetPatch({ WANJUAN_JIXIN_DOC_URL, _e, setActiveProtocolConfigText, setActiveProtocolName, setActiveStoredGlobalConfigId, setApiConfigs, setAudioApiConfigId, setAudioApiKey, setAudioApiUrl, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setConfigButlerApiKey, setConfigButlerApiUrl, setConfigButlerBatchItems, setConfigButlerDocUrl, setConfigButlerMode, setConfigButlerModel, setConfigButlerProtocol, setConfigButlerRepairHistory, setConfigButlerResultText, setConfigButlerTargetApiConfigId, setConfigButlerTargetCategory, setImageApiConfigId, setImageApiKey, setImageApiUrl, setImageCompatResolutions, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setJixinModelScanNotice, setModelProtocolRegistry, setProtocolNamesText, setSeedanceDurations, setSeedanceEnableWebSearch, setSeedanceGenerateAudio, setSeedanceModel, setSeedanceRatios, setSeedanceResolutions, setSeedanceWatermark, setStoredGlobalConfigs, setTextApiConfigId, setTextApiKey, setTextApiUrl, setTextModelApiBindings, setTextModelProtocolBindings, setTianjiSeedanceModel, setTianjiSeedanceSettingsMode, setTongyiWanxiangDurations, setTongyiWanxiangEditModels, setTongyiWanxiangImageModels, setTongyiWanxiangRatios, setTongyiWanxiangReferenceImageModels, setTongyiWanxiangResolutions, setTongyiWanxiangTextModels, setTtsMusicModel, setVideoApiConfigId, setVideoApiKey, setVideoApiUrl, setVideoAspectRatios, setVideoDurations, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModelRequestProfilesText, setVideoModels, setVideoResolutions }).applyJixinDefaultResetPatch,
-  resetJixinDefaultConfiguration = () => {
-      let confirmed = window.confirm(
-        `恢复极鑫默认配置会清空当前统一 API、模型列表、模型绑定、协议配置、配置管家和即梦天玑授权信息，需要重新填写 Key。\n\n不会删除画布项目、资源库、智能体、工作空间、下载目录和人像素材库。\n\n确定继续吗？`,
-      );
-      if (!confirmed) return;
-      let resetPatch = buildJixinDefaultResetPatch();
-      apiModelCloudSettingsSaveTimerRef.current &&
-        clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
-      applyJixinDefaultResetPatch(resetPatch);
-      try {
-        window.localStorage?.removeItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY);
-      } catch {}
-      typeof chrome < `u` &&
-        chrome.storage?.local?.set?.(resetPatch, () => {
-          showToast2(`已恢复极鑫默认配置，请重新填写 Key`);
-        });
-    },
+  resetJixinDefaultConfiguration = use_resetJixinDefaultConfiguration({ apiModelCloudSettingsSaveTimerRef, applyJixinDefaultResetPatch, buildJixinDefaultResetPatch, showToast2 }).resetJixinDefaultConfiguration,
   saveApiModelCloudSettings = use_saveApiModelCloudSettings({ activeStoredGlobalConfigId, apiConfigs, apiModelCloudSettingsSaveTimerRef, audioApiConfigId, audioApiKey, audioApiUrl, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerApiKey, configButlerApiUrl, configButlerDocUrl, configButlerMode, configButlerModel, configButlerProtocol, configButlerTargetApiConfigId, configButlerTargetCategory, customPublicUploadConfig, imageApiConfigId, imageApiKey, imageApiUrl, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, imageModels, modelProtocolRegistry, qiniuConfig, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, settingsHydratedRef, storedGlobalConfigs, syncTianjiConfigFromJixinApi, textApiConfigId, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings, textModels, tianjiSeedanceModel, tianjiSeedanceSettingsMode, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, tosConfig, ttsMusicModel, videoApiConfigId, videoApiKey, videoApiUrl, videoAspectRatios, videoDurations, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfilesText, videoModels, videoResolutions }).saveApiModelCloudSettings;
   useTransitAudioEffect({ activeProjectId, activeView, isPluginEnv, localforageModule, setTransitResources, transitResources });
-  let persistSeedanceVirtualPortraits = (portraits) => {
-      let normalizedPortraits = wanjuanNormalizeSeedanceVirtualPortraits(portraits);
-      (setSeedanceVirtualPortraits(normalizedPortraits),
-        typeof chrome < `u` &&
-        chrome.storage?.local?.set({
-          seedanceVirtualPortraits: normalizedPortraits
-        }));
-      return normalizedPortraits;
-    },
+  let persistSeedanceVirtualPortraits = use_persistSeedanceVirtualPortraits({ setSeedanceVirtualPortraits }).persistSeedanceVirtualPortraits,
     resetSeedancePortraitForm = () => {
       (setSeedancePortraitEditingId(``),
         setSeedancePortraitForm({
@@ -2625,43 +2502,13 @@ time=${normalizedTtl}`,
         }));
     },
     saveSeedancePortraitForm = use_saveSeedancePortraitForm({ persistSeedanceVirtualPortraits, resetSeedancePortraitForm, seedancePortraitEditingId, seedancePortraitForm, seedanceVirtualPortraits, showToast2 }).saveSeedancePortraitForm,
-    editSeedancePortrait = (portrait) => {
-      (setSeedancePortraitEditingId(portrait.id),
-        setSeedancePortraitForm({
-          name: portrait.name || ``,
-          assetId: portrait.assetId || ``,
-          imageUrl: ``,
-          previewUrl: portrait.previewUrl || portrait.imageUrl || ``,
-          projectName: portrait.projectName || ``,
-          notes: portrait.notes || ``,
-        }),
-        setSeedancePortraitLibraryExpanded(true));
-    },
+    editSeedancePortrait = use_editSeedancePortrait({ setSeedancePortraitEditingId, setSeedancePortraitForm, setSeedancePortraitLibraryExpanded }).editSeedancePortrait,
     removeSeedancePortrait = (portraitId) => {
       persistSeedanceVirtualPortraits(seedanceVirtualPortraits.filter((portrait) => portrait.id !== portraitId));
       seedancePortraitEditingId === portraitId && resetSeedancePortraitForm();
       showToast2(`虚拟人像已删除`);
     },
-    handleSeedancePortraitFile = (event) => {
-      let file = event?.target?.files?.[0];
-      if (!file) return;
-      let reader = new FileReader();
-      reader.onload = async (event2) => {
-        let dataUrl = String(event2.target?.result || ``);
-        if (!dataUrl) return;
-        try {
-          dataUrl = await wanjuanPrepareSeedancePortraitPreview(dataUrl);
-        } catch (error) {
-          console.warn(`Seedance virtual portrait preview prepare failed`, error);
-        }
-        setSeedancePortraitForm((prevForm) => ({
-          ...prevForm,
-          previewUrl: dataUrl
-        }));
-      };
-      reader.readAsDataURL(file);
-      event.target.value = ``;
-    };
+    handleSeedancePortraitFile = use_handleSeedancePortraitFile({ setSeedancePortraitForm }).handleSeedancePortraitFile;
   let allAdvancedModelSettingsExpanded =
     configButlerExpanded &&
     textModelSettingsExpanded &&
@@ -2671,18 +2518,7 @@ time=${normalizedTtl}`,
     ttsMusicSettingsExpanded &&
     seedanceSettingsExpanded &&
     tongyiWanxiangSettingsExpanded,
-  setAllAdvancedModelSettings = (expanded2) => {
-      (
-        setConfigButlerExpanded(expanded2),
-        setTextModelSettingsExpanded(expanded2),
-        setImageModelSettingsExpanded(expanded2),
-        setVideoModelSettingsExpanded(expanded2),
-        setAudioModelSettingsExpanded(expanded2),
-        setTtsMusicSettingsExpanded(expanded2),
-        setSeedanceSettingsExpanded(expanded2),
-        setTongyiWanxiangSettingsExpanded(expanded2)
-      );
-	    },
+  setAllAdvancedModelSettings = use_setAllAdvancedModelSettings({ setAudioModelSettingsExpanded, setConfigButlerExpanded, setImageModelSettingsExpanded, setSeedanceSettingsExpanded, setTextModelSettingsExpanded, setTongyiWanxiangSettingsExpanded, setTtsMusicSettingsExpanded, setVideoModelSettingsExpanded }).setAllAdvancedModelSettings,
   applyTianjiSeedanceSettingsMode = use_applyTianjiSeedanceSettingsMode({ setTianjiSeedanceSettingsMode }).applyTianjiSeedanceSettingsMode,
   getDefaultButlerModel = () =>
     configButlerModel.trim() ||
@@ -2693,85 +2529,15 @@ time=${normalizedTtl}`,
     apiConfigs[0] ||
     null,
   repairXSeeVeoReferenceVideoBindings = use_repairXSeeVeoReferenceVideoBindings({}).repairXSeeVeoReferenceVideoBindings,
-  normalizeStoredGlobalConfigBackup = (backup = {}) => {
-      let config = backup && typeof backup == `object` ? cloneBackupValue(backup) : {};
-      Array.isArray(config.apiConfigs) && (config.apiConfigs = normalizeUnifiedApiConfigs(config.apiConfigs));
-      let configApiUrl = config.videoApiUrl || config.apiConfigs?.find((apiConfig) => apiConfig?.url)?.url || ``;
-      return repairXSeeVeoReferenceVideoBindings(config, configApiUrl);
-    },
-  normalizeStoredGlobalConfigs = (items) =>
-    Array.isArray(items) ?
-    items
-    .filter((item) => item && typeof item == `object` && item.id && item.name && item.config && typeof item.config == `object`)
-    .map((item) => ({
-      id: String(item.id),
-      name: String(item.name),
-      description: String(item.description || ``),
-      source: String(item.source || ``),
-      apiDocUrl: String(item.apiDocUrl || item.config?.apiDocUrl || item.config?.configButlerDocUrl || ``),
-      updatedAt: item.updatedAt || 0,
-      config: normalizeStoredGlobalConfigBackup(item.config),
-    })) :
-    [],
+  normalizeStoredGlobalConfigBackup = use_normalizeStoredGlobalConfigBackup({ repairXSeeVeoReferenceVideoBindings }).normalizeStoredGlobalConfigBackup,
+  normalizeStoredGlobalConfigs = use_normalizeStoredGlobalConfigs({ normalizeStoredGlobalConfigBackup }).normalizeStoredGlobalConfigs,
   captureCurrentGlobalConfig = use_captureCurrentGlobalConfig({ apiConfigs, audioApiConfigId, audioApiKey, audioApiUrl, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerDocUrl, configButlerMode, configButlerTargetApiConfigId, configButlerTargetCategory, imageApiConfigId, imageApiKey, imageApiUrl, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, imageModels, modelProtocolRegistry, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceVirtualPortraits, seedanceWatermark, textApiConfigId, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings, textModels, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, ttsMusicModel, videoApiConfigId, videoApiKey, videoApiUrl, videoAspectRatios, videoDurations, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfilesText, videoModels, videoResolutions }).captureCurrentGlobalConfig,
-  persistStoredGlobalConfigs = (configs, activeConfigId = activeStoredGlobalConfigId) => {
-      (setStoredGlobalConfigs(configs),
-        setActiveStoredGlobalConfigId(activeConfigId || ``),
-        typeof chrome < `u` && chrome.storage?.local?.set({
-          storedGlobalConfigs: configs,
-          activeStoredGlobalConfigId: activeConfigId || ``,
-        }));
-    },
-  mergeStoredGlobalApiConfigs = (value) => {
-      let backupList = Array.isArray(value) ? cloneBackupValue(normalizeUnifiedApiConfigs(value)) : [],
-        firstBackup = backupList[0],
-        allBackups = Array.isArray(apiConfigs) ? cloneBackupValue(normalizeUnifiedApiConfigs(apiConfigs)) : [];
-      if (!firstBackup) return allBackups;
-      return [
-        firstBackup,
-        ...allBackups.slice(1).filter((backup) => backup && backup.id !== firstBackup.id),
-      ];
-    },
+  persistStoredGlobalConfigs = use_persistStoredGlobalConfigs({ activeStoredGlobalConfigId, setActiveStoredGlobalConfigId, setStoredGlobalConfigs }).persistStoredGlobalConfigs,
+  mergeStoredGlobalApiConfigs = use_mergeStoredGlobalApiConfigs({ apiConfigs }).mergeStoredGlobalApiConfigs,
   applyStoredGlobalConfig = use_applyStoredGlobalConfig({ _e, configButlerApiKey, configButlerApiUrl, configButlerModel, configButlerProtocol, mergeStoredGlobalApiConfigs, normalizeStoredGlobalConfigBackup, setActiveStoredGlobalConfigId, setApiConfigs, setAudioApiConfigId, setAudioApiKey, setAudioApiUrl, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setConfigButlerDocUrl, setConfigButlerMode, setConfigButlerTargetApiConfigId, setConfigButlerTargetCategory, setImageApiConfigId, setImageApiKey, setImageApiUrl, setImageCompatResolutions, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setModelProtocolRegistry, setSeedanceDurations, setSeedanceEnableWebSearch, setSeedanceGenerateAudio, setSeedanceModel, setSeedanceRatios, setSeedanceResolutions, setSeedanceVirtualPortraits, setSeedanceWatermark, setTextApiConfigId, setTextApiKey, setTextApiUrl, setTextModelApiBindings, setTextModelProtocolBindings, setTianjiSeedanceModel, setTongyiWanxiangDurations, setTongyiWanxiangEditModels, setTongyiWanxiangImageModels, setTongyiWanxiangRatios, setTongyiWanxiangReferenceImageModels, setTongyiWanxiangResolutions, setTongyiWanxiangTextModels, setTtsMusicModel, setVideoApiConfigId, setVideoApiKey, setVideoApiUrl, setVideoAspectRatios, setVideoDurations, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModelRequestProfilesText, setVideoModels, setVideoResolutions, showToast2, storedGlobalConfigs }).applyStoredGlobalConfig,
-  saveCurrentToStoredGlobalConfig = (configId) => {
-      let targetConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
-      if (!targetConfig) {
-        showToast2(`请选择一个已存储配置`);
-        return;
-      }
-      let updatedConfigs = (storedGlobalConfigs || []).map((config) =>
-        config.id === configId ? {
-          ...config,
-          updatedAt: Date.now(),
-          config: captureCurrentGlobalConfig(),
-        } : config,
-      );
-      persistStoredGlobalConfigs(updatedConfigs, configId);
-      showToast2(`已更新 ${targetConfig.name}`);
-    },
+  saveCurrentToStoredGlobalConfig = use_saveCurrentToStoredGlobalConfig({ captureCurrentGlobalConfig, persistStoredGlobalConfigs, showToast2, storedGlobalConfigs }).saveCurrentToStoredGlobalConfig,
   saveStoredGlobalConfigApiDocUrl = use_saveStoredGlobalConfigApiDocUrl({ persistStoredGlobalConfigs, setConfigButlerDocUrl, showToast2, storedGlobalConfigs }).saveStoredGlobalConfigApiDocUrl,
-  saveCurrentAsStoredGlobalConfig = async () => {
-      let configName = typeof window < `u` && window.wanjuanDesktop?.showInputDialog ? await window.wanjuanDesktop.showInputDialog({
-        title: `保存全局模型配置`,
-        message: `给这套全局模型配置命名`,
-        defaultValue: `新的全局配置`,
-      }) : ``;
-      configName = String(configName || ``).trim();
-      if (!configName) return;
-      let newConfigId = `global-config-${Date.now()}`,
-        nextConfigs = [
-          ...(storedGlobalConfigs || []),
-          {
-            id: newConfigId,
-            name: configName,
-            description: `手动保存`,
-            updatedAt: Date.now(),
-            config: captureCurrentGlobalConfig(),
-          },
-        ];
-      persistStoredGlobalConfigs(nextConfigs, newConfigId);
-      showToast2(`已保存 ${configName}`);
-    },
+  saveCurrentAsStoredGlobalConfig = use_saveCurrentAsStoredGlobalConfig({ captureCurrentGlobalConfig, persistStoredGlobalConfigs, showToast2, storedGlobalConfigs }).saveCurrentAsStoredGlobalConfig,
   findExistingProtocolName = (protocolConfig) => {
       let serialized = JSON.stringify(protocolConfig || {});
       return (
@@ -2780,25 +2546,9 @@ time=${normalizedTtl}`,
         ) || ``
       );
     },
-  ensureUniqueProtocolName = (baseName) => {
-      let protocolName = String(baseName || ``).trim() || `自定义协议`;
-      if (!modelProtocolRegistry?.[protocolName]) return protocolName;
-      let suffix = 2,
-        candidateName = `${protocolName}（${suffix}）`;
-      for (; modelProtocolRegistry?.[candidateName];)((suffix += 1), (candidateName = `${protocolName}（${suffix}）`));
-      return candidateName;
-    },
+  ensureUniqueProtocolName = use_ensureUniqueProtocolName({ modelProtocolRegistry }).ensureUniqueProtocolName,
   callConfigButlerModel = useCallConfigButlerModel({ configButlerApiKey, configButlerApiUrl, configButlerProtocol, getDefaultButlerModel, useRequestGemini }).callConfigButlerModel,
-  readChromeStorage = (keys) =>
-	        new Promise((resolve) => {
-	          try {
-	            typeof chrome < `u` && chrome.storage?.local ?
-	              chrome.storage.local.get(keys, (result) => resolve(result || {})) :
-	              resolve({});
-	          } catch {
-	            resolve({});
-	          }
-	        }),
+  readChromeStorage = use_readChromeStorage({}).readChromeStorage,
   writeChromeStorage = (items) => {
 	          try {
 	            typeof chrome < `u` && chrome.storage?.local?.set?.(items);
@@ -2922,49 +2672,12 @@ time=${normalizedTtl}`,
 	    useLateEffect4766({ apiModelCloudSettingsSaveTimerRef, nonModelSettingsSaveTimerRef }));
   let saveUsers = use_saveUsers({ isPluginEnv, setUsers }).saveUsers,
     restoreCookies = use_restoreCookies({ isPluginEnv }).restoreCookies,
-      openAccountSite = async (account) => {
-          if ((await restoreCookies(account), isPluginEnv && account.siteUrl)) {
-            let [activeTab] = await chrome.tabs.query({
-              active: true,
-              currentWindow: true
-            });
-            activeTab && chrome.tabs.update(activeTab.id, {
-              url: account.siteUrl
-            });
-          }
-          setSelectedUser(account);
-        },
+      openAccountSite = use_openAccountSite({ isPluginEnv, restoreCookies, setSelectedUser }).openAccountSite,
         addAccount = use_addAccount({ accountNameInput, cookieInput, currentLimits, currentPlatform, editingAccountId, isPluginEnv, saveUsers, setAccountNameInput, setCookieInput, setEditingAccountId, setIsAccountBusy, setIsAddingAccount, users }).addAccount,
           [pendingDeleteId, setPendingDeleteId] = useState(null),
-          handleDeleteClick = (accountId, event) => {
-            (event.stopPropagation(),
-              pendingDeleteId === accountId ?
-              (saveUsers(users.filter((account) => account.id !== accountId)), selectedUser?.id === accountId && setSelectedUser(null), setPendingDeleteId(null)) :
-              (setPendingDeleteId(accountId), setTimeout(() => setPendingDeleteId(null), 3e3)));
-          },
-          toggleFavorite = async (resourceId) => {
-              let updatedResources = transitResources.map((resource) =>
-                resource.id === resourceId ? {
-                  ...resource,
-                  isFavorite: !resource.isFavorite
-                } : resource,
-              );
-              (setTransitResources(updatedResources),
-                await localforageModule.default.setItem(`transitResources`, updatedResources),
-                isPluginEnv && chrome.storage.local.set({
-                  transitResources: updatedResources
-                }));
-            },
-            handleClearUnfavorited = async () => {
-              if (confirm(`确定清空所有未收藏的资源吗？（收藏的资源将保留）`)) {
-                let favoritedResources = transitResources.filter((resource) => resource.isFavorite);
-                (setTransitResources(favoritedResources),
-                  await localforageModule.default.setItem(`transitResources`, favoritedResources),
-                  isPluginEnv && chrome.storage.local.set({
-                    transitResources: favoritedResources
-                  }));
-              }
-            },
+          handleDeleteClick = use_handleDeleteClick({ pendingDeleteId, saveUsers, selectedUser, setPendingDeleteId, setSelectedUser, users }).handleDeleteClick,
+          toggleFavorite = use_toggleFavorite({ isPluginEnv, setTransitResources, transitResources }).toggleFavorite,
+            handleClearUnfavorited = use_handleClearUnfavorited({ isPluginEnv, setTransitResources, transitResources }).handleClearUnfavorited,
             probeResourceAlive = use_probeResourceAlive({}).probeResourceAlive,
             handleCleanInvalidResources = use_handleCleanInvalidResources({ isPluginEnv, probeResourceAlive, resourceCleanupBusy, setCurrentPage, setResourceCleanupBusy, setTransitResources, showToast2, transitResources }).handleCleanInvalidResources;
   let filteredTransitResources = transitResources.filter((resource) => wanjuanResourceMatchesFilter(resource, resourceTypeFilter, resourceSourceFilter, resourceFavoriteOnly)),
@@ -3006,150 +2719,27 @@ time=${normalizedTtl}`,
       }
     );
   }, [activeView, transitResources]);
-	  let addResource = (url, resourceType, source = `pasted`) => {
-	      let newResource = {
-        id: Date.now().toString(),
-        url: url,
-        type: resourceType,
-        timestamp: Date.now(),
-        pageUrl: `clipboard`,
-        pageTitle: source === `generated` ? `AI生成内容` : `来自剪贴板`,
-        source: source,
-      };
-      setTransitResources((prevResources) => {
-        let updatedResources = [newResource, ...prevResources];
-        return (
-          localforageModule.default.setItem(`transitResources`, updatedResources),
-          isPluginEnv && chrome.storage.local.set({
-            transitResources: updatedResources
-          }),
-          updatedResources
-        );
-	      });
-	    };
+	  let addResource = use_addResource({ isPluginEnv, setTransitResources }).addResource;
 	  useSafeEffect46({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
 	  useSafeEffect47({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
   let persistTransitResource = use_persistTransitResource({}).persistTransitResource;
   let addTransitResource = use_addTransitResource({ isPluginEnv, persistTransitResource, setEdges, setTransitResources }).addTransitResource;
   let sendToPlugin = use_sendToPlugin({ isPluginEnv, showToast2 }).sendToPlugin,
   copyResource = use_copyResource({ showToast2 }).copyResource,
-  handleRemoveTransitResource = (resourceId) => {
-          setTransitResources((resources) => {
-            let updatedResources = resources.filter((resource) => resource.id !== resourceId);
-            return (
-              localforageModule.default.setItem(`transitResources`, updatedResources),
-              isPluginEnv && chrome.storage.local.set({
-                transitResources: updatedResources
-              }),
-              updatedResources
-            );
-          });
-        },
+  handleRemoveTransitResource = use_handleRemoveTransitResource({ isPluginEnv, setTransitResources }).handleRemoveTransitResource,
   handleCreateProject = use_handleCreateProject({ isPluginEnv, newProjectGroupId, newProjectName, projectGroups, projects, setActiveProjectId, setNewProjectGroupId, setNewProjectIds, setNewProjectName, setProjectMenuOpen, setProjects }).handleCreateProject,
-  persistProjectGroups = (groups, projects2 = projects) => {
-          let normalizedGroups = normalizeProjectGroups(groups);
-          (setProjectGroups(normalizedGroups),
-            isPluginEnv && chrome.storage.local.set({
-              projects: projects2,
-              projectGroups: normalizedGroups
-            }));
-          return normalizedGroups;
-        },
-  createProjectGroup = () => {
-          let groupName = String(projectGroupDraft || ``).trim();
-          if (!groupName) {
-            showToast2(`分组名称不能为空`);
-            return;
-          }
-          let existingGroups = normalizeProjectGroups(projectGroups);
-          if (existingGroups.some((group) => group.name === groupName)) {
-            showToast2(`已存在同名分组`);
-            return;
-          }
-          let updatedGroups = [...existingGroups, {
-            id: `group-${Date.now()}`,
-            name: groupName,
-            collapsed: false,
-            order: existingGroups.length
-          }];
-          (persistProjectGroups(updatedGroups), setProjectGroupDraft(``), showToast2(`分组已创建`));
-        },
-  renameProjectGroup = (groupId) => {
-          let normalizedGroups = normalizeProjectGroups(projectGroups),
-            targetGroup = normalizedGroups.find((group) => group.id === groupId);
-          if (!targetGroup) return;
-          (setEditingProjectGroupId(groupId), setEditingProjectGroupName(targetGroup.name || ``));
-        },
-  confirmProjectGroupRename = () => {
-          if (!editingProjectGroupId) return;
-          let normalizedGroups = normalizeProjectGroups(projectGroups),
-            trimmedGroupName = String(editingProjectGroupName || ``).trim();
-          if (!trimmedGroupName) {
-            showToast2(`分组名称不能为空`);
-            return;
-          }
-          (persistProjectGroups(normalizedGroups.map((group) => group.id === editingProjectGroupId ? {
-            ...group,
-            name: trimmedGroupName
-          } : group)),
-            setEditingProjectGroupId(null),
-            setEditingProjectGroupName(``),
-            showToast2(`分组已重命名`));
-        },
-  deleteProjectGroup = (groupId) => {
-          let normalizedGroups = normalizeProjectGroups(projectGroups),
-            targetGroup = normalizedGroups.find((group) => group.id === groupId);
-          if (!targetGroup) return;
-          if (!confirm(`删除分组“${targetGroup.name}”？分组内项目会移动到未分组。`)) return;
-          let updatedProjects = projects.map((project) => project.groupId === groupId ? {
-            ...project,
-            groupId: ``
-          } : project),
-            updatedGroups = normalizedGroups.filter((group) => group.id !== groupId).map((group, index) => ({
-              ...group,
-              order: index
-            }));
-          (setProjects(updatedProjects),
-            persistProjectGroups(updatedGroups, updatedProjects),
-            showToast2(`分组已删除`));
-        },
-  moveProjectToGroup = (projectId, groupId) => {
-          let updatedProjects = projects.map((project) => project.id === projectId ? {
-            ...project,
-            groupId: groupId || ``
-          } : project);
-          (setProjects(updatedProjects),
-            isPluginEnv && chrome.storage.local.set({
-              projects: updatedProjects,
-              projectGroups: normalizeProjectGroups(projectGroups)
-            }));
-        },
+  persistProjectGroups = use_persistProjectGroups({ isPluginEnv, projects, setProjectGroups }).persistProjectGroups,
+  createProjectGroup = use_createProjectGroup({ persistProjectGroups, projectGroupDraft, projectGroups, setProjectGroupDraft, showToast2 }).createProjectGroup,
+  renameProjectGroup = use_renameProjectGroup({ projectGroups, setEditingProjectGroupId, setEditingProjectGroupName }).renameProjectGroup,
+  confirmProjectGroupRename = use_confirmProjectGroupRename({ editingProjectGroupId, editingProjectGroupName, persistProjectGroups, projectGroups, setEditingProjectGroupId, setEditingProjectGroupName, showToast2 }).confirmProjectGroupRename,
+  deleteProjectGroup = use_deleteProjectGroup({ persistProjectGroups, projectGroups, projects, setProjects, showToast2 }).deleteProjectGroup,
+  moveProjectToGroup = use_moveProjectToGroup({ isPluginEnv, projectGroups, projects, setProjects }).moveProjectToGroup,
   VtRenameProject = (projectId) => {
           let project = projects.find((project2) => project2.id === projectId);
           if (!project) return;
           (setRenameProjectId(projectId), setRenameProjectName(project.name || ``));
         },
-  ConfirmRenameProject = () => {
-          if (!renameProjectId) return;
-          let trimmedName = renameProjectName.trim();
-          if (!trimmedName) {
-            showToast2(`项目名称不能为空`);
-            return;
-          }
-          let updatedProjects = projects.map((project) =>
-            project.id === renameProjectId ? {
-              ...project,
-              name: trimmedName
-            } : project,
-          );
-          (setProjects(updatedProjects),
-            isPluginEnv && chrome.storage.local.set({
-              projects: updatedProjects
-            }),
-            setRenameProjectId(null),
-            setRenameProjectName(``),
-            showToast2(`项目名称已更新`));
-        },
+  ConfirmRenameProject = use_ConfirmRenameProject({ isPluginEnv, projects, renameProjectId, renameProjectName, setProjects, setRenameProjectId, setRenameProjectName, showToast2 }).ConfirmRenameProject,
   handleDeleteProject = (projectId) => {
           if (projects.length <= 1) {
             showToast2(`至少保留一个项目`);
@@ -3218,19 +2808,7 @@ time=${normalizedTtl}`,
           authorization: `需要授权`,
           failed: `迁移失败`,
         },
-  persistProjectsWithStorageState = (projectId, storageStatus, storageDetail = ``) => {
-          let updatedProjects = projects.map((project) => project.id === projectId ? {
-            ...project,
-            storageStatus: storageStatus,
-            storageDetail: storageDetail,
-            storageUpdatedAt: Date.now(),
-          } : project);
-          (setProjects(updatedProjects),
-            isPluginEnv && chrome.storage.local.set({
-              projects: updatedProjects
-            }));
-          return updatedProjects;
-        },
+  persistProjectsWithStorageState = use_persistProjectsWithStorageState({ isPluginEnv, projects, setProjects }).persistProjectsWithStorageState,
   refreshStorageOptimizationStatus = async () => {
           let result = await window.wanjuanDesktop?.getStorageOptimizationStatus?.({
             directory: downloadDirectory
@@ -3319,33 +2897,13 @@ time=${normalizedTtl}`,
   enableStorageOptimization = use_enableStorageOptimization({ activeProjectId, projects, refreshStorageOptimizationStatus, setProjects, setStorageOptimizationEnabled, setStorageOptimizationLastResult, setStorageOptimizationPaused, showToast2 }).enableStorageOptimization,
   scanStorageOptimization = use_scanStorageOptimization({ buildCompleteStorageReferenceIndex, downloadDirectory, refreshStorageOptimizationStatus, setStorageOptimizationBusy, setStorageOptimizationLastResult, showToast2 }).scanStorageOptimization,
   cleanStorageOptimization = use_cleanStorageOptimization({ buildCompleteStorageReferenceIndex, downloadDirectory, refreshStorageOptimizationStatus, setStorageOptimizationBusy, setStorageOptimizationLastResult, showToast2 }).cleanStorageOptimization,
-  restoreStorageOptimizationTrash = async () => {
-          let result = await window.wanjuanDesktop?.restoreStorageTrash?.({
-            directory: downloadDirectory
-          });
-          setStorageOptimizationLastResult(result?.ok ? `已恢复 ${result.restoredCount} 个回收区文件` : `恢复失败`);
-          await refreshStorageOptimizationStatus();
-        },
-  purgeStorageOptimizationTrash = async () => {
-          if (!confirm(`永久删除回收区内超过 30 天的文件？此操作无法撤销。`)) return;
-          let result = await window.wanjuanDesktop?.purgeStorageTrash?.({
-            directory: downloadDirectory,
-            olderThanDays: 30,
-            confirm: true,
-          });
-          setStorageOptimizationLastResult(result?.ok ? `已永久删除 ${result.purgedFiles} 个过期文件` : `永久删除失败`);
-          await refreshStorageOptimizationStatus();
-        },
+  restoreStorageOptimizationTrash = use_restoreStorageOptimizationTrash({ downloadDirectory, refreshStorageOptimizationStatus, setStorageOptimizationLastResult }).restoreStorageOptimizationTrash,
+  purgeStorageOptimizationTrash = use_purgeStorageOptimizationTrash({ downloadDirectory, refreshStorageOptimizationStatus, setStorageOptimizationLastResult }).purgeStorageOptimizationTrash,
   showStorageOptimizationDetails = () => {
           let lines = projects.map((project) => `${project.name}：${projectStorageLabel(project)}${project.storageDetail ? ` · ${project.storageDetail}` : ``}`);
           alert(`存储优化详细记录\n\n${lines.join(`\n`) || `暂无项目记录`}\n\n最近结果：${storageOptimizationLastResult || `暂无`}`);
         },
-  manageStorageOptimizationTrash = async () => {
-          let result = await window.wanjuanDesktop?.listStorageTrash?.({
-            directory: downloadDirectory
-          });
-          alert(result?.ok ? `回收区共有 ${result.totalFiles} 个文件，占用 ${formatStorageBytes(result.totalBytes)}。\n\n可使用“恢复回收区”恢复全部文件，或永久删除超过 30 天的文件。` : `无法读取回收区：${result?.error || `未知错误`}`);
-        },
+  manageStorageOptimizationTrash = use_manageStorageOptimizationTrash({ downloadDirectory }).manageStorageOptimizationTrash,
   projectStorageLabel = (project) => storageStatusLabels[project?.storageStatus || `unoptimized`] || `未优化`,
   projectGroupList = normalizeProjectGroups(projectGroups),
   projectGroupIds = new Set(projectGroupList.map((group) => group.id)),
@@ -3363,25 +2921,8 @@ time=${normalizedTtl}`,
           ...group,
           projects: group.projects.filter(projectMatchesGroupSearch)
         })),
-  addCustomNodeTemplate = (template) => {
-          template.id ||= Date.now().toString();
-          let updatedTemplates = [...edges, template];
-          (setEdges(updatedTemplates),
-            isPluginEnv && chrome.storage.local.set({
-              customNodeTemplates: updatedTemplates
-            }),
-            showToast2(`已保存为自定义节点`));
-        },
-  deleteCustomNodeTemplate = (templateId) => {
-          if (confirm(`确定要删除这个自定义节点模板吗？`)) {
-            let updatedTemplates = edges.filter((template) => template.id !== templateId);
-            (setEdges(updatedTemplates),
-              isPluginEnv && chrome.storage.local.set({
-                customNodeTemplates: updatedTemplates
-              }),
-              showToast2(`已删除自定义节点`));
-          }
-        },
+  addCustomNodeTemplate = use_addCustomNodeTemplate({ edges, isPluginEnv, setEdges, showToast2 }).addCustomNodeTemplate,
+  deleteCustomNodeTemplate = use_deleteCustomNodeTemplate({ edges, isPluginEnv, setEdges, showToast2 }).deleteCustomNodeTemplate,
   agentModelOptions = textModels
         .split(/\r?\n/)
         .map((line) => line.trim())
@@ -3397,47 +2938,13 @@ time=${normalizedTtl}`,
         agentItems.find((agent) => agent.id === selectedAgentId) || agentItems[0] || null,
   selectedAgentMessages = agentConversations[selectedAgentId] || [],
   agentMessagesAutoScrollEffect = useLateEffect5880({ agentMessagesScrollRef, selectedAgentId, selectedAgentMessages }),
-  updateSelectedAgent = (updates) => {
-          selectedAgent &&
-            setAgentItems((agents) =>
-              agents.map((agent) =>
-                agent.id === selectedAgent.id ?
-                {
-                  ...agent,
-                  ...updates,
-                  updatedAt: Date.now()
-                } :
-                agent,
-              ),
-            );
-        },
+  updateSelectedAgent = use_updateSelectedAgent({ selectedAgent, setAgentItems }).updateSelectedAgent,
   normalizeMem0BaseUrl = (url) =>
         String(url || ``)
         .trim()
         .replace(/\/+$/, ``),
-  normalizeMem0MemoryText = (value) => {
-          if (!value) return ``;
-          if (typeof value == `string`) return value.trim();
-          if (typeof value?.memory == `string`) return value.memory.trim();
-          if (typeof value?.text == `string`) return value.text.trim();
-          if (typeof value?.content == `string`) return value.content.trim();
-          if (typeof value?.data?.memory == `string`) return value.data.memory.trim();
-          return ``;
-        },
-  extractMem0Results = (data) => {
-          let results = Array.isArray(data) ?
-            data :
-            Array.isArray(data?.results) ?
-            data.results :
-            Array.isArray(data?.memories) ?
-            data.memories :
-            Array.isArray(data?.data?.results) ?
-            data.data.results :
-            Array.isArray(data?.data?.memories) ?
-            data.data.memories :
-            [];
-          return results.map(normalizeMem0MemoryText).filter(Boolean);
-        },
+  normalizeMem0MemoryText = use_normalizeMem0MemoryText({}).normalizeMem0MemoryText,
+  extractMem0Results = use_extractMem0Results({ normalizeMem0MemoryText }).extractMem0Results,
   searchAgentLongTermMemory = use_searchAgentLongTermMemory({ extractMem0Results, normalizeMem0BaseUrl }).searchAgentLongTermMemory,
   storeAgentLongTermMemory = use_storeAgentLongTermMemory({ normalizeMem0BaseUrl }).storeAgentLongTermMemory,
   resolvedAgentTheme =
@@ -3506,15 +3013,7 @@ time=${normalizedTtl}`,
             `0 18px 50px rgba(0,0,0,0.58)`,
         },
   importAgentKnowledgeFile = use_importAgentKnowledgeFile({ selectedAgent, showToast2, updateSelectedAgent }).importAgentKnowledgeFile,
-  removeAgentKnowledgeFile = (fileId) => {
-            if (!selectedAgent) return;
-            updateSelectedAgent({
-                knowledgeFiles: (selectedAgent.knowledgeFiles || []).filter(
-                  (knowledgeFile) => knowledgeFile.id !== fileId,
-                ),
-              }),
-              showToast2(`已移除知识文件`);
-          },
+  removeAgentKnowledgeFile = use_removeAgentKnowledgeFile({ selectedAgent, showToast2, updateSelectedAgent }).removeAgentKnowledgeFile,
   addAgentReferenceFile = () => {
 	            agentAttachmentInputRef.current?.click();
 	          },
@@ -3673,48 +3172,12 @@ time=${normalizedTtl}`,
 	              ],
 	            }, attachment.id);
 	          },
-  removeAgentAttachment = (attachmentId) => {
-	            setAgentAttachments((attachments) => {
-	              let targetAttachment = attachments.find((attachment) => attachment.id === attachmentId);
-	              return targetAttachment && releaseAgentAttachment(targetAttachment), attachments.filter((attachment) => attachment.id !== attachmentId);
-            });
-          },
+  removeAgentAttachment = use_removeAgentAttachment({ setAgentAttachments }).removeAgentAttachment,
   handleAgentReferenceSelection = use_handleAgentReferenceSelection({ setAgentAttachments, showToast2 }).handleAgentReferenceSelection,
   createAgent = use_createAgent({ agentModelOptions, setAgentConversations, setAgentItems, setSelectedAgentId, showToast2, textApiConfigId, textModelApiBindings, textModels }).createAgent,
   duplicateSelectedAgent = use_duplicateSelectedAgent({ selectedAgent, setAgentConversations, setAgentItems, setSelectedAgentId, showToast2 }).duplicateSelectedAgent,
-  deleteSelectedAgent = () => {
-            if (!selectedAgent) return;
-            if (agentItems.length <= 1) {
-              showToast2(`至少保留一个智能体`);
-              return;
-            }
-            if (!confirm(`确定删除当前智能体吗？`)) return;
-            let remainingAgents = agentItems.filter((agent) => agent.id !== selectedAgent.id),
-              nextAgentId = remainingAgents[0]?.id || ``;
-            (setAgentItems(remainingAgents),
-              setSelectedAgentId(nextAgentId),
-              setAgentConversations((prevConversations) => {
-                let updatedConversations = {
-                  ...prevConversations
-                };
-                return delete updatedConversations[selectedAgent.id], updatedConversations;
-              }),
-              showToast2(`已删除智能体`));
-          },
-  clearSelectedAgentConversation = () => {
-            if (!selectedAgent) return;
-            let conversation = agentConversations[selectedAgent.id] || [];
-            if (conversation.length === 0) {
-              showToast2(`当前没有聊天记录`);
-              return;
-            }
-            if (!confirm(`确定清空当前智能体的聊天记录吗？`)) return;
-            (setAgentConversations((prevConversations) => ({
-                ...prevConversations,
-                [selectedAgent.id]: [],
-              })),
-              showToast2(`已清空聊天记录`));
-          },
+  deleteSelectedAgent = use_deleteSelectedAgent({ agentItems, selectedAgent, setAgentConversations, setAgentItems, setSelectedAgentId, showToast2 }).deleteSelectedAgent,
+  clearSelectedAgentConversation = use_clearSelectedAgentConversation({ agentConversations, selectedAgent, setAgentConversations, showToast2 }).clearSelectedAgentConversation,
   sendAgentMessage = use_sendAgentMessage({ agentAttachments, agentComposer, agentConversations, agentModelOptions, apiConfigs, modelProtocolRegistry, searchAgentLongTermMemory, selectedAgent, setAgentAttachments, setAgentComposer, setAgentConversations, showToast2, storeAgentLongTermMemory, textApiConfigId, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings }).sendAgentMessage,
   canManuallyRefreshGlobalTask = (task) => {
 		              return !!task && [`running`, `pending`, `failed`, `completed`].includes(task.status);
@@ -3758,17 +3221,7 @@ time=${normalizedTtl}`,
 		            },
   applyConfigButlerManualProtocolFix = use_applyConfigButlerManualProtocolFix({ applyConfigButlerProtocolRepair, configButlerErrorAssistant, configButlerManualProtocolName, configButlerManualProtocolText, getConfigButlerRepairContext, showToast2 }).applyConfigButlerManualProtocolFix,
   rollbackConfigButlerRepair = use_rollbackConfigButlerRepair({ configButlerRepairHistory, setAudioModelProtocolBindings, setConfigButlerRepairHistory, setImageModelProtocolBindings, setModelProtocolRegistry, setStoredGlobalConfigs, setTextModelProtocolBindings, setVideoModelProtocolBindings, showToast2, storedGlobalConfigs }).rollbackConfigButlerRepair,
-  updateGlobalTasks = (updater) => {
-		              setGlobalTasks((prevTasks) => {
-		                let nextTasks = compactGlobalTasks(updater(prevTasks));
-			                // 防抖持久化：不再每次更新都同步写 chrome.storage（原写在 updater 内→StrictMode 双写且无节流，自动刷新每 tick 触发）
-			                clearTimeout(globalThis.__wanjuanGlobalTasksPersistTimer);
-			                globalThis.__wanjuanGlobalTasksPersistTimer = setTimeout(() => {
-			                  isPluginEnv && chrome.storage.local.set({ globalTasks: nextTasks });
-			                }, 400);
-			                return nextTasks;
-              });
-            },
+  updateGlobalTasks = use_updateGlobalTasks({ isPluginEnv, setGlobalTasks }).updateGlobalTasks,
   configButlerDiagnosticsTestHook = (() => {
               try {
                 typeof window < `u` &&
@@ -3797,18 +3250,7 @@ time=${normalizedTtl}`,
                   [key]: value
                 }), setPresetPrompts(nextPresets));
               },
-  handleAddPreset = () => {
-                if (false && presetPrompts.length >= currentLimits.presets) {
-                  showToast2(`当前${currentLimits.name}最多支持 ${currentLimits.presets} 个预设，请升级会员`);
-                  return;
-                }
-                setPresetPrompts([...presetPrompts, {
-                  title: `新预设`,
-                  prompt: ``,
-                  type: `all`,
-                  enabled: true
-                }]);
-              },
+  handleAddPreset = use_handleAddPreset({ currentLimits, presetPrompts, setPresetPrompts, showToast2 }).handleAddPreset,
   handleRemovePreset = (index) => {
                 setPresetPrompts(presetPrompts.filter((promptRule, index2) => index2 !== index));
               },
@@ -3845,47 +3287,12 @@ time=${normalizedTtl}`,
   PROJECT_ASSET_STORAGE_PREFIX = `project-asset-v2-`,
   EXTERNAL_PROJECT_ASSET_ORIGINS = new Set([`external-upload`, `uploaded`, `user-upload`, `user-media`, `local-file`, `relinked`]),
   GENERATED_PROJECT_ASSET_ORIGIN_PATTERN = /(generated|video-editor|ai|seedream|seedance|task|tts|music)/i,
-  splitChromeStorageModules = (storageData) => {
-      let settings = {},
-        projects2 = {},
-        agents = {};
-      for (let [key, value] of Object.entries(storageData || {}))
-        PROJECT_STORAGE_KEYS.has(key) ?
-        (projects2[key] = value) :
-        AGENT_STORAGE_KEYS.has(key) ?
-        (agents[key] = value) :
-        key === TRANSIT_RESOURCES_STORAGE_KEY ||
-        key.startsWith(PROJECT_CANVAS_STORAGE_PREFIX) ||
-        key.startsWith(DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX) ||
-        key.startsWith(PROJECT_ASSET_STORAGE_PREFIX) ?
-        undefined :
-        (settings[key] = value);
-      return {
-        settings: settings,
-        projects: projects2,
-        agents: agents
-      };
-    },
+  splitChromeStorageModules = use_splitChromeStorageModules({ AGENT_STORAGE_KEYS, DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX, PROJECT_ASSET_STORAGE_PREFIX, PROJECT_CANVAS_STORAGE_PREFIX, PROJECT_STORAGE_KEYS, TRANSIT_RESOURCES_STORAGE_KEY }).splitChromeStorageModules,
   getBackupSettingSectionForKey = (key) =>
     BACKUP_SETTINGS_SECTION_ORDER.find(
       (section) => section !== `other` && BACKUP_SETTINGS_SECTION_KEYS[section].includes(key),
     ) || `other`,
-  getBackupSettingsSectionMap = (settings) => {
-      let sections = BACKUP_SETTINGS_SECTION_ORDER.reduce(
-        (acc, section) => ({
-          ...acc,
-          [section]: {}
-        }), {},
-      );
-      for (let [key, value] of Object.entries(settings || {}))
-        sections[getBackupSettingSectionForKey(key)][key] = cloneBackupValue(value);
-      return {
-        sections: sections,
-        availableSections: BACKUP_SETTINGS_SECTION_ORDER.filter(
-          (section) => Object.keys(sections[section] || {}).length > 0,
-        ),
-      };
-    },
+  getBackupSettingsSectionMap = use_getBackupSettingsSectionMap({ BACKUP_SETTINGS_SECTION_ORDER, getBackupSettingSectionForKey }).getBackupSettingsSectionMap,
   getProjectCanvasStorageKey = (projectId) => `${PROJECT_CANVAS_STORAGE_PREFIX}${projectId}`,
   getDesktopProjectMirrorStorageKey = (projectId) =>
     `${DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX}${projectId}`,
@@ -3893,44 +3300,13 @@ time=${normalizedTtl}`,
   externalizeProjectAssetContainer = use_externalizeProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX }).externalizeProjectAssetContainer,
   externalizeProjectCanvasState = use_externalizeProjectCanvasState({ externalizeProjectAssetContainer }).externalizeProjectCanvasState,
   hydrateProjectAssetContainer = use_hydrateProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX }).hydrateProjectAssetContainer,
-  extractProjectAssetRefs = (container, refs = new Set()) => {
-              if (Array.isArray(container)) {
-                container.forEach((item) => extractProjectAssetRefs(item, refs));
-                return [...refs];
-              }
-              if (!container || typeof container != `object`) return [...refs];
-              for (let [key, value] of Object.entries(container))
-                (key.endsWith(PROJECT_ASSET_REF_SUFFIX) &&
-                  typeof value == `string` &&
-                  value &&
-                  refs.add(value),
-                  extractProjectAssetRefs(value, refs));
-              return [...refs];
-            },
+  extractProjectAssetRefs = use_extractProjectAssetRefs({ PROJECT_ASSET_REF_SUFFIX }).extractProjectAssetRefs,
   projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
-  blobToDataUrl = (blob) =>
-            new Promise((resolvePromise, rejectPromise) => {
-              let fileReader = new FileReader();
-              ((fileReader.onload = () => resolvePromise(typeof fileReader.result == `string` ? fileReader.result : ``)),
-                (fileReader.onerror = () => rejectPromise(fileReader.error || Error(`blob read failed`))),
-                fileReader.readAsDataURL(blob));
-            }),
+  blobToDataUrl = use_blobToDataUrl({}).blobToDataUrl,
   projectMediaFetchWarningCache = new Set(),
-  warnProjectMediaFetchOnce = (mediaUrl, error) => {
-              let warnKey =
-                typeof mediaUrl == `string` ?
-                `${mediaUrl.slice(0, 180)}:${error?.message || error}` :
-                String(error?.message || error);
-              if (projectMediaFetchWarningCache.has(warnKey)) return;
-              projectMediaFetchWarningCache.add(warnKey);
-            },
+  warnProjectMediaFetchOnce = use_warnProjectMediaFetchOnce({ projectMediaFetchWarningCache }).warnProjectMediaFetchOnce,
   projectMediaStringToPortableValue = use_projectMediaStringToPortableValue({ blobToDataUrl, warnProjectMediaFetchOnce }).projectMediaStringToPortableValue,
-  shouldReuseProjectMediaBinding = (binding, signature) => {
-                  if (!binding || typeof binding != `object` || typeof signature != `string` || !signature) return false;
-                  if (binding.sourceSignature === signature) return true;
-                  if (binding.localPath && buildProjectMediaFileUrl(binding.localPath) === signature) return true;
-                  return false;
-                },
+  shouldReuseProjectMediaBinding = use_shouldReuseProjectMediaBinding({}).shouldReuseProjectMediaBinding,
   isExternalUploadedProjectAssetBinding = use_isExternalUploadedProjectAssetBinding({ EXTERNAL_PROJECT_ASSET_ORIGINS, GENERATED_PROJECT_ASSET_ORIGIN_PATTERN }).isExternalUploadedProjectAssetBinding,
   shouldPromptProjectMediaRelink = (binding, bindingKey, data = {}) =>
 	                  !!(
@@ -3938,21 +3314,7 @@ time=${normalizedTtl}`,
 	                    isProjectMediaFileBackedBinding(binding, bindingKey, binding?.kind) &&
 	                    isExternalUploadedProjectAssetBinding(binding, bindingKey, data)
 	                  ),
-  stripLargeProjectMediaPortablePayload = (binding, bindingKey, data) => {
-                  if (!binding || typeof binding != `object`) return binding;
-                  if (!binding.localPath || !isProjectMediaFileBackedBinding(binding, bindingKey, data)) return binding;
-                  let {
-                    value,
-                    portableData,
-                    portableDataRef,
-                    ...rest
-                  } = binding;
-                  return {
-                    ...rest,
-                    valueFormat: `file-url`,
-                    sourceSignature: buildProjectMediaFileUrl(binding.localPath) || binding.sourceSignature,
-                  };
-                },
+  stripLargeProjectMediaPortablePayload = use_stripLargeProjectMediaPortablePayload({}).stripLargeProjectMediaPortablePayload,
   getProjectMediaPayload = use_getProjectMediaPayload({ projectMediaStringToPortableValue }).getProjectMediaPayload,
   applyProjectMediaBindingsToNode =
                   (globalThis.applyProjectMediaBindingsToNode = (node, presenceMap = new Map()) => {
@@ -4391,47 +3753,11 @@ time=${normalizedTtl}`,
   applyExternalAssetBundleToBackupPayload = use_applyExternalAssetBundleToBackupPayload({}).applyExternalAssetBundleToBackupPayload,
   compactBackupPortableAssets = use_compactBackupPortableAssets({ PROJECT_ASSET_MANIFEST_STORAGE_PREFIX }).compactBackupPortableAssets,
   sanitizeProjectNodeDataForExport = use_sanitizeProjectNodeDataForExport({ EXPORT_INLINE_MEDIA_FIELDS }).sanitizeProjectNodeDataForExport,
-  sanitizeProjectCanvasStateForExport = (exportCanvasState) => {
-                    let canvasState = cloneBackupValue(exportCanvasState || {});
-                    return (
-                      Array.isArray(canvasState.nodes) &&
-                      (canvasState.nodes = canvasState.nodes.map((node) =>
-                        node && typeof node == `object` ?
-                        node.data && typeof node.data == `object` ?
-                        {
-                          ...node,
-                          data: sanitizeProjectNodeDataForExport(node.data)
-                        } :
-                        node :
-                        node,
-                      )),
-                      canvasState
-                    );
-                  },
+  sanitizeProjectCanvasStateForExport = use_sanitizeProjectCanvasStateForExport({ sanitizeProjectNodeDataForExport }).sanitizeProjectCanvasStateForExport,
   buildProjectLocalforageExportPayload = use_buildProjectLocalforageExportPayload({ externalizeProjectCanvasState, extractProjectAssetRefs, getProjectCanvasStorageKey, sanitizeProjectCanvasStateForExport }).buildProjectLocalforageExportPayload,
   collectExternalUploadProjectAssetFiles = use_collectExternalUploadProjectAssetFiles({}).collectExternalUploadProjectAssetFiles,
-  normalizeResourceLocalforagePayload = (payload) => {
-                      let normalizedPayload = payload && typeof payload == `object` ? cloneBackupValue(payload) : {};
-                      return Object.prototype.hasOwnProperty.call(normalizedPayload, TRANSIT_RESOURCES_STORAGE_KEY) ?
-                        {
-                          [TRANSIT_RESOURCES_STORAGE_KEY]: cloneBackupValue(
-                            normalizedPayload[TRANSIT_RESOURCES_STORAGE_KEY],
-                          ),
-                        } :
-                        {};
-                    },
-  readChromeStorageSnapshot = (keys = null) =>
-                      new Promise((resolve, reject) => {
-                        if (!(typeof chrome < `u` && chrome.storage && chrome.storage.local)) {
-                          reject(Error(`Chrome Storage API 不可用`));
-                          return;
-                        }
-                        chrome.storage.local.get(Array.isArray(keys) ? keys : null, (items) => {
-                          chrome.runtime?.lastError ?
-                            reject(Error(chrome.runtime.lastError.message)) :
-                            resolve(items || {});
-                        });
-                      }),
+  normalizeResourceLocalforagePayload = use_normalizeResourceLocalforagePayload({ TRANSIT_RESOURCES_STORAGE_KEY }).normalizeResourceLocalforagePayload,
+  readChromeStorageSnapshot = use_readChromeStorageSnapshot({}).readChromeStorageSnapshot,
   getBackupChromeStorageKeys = use_getBackupChromeStorageKeys({ AGENT_STORAGE_KEYS, PROJECT_STORAGE_KEYS, getDesktopProjectMirrorStorageKey }).getBackupChromeStorageKeys,
   collectSelectedLocalforageBackup = use_collectSelectedLocalforageBackup({ extractProjectAssetRefs, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey }).collectSelectedLocalforageBackup,
   buildBackupModules = use_buildBackupModules({ BACKUP_MODULE_LABELS, apiConfigs, buildProjectLocalforageExportPayload, edges, getBackupSettingsSectionMap, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, setEdges, setMaxPollingDuration, splitChromeStorageModules }).buildBackupModules,
@@ -4442,12 +3768,7 @@ time=${normalizedTtl}`,
                           (acc, [moduleName, moduleData]) => (moduleHasBackupData(moduleName, moduleData) ? [...acc, moduleName] : acc),
                           [],
                         ),
-  buildBackupPayload = async (chromeStorage, userData, moduleSelection, backupOptions = {}) => ({
-				                            version: `1.3.6`,
-                            backupFormat: `4`,
-                            exportedAt: new Date().toISOString(),
-                            modules: await buildBackupModules(chromeStorage, userData, moduleSelection, backupOptions),
-                          }),
+  buildBackupPayload = use_buildBackupPayload({ buildBackupModules }).buildBackupPayload,
   restoreSelectedBackup = use_restoreSelectedBackup({ PROJECT_ASSET_MANIFEST_STORAGE_PREFIX, TRANSIT_RESOURCES_STORAGE_KEY, extractProjectAssetRefs, getAvailableBackupModules, getBackupSettingsSectionMap, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, normalizeBackupModules, normalizeResourceLocalforagePayload }).restoreSelectedBackup,
   openBackupExportDialog = async (moduleSelection) => {
                                 try {
@@ -4515,7 +3836,7 @@ time=${normalizedTtl}`,
                                     (console.error(error), showToast2(`导入失败`));
                                   }
                                 };
-  let $t = use_$t({}).$t;
+  let $t = use_$t({ BACKUP_MODULE_LABELS, buildBackupPayload, collectExternalUploadProjectAssetFiles, collectSelectedLocalforageBackup, compactBackupPortableAssets, getBackupChromeStorageKeys, readChromeStorageSnapshot, showToast2 }).$t;
   return isLoading ?
     jsx(`div`, {
       className: `flex items-center justify-center h-screen`,

@@ -1,0 +1,26 @@
+// @ts-nocheck
+/**
+ * editSeedancePortrait。自 bundle 抽出，逐字搬运、行为不变。
+ */
+import { useCallback, useMemo } from "react";
+
+export function use_editSeedancePortrait(deps: any) {
+  const {
+    setSeedancePortraitEditingId,
+    setSeedancePortraitForm,
+    setSeedancePortraitLibraryExpanded,
+  } = deps;
+  const editSeedancePortrait = (portrait) => {
+      (setSeedancePortraitEditingId(portrait.id),
+        setSeedancePortraitForm({
+          name: portrait.name || ``,
+          assetId: portrait.assetId || ``,
+          imageUrl: ``,
+          previewUrl: portrait.previewUrl || portrait.imageUrl || ``,
+          projectName: portrait.projectName || ``,
+          notes: portrait.notes || ``,
+        }),
+        setSeedancePortraitLibraryExpanded(true));
+    };
+  return { editSeedancePortrait };
+}

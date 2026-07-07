@@ -3,9 +3,19 @@
  * $t。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import { normalizeModuleSelection } from "../lib/project-normalize";
 
 export function use_$t(deps: any) {
-  const {} = deps;
+  const {
+    BACKUP_MODULE_LABELS,
+    buildBackupPayload,
+    collectExternalUploadProjectAssetFiles,
+    collectSelectedLocalforageBackup,
+    compactBackupPortableAssets,
+    getBackupChromeStorageKeys,
+    readChromeStorageSnapshot,
+    showToast2,
+  } = deps;
   const $t = async (moduleSelection, options = {}) => {
     try {
       let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
