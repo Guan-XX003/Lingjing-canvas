@@ -154,50 +154,44 @@ async function run() {
     }
   );
 
-  // ---- suno-music-api ----
+  // ---- suno-music-api (newapi 版) ----
   const suno = await import(pathToFileURL(join(outDir, "suno-music-api.js")).href);
-  // 灵感模式：只带 prompt，不带 style/title
-  check("suno.generate.inspiration", suno.buildSunoGenerateBody(
-    { customMode: false, instrumental: false, model: "V4_5PLUS", prompt: "轻快的城市清晨", style: "should-be-ignored", title: "ignored" }
-  ), { customMode: false, instrumental: false, model: "V4_5PLUS", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "轻快的城市清晨" });
-  // 自定义模式：带 style/title/歌词，权重裁剪，负向标签，人声性别
-  check("suno.generate.custom", suno.buildSunoGenerateBody(
-    { customMode: true, instrumental: false, model: "V5", prompt: "[verse]...", style: "citypop", title: "Morning", negativeTags: "heavy metal", vocalGender: "f", styleWeight: 1.5, weirdnessConstraint: -0.2, audioWeight: 0.3 }
-  ), { customMode: true, instrumental: false, model: "V5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "[verse]...", style: "citypop", title: "Morning", negativeTags: "heavy metal", vocalGender: "f", styleWeight: 1, weirdnessConstraint: 0, audioWeight: 0.3 });
-  // 纯伴奏+自定义：可无 prompt
-  check("suno.generate.instrumental", suno.buildSunoGenerateBody(
-    { customMode: true, instrumental: true, model: "V4", style: "lofi", title: "Focus" }
-  ), { customMode: true, instrumental: true, model: "V4", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, style: "lofi", title: "Focus" });
-  // extend：defaultParamFlag=false 时不带自定义参数
-  check("suno.extend.original", suno.buildSunoExtendBody(
-    { audioId: "abc", defaultParamFlag: false, model: "V4_5", prompt: "x", continueAt: 30 }
-  ), { defaultParamFlag: false, audioId: "abc", model: "V4_5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK });
-  check("suno.extend.custom", suno.buildSunoExtendBody(
-    { audioId: "abc", defaultParamFlag: true, model: "V4_5", prompt: "继续", style: "rock", title: "T", continueAt: 30 }
-  ), { defaultParamFlag: true, audioId: "abc", model: "V4_5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "继续", style: "rock", title: "T", continueAt: 30 });
+  // 灵感模式：描述放 gpt_description_prompt
+  check("suno.gen.inspiration", suno.buildSunoGenerateBody(
+    { customMode: false, instrumental: false, mv: "chirp-v4", prompt: "乡愁", tags: "" }
+  ), { mv: "chirp-v4", gpt_description_prompt: "乡愁" });
+  // 自定义：歌词放 prompt + tags + title
+  check("suno.gen.custom", suno.buildSunoGenerateBody(
+    { customMode: true, instrumental: false, mv: "chirp-auk", prompt: "[Verse]...", tags: "edm", title: "T" }
+  ), { mv: "chirp-auk", prompt: "[Verse]...", tags: "edm", title: "T" });
+  // 纯伴奏自定义
+  check("suno.gen.instrumental", suno.buildSunoGenerateBody(
+    { customMode: true, instrumental: true, mv: "chirp-v4", tags: "lofi" }
+  ), { mv: "chirp-v4", make_instrumental: true, tags: "lofi" });
+  // 续写
+  check("suno.extend", suno.buildSunoExtendBody(
+    { continueClipId: "abc", continueAt: 30, mv: "chirp-v4", prompt: "x" }
+  ), { mv: "chirp-v4", continue_clip_id: "abc", continue_at: 30, prompt: "x" });
+  // 翻唱/参考
+  check("suno.reference", suno.buildSunoReferenceBody(
+    { referenceClipId: "xyz", mv: "chirp-v4", tags: "jazz" }
+  ), { mv: "chirp-v4", reference_clip_id: "xyz", tags: "jazz" });
   // 校验
-  check("suno.validate.customNeedsStyle", suno.validateSunoGenerateParams({ customMode: true, instrumental: false, model: "V4", prompt: "l", title: "t" }), "自定义模式需填写风格(style)");
-  check("suno.validate.inspirationNeedsPrompt", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, model: "V4", prompt: "" }), "灵感模式需填写歌曲描述(prompt)");
-  check("suno.validate.ok", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, model: "V4", prompt: "hi" }), null);
-  // 状态
-  check("suno.status.success", suno.sunoStatusIsSuccess("SUCCESS"), true);
-  check("suno.status.failure", suno.sunoStatusIsFailure("SENSITIVE_WORD_ERROR"), true);
-  check("suno.status.pendingNotTerminal", suno.sunoStatusIsTerminal("PENDING"), false);
-  // 结果提取
-  check("suno.extractTracks", suno.extractSunoTracks(
-    { data: { response: { sunoData: [{ id: "1", audioUrl: "http://a/1.mp3", title: "T", duration: "120", model_name: "chirp" }] } } }
-  ), [{ id: "1", audioUrl: "http://a/1.mp3", streamAudioUrl: undefined, imageUrl: undefined, title: "T", tags: undefined, duration: 120, prompt: undefined, modelName: "chirp", createTime: undefined }]);
-  check("suno.extractStatus", suno.extractSunoStatus({ data: { status: "first_success" } }), "FIRST_SUCCESS");
-  check("suno.url", suno.sunoUrl("https://api.sunoapi.org/", "/api/v1/generate"), "https://api.sunoapi.org/api/v1/generate");
-  check("suno.charLimits.v4", suno.sunoCharLimits("V4"), { prompt: 3000, style: 200, title: 80 });
-  check("suno.charLimits.v5", suno.sunoCharLimits("V5_5"), { prompt: 5000, style: 1000, title: 100 });
-  // 参考音频翻唱 upload-cover
-  check("suno.cover.body", suno.buildSunoUploadCoverBody(
-    { uploadUrl: "https://cdn.example.com/ref.mp3", customMode: false, instrumental: false, model: "V4_5PLUS", prompt: "改成爵士风" }
-  ), { uploadUrl: "https://cdn.example.com/ref.mp3", customMode: false, instrumental: false, model: "V4_5PLUS", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "改成爵士风" });
-  check("suno.cover.validate.needUrl", suno.validateSunoUploadCoverParams({ uploadUrl: "", customMode: false, instrumental: false, model: "V4", prompt: "x" }), "翻唱需提供参考音频的公网 URL（uploadUrl）");
-  check("suno.cover.validate.needPublic", suno.validateSunoUploadCoverParams({ uploadUrl: "file:///a.mp3", customMode: false, instrumental: false, model: "V4", prompt: "x" }), "参考音频必须是公网可访问的 http(s) URL（本地文件需先上传到公网）");
-  check("suno.cover.validate.ok", suno.validateSunoUploadCoverParams({ uploadUrl: "https://a/x.mp3", customMode: false, instrumental: false, model: "V4", prompt: "x" }), null);
+  check("suno.validate.inspirationNeedsPrompt", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, mv: "chirp-v4", prompt: "" }), "灵感模式需填写歌曲描述");
+  check("suno.validate.customNeedsPrompt", suno.validateSunoGenerateParams({ customMode: true, instrumental: false, mv: "chirp-v4", prompt: "" }), "自定义模式需填写歌词(prompt)");
+  check("suno.validate.instrumentalOk", suno.validateSunoGenerateParams({ customMode: false, instrumental: true, mv: "chirp-v4", prompt: "" }), null);
+  check("suno.validate.ok", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, mv: "chirp-v4", prompt: "hi" }), null);
+  // 提交响应取 clip ids（兼容 数组 / {clips}）
+  check("suno.clipIds.array", suno.extractSunoClipIds([{ id: "1" }, { id: "2" }]), ["1", "2"]);
+  check("suno.clipIds.wrapped", suno.extractSunoClipIds({ clips: [{ id: "a" }, { clip_id: "b" }] }), ["a", "b"]);
+  // feed 结果提取
+  check("suno.clips", suno.extractSunoClips([{ id: "1", audio_url: "http://a/1.mp3", status: "complete", title: "T", metadata: { duration: 120 } }]),
+    [{ id: "1", audioUrl: "http://a/1.mp3", videoUrl: undefined, imageUrl: undefined, title: "T", tags: undefined, prompt: undefined, status: "complete", duration: 120 }]);
+  // feed 汇总状态
+  check("suno.feed.complete", suno.summarizeSunoFeed([{ id: "1", audioUrl: "u", status: "complete" }]), "complete");
+  check("suno.feed.error", suno.summarizeSunoFeed([{ id: "1", audioUrl: "", status: "error" }]), "error");
+  check("suno.feed.pending", suno.summarizeSunoFeed([{ id: "1", audioUrl: "", status: "streaming" }]), "pending");
+  check("suno.url", suno.sunoUrl("https://x.newapi.com/", "/suno/generate"), "https://x.newapi.com/suno/generate");
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`);
   rmSync(outDir, { recursive: true, force: true });

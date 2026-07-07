@@ -1,100 +1,72 @@
 /**
- * sunoapi.org 音乐生成 API 接口层（供独立音乐节点使用）。
+ * newapi 版 Suno 音乐接口层（供独立音乐节点使用）。
  *
- * 端点（base 默认 https://api.sunoapi.org）：
- *  - 生成            POST /api/v1/generate
- *  - 续写/扩展       POST /api/v1/generate/extend
- *  - 轮询任务详情    GET  /api/v1/generate/record-info?taskId=
+ * 端点（base 为你的 newapi 站点）：
+ *  - 生成/续写/翻唱  POST {base}/suno/generate
+ *  - 查询结果        GET  {base}/suno/feed/{clipIds}   （clipIds 可逗号分隔多个）
+ *  - 上传参考音频    POST {base}/suno/upload           （multipart，返回 clip_id）
  * 鉴权：Authorization: Bearer <apiKey>
  *
- * 桌面端收不到 callBackUrl 回调，故：提交时传占位 callBackUrl，之后用 record-info 轮询取结果。
+ * 提交后返回若干 clip（含 id），用 /suno/feed 轮询到 status=complete/error。
+ * 模型版本用 mv 字段（chirp-*）。
  *
- * 本文件分两类：
- *  1) 纯函数（body 构造 / 结果提取 / 状态判定 / 参数校验）——可单测，不碰网络。
- *  2) 网络函数（submit/poll）——接受可注入的 fetch（默认 globalThis.fetch），便于测试。
+ * 分两类：纯函数（body 构造 / 结果提取 / 状态判定）可单测；网络函数接受可注入 fetch。
  */
 
-/** sunoapi.org 支持的模型版本（新→旧） */
-export const SUNO_MODELS = ["V5_5", "V5", "V4_5PLUS", "V4_5ALL", "V4_5", "V4"] as const;
-export type SunoModel = (typeof SUNO_MODELS)[number];
-export const SUNO_DEFAULT_MODEL: SunoModel = "V4_5PLUS";
+/** mv 模型版本（新→旧） */
+export const SUNO_MV_MODELS = ["chirp-crow", "chirp-bluejay", "chirp-auk", "chirp-v4", "chirp-v3-5"] as const;
+export type SunoMv = (typeof SUNO_MV_MODELS)[number];
+export const SUNO_DEFAULT_MV: SunoMv = "chirp-v4";
+export const SUNO_MV_LABELS: Record<string, string> = {
+  "chirp-crow": "chirp-crow（v5）",
+  "chirp-bluejay": "chirp-bluejay（v4.5+）",
+  "chirp-auk": "chirp-auk（v4.5）",
+  "chirp-v4": "chirp-v4",
+  "chirp-v3-5": "chirp-v3.5",
+};
 
 export const SUNO_ENDPOINTS = {
-  generate: "/api/v1/generate",
-  extend: "/api/v1/generate/extend",
-  /** 参考音频翻唱：uploadUrl 必须是公网可访问 URL，音频 ≤8 分钟（V4_5ALL ≤1 分钟） */
-  uploadCover: "/api/v1/generate/upload-cover",
-  recordInfo: "/api/v1/generate/record-info",
+  generate: "/suno/generate",
+  feed: "/suno/feed",
+  upload: "/suno/upload",
 } as const;
 
-/** 桌面端占位回调（不可达，仅为满足必填；结果走轮询） */
-export const SUNO_PLACEHOLDER_CALLBACK = "https://wanjuan.invalid/suno/callback";
-
-/** 各模型的字段长度上限（用于前端校验/截断） */
-export function sunoCharLimits(model: string): { prompt: number; style: number; title: number } {
-  const isV4 = String(model || "").toUpperCase() === "V4";
-  const isV45All = String(model || "").toUpperCase() === "V4_5ALL";
-  return {
-    prompt: isV4 ? 3000 : 5000,
-    style: isV4 ? 200 : 1000,
-    title: isV4 || isV45All ? 80 : 100,
-  };
-}
-
-/** 音乐生成 UI 参数（节点侧收集，传给 buildSunoGenerateBody） */
+/** 生成参数（节点侧收集） */
 export interface SunoGenerateParams {
-  /** 自定义模式：true=提供歌词(prompt)+风格(style)+标题(title)；false=灵感模式，prompt 为整体描述 */
+  /** true=自定义(用 prompt 当歌词 + tags + title)；false=灵感(用 gpt_description_prompt 描述，AI 写词) */
   customMode: boolean;
-  /** 纯伴奏（无人声） */
+  /** 纯伴奏 */
   instrumental: boolean;
-  model: SunoModel | string;
-  /** 自定义模式=歌词；灵感模式=描述。纯伴奏+自定义模式时可为空 */
+  mv: SunoMv | string;
+  /** 自定义模式=歌词；灵感模式=描述 */
   prompt?: string;
-  /** 风格/曲风（自定义模式必填） */
-  style?: string;
-  /** 标题（自定义模式必填） */
+  /** 风格/曲风 */
+  tags?: string;
   title?: string;
-  /** 要排除的风格 */
-  negativeTags?: string;
-  /** 人声性别 m/f */
-  vocalGender?: "m" | "f" | "";
-  styleWeight?: number | null;
-  weirdnessConstraint?: number | null;
-  audioWeight?: number | null;
-  personaId?: string;
-  personaModel?: "style_persona" | "voice_persona" | "";
 }
 
 /** 续写参数 */
 export interface SunoExtendParams {
-  /** 源音轨 id（从已有生成结果的 track.id 取） */
-  audioId: string;
-  /** true=自定义扩展参数（需 prompt/style/title/continueAt）；false=沿用原曲参数 */
-  defaultParamFlag: boolean;
-  model: SunoModel | string;
-  prompt?: string;
-  style?: string;
-  title?: string;
-  /** 从第几秒开始续写（0 < continueAt < 总时长） */
+  /** 要续写的源音轨 clip_id */
+  continueClipId: string;
+  /** 从第几秒续写 */
   continueAt?: number | null;
-  negativeTags?: string;
-  vocalGender?: "m" | "f" | "";
-  styleWeight?: number | null;
-  weirdnessConstraint?: number | null;
-  audioWeight?: number | null;
-  personaId?: string;
-  personaModel?: "style_persona" | "voice_persona" | "";
+  mv: SunoMv | string;
+  prompt?: string;
+  tags?: string;
+  title?: string;
 }
 
-/** 把 0–1 的可选权重规整为数字或省略（超范围裁剪） */
-function clampWeight(value: number | null | undefined): number | undefined {
-  if (value === null || value === undefined || value === ("" as any)) return undefined;
-  const n = Number(value);
-  if (!Number.isFinite(n)) return undefined;
-  return Math.min(1, Math.max(0, n));
+/** 翻唱/参考参数：基于已有 clip_id 做参考生成（若是本地音频，需先 uploadSunoAudio 拿到 clip_id） */
+export interface SunoReferenceParams {
+  referenceClipId: string;
+  mv: SunoMv | string;
+  prompt?: string;
+  tags?: string;
+  title?: string;
+  instrumental?: boolean;
 }
 
-/** 仅保留有意义的可选字段（去掉空串/undefined），避免给 API 传空值 */
 function withOptional(base: Record<string, any>, optional: Record<string, any>): Record<string, any> {
   const out = { ...base };
   for (const [k, v] of Object.entries(optional)) {
@@ -104,230 +76,177 @@ function withOptional(base: Record<string, any>, optional: Record<string, any>):
   return out;
 }
 
-/** 构造 /api/v1/generate 请求体 */
-export function buildSunoGenerateBody(params: SunoGenerateParams, callBackUrl: string = SUNO_PLACEHOLDER_CALLBACK): Record<string, any> {
-  const base: Record<string, any> = {
-    customMode: !!params.customMode,
-    instrumental: !!params.instrumental,
-    model: params.model || SUNO_DEFAULT_MODEL,
-    callBackUrl: callBackUrl || SUNO_PLACEHOLDER_CALLBACK,
-  };
-  // prompt：纯伴奏+自定义模式时允许省略
-  if (!(params.instrumental && params.customMode) && params.prompt) base.prompt = params.prompt;
-  else if (params.prompt) base.prompt = params.prompt;
-  return withOptional(base, {
-    style: params.customMode ? params.style : undefined,
-    title: params.customMode ? params.title : undefined,
-    negativeTags: params.negativeTags,
-    vocalGender: params.vocalGender,
-    styleWeight: clampWeight(params.styleWeight),
-    weirdnessConstraint: clampWeight(params.weirdnessConstraint),
-    audioWeight: clampWeight(params.audioWeight),
-    personaId: params.personaId,
-    personaModel: params.personaModel,
-  });
-}
-
-/** 构造 /api/v1/generate/extend 请求体 */
-export function buildSunoExtendBody(params: SunoExtendParams, callBackUrl: string = SUNO_PLACEHOLDER_CALLBACK): Record<string, any> {
-  const base: Record<string, any> = {
-    defaultParamFlag: !!params.defaultParamFlag,
-    audioId: params.audioId,
-    model: params.model || SUNO_DEFAULT_MODEL,
-    callBackUrl: callBackUrl || SUNO_PLACEHOLDER_CALLBACK,
-  };
-  return withOptional(base, {
-    prompt: params.defaultParamFlag ? params.prompt : undefined,
-    style: params.defaultParamFlag ? params.style : undefined,
-    title: params.defaultParamFlag ? params.title : undefined,
-    continueAt: params.defaultParamFlag && params.continueAt != null ? Number(params.continueAt) : undefined,
-    negativeTags: params.negativeTags,
-    vocalGender: params.vocalGender,
-    styleWeight: clampWeight(params.styleWeight),
-    weirdnessConstraint: clampWeight(params.weirdnessConstraint),
-    audioWeight: clampWeight(params.audioWeight),
-    personaId: params.personaId,
-    personaModel: params.personaModel,
-  });
-}
-
-/** 参考音频翻唱参数 = 生成参数 + 参考音频公网 URL */
-export interface SunoUploadCoverParams extends SunoGenerateParams {
-  /** 参考音频的公网可访问 URL（本地文件需先上传到公网） */
-  uploadUrl: string;
-}
-
-/** 构造 /api/v1/generate/upload-cover 请求体（参考音频翻唱） */
-export function buildSunoUploadCoverBody(params: SunoUploadCoverParams, callBackUrl: string = SUNO_PLACEHOLDER_CALLBACK): Record<string, any> {
-  const base: Record<string, any> = {
-    uploadUrl: params.uploadUrl,
-    customMode: !!params.customMode,
-    instrumental: !!params.instrumental,
-    model: params.model || SUNO_DEFAULT_MODEL,
-    callBackUrl: callBackUrl || SUNO_PLACEHOLDER_CALLBACK,
-  };
-  if (params.prompt) base.prompt = params.prompt;
-  return withOptional(base, {
-    style: params.customMode ? params.style : undefined,
-    title: params.customMode ? params.title : undefined,
-    negativeTags: params.negativeTags,
-    vocalGender: params.vocalGender,
-    styleWeight: clampWeight(params.styleWeight),
-    weirdnessConstraint: clampWeight(params.weirdnessConstraint),
-    audioWeight: clampWeight(params.audioWeight),
-    personaId: params.personaId,
-    personaModel: params.personaModel,
-  });
-}
-
-/** 参考音频翻唱校验：需 uploadUrl（公网 URL）+ 生成参数校验 */
-export function validateSunoUploadCoverParams(params: SunoUploadCoverParams): string | null {
-  const url = String(params.uploadUrl || "").trim();
-  if (!url) return "翻唱需提供参考音频的公网 URL（uploadUrl）";
-  if (!/^https?:\/\//i.test(url)) return "参考音频必须是公网可访问的 http(s) URL（本地文件需先上传到公网）";
-  return validateSunoGenerateParams(params);
-}
-
-/** 前端校验：自定义模式必填 style/title；非纯伴奏必填 prompt。返回错误信息或 null */
-export function validateSunoGenerateParams(params: SunoGenerateParams): string | null {
+/** 构造 /suno/generate 生成请求体 */
+export function buildSunoGenerateBody(params: SunoGenerateParams): Record<string, any> {
+  const base: Record<string, any> = { mv: params.mv || SUNO_DEFAULT_MV };
+  if (params.instrumental) base.make_instrumental = true;
   if (params.customMode) {
-    if (!params.style || !String(params.style).trim()) return "自定义模式需填写风格(style)";
-    if (!params.title || !String(params.title).trim()) return "自定义模式需填写标题(title)";
-    if (!params.instrumental && (!params.prompt || !String(params.prompt).trim())) return "自定义模式需填写歌词(prompt)";
-  } else if (!params.prompt || !String(params.prompt).trim()) {
-    return "灵感模式需填写歌曲描述(prompt)";
+    return withOptional(base, { prompt: params.prompt, tags: params.tags, title: params.title });
+  }
+  // 灵感模式：描述放 gpt_description_prompt，AI 自动写词
+  return withOptional(base, { gpt_description_prompt: params.prompt, tags: params.tags, title: params.title });
+}
+
+/** 构造 /suno/generate 续写请求体 */
+export function buildSunoExtendBody(params: SunoExtendParams): Record<string, any> {
+  const base: Record<string, any> = { mv: params.mv || SUNO_DEFAULT_MV, continue_clip_id: params.continueClipId };
+  return withOptional(base, {
+    continue_at: params.continueAt != null ? Number(params.continueAt) : undefined,
+    prompt: params.prompt,
+    tags: params.tags,
+    title: params.title,
+  });
+}
+
+/** 构造 /suno/generate 翻唱/参考请求体 */
+export function buildSunoReferenceBody(params: SunoReferenceParams): Record<string, any> {
+  const base: Record<string, any> = { mv: params.mv || SUNO_DEFAULT_MV, reference_clip_id: params.referenceClipId };
+  if (params.instrumental) base.make_instrumental = true;
+  return withOptional(base, { prompt: params.prompt, tags: params.tags, title: params.title });
+}
+
+/** 校验：灵感/自定义都需要描述或歌词(prompt)；纯伴奏灵感模式可留空 */
+export function validateSunoGenerateParams(params: SunoGenerateParams): string | null {
+  if (!params.prompt || !String(params.prompt).trim()) {
+    if (params.instrumental && !params.customMode) return null; // 纯伴奏灵感可无描述
+    return params.customMode ? "自定义模式需填写歌词(prompt)" : "灵感模式需填写歌曲描述";
   }
   return null;
 }
 
-/** 一条生成音轨 */
-export interface SunoTrack {
+/** 一条生成音轨（clip） */
+export interface SunoClip {
   id: string;
   audioUrl: string;
-  streamAudioUrl?: string;
+  videoUrl?: string;
   imageUrl?: string;
   title?: string;
   tags?: string;
-  duration?: number;
   prompt?: string;
-  modelName?: string;
-  createTime?: string;
+  status?: string;
+  duration?: number;
 }
 
-const SUNO_TERMINAL_SUCCESS = new Set(["SUCCESS"]);
-const SUNO_TERMINAL_FAILURE = new Set([
-  "CREATE_TASK_FAILED",
-  "GENERATE_AUDIO_FAILED",
-  "CALLBACK_EXCEPTION",
-  "SENSITIVE_WORD_ERROR",
-]);
+const SUNO_STATUS_COMPLETE = new Set(["complete", "succeeded", "success"]);
+const SUNO_STATUS_ERROR = new Set(["error", "failed"]);
 
-export function sunoStatusIsSuccess(status: string): boolean {
-  return SUNO_TERMINAL_SUCCESS.has(String(status || "").toUpperCase());
+export function sunoClipIsComplete(status: string): boolean {
+  return SUNO_STATUS_COMPLETE.has(String(status || "").toLowerCase());
 }
-export function sunoStatusIsFailure(status: string): boolean {
-  return SUNO_TERMINAL_FAILURE.has(String(status || "").toUpperCase());
-}
-export function sunoStatusIsTerminal(status: string): boolean {
-  return sunoStatusIsSuccess(status) || sunoStatusIsFailure(status);
+export function sunoClipIsError(status: string): boolean {
+  return SUNO_STATUS_ERROR.has(String(status || "").toLowerCase());
 }
 
-/** 从 record-info 响应里提取音轨数组（data.response.sunoData[]） */
-export function extractSunoTracks(recordInfo: any): SunoTrack[] {
-  const list =
-    recordInfo?.data?.response?.sunoData ||
-    recordInfo?.data?.response?.data ||
-    recordInfo?.response?.sunoData ||
-    [];
-  if (!Array.isArray(list)) return [];
-  return list
-    .map((item: any) => ({
-      id: String(item?.id ?? item?.audioId ?? ""),
-      audioUrl: String(item?.audioUrl ?? item?.audio_url ?? item?.sourceAudioUrl ?? ""),
-      streamAudioUrl: item?.streamAudioUrl ?? item?.stream_audio_url ?? undefined,
-      imageUrl: item?.imageUrl ?? item?.image_url ?? undefined,
-      title: item?.title ?? undefined,
-      tags: item?.tags ?? undefined,
-      duration: item?.duration != null ? Number(item.duration) : undefined,
-      prompt: item?.prompt ?? undefined,
-      modelName: item?.modelName ?? item?.model_name ?? undefined,
-      createTime: item?.createTime ?? item?.create_time ?? undefined,
+/** 从任意响应里取 clip 数组（兼容 数组 / {clips} / {data} / {clips_url}） */
+function coerceClipArray(resp: any): any[] {
+  if (Array.isArray(resp)) return resp;
+  if (Array.isArray(resp?.clips)) return resp.clips;
+  if (Array.isArray(resp?.data)) return resp.data;
+  if (Array.isArray(resp?.data?.clips)) return resp.data.clips;
+  if (resp && typeof resp === "object" && (resp.id || resp.audio_url)) return [resp];
+  return [];
+}
+
+/** 从 /suno/generate 提交响应里取 clip id 列表（用于随后轮询 feed） */
+export function extractSunoClipIds(submitResponse: any): string[] {
+  return coerceClipArray(submitResponse)
+    .map((c: any) => String(c?.id ?? c?.clip_id ?? c?.song_id ?? ""))
+    .filter(Boolean);
+}
+
+/** 从 /suno/feed 响应里提取标准化音轨 */
+export function extractSunoClips(feedResponse: any): SunoClip[] {
+  return coerceClipArray(feedResponse)
+    .map((c: any) => ({
+      id: String(c?.id ?? c?.clip_id ?? ""),
+      audioUrl: String(c?.audio_url ?? c?.audioUrl ?? c?.source_audio_url ?? ""),
+      videoUrl: c?.video_url ?? c?.videoUrl ?? undefined,
+      imageUrl: c?.image_url ?? c?.image_large_url ?? undefined,
+      title: c?.title ?? c?.metadata?.title ?? undefined,
+      tags: c?.tags ?? c?.metadata?.tags ?? undefined,
+      prompt: c?.prompt ?? c?.metadata?.prompt ?? undefined,
+      status: c?.status ? String(c.status).toLowerCase() : undefined,
+      duration: c?.metadata?.duration != null ? Number(c.metadata.duration) : c?.duration != null ? Number(c.duration) : undefined,
     }))
-    .filter((t: SunoTrack) => t.id || t.audioUrl);
+    .filter((c: SunoClip) => c.id || c.audioUrl);
 }
 
-/** 从 record-info 响应取任务状态 */
-export function extractSunoStatus(recordInfo: any): string {
-  return String(recordInfo?.data?.status ?? recordInfo?.status ?? "").toUpperCase();
+/** 汇总一组 clip 的整体状态：全 complete→complete；有 error→error；否则 pending */
+export function summarizeSunoFeed(clips: SunoClip[]): "complete" | "error" | "pending" {
+  if (!clips.length) return "pending";
+  if (clips.some((c) => sunoClipIsError(c.status || ""))) return "error";
+  if (clips.every((c) => sunoClipIsComplete(c.status || "") && c.audioUrl)) return "complete";
+  return "pending";
 }
 
-/** 拼接完整 URL（base 去尾斜杠 + path） */
 export function sunoUrl(baseUrl: string, path: string): string {
   const b = String(baseUrl || "").replace(/\/+$/, "");
   return `${b}${path}`;
 }
 
 type FetchLike = (url: string, init?: any) => Promise<any>;
-
 function sunoHeaders(apiKey: string, json = true): Record<string, string> {
   const h: Record<string, string> = { Authorization: `Bearer ${apiKey}` };
   if (json) h["Content-Type"] = "application/json";
   return h;
 }
 
-/** 提交任务，返回 taskId。任一错误抛异常（含 API 的 msg）。 */
-export async function submitSunoTask(
-  baseUrl: string,
-  apiKey: string,
-  path: string,
-  body: Record<string, any>,
-  fetchImpl: FetchLike = (globalThis as any).fetch,
-): Promise<string> {
-  const resp = await fetchImpl(sunoUrl(baseUrl, path), {
-    method: "POST",
-    headers: sunoHeaders(apiKey, true),
-    body: JSON.stringify(body),
+/** 提交生成，返回 clip id 列表 */
+export async function submitSunoGenerate(
+  baseUrl: string, apiKey: string, body: Record<string, any>, fetchImpl: FetchLike = (globalThis as any).fetch,
+): Promise<string[]> {
+  const resp = await fetchImpl(sunoUrl(baseUrl, SUNO_ENDPOINTS.generate), {
+    method: "POST", headers: sunoHeaders(apiKey, true), body: JSON.stringify(body),
   });
   const json = await resp.json().catch(() => ({}));
-  if (!resp.ok || (json?.code != null && json.code !== 200)) {
-    throw new Error(`Suno 提交失败: ${json?.msg || resp.status}`);
-  }
-  const taskId = json?.data?.taskId || json?.data?.task_id || json?.taskId;
-  if (!taskId) throw new Error(`Suno 提交未返回 taskId: ${json?.msg || "unknown"}`);
-  return String(taskId);
+  if (!resp.ok) throw new Error(`Suno 提交失败: ${json?.message || json?.detail || resp.status}`);
+  const ids = extractSunoClipIds(json);
+  if (!ids.length) throw new Error(`Suno 提交未返回 clip id: ${JSON.stringify(json).slice(0, 200)}`);
+  return ids;
 }
 
-/** 轮询 record-info 直到成功/失败/超时。onTick 每次拿到状态时回调。 */
-export async function pollSunoTask(
-  baseUrl: string,
-  apiKey: string,
-  taskId: string,
+/** 轮询 /suno/feed 直到 complete/error/超时 */
+export async function pollSunoFeed(
+  baseUrl: string, apiKey: string, clipIds: string[],
   opts: {
-    fetchImpl?: FetchLike;
-    intervalMs?: number;
-    timeoutMs?: number;
-    sleep?: (ms: number) => Promise<void>;
-    now?: () => number;
-    onTick?: (status: string, recordInfo: any) => void;
-    signal?: { aborted: boolean };
+    fetchImpl?: FetchLike; intervalMs?: number; timeoutMs?: number;
+    sleep?: (ms: number) => Promise<void>; now?: () => number;
+    onTick?: (status: string, clips: SunoClip[]) => void; signal?: { aborted: boolean };
   } = {},
-): Promise<{ status: string; tracks: SunoTrack[]; recordInfo: any }> {
+): Promise<{ status: string; clips: SunoClip[] }> {
   const fetchImpl = opts.fetchImpl || (globalThis as any).fetch;
   const intervalMs = opts.intervalMs ?? 5000;
   const timeoutMs = opts.timeoutMs ?? 300000;
   const now = opts.now || (() => Date.now());
   const sleep = opts.sleep || ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const start = now();
+  const idsPath = clipIds.map(encodeURIComponent).join(",");
   for (;;) {
     if (opts.signal?.aborted) throw new Error("Suno 轮询已取消");
-    const url = `${sunoUrl(baseUrl, SUNO_ENDPOINTS.recordInfo)}?taskId=${encodeURIComponent(taskId)}`;
-    const resp = await fetchImpl(url, { method: "GET", headers: sunoHeaders(apiKey, false) });
+    const resp = await fetchImpl(`${sunoUrl(baseUrl, SUNO_ENDPOINTS.feed)}/${idsPath}`, { method: "GET", headers: sunoHeaders(apiKey, false) });
     const json = await resp.json().catch(() => ({}));
-    const status = extractSunoStatus(json);
-    opts.onTick?.(status, json);
-    if (sunoStatusIsSuccess(status)) return { status, tracks: extractSunoTracks(json), recordInfo: json };
-    if (sunoStatusIsFailure(status)) throw new Error(`Suno 生成失败: ${status}`);
-    if (now() - start > timeoutMs) throw new Error(`Suno 生成超时，请稍后用任务ID查询：${taskId}`);
+    const clips = extractSunoClips(json);
+    const status = summarizeSunoFeed(clips);
+    opts.onTick?.(status, clips);
+    if (status === "complete") return { status, clips };
+    if (status === "error") throw new Error(`Suno 生成失败：${clips.find((c) => sunoClipIsError(c.status || ""))?.id || ""}`);
+    if (now() - start > timeoutMs) throw new Error(`Suno 生成超时，请稍后用 clip id 查询：${clipIds.join(",")}`);
     await sleep(intervalMs);
   }
+}
+
+/** 上传本地音频到 /suno/upload，返回 clip_id（用于翻唱参考） */
+export async function uploadSunoAudio(
+  baseUrl: string, apiKey: string, file: any, fetchImpl: FetchLike = (globalThis as any).fetch,
+): Promise<{ clipId: string; duration?: number }> {
+  const form = new FormData();
+  form.append("file", file);
+  const resp = await fetchImpl(sunoUrl(baseUrl, SUNO_ENDPOINTS.upload), {
+    method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form,
+  });
+  const json = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(`Suno 上传失败: ${json?.message || resp.status}`);
+  const clipId = String(json?.clip_id ?? json?.id ?? json?.data?.clip_id ?? "");
+  if (!clipId) throw new Error(`Suno 上传未返回 clip_id`);
+  return { clipId, duration: json?.duration != null ? Number(json.duration) : undefined };
 }
