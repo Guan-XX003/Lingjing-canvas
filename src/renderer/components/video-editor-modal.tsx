@@ -53,6 +53,7 @@ export function videoEditorModal({
     [verticalRatio, setVerticalRatio] = useState(0.72),
     [guideState, setGuideState] = useState(null),
     [previewZoom, setPreviewZoom] = useState(1),
+    [filmstrip, setFilmstrip] = useState([]),
     outputBaseName = useMemo(() => {
       let base = String(initialName || `edited-video`).trim() || `edited-video`;
       return base.replace(/\.[^.]+$/, ``) || `edited-video`;
@@ -314,6 +315,23 @@ export function videoEditorModal({
             },
             resetSelection = () => {
               duration > 0 && (setStartTime(0), setEndTime(duration), setPlayheadTime(0), setStatusMessage(`已恢复到完整视频时长`));
+            },
+            beginTrimHandleDrag = (edge) => (event) => {
+              (event.preventDefault(), event.stopPropagation());
+              let track = timelineTrackRef.current;
+              if (!track || !duration) return;
+              let move = (e) => {
+                let rect = track.getBoundingClientRect(),
+                  ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+                  t = roundToTenth(ratio * duration);
+                edge === `start` ? setStartSeconds(t) : setEndSeconds(t);
+                let v = videoRef.current;
+                v && ((v.currentTime = t), setPlayheadTime(t));
+              },
+                up = () => {
+                  (window.removeEventListener(`mousemove`, move), window.removeEventListener(`mouseup`, up));
+                };
+              (window.addEventListener(`mousemove`, move), window.addEventListener(`mouseup`, up));
             },
             previewSelection = async () => {
                 let video = videoRef.current;
@@ -709,1420 +727,194 @@ export function videoEditorModal({
       }
     );
   }, []);
+  useEffect(() => {
+    if (!videoUrl || !(duration > 0)) return;
+    let cancelled = false,
+      probe = document.createElement(`video`),
+      canvas = document.createElement(`canvas`),
+      frames = [],
+      count = 12;
+    ((probe.src = videoUrl), (probe.crossOrigin = `anonymous`), (probe.muted = !0), (probe.preload = `auto`), (probe.playsInline = !0));
+    let run = async () => {
+      await waitForMetadata(probe);
+      let vw = probe.videoWidth || 16,
+        vh = probe.videoHeight || 9,
+        tw = 96,
+        th = Math.max(24, Math.round((tw * vh) / vw)) || 54;
+      ((canvas.width = tw), (canvas.height = th));
+      let ctx = canvas.getContext(`2d`);
+      if (!ctx) return;
+      for (let idx = 0; idx < count; idx++) {
+        if (cancelled) return;
+        try {
+          await seekTo(probe, ((idx + 0.5) / count) * duration);
+          ctx.drawImage(probe, 0, 0, tw, th);
+          frames.push(canvas.toDataURL(`image/jpeg`, 0.55));
+          cancelled || setFilmstrip(frames.slice());
+        } catch {}
+      }
+    };
+    return (run().catch(() => {}), () => { cancelled = true; });
+  }, [videoUrl, duration]);
+  let selectionSeconds = Math.max(0, roundToTenth(endTime - startTime)),
+    pct = (t) => (duration > 0 ? Math.max(0, Math.min(100, (t / duration) * 100)) : 0);
   return createPortal(
     jsxs(`div`, {
-      className: `fixed inset-0 z-[9999] bg-[#08090c] flex flex-col nodrag nopan wanjuan-video-editor-modal`,
-      style: {
-        position: `fixed`,
-        inset: 0,
-        zIndex: 2147483647,
-        display: `flex`,
-        flexDirection: `column`,
-        gap: 8,
-        padding: 12,
-        boxSizing: `border-box`,
-        background: `radial-gradient(circle at top, rgba(67,84,124,0.22), rgba(8,9,12,0.98) 36%), #08090c`,
-        color: `#ffffff`,
-        pointerEvents: `auto`,
-        fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`,
-      },
+      className: `fixed inset-0 z-[9999] flex flex-col bg-[#0d0d0d] select-none`,
+      style: { WebkitAppRegion: `no-drag` },
       children: [
         jsxs(`div`, {
-          className: `flex items-center justify-between gap-4 px-5 py-3 bg-[#111317] border-b border-[#23262d] nodrag nopan wanjuan-video-editor-toolbar`,
-          onPointerDown: (event) => event.stopPropagation(),
-          onMouseDown: (event) => event.stopPropagation(),
-          onClick: (event) => event.stopPropagation(),
-          style: {
-            display: `flex`,
-            alignItems: `center`,
-            justifyContent: `space-between`,
-            gap: 12,
-            padding: `10px 14px`,
-            background: `rgba(17,19,23,0.9)`,
-            border: `1px solid rgba(67,75,90,0.82)`,
-            borderRadius: 18,
-            boxShadow: `0 12px 32px rgba(0,0,0,0.22)`,
-            backdropFilter: `blur(14px)`,
-            flex: `0 0 auto`,
-          },
+          className: `flex items-center justify-between px-5 pt-8 pb-3 border-b border-[#222]`,
           children: [
             jsxs(`div`, {
-              className: `flex flex-col`,
+              className: `flex items-baseline gap-3`,
               children: [
-                jsx(`span`, {
-                  className: `text-white text-[15px] font-medium leading-none`,
-                  children: `视频剪辑台`,
-                }),
-                jsx(`span`, {
-                  className: `text-[10px] leading-4 text-gray-500`,
-                  children: `只剪辑视频片段时长，保留完整画面；导出会在画布中生成副本`,
-                }),
+                jsx(`span`, { className: `text-white font-semibold text-base`, children: `视频剪辑` }),
+                jsx(`span`, { className: `text-[11px] text-gray-500`, children: `拖动两端裁剪时长，保留完整画面` }),
               ],
             }),
             jsxs(`div`, {
               className: `flex items-center gap-2`,
-              style: {
-                display: `flex`,
-                alignItems: `center`,
-                gap: 6,
-                flexWrap: `wrap`,
-                justifyContent: `flex-end`,
-              },
               children: [
-                guideState?.label &&
-                jsx(`span`, {
-                  style: {
-                    padding: `4px 8px`,
-                    borderRadius: 999,
-                    border: `1px solid rgba(96,165,250,0.28)`,
-                    background: `rgba(59,130,246,0.12)`,
-                    color: `#bfdbfe`,
-                    fontSize: 10,
-                    whiteSpace: `nowrap`,
-                  },
-                  children: guideState.label,
-                }),
                 jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm transition-colors nodrag nopan`,
-                  style: {
-                    background: layoutPreset === `balanced` ? `#2563eb` : `#1f2430`,
-                    color: `#ffffff`,
-                  },
-                  onClick: () => applyLayoutPreset(`balanced`),
-                  children: `均衡布局`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm transition-colors nodrag nopan`,
-                  style: {
-                    background: layoutPreset === `focus-preview` ? `#2563eb` : `#1f2430`,
-                    color: `#ffffff`,
-                  },
-                  onClick: () => applyLayoutPreset(`focus-preview`),
-                  children: `预览优先`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm transition-colors nodrag nopan`,
-                  style: {
-                    background: layoutPreset === `timeline-focus` ? `#2563eb` : `#1f2430`,
-                    color: `#ffffff`,
-                  },
-                  onClick: () => applyLayoutPreset(`timeline-focus`),
-                  children: `时间线优先`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm transition-colors nodrag nopan`,
-                  style: {
-                    background: maximizedPanel === `preview` ? `#2563eb` : `#1f2430`,
-                    color: `#ffffff`,
-                  },
-                  onClick: () => togglePanelMaximize(`preview`),
-                  children: maximizedPanel === `preview` ? `还原预览` : `放大预览`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm transition-colors nodrag nopan`,
-                  style: {
-                    background: maximizedPanel === `timeline` ? `#2563eb` : `#1f2430`,
-                    color: `#ffffff`,
-                  },
-                  onClick: () => togglePanelMaximize(`timeline`),
-                  children: maximizedPanel === `timeline` ? `还原轨道` : `放大轨道`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-[#23262d] transition-colors nodrag nopan`,
-                  onClick: () => applyLayoutPreset(`balanced`),
-                  children: `重置工作区`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-[#23262d] transition-colors nodrag nopan`,
-                  onClick: () => setIsTimelineCollapsed((prev) => !prev),
-                  children: isTimelineCollapsed ? `展开时间线` : `隐藏时间线`,
-                }),
-                jsx(`button`, {
-                  className: `px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-[#23262d] transition-colors nodrag nopan`,
-                  onClick: () => {
-                    !isExporting && onClose();
-                  },
+                  onClick: onClose,
+                  className: `px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-[#222] transition-colors`,
                   children: `关闭`,
                 }),
                 jsx(`button`, {
-                  className: `px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-medium transition-colors nodrag nopan`,
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    exportClip();
-                  },
-	                  disabled: isExporting || totalOutputDuration <= 0.05,
-	                  children: isExporting ? `导出中...` : totalOutputDuration <= 0.05 ? `选区无效` : `导出副本`,
+                  onClick: exportClip,
+                  disabled: isExporting,
+                  className: `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${isExporting ? `bg-[#333] text-gray-500` : `bg-blue-600 hover:bg-blue-500 text-white`}`,
+                  children: isExporting ? `导出中…` : `完成并导出`,
                 }),
               ],
             }),
           ],
         }),
         jsxs(`div`, {
-          ref: editorShellRef,
-          className: `flex-1 min-h-0 flex flex-col`,
-          style: {
-            flex: `1 1 auto`,
-            minHeight: 0,
-            display: `flex`,
-            flexDirection: `column`,
-            position: `relative`,
-            overflow: `hidden`,
-            borderRadius: 28,
-            border: `1px solid rgba(41,48,60,0.98)`,
-            boxShadow: `0 28px 80px rgba(0,0,0,0.34)`,
-            background: `#08090c`,
-          },
+          className: `flex-1 min-h-0 flex items-center justify-center bg-black relative p-4`,
           children: [
-            guideState?.kind === `horizontal` &&
-            showSidebar &&
-            jsx(`div`, {
-              style: {
-                position: `absolute`,
-                top: 20,
-                bottom: showTimeline ? `calc(${Math.max(18, Math.round((1 - topAreaRatio) * 100))}% + 18px)` : 20,
-                left: `calc(${Math.round(previewAreaRatio * 1e4) / 100}% - 6px)`,
-                width: 12,
-                borderRadius: 999,
-                border: `1px solid rgba(147,197,253,0.52)`,
-                background: `rgba(59,130,246,0.22)`,
-                boxShadow: `0 0 0 1px rgba(191,219,254,0.18)`,
-                pointerEvents: `none`,
-                zIndex: 4,
+            jsx(`video`, {
+              ref: videoRef,
+              src: videoUrl,
+              controls: !1,
+              playsInline: !0,
+              className: `max-w-full max-h-full object-contain rounded-lg shadow-2xl cursor-pointer`,
+              onClick: togglePlayback,
+              onTimeUpdate: (event) => {
+                let time = roundToTenth(event.currentTarget.currentTime || 0);
+                (setPlayheadTime(time),
+                  isPreviewing && time >= endTime && (event.currentTarget.pause(), setIsPreviewing(!1)));
               },
+              onLoadedMetadata: (event) => {
+                let dur = event.currentTarget.duration || 0;
+                (setDuration(dur),
+                  setStartTime(0),
+                  setEndTime(dur),
+                  setPlayheadTime(0),
+                  setVideoFrame({ width: event.currentTarget.videoWidth || 9, height: event.currentTarget.videoHeight || 16 }));
+              },
+              onPlay: () => setIsPlaying(!0),
+              onPause: () => setIsPlaying(!1),
+              onEnded: () => { (setIsPlaying(!1), setIsPreviewing(!1)); },
             }),
-            guideState?.kind === `vertical` &&
-            showTimeline &&
-            jsx(`div`, {
-              style: {
-                position: `absolute`,
-                left: 20,
-                right: 20,
-                top: `calc(${Math.round(topAreaRatio * 1e4) / 100}% - 6px)`,
-                height: 12,
-                borderRadius: 999,
-                border: `1px solid rgba(147,197,253,0.52)`,
-                background: `rgba(59,130,246,0.22)`,
-                boxShadow: `0 0 0 1px rgba(191,219,254,0.18)`,
-                pointerEvents: `none`,
-                zIndex: 4,
-              },
-            }),
-            jsxs(`div`, {
-              className: `flex-1 min-h-0 grid grid-cols-[minmax(0,1fr)_320px]`,
-              style: {
-                flex: showTimeline ? `0 0 ${Math.round(topAreaRatio * 1e3) / 10}%` : `1 1 auto`,
-                minHeight: 0,
-                display: `grid`,
-                gridTemplateColumns: showSidebar ?
-                  `minmax(0, ${Math.max(0.54, previewAreaRatio).toFixed(3)}fr) 12px minmax(260px, ${Math.max(0.16, 1 - previewAreaRatio).toFixed(3)}fr)` :
-                  `minmax(0, 1fr)`,
-                transition: `grid-template-columns 160ms ease, flex-basis 160ms ease`,
-                background: `#08090c`,
-              },
-              children: [
-                jsxs(`div`, {
-                  className: `min-w-0 border-r border-[#1d2026] p-4 flex flex-col gap-4`,
-                  style: {
-                    minWidth: 0,
-                    padding: 12,
-                    display: `flex`,
-                    flexDirection: `column`,
-	                    gap: 10,
-	                    borderRight: showSidebar ? `1px solid #1d2026` : `none`,
-	                    background: `#08090c`,
-	                    overflow: `hidden`,
-	                  },
-                  onDoubleClick: (event) => {
-                    event.target instanceof HTMLButtonElement ||
-                      event.target instanceof HTMLInputElement ||
-                      event.target instanceof HTMLTextAreaElement ||
-                      togglePanelMaximize(`preview`);
-                  },
-                  children: [
-                    jsx(`style`, {
-                      children: `.wanjuan-config-error-assistant,.wanjuan-config-error-assistant *{box-sizing:border-box}.wanjuan-config-error-assistant-action{cursor:pointer;user-select:none}.wanjuan-config-error-assistant-action:hover{filter:brightness(1.04)}`,
-                    }),
-                    jsxs(`div`, {
-                      className: `rounded-2xl border border-[#23262d] bg-[#0f1115] overflow-hidden flex-1 min-h-0 flex flex-col`,
-                      style: {
-                        flex: `1 1 auto`,
-                        minHeight: 0,
-                        display: `flex`,
-                        flexDirection: `column`,
-                        overflow: `hidden`,
-                        borderRadius: 16,
-                        border: `1px solid #23262d`,
-                        background: `#0f1115`,
-                      },
-                      children: [
-                        jsxs(`div`, {
-                          className: `px-4 py-2 border-b border-[#23262d] flex items-center justify-between text-xs text-gray-500`,
-                          style: {
-                            display: `flex`,
-                            alignItems: `center`,
-                            justifyContent: `space-between`,
-                            padding: `8px 12px`,
-                            borderBottom: `1px solid #23262d`,
-                            color: `#9ca3af`,
-                            background: `#13161c`,
-                            flex: `0 0 auto`,
-                          },
-                          children: [
-                            jsxs(`span`, {
-                              children: [`节目监视器`, setIsPlaying ? ` · 播放中` : ``],
-                            }),
-                            jsxs(`span`, {
-                              children: [`输出文件：`, `${outputBaseName}-edited.webm`],
-                            }),
-                          ],
-                        }),
-                        jsx(`div`, {
-                          className: `flex-1 min-h-0 overflow-auto flex items-center justify-center p-4`,
-                          style: {
-                            flex: `1 1 auto`,
-                            minHeight: 0,
-                            overflow: `hidden`,
-                            display: `flex`,
-                            alignItems: `center`,
-                            justifyContent: `center`,
-                            padding: 10,
-                            background: `#0b0d11`,
-                          },
-                          children: jsxs(`div`, {
-                            className: `max-w-full max-h-full`,
-                            style: {
-                              maxWidth: `100%`,
-	                              maxHeight: `100%`,
-	                              height: `100%`,
-	                              minHeight: 0,
-	                              display: `flex`,
-                              flexDirection: `column`,
-                              alignItems: `center`,
-                              justifyContent: `center`,
-                              gap: 8,
-                            },
-                            children: [
-                              jsxs(`div`, {
-                                style: {
-                                  position: `relative`,
-                                  width: previewFrameWidth,
-                                  height: previewFrameHeight,
-                                  aspectRatio: `${Math.max(1, videoFrame.width)} / ${Math.max(1, videoFrame.height)}`,
-                                  maxHeight: previewFrameMaxHeight,
-                                  maxWidth: `100%`,
-                                  background: `radial-gradient(circle at top, rgba(64,82,121,0.22), rgba(8,9,12,0.98) 72%)`,
-                                  borderRadius: 20,
-                                  overflow: `hidden`,
-                                  border: `1px solid #23262d`,
-                                  boxShadow: `0 24px 80px rgba(0,0,0,0.42)`,
-                                },
-                                children: [
-                                  jsx(`video`, {
-                                    ref: videoRef,
-                                    src: videoUrl,
-                                    controls: !1,
-                                    playsInline: !0,
-                                    className: `max-w-full max-h-full object-contain bg-black rounded-xl shadow-2xl`,
-                                    style: {
-                                      display: `block`,
-                                      width: `100%`,
-                                      height: `100%`,
-                                      objectFit: `contain`,
-                                      background: `#000000`,
-                                    },
-                                    onTimeUpdate: (event) => {
-                                      let time = roundToTenth(event.currentTarget.currentTime || 0);
-                                      (setPlayheadTime(time),
-                                        isPreviewing &&
-                                        time >= endTime &&
-                                        (event.currentTarget.pause(), setIsPreviewing(!1), setStatusMessage(`片段预览结束`)));
-                                    },
-                                    onLoadedMetadata: (event) => {
-                                      let dur = event.currentTarget.duration || 0,
-                                        width = event.currentTarget.videoWidth || 9,
-                                        height = event.currentTarget.videoHeight || 16;
-                                      (setDuration(dur),
-                                        setStartTime(0),
-                                        setEndTime(dur),
-                                        setPlayheadTime(0),
-                                        setPreviewZoom(height > width ? 1 : 0.95),
-                                        setVideoFrame({
-                                          width,
-                                          height,
-                                        }));
-                                    },
-                                    onPlay: () => setIsPlaying(!0),
-                                    onPause: () => setIsPlaying(!1),
-                                    onEnded: () => {
-                                      (setIsPlaying(!1), setIsPreviewing(!1));
-                                    },
-                                  }),
-                                  jsx(`button`, {
-                                    type: `button`,
-                                    title: `拖动缩放预览画面`,
-                                    onMouseDown: beginPreviewResize,
-                                    style: {
-                                      position: `absolute`,
-                                      right: 8,
-                                      bottom: 8,
-                                      width: 28,
-                                      height: 28,
-                                      borderRadius: 10,
-                                      border: `1px solid rgba(255,255,255,0.18)`,
-                                      background: `rgba(9,12,18,0.72)`,
-                                      color: `#ffffff`,
-                                      cursor: `nwse-resize`,
-                                      display: `flex`,
-                                      alignItems: `center`,
-                                      justifyContent: `center`,
-                                      boxShadow: `0 8px 22px rgba(0,0,0,0.32)`,
-                                    },
-                                    children: `↘`,
-                                  }),
-                                ],
-                              }),
-                            ],
-                          }),
-                        }),
-                      ],
-                    }),
-                    jsxs(`div`, {
-                      className: `rounded-2xl border border-[#23262d] bg-[#0f1115] px-4 py-3 flex flex-wrap items-center gap-2`,
-	                      style: {
-		                        display: `flex`,
-		                        flexWrap: `wrap`,
-		                        alignItems: `center`,
-		                        justifyContent: `space-between`,
-		                        gap: 8,
-	                        padding: `9px 12px`,
-	                        borderRadius: 16,
-	                        border: `1px solid #23262d`,
-	                        background: `#0f1115`,
-	                        flex: `0 0 auto`,
-	                      },
-	                      children: [
-	                        jsx(`button`, {
-	                          className: `px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white transition-colors`,
-	                          onClick: togglePlayback,
-	                          children: setIsPlaying ? `暂停` : `播放`,
-	                        }),
-	                        jsx(`button`, {
-	                          className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                          onClick: previewSelection,
-	                          disabled: isPreviewing,
-	                          children: isPreviewing ? `预览中...` : `预览选区`,
-	                        }),
-	                        jsxs(`div`, {
-	                          style: {
-		                            display: `flex`,
-		                            alignItems: `center`,
-		                            gap: 6,
-		                            flexWrap: `wrap`,
-		                            minWidth: 0,
-	                          },
-	                          children: [
-	                            jsxs(`label`, {
-	                              style: {
-	                                display: `flex`,
-	                                alignItems: `center`,
-	                                gap: 5,
-	                                color: `#9ca3af`,
-	                                fontSize: 12,
-	                                whiteSpace: `nowrap`,
-	                              },
-	                              children: [
-	                                `入点`,
-	                                jsx(`input`, {
-	                                  type: `number`,
-	                                  min: 0,
-	                                  max: Math.max(0, duration),
-	                                  step: 0.1,
-	                                  value: Number.isFinite(startTime) ? startTime.toFixed(1) : `0.0`,
-	                                  onChange: (event) => setStartSeconds(event.currentTarget.value),
-		                                  onBlur: (event) => seekToTime(event.currentTarget.value),
-	                                  style: {
-	                                    width: 72,
-	                                    height: 28,
-	                                    borderRadius: 8,
-	                                    border: `1px solid #2a3140`,
-	                                    background: `#0b0f15`,
-	                                    color: `#f9fafb`,
-	                                    padding: `0 8px`,
-	                                    fontSize: 12,
-	                                  },
-	                                }),
-		                              ],
-		                            }),
-	                            jsxs(`label`, {
-	                              style: {
-	                                display: `flex`,
-	                                alignItems: `center`,
-	                                gap: 5,
-	                                color: `#9ca3af`,
-	                                fontSize: 12,
-	                                whiteSpace: `nowrap`,
-	                              },
-	                              children: [
-	                                `出点`,
-	                                jsx(`input`, {
-	                                  type: `number`,
-	                                  min: 0,
-	                                  max: Math.max(0, duration),
-	                                  step: 0.1,
-	                                  value: Number.isFinite(endTime) ? endTime.toFixed(1) : `0.0`,
-	                                  onChange: (event) => setEndSeconds(event.currentTarget.value),
-		                                  onBlur: (event) => seekToTime(event.currentTarget.value),
-	                                  style: {
-	                                    width: 72,
-	                                    height: 28,
-	                                    borderRadius: 8,
-	                                    border: `1px solid #2a3140`,
-	                                    background: `#0b0f15`,
-	                                    color: `#f9fafb`,
-	                                    padding: `0 8px`,
-	                                    fontSize: 12,
-	                                  },
-	                                }),
-	                              ],
-	                            }),
-	                            jsx(`span`, {
-	                              style: {
-	                                padding: `5px 8px`,
-	                                borderRadius: 999,
-	                                background: `rgba(59,130,246,0.12)`,
-	                                color: `#bfdbfe`,
-	                                fontSize: 12,
-	                                whiteSpace: `nowrap`,
-	                              },
-	                              children: [`导出 `, formatTime(totalOutputDuration)],
-	                            }),
-	                          ],
-	                        }),
-	                        jsxs(`div`, {
-	                          style: {
-	                            display: `flex`,
-	                            alignItems: `center`,
-		                            justifyContent: `flex-end`,
-		                            gap: 6,
-		                            flexWrap: `wrap`,
-		                            marginLeft: `auto`,
-	                          },
-	                          children: [
-	                            jsx(`button`, {
-	                              className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                              onClick: () => seekToTime(startTime),
-	                              children: `到入点`,
-	                            }),
-	                            jsx(`button`, {
-	                              className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                              onClick: () => seekToTime(endTime),
-	                              children: `到出点`,
-	                            }),
-	                            jsx(`button`, {
-	                              className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                              onClick: markInPoint,
-	                              children: `设入点`,
-	                            }),
-	                            jsx(`button`, {
-	                              className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                              onClick: markOutPoint,
-	                              children: `设出点`,
-	                            }),
-	                            jsx(`button`, {
-	                              className: `px-3 py-1.5 rounded-lg bg-[#1d2129] hover:bg-[#272c36] text-sm text-gray-200 transition-colors`,
-	                              onClick: resetSelection,
-	                              children: `恢复全片`,
-	                            }),
-	                          ],
-	                        }),
-	                        jsxs(`div`, {
-	                          className: `text-xs text-gray-400 flex items-center gap-2`,
-	                          style: {
-	                            justifyContent: `flex-end`,
-	                            whiteSpace: `nowrap`,
-	                          },
-	                          children: [formatTime(playheadTime), jsx(`span`, {
-	                            children: `/`
-	                          }), formatTime(duration)],
-                        }),
-                      ],
-                    }),
-                  ],
-                }),
-                showSidebar &&
-                jsx(`div`, {
-                  style: {
-                    position: `relative`,
-                    display: `flex`,
-                    alignItems: `stretch`,
-                    justifyContent: `center`,
-                    padding: `10px 0`,
-                    background: `linear-gradient(180deg, rgba(15,17,21,0), rgba(15,17,21,0.92) 22%, rgba(15,17,21,0.92) 78%, rgba(15,17,21,0))`,
-                  },
-                  children: jsx(`button`, {
-                    type: `button`,
-                    onMouseDown: (event) => beginLayoutDrag(`horizontal`, event),
-                    title: `拖动调整左右面板`,
-                    style: {
-                      width: 12,
-                      borderRadius: 999,
-                      border: `1px solid rgba(71,85,105,0.72)`,
-                      background: `linear-gradient(180deg, rgba(30,41,59,0.96), rgba(15,23,42,0.96))`,
-                      cursor: `col-resize`,
-                      display: `flex`,
-                      alignItems: `center`,
-                      justifyContent: `center`,
-                      boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.04)`,
-                    },
-                    children: jsx(`span`, {
-                      style: {
-                        width: 4,
-                        height: 48,
-                        borderRadius: 999,
-                        background: `rgba(191,219,254,0.92)`,
-                      },
-                    }),
-                  }),
-                }),
-                showSidebar &&
-                jsxs(`div`, {
-                  className: `min-w-0 p-4 space-y-4 overflow-y-auto bg-[#0d0f13]`,
-                  style: {
-                    minWidth: 0,
-                    padding: 12,
-                    display: `flex`,
-                    flexDirection: `column`,
-                    gap: 12,
-                    overflowY: `auto`,
-                    background: `#0d0f13`,
-                  },
-                  onDoubleClick: (event) => {
-                    event.target instanceof HTMLButtonElement ||
-                      event.target instanceof HTMLInputElement ||
-                      event.target instanceof HTMLTextAreaElement ||
-                      togglePanelMaximize(`sidebar`);
-                  },
-                  children: [
-                    jsx(`style`, {
-                      children: `.wanjuan-config-error-assistant,.wanjuan-config-error-assistant *{box-sizing:border-box}.wanjuan-config-error-assistant-action{cursor:pointer;user-select:none}.wanjuan-config-error-assistant-action:hover{filter:brightness(1.04)}`,
-                    }),
-                    jsxs(`div`, {
-                      className: `rounded-2xl border border-[#23262d] bg-[#13161c] p-4 space-y-3`,
-                      children: [
-                        jsxs(`div`, {
-                          className: `flex items-center justify-between`,
-                          children: [
-                            jsx(`div`, {
-                              className: `text-sm font-medium text-white`,
-                              children: `剪辑摘要`,
-                            }),
-                            jsx(`div`, {
-                              className: `text-[11px] text-gray-500`,
-                              children: `选区用时间线直接拖动`,
-                            }),
-                          ],
-                        }),
-                        jsxs(`div`, {
-                          className: `grid grid-cols-2 gap-2 text-sm`,
-                          children: [
-                            jsxs(`div`, {
-                              className: `rounded-xl bg-[#0d1015] border border-[#23262d] px-3 py-2 flex flex-col`,
-                              children: [
-                                jsx(`span`, {
-                                  className: `text-xs text-gray-500`,
-                                  children: `入点`,
-                                }),
-                                jsx(`span`, {
-                                  className: `text-white mt-1`,
-                                  children: formatTime(startTime),
-                                }),
-                              ],
-                            }),
-                            jsxs(`div`, {
-                              className: `rounded-xl bg-[#0d1015] border border-[#23262d] px-3 py-2 flex flex-col`,
-                              children: [
-                                jsx(`span`, {
-                                  className: `text-xs text-gray-500`,
-                                  children: `出点`,
-                                }),
-                                jsx(`span`, {
-                                  className: `text-white mt-1`,
-                                  children: formatTime(endTime),
-                                }),
-                              ],
-                            }),
-                            jsxs(`div`, {
-                              className: `rounded-xl bg-[#0d1015] border border-[#23262d] px-3 py-2 flex flex-col`,
-                              children: [
-                                jsx(`span`, {
-                                  className: `text-xs text-gray-500`,
-                                  children: `选区长度`,
-                                }),
-                                jsx(`span`, {
-                                  className: `text-white mt-1`,
-                                  children: `${Math.max(0, clamp(roundToTenth(endTime), duration) - clamp(roundToTenth(startTime), duration)).toFixed(1)}s`,
-                                }),
-                              ],
-                            }),
-                            jsxs(`div`, {
-                              className: `rounded-xl bg-[#0d1015] border border-[#23262d] px-3 py-2 flex flex-col`,
-                              children: [
-                                jsx(`span`, {
-                                  className: `text-xs text-gray-500`,
-                                  children: `导出时长`,
-                                }),
-                                jsx(`span`, {
-                                  className: `text-white mt-1`,
-                                  children: formatTime(totalOutputDuration),
-                                }),
-                              ],
-                            }),
-                          ],
-                        }),
-                        jsx(`div`, {
-                          className: `rounded-xl bg-[#10141b] border border-[#1d2733] px-3 py-2 text-[11px] leading-5 text-gray-400`,
-                          children: `预览窗只影响查看大小，不会裁剪画面；拖动时间线两端调整最终片段时长。`,
-                        }),
-                      ],
-                    }),
-                    jsxs(`div`, {
-                      className: `rounded-2xl border border-[#23262d] bg-[#13161c] p-4 space-y-3`,
-                      style: {
-                        flex: `1 1 auto`,
-                        minHeight: 180,
-                      },
-                      children: [
-                        jsxs(`div`, {
-                          className: `flex items-center justify-between`,
-                          children: [
-                            jsx(`div`, {
-                              className: `text-sm font-medium text-white`,
-                              children: `当前导出片段`,
-                            }),
-                            jsx(`div`, {
-                              className: `text-[11px] text-gray-500`,
-                              children: `导出时会生成当前画布里的副本`,
-                            }),
-                          ],
-                        }),
-                        jsx(`div`, {
-                          className: `space-y-2 overflow-y-auto`,
-                          style: {
-                            minHeight: 120,
-                            maxHeight: 320,
-                          },
-                          children: outputSegments.length === 0 ?
-                            jsx(`div`, {
-                              className: `rounded-xl border border-dashed border-[#2a2f38] px-3 py-6 text-center text-xs text-gray-500`,
-                              children: `还没有有效选区。先在时间线上设定入点和出点。`,
-                            }) :
-                            outputSegments.map((segment, index) =>
-                              jsxs(
-                                `button`, {
-                                  className: `w-full text-left rounded-xl border border-[#23262d] bg-[#0d1015] px-3 py-2 hover:border-blue-500/50 transition-colors`,
-                                  onClick: () => seekToTime(segment.start),
-                                  children: [
-                                    jsxs(`div`, {
-                                      className: `flex items-center justify-between`,
-                                      children: [
-                                        jsxs(`span`, {
-                                          className: `text-sm text-white`,
-                                          children: [`片段 `, index + 1],
-                                        }),
-                                      ],
-                                    }),
-                                    jsxs(`div`, {
-                                      className: `mt-1 text-xs text-gray-500`,
-                                      children: [
-                                        formatTime(segment.start),
-                                        ` → `,
-                                        formatTime(segment.end),
-                                        ` / `,
-                                        segment.duration.toFixed(1),
-                                        `s`,
-                                      ],
-                                    }),
-                                  ],
-                                },
-                                segment.id,
-                              ),
-                            ),
-                        }),
-                      ],
-                    }),
-                    jsxs(`div`, {
-                      className: `rounded-2xl border border-[#23262d] bg-[#13161c] p-4 space-y-2`,
-                      children: [
-                        jsxs(`div`, {
-                          className: `flex items-center justify-between gap-2 text-xs text-gray-500`,
-                          children: [
-                            jsxs(`span`, {
-                              children: [`播放头 `, formatTime(playheadTime)],
-                            }),
-                            jsxs(`span`, {
-                              children: [`源视频 `, formatTime(duration)],
-                            }),
-                          ],
-                        }),
-                        jsx(`div`, {
-                          className: `text-xs text-blue-300`,
-                          children: statusMessage,
-                        }),
-                      ],
-                    }),
-                  ],
-                }),
-              ],
-            }),
-            showTimeline &&
-            jsx(`div`, {
-              style: {
-                flex: `0 0 16px`,
-                display: `flex`,
-                alignItems: `center`,
-                justifyContent: `center`,
-                padding: `0 16px`,
-                background: `#08090c`,
-              },
-              children: jsx(`button`, {
-                type: `button`,
-                onMouseDown: (event) => beginLayoutDrag(`vertical`, event),
-                title: `拖动调整预览与时间线`,
-                style: {
-                  width: `100%`,
-                  height: 12,
-                  borderRadius: 999,
-                  border: `1px solid rgba(71,85,105,0.72)`,
-                  background: `linear-gradient(90deg, rgba(30,41,59,0.96), rgba(15,23,42,0.96))`,
-                  cursor: `row-resize`,
-                  display: `flex`,
-                  alignItems: `center`,
-                  justifyContent: `center`,
-                  boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.04)`,
-                },
-                children: jsx(`span`, {
-                  style: {
-                    width: 54,
-                    height: 4,
-                    borderRadius: 999,
-                    background: `rgba(191,219,254,0.92)`,
-                  },
-                }),
+            previewError &&
+              jsx(`div`, {
+                className: `absolute inset-0 flex items-center justify-center text-red-400 text-sm px-6 text-center`,
+                children: previewError,
               }),
-            }),
-            showTimeline &&
+          ],
+        }),
+        jsxs(`div`, {
+          className: `px-6 py-4 bg-[#141414] border-t border-[#222] flex flex-col gap-3`,
+          children: [
             jsxs(`div`, {
-              className: `border-t border-[#1d2026] bg-[#0c0f14] px-3 py-3 flex flex-col gap-2`,
-              style: {
-                flex: `1 1 ${Math.round((1 - topAreaRatio) * 1e3) / 10}%`,
-                minHeight: 168,
-                borderTop: `1px solid #1d2026`,
-                background: `#0c0f14`,
-                padding: 10,
-                display: `flex`,
-                flexDirection: `column`,
-                gap: 8,
-              },
-              onDoubleClick: (event) => {
-                event.target instanceof HTMLButtonElement ||
-                  event.target instanceof HTMLInputElement ||
-                  event.target instanceof HTMLTextAreaElement ||
-                  togglePanelMaximize(`timeline`);
-              },
+              className: `flex items-center gap-3`,
               children: [
-                jsxs(`div`, {
-                  className: `flex items-center justify-between`,
+                jsx(`button`, {
+                  onClick: togglePlayback,
+                  className: `w-9 h-9 shrink-0 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center text-xs`,
+                  children: isPlaying ? `❚❚` : `▶`,
+                }),
+                jsx(`span`, { className: `text-xs text-gray-400 tabular-nums whitespace-nowrap`, children: `${formatTime(playheadTime)} / ${formatTime(duration)}` }),
+                jsx(`div`, { className: `flex-1` }),
+                jsxs(`label`, {
+                  className: `flex items-center gap-1 text-xs text-gray-400`,
                   children: [
-                    jsx(`div`, {
-                      className: `text-sm font-medium text-white`,
-                      children: `时间线`,
-                    }),
-                    jsxs(`div`, {
-                      className: `text-xs text-gray-500 flex items-center gap-4`,
-                      children: [
-                        jsxs(`span`, {
-                          children: [`入点 `, formatTime(startTime)],
-                        }),
-                        jsxs(`span`, {
-                          children: [`出点 `, formatTime(endTime)],
-                        }),
-                        jsxs(`span`, {
-                          children: [`导出时长 `, formatTime(totalOutputDuration)],
-                        }),
-                      ],
+                    `入点`,
+                    jsx(`input`, {
+                      type: `number`,
+                      step: `0.1`,
+                      min: `0`,
+                      value: startTime,
+                      onChange: (e) => setStartSeconds(parseFloat(e.target.value)),
+                      className: `w-16 bg-[#0d0d0d] border border-[#333] rounded px-2 py-1 text-white text-xs`,
                     }),
                   ],
                 }),
-                jsxs(`div`, {
-                  className: `rounded-2xl border border-[#23262d] bg-[#111317] px-3 py-3 space-y-2`,
-                  style: {
-                    borderRadius: 20,
-                    border: `1px solid #23262d`,
-                    background: `linear-gradient(180deg, #12151b 0%, #0d1015 100%)`,
-                    padding: 10,
-                    display: `flex`,
-                    flexDirection: `column`,
-                    gap: 8,
-                    flex: `1 1 auto`,
-                    minHeight: 0,
-                  },
+                jsxs(`label`, {
+                  className: `flex items-center gap-1 text-xs text-gray-400`,
                   children: [
-                    jsx(`style`, {
-                      children: `.wanjuan-config-error-assistant,.wanjuan-config-error-assistant *{box-sizing:border-box}.wanjuan-config-error-assistant-action{cursor:pointer;user-select:none}.wanjuan-config-error-assistant-action:hover{filter:brightness(1.04)}`,
-                    }),
-                    jsxs(`div`, {
-                      style: {
-                        display: `flex`,
-                        alignItems: `center`,
-                        justifyContent: `space-between`,
-                        gap: 8,
-                      },
-                      children: [
-                        jsxs(`div`, {
-                          style: {
-                            display: `flex`,
-                            alignItems: `center`,
-                            gap: 8,
-                          },
-                          children: [
-                            jsx(`div`, {
-                              style: {
-                                padding: `4px 8px`,
-                                borderRadius: 999,
-                                background: `rgba(64,124,255,0.14)`,
-                                color: `#b9d1ff`,
-                                fontSize: 10,
-                                border: `1px solid rgba(96,165,250,0.24)`,
-                              },
-                              children: `时长剪辑`,
-                            }),
-                            jsx(`span`, {
-                              style: {
-                                fontSize: 10,
-                                color: `#6b7280`,
-                              },
-	                              children: `拖动蓝色片段两端，或在预览下方输入秒数来精确设置入点和出点`,
-                            }),
-                          ],
-                        }),
-                        jsxs(`div`, {
-                          style: {
-                            display: `flex`,
-                            alignItems: `center`,
-                            gap: 6,
-                            fontSize: 10,
-                            color: `#9ca3af`,
-                          },
-                          children: [
-                            jsxs(`span`, {
-                              children: [`播放头 `, formatTime(playheadTime)],
-                            }),
-                            jsxs(`span`, {
-                              children: [`选区 `, `${Math.max(0, clamp(roundToTenth(endTime), duration) - clamp(roundToTenth(startTime), duration)).toFixed(1)}s`],
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                    jsxs(`div`, {
-                      style: {
-                        position: `relative`,
-                        flex: `1 1 auto`,
-                        minHeight: 0,
-                        borderRadius: 18,
-                        border: `1px solid #1f2430`,
-                        background: `linear-gradient(180deg, rgba(12,15,20,0.96), rgba(10,12,17,0.98))`,
-                        overflow: `hidden`,
-                        padding: 8,
-                        display: `flex`,
-                        flexDirection: `column`,
-                        gap: 8,
-                      },
-                      children: [
-                        Array.from({
-                          length: 9
-                        }).map((_, index) =>
-                          jsx(
-                            `div`, {
-                              style: {
-                                position: `absolute`,
-                                top: 0,
-                                bottom: 0,
-                                left: `${(index / 8) * 100}%`,
-                                width: 1,
-                                background: `linear-gradient(180deg, rgba(148,163,184,0.14), rgba(148,163,184,0.04))`,
-                                pointerEvents: `none`,
-                              },
-                            },
-                            `grid-${index}`,
-                          ),
-                        ),
-                        jsxs(`div`, {
-                          style: {
-                            position: `relative`,
-                            zIndex: 1,
-                            display: `flex`,
-                            justifyContent: `space-between`,
-                            padding: `0 8px 0 48px`,
-                            fontSize: 10,
-                            color: `#6b7280`,
-                          },
-                          children: Array.from({
-                            length: 9
-                          }).map((_, index) =>
-                            jsx(`span`, {
-                              children: formatTime((duration / 8) * index)
-                            }, index),
-                          ),
-                        }),
-                        jsxs(`div`, {
-                          className: `grid grid-cols-[38px_minmax(0,1fr)] items-center gap-2`,
-                          style: {
-                            position: `relative`,
-                            zIndex: 1,
-                            display: `grid`,
-                            gridTemplateColumns: `38px minmax(0, 1fr)`,
-                            alignItems: `center`,
-                            gap: 8,
-                          },
-                          children: [
-                            jsxs(`div`, {
-                              style: {
-                                display: `flex`,
-                                flexDirection: `column`,
-                                gap: 2,
-                                color: `#9ca3af`,
-                              },
-                              children: [
-                                jsx(`span`, {
-                                  style: {
-                                    fontSize: 11,
-                                    color: `#f3f4f6`,
-                                    fontWeight: 600,
-                                    writingMode: `vertical-rl`,
-                                    letterSpacing: 1
-                                  },
-                                  children: `导出`,
-                                }),
-                              ],
-                            }),
-                            jsxs(`div`, {
-                              ref: timelineTrackRef,
-                              className: `relative overflow-hidden cursor-pointer`,
-                              style: {
-                                position: `relative`,
-                                height: 98,
-                                borderRadius: 18,
-                                border: `1px solid #2a3140`,
-                                background: `linear-gradient(180deg, #0d1118 0%, #0b0e14 100%)`,
-                                overflow: `hidden`,
-                                cursor: `pointer`,
-                                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)`,
-                              },
-                              onMouseDown: (event) => {
-                                if (!duration) return;
-                                (setPlayheadTime(trackTimeFromClientX(event.clientX)),
-                                  beginTrimDrag(`playhead`, event));
-                              },
-                              children: [
-                                jsx(`div`, {
-                                  style: {
-                                    position: `absolute`,
-                                    inset: 10,
-                                    borderRadius: 14,
-                                    background: `linear-gradient(180deg, rgba(36,44,57,0.92), rgba(24,30,40,0.92))`,
-                                  },
-                                }),
-                                Array.from({
-                                  length: 18
-                                }).map((_, index) =>
-                                  jsx(
-                                    `div`, {
-                                      style: {
-                                        position: `absolute`,
-                                        top: 18,
-                                        bottom: 26,
-                                        left: `calc(${(index / 18) * 100}% + 10px)`,
-                                        width: `calc(${100 / 18}% - 12px)`,
-                                        minWidth: 18,
-                                        borderRadius: 10,
-                                        background: index % 2 === 0 ?
-                                          `linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))` :
-                                          `linear-gradient(180deg, rgba(148,163,184,0.1), rgba(71,85,105,0.05))`,
-                                        border: `1px solid rgba(255,255,255,0.03)`,
-                                      },
-                                    },
-                                    `thumb-${index}`,
-                                  ),
-                                ),
-                                duration > 0 &&
-                                jsxs(`div`, {
-                                  style: {
-                                    position: `absolute`,
-                                    top: 10,
-                                    bottom: 24,
-                                    left: toPercent(startTime),
-                                    width: `calc(${toPercent(Math.max(0, endTime - startTime))} + 2px)`,
-                                    minWidth: 44,
-                                    borderRadius: 14,
-                                    background: `linear-gradient(90deg, rgba(50,104,255,0.92), rgba(50,193,255,0.84))`,
-                                    boxShadow: `0 12px 28px rgba(31,96,255,0.22), inset 0 0 0 1px rgba(255,255,255,0.24)`,
-                                  },
-                                  children: [
-                                    jsx(`button`, {
-                                      onMouseDown: (event) => beginTrimDrag(`start`, event),
-                                      style: {
-                                        position: `absolute`,
-                                        left: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        width: 18,
-                                        border: `none`,
-                                        borderRadius: `14px 0 0 14px`,
-                                        background: `rgba(255,255,255,0.24)`,
-                                        cursor: `ew-resize`,
-                                      },
-                                      children: jsx(`span`, {
-                                        style: {
-                                          display: `block`,
-                                          width: 3,
-                                          height: 28,
-                                          borderRadius: 999,
-                                          background: `rgba(255,255,255,0.98)`,
-                                          margin: `18px auto`,
-                                        },
-                                      }),
-                                    }),
-                                    jsxs(`div`, {
-                                      style: {
-                                        position: `absolute`,
-                                        left: 26,
-                                        right: 26,
-                                        top: 12,
-                                        display: `flex`,
-                                        alignItems: `center`,
-                                        justifyContent: `space-between`,
-                                        gap: 10,
-                                        pointerEvents: `none`,
-                                        color: `#ffffff`,
-                                      },
-                                      children: [
-                                        jsxs(`div`, {
-                                          style: {
-                                            display: `flex`,
-                                            flexDirection: `column`,
-                                            gap: 4,
-                                            minWidth: 0,
-                                          },
-                                          children: [
-                                            jsx(`span`, {
-                                              style: {
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                whiteSpace: `nowrap`,
-                                              },
-                                              children: `导出片段`,
-                                            }),
-                                            jsx(`span`, {
-                                              style: {
-                                                fontSize: 10,
-                                                color: `rgba(255,255,255,0.82)`,
-                                                whiteSpace: `nowrap`,
-                                              },
-                                              children: `${Math.max(0, clamp(roundToTenth(endTime), duration) - clamp(roundToTenth(startTime), duration)).toFixed(1)}s`,
-                                            }),
-                                          ],
-                                        }),
-                                        jsxs(`span`, {
-                                          style: {
-                                            fontSize: 10,
-                                            color: `rgba(255,255,255,0.82)`,
-                                            whiteSpace: `nowrap`,
-                                          },
-                                          children: [formatTime(startTime), ` - `, formatTime(endTime)],
-                                        }),
-                                      ],
-                                    }),
-                                    jsx(`button`, {
-                                      onMouseDown: (event) => beginTrimDrag(`end`, event),
-                                      style: {
-                                        position: `absolute`,
-                                        right: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        width: 18,
-                                        border: `none`,
-                                        borderRadius: `0 14px 14px 0`,
-                                        background: `rgba(255,255,255,0.24)`,
-                                        cursor: `ew-resize`,
-                                      },
-                                      children: jsx(`span`, {
-                                        style: {
-                                          display: `block`,
-                                          width: 3,
-                                          height: 28,
-                                          borderRadius: 999,
-                                          background: `rgba(255,255,255,0.98)`,
-                                          margin: `18px auto`,
-                                        },
-                                      }),
-                                    }),
-                                  ],
-                                }),
-                                duration > 0 &&
-                                jsxs(`div`, {
-                                  style: {
-                                    position: `absolute`,
-                                    left: 14,
-                                    bottom: 8,
-                                    display: `flex`,
-                                    alignItems: `center`,
-                                    gap: 8,
-                                    fontSize: 10,
-                                    color: `#8ea2c3`,
-                                    background: `rgba(9,12,18,0.66)`,
-                                    borderRadius: 999,
-                                    padding: `4px 8px`,
-                                  },
-                                  children: [
-                                    jsx(`span`, {
-	                                    children: `拖两端改时长`,
-                                    }),
-                                    jsx(`span`, {
-                                      children: `拖白线走位`,
-                                    }),
-                                  ],
-                                }),
-                                savedSegments.map((segment, index) =>
-                                  jsx(
-                                    `div`, {
-                                      style: {
-                                        position: `absolute`,
-                                        top: 74,
-                                        height: 10,
-                                        borderRadius: 999,
-                                        background: `rgba(52,211,153,0.72)`,
-                                        border: `1px solid rgba(167,243,208,0.62)`,
-                                        left: toPercent(segment.start),
-                                        width: `calc(${toPercent(Math.max(0, segment.end - segment.start))} + 2px)`,
-                                      },
-                                      title: `片段 ${index + 1}: ${formatTime(segment.start)} - ${formatTime(segment.end)}`,
-                                    },
-                                    segment.id,
-                                  ),
-                                ),
-                                duration > 0 &&
-                                jsxs(`div`, {
-                                  onMouseDown: (event) => beginTrimDrag(`playhead`, event),
-                                  style: {
-                                    position: `absolute`,
-                                    top: 0,
-                                    bottom: 0,
-                                    left: toPercent(playheadTime),
-                                    width: 2,
-                                    background: `rgba(255,255,255,0.98)`,
-                                    boxShadow: `0 0 14px rgba(255,255,255,0.42)`,
-                                    cursor: `ew-resize`,
-                                  },
-                                  children: [
-                                    jsx(`div`, {
-                                      style: {
-                                        position: `absolute`,
-                                        left: -7,
-                                        top: 8,
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: 999,
-                                        background: `#ffffff`,
-                                        boxShadow: `0 4px 12px rgba(0,0,0,0.28)`,
-                                      },
-                                    }),
-                                    jsx(`div`, {
-                                      style: {
-                                        position: `absolute`,
-                                        left: playheadTime <= 0.4 ?
-                                          4 :
-                                          playheadTime >= Math.max(0, duration - 0.4) ?
-                                          -46 :
-                                          -18,
-                                        top: -2,
-                                        minWidth: 40,
-                                        padding: `3px 6px`,
-                                        borderRadius: 999,
-                                        background: `rgba(8,9,12,0.92)`,
-                                        color: `#ffffff`,
-                                        fontSize: 10,
-                                        textAlign: `center`,
-                                      },
-                                      children: formatTime(playheadTime),
-                                    }),
-                                  ],
-                                }),
-                              ],
-                            }),
-                          ],
-                        }),
-                        jsxs(`div`, {
-                          className: `grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3`,
-                          style: {
-                            position: `relative`,
-                            zIndex: 1,
-                            display: `none`,
-                            gridTemplateColumns: `88px minmax(0, 1fr)`,
-                            alignItems: `center`,
-                            gap: 12,
-                          },
-                          children: [
-                            jsxs(`div`, {
-                              style: {
-                                display: `flex`,
-                                flexDirection: `column`,
-                                gap: 6,
-                                color: `#9ca3af`,
-                              },
-                              children: [
-                                jsx(`span`, {
-                                  style: {
-                                    fontSize: 12,
-                                    color: `#f3f4f6`,
-                                    fontWeight: 600
-                                  },
-                                  children: `成片轨`,
-                                }),
-                                jsx(`span`, {
-                                  style: {
-                                    fontSize: 11
-                                  },
-                                  children: `输出顺序`,
-                                }),
-                              ],
-                            }),
-                            jsx(`div`, {
-                              className: `relative overflow-hidden`,
-                              style: {
-                                position: `relative`,
-                                height: 114,
-                                borderRadius: 18,
-                                border: `1px solid #2a3140`,
-                                background: `linear-gradient(180deg, #0d1118 0%, #0b0e14 100%)`,
-                                overflow: `hidden`,
-                                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)`,
-                              },
-                              children: outputSegments.length === 0 ?
-                                jsxs(`div`, {
-                                  style: {
-                                    position: `absolute`,
-                                    inset: 12,
-                                    borderRadius: 14,
-                                    border: `1px dashed rgba(148,163,184,0.22)`,
-                                    display: `flex`,
-                                    flexDirection: `column`,
-                                    alignItems: `center`,
-                                    justifyContent: `center`,
-                                    color: `#6b7280`,
-                                    gap: 6,
-                                    fontSize: 11,
-                                  },
-                                  children: [
-                                    jsx(`span`, {
-                                      children: `成片轨还是空的`,
-                                    }),
-                                    jsx(`span`, {
-                                      children: `把上面的选区加入成片轨后，会在这里按顺序拼接`,
-                                    }),
-                                  ],
-                                }) :
-                                outputSegments.map((segment, index) =>
-                                  jsxs(
-                                    `button`, {
-                                      className: `absolute rounded-2xl text-left overflow-hidden`,
-                                      style: {
-                                        left: toPercent(segment.outputStart, totalOutputDuration),
-                                        width: `calc(${toPercent(Math.max(0, segment.outputEnd - segment.outputStart), totalOutputDuration)} + 4px)`,
-                                        top: 14,
-                                        bottom: 14,
-                                        minWidth: 96,
-                                        border: `1px solid rgba(147,197,253,0.32)`,
-                                        background: index % 2 === 0 ?
-                                          `linear-gradient(90deg, rgba(59,130,246,0.9), rgba(56,189,248,0.82))` :
-                                          `linear-gradient(90deg, rgba(99,102,241,0.88), rgba(45,212,191,0.82))`,
-                                        boxShadow: `0 12px 28px rgba(15,23,42,0.24)`,
-                                      },
-                                      onClick: () => seekToTime(segment.start),
-                                      children: [
-                                        jsx(`div`, {
-                                          style: {
-                                            position: `absolute`,
-                                            left: 8,
-                                            right: 8,
-                                            top: 8,
-                                            height: 16,
-                                            borderRadius: 10,
-                                            background: `repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 18px, rgba(255,255,255,0.05) 18px 36px)`,
-                                          },
-                                        }),
-                                        jsxs(`div`, {
-                                          style: {
-                                            position: `absolute`,
-                                            left: 12,
-                                            right: 12,
-                                            bottom: 12,
-                                            display: `flex`,
-                                            flexDirection: `column`,
-                                            gap: 4,
-                                            color: `#ffffff`,
-                                          },
-                                          children: [
-                                            jsxs(`div`, {
-                                              style: {
-                                                display: `flex`,
-                                                alignItems: `center`,
-                                                justifyContent: `space-between`,
-                                                gap: 8,
-                                              },
-                                              children: [
-                                                jsxs(`span`, {
-                                                  style: {
-                                                    fontSize: 11,
-                                                    fontWeight: 700
-                                                  },
-                                                  children: [`片段 `, index + 1],
-                                                }),
-                                                jsx(`span`, {
-                                                  style: {
-                                                    fontSize: 10,
-                                                    color: `rgba(255,255,255,0.8)`,
-                                                  },
-                                                  children: `${segment.duration.toFixed(1)}s`,
-                                                }),
-                                              ],
-                                            }),
-                                            jsxs(`div`, {
-                                              style: {
-                                                fontSize: 10,
-                                                color: `rgba(255,255,255,0.82)`,
-                                                whiteSpace: `nowrap`,
-                                                overflow: `hidden`,
-                                                textOverflow: `ellipsis`,
-                                              },
-                                              children: [formatTime(segment.start), ` → `, formatTime(segment.end)],
-                                            }),
-                                          ],
-                                        }),
-                                      ],
-                                    },
-                                    `${segment.id}-output`,
-                                  ),
-                                ),
-                            }),
-                          ],
-                        }),
-                      ],
+                    `出点`,
+                    jsx(`input`, {
+                      type: `number`,
+                      step: `0.1`,
+                      min: `0`,
+                      value: endTime,
+                      onChange: (e) => setEndSeconds(parseFloat(e.target.value)),
+                      className: `w-16 bg-[#0d0d0d] border border-[#333] rounded px-2 py-1 text-white text-xs`,
                     }),
                   ],
                 }),
+                jsx(`button`, {
+                  onClick: resetSelection,
+                  className: `px-2.5 py-1 rounded text-xs text-gray-400 hover:bg-[#222] transition-colors whitespace-nowrap`,
+                  children: `恢复全片`,
+                }),
+                jsx(`span`, { className: `text-xs text-gray-500 whitespace-nowrap`, children: `选段 ${formatTime(selectionSeconds)}` }),
               ],
             }),
+            jsxs(`div`, {
+              ref: timelineTrackRef,
+              className: `relative h-16 rounded-lg overflow-hidden bg-[#0a0a0a] cursor-pointer`,
+              onClick: (event) => {
+                let track = timelineTrackRef.current;
+                if (!track || !duration) return;
+                let rect = track.getBoundingClientRect(),
+                  ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+                seekToTime(ratio * duration);
+              },
+              children: [
+                jsx(`div`, {
+                  className: `absolute inset-0 flex`,
+                  children: (filmstrip.length ? filmstrip : new Array(12).fill(``)).map((src, i) =>
+                    jsx(`div`, {
+                      className: `h-full flex-1 bg-[#1a1a1a] bg-cover bg-center`,
+                      style: src ? { backgroundImage: `url(${src})` } : undefined,
+                    }, `f${i}`),
+                  ),
+                }),
+                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 left-0 bg-black/55 pointer-events-none`, style: { width: `${pct(startTime)}%` } }),
+                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 right-0 bg-black/55 pointer-events-none`, style: { width: `${100 - pct(endTime)}%` } }),
+                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 border-y-[3px] border-yellow-400 pointer-events-none`, style: { left: `${pct(startTime)}%`, right: `${100 - pct(endTime)}%` } }),
+                duration > 0 && jsx(`div`, {
+                  className: `absolute top-0 bottom-0 w-3 bg-yellow-400 rounded-l cursor-ew-resize flex items-center justify-center z-10`,
+                  style: { left: `${pct(startTime)}%` },
+                  onMouseDown: beginTrimHandleDrag(`start`),
+                  onClick: (e) => e.stopPropagation(),
+                  children: jsx(`div`, { className: `w-0.5 h-6 bg-black/45 rounded` }),
+                }),
+                duration > 0 && jsx(`div`, {
+                  className: `absolute top-0 bottom-0 w-3 bg-yellow-400 rounded-r cursor-ew-resize flex items-center justify-center z-10`,
+                  style: { left: `calc(${pct(endTime)}% - 12px)` },
+                  onMouseDown: beginTrimHandleDrag(`end`),
+                  onClick: (e) => e.stopPropagation(),
+                  children: jsx(`div`, { className: `w-0.5 h-6 bg-black/45 rounded` }),
+                }),
+                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 w-[2px] bg-white pointer-events-none z-20 shadow`, style: { left: `${pct(playheadTime)}%` } }),
+              ],
+            }),
+            jsx(`div`, { className: `text-[11px] text-gray-500 h-4`, children: isExporting ? statusMessage : `` }),
           ],
         }),
       ],
@@ -2130,4 +922,3 @@ export function videoEditorModal({
     document.body,
   );
 }
-
