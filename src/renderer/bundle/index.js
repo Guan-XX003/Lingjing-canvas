@@ -23207,27 +23207,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                  className: `hidden`,
 	                                  onChange: handleAgentReferenceSelection,
 	                                }),
-		                                false && agentAttachments.length > 0 &&
-		                                jsx(`div`, {
-	                                  className: `custom-scrollbar`,
-	                                  style: {
-	                                    position: `absolute`,
-	                                    left: `28px`,
-	                                    right: `28px`,
-	                                    top: `-22px`,
-	                                    zIndex: 12,
-	                                    display: `flex`,
-	                                    alignItems: `center`,
-	                                    gap: `8px`,
-	                                    minHeight: `48px`,
-	                                    maxHeight: `52px`,
-	                                    overflowX: `auto`,
-	                                    overflowY: `visible`,
-	                                    padding: `6px 8px 8px 8px`,
-	                                    pointerEvents: `auto`,
-	                                  },
-	                                  children: agentAttachments.map(renderAgentAttachmentPill),
-	                                }),
+		                                false,
 		                                jsx(`textarea`, {
 		                                  value: agentComposer,
 	                                  onChange: (event) =>
