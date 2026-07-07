@@ -146,3 +146,80 @@ export const mediaUrlToDataUrl = async (url) => {
         }
       };
 export const wanjuanMediaUrlToDataUrl = mediaUrlToDataUrl;
+
+/** 复用 app 的「参考媒体转公网直链」上传配置（自定义直链 / 火山 TOS / 七牛 / litterbox 临时） */
+export interface WanjuanPublicUploadConfigs {
+  uploadMode?: string;
+  tosConfig?: any;
+  qiniuConfig?: any;
+  customPublicUploadConfig?: any;
+}
+
+/**
+ * 把一个（可能是本地的）媒体 URL 上传成公网直链，供需要公网 URL 的接口（如 Suno 翻唱参考音频）复用。
+ * 走 window.wanjuanDesktop 上传：按 uploadMode 主选（custom/tos/qiniu），失败回退 litterbox 临时链。
+ * kind 支持 audio/image/video。返回公网 URL；无桌面上传能力或全部失败则抛错。
+ */
+export const wanjuanUploadMediaToPublicUrl = async (
+  url: string,
+  kind: "audio" | "image" | "video",
+  configs: WanjuanPublicUploadConfigs = {},
+  desktop: any = (typeof window !== "undefined" ? (window as any).wanjuanDesktop : undefined),
+  onStatus?: (msg: string) => void,
+): Promise<string> => {
+  if (!desktop) throw new Error("需要桌面端上传服务（当前环境无法把本地文件转公网直链）");
+  const mode = configs.uploadMode || "public";
+  const filename = `suno-reference-${kind}-${Date.now()}`;
+  const tos = configs.tosConfig || {};
+  const qiniu = configs.qiniuConfig || {};
+  const custom = configs.customPublicUploadConfig || {};
+  const s = (v: any) => String(v || "").trim();
+  const hasTos = !!(s(tos.accessKeyId || tos.accessKey) && s(tos.secretAccessKey || tos.secretKey) && s(tos.bucket));
+  const hasQiniu = !!(s(qiniu.accessKey || qiniu.accessKeyId) && s(qiniu.secretKey || qiniu.secretAccessKey) && s(qiniu.bucket) && s(qiniu.endpoint));
+  const hasCustom = !!(s(custom.uploadUrl || custom.endpoint || custom.url) || s(custom.putUrl));
+
+  const tryCustom = async () => {
+    if (typeof desktop.uploadCustomPublicMedia !== "function") throw new Error("无自定义公网直链上传能力");
+    onStatus?.("上传参考音频到自定义公网直链…");
+    const r = await desktop.uploadCustomPublicMedia({ url, kind, filename, customUpload: custom });
+    if (r?.ok && r.url) return r.url as string;
+    throw new Error(r?.error || "自定义公网直链上传失败");
+  };
+  const tryTos = async () => {
+    if (typeof desktop.uploadTosMedia !== "function") throw new Error("无火山 TOS 上传能力");
+    onStatus?.("上传参考音频到火山 TOS…");
+    const r = await desktop.uploadTosMedia({ url, kind, filename, tos });
+    if (r?.ok && r.url) return r.url as string;
+    throw new Error(r?.error || "火山 TOS 上传失败");
+  };
+  const tryQiniu = async () => {
+    if (typeof desktop.uploadQiniuMedia !== "function") throw new Error("无七牛云上传能力");
+    onStatus?.("上传参考音频到七牛云…");
+    const r = await desktop.uploadQiniuMedia({ url, kind, filename, qiniu });
+    if (r?.ok && r.url) return r.url as string;
+    throw new Error(r?.error || "七牛云上传失败");
+  };
+  const tryPublic = async () => {
+    if (typeof desktop.uploadPublicMedia !== "function") throw new Error("无公网临时链接上传能力");
+    onStatus?.("上传参考音频到公网临时链接…");
+    const r = await desktop.uploadPublicMedia({ url, kind, filename });
+    if (r?.ok && r.url) return r.url as string;
+    throw new Error(r?.error || "公网临时链接上传失败");
+  };
+
+  // 主选（按 uploadMode）→ 其它已配置 → litterbox 临时兜底（去重）
+  const chain: Array<() => Promise<string>> = [];
+  if (mode === "custom" && hasCustom) chain.push(tryCustom);
+  else if (mode === "tos" && hasTos) chain.push(tryTos);
+  else if (mode === "qiniu" && hasQiniu) chain.push(tryQiniu);
+  if (hasCustom && !chain.includes(tryCustom)) chain.push(tryCustom);
+  if (hasTos && !chain.includes(tryTos)) chain.push(tryTos);
+  if (hasQiniu && !chain.includes(tryQiniu)) chain.push(tryQiniu);
+  chain.push(tryPublic);
+
+  let lastErr: any;
+  for (const fn of chain) {
+    try { return await fn(); } catch (e) { lastErr = e; }
+  }
+  throw new Error(`参考音频转公网直链失败：${lastErr?.message || lastErr}`);
+};

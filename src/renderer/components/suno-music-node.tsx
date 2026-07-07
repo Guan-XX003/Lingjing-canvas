@@ -14,6 +14,7 @@ import { memo as reactMemo, useEffect, useRef, useState, type CSSProperties } fr
 import { Position, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { CircleAlert, RefreshCw, Download, Settings2 } from "lucide-react";
 import { resolveModelApiBindingIdHelper } from "../lib/model-binding";
+import { wanjuanUploadMediaToPublicUrl } from "../lib/reference-media";
 import { WanJuanNodeHandle } from "./render-mode";
 import {
   SUNO_MV_MODELS,
@@ -150,14 +151,28 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       body = buildSunoGenerateBody(params);
     } else if (action === "cover") {
       const refClipId = referenceClipId.trim();
-      const refUrl = effectiveCoverAudio;
+      let refUrl = effectiveCoverAudio;
       if (!refClipId && !refUrl) {
-        updateNodeData(nodeId, { errorMessage: "翻唱需要参考：填公网音频 URL、连一个输出公网音频的节点、或填已有 clip_id" });
+        updateNodeData(nodeId, { errorMessage: "翻唱需要参考：填音频 URL、连一个音频节点、或填已有 clip_id" });
         return;
       }
-      if (!refClipId && !/^https?:\/\//i.test(refUrl)) {
-        updateNodeData(nodeId, { errorMessage: "参考音频需公网 http(s) URL（此网关不支持本地文件上传）；或改填已有 clip_id" });
-        return;
+      // 本地/私有音频 → 复用 app 的「参考媒体转公网直链」上传，换成公网 URL
+      if (!refClipId && refUrl && !/^https?:\/\//i.test(refUrl)) {
+        runningRef.current = true;
+        try {
+          updateNodeData(nodeId, { loading: true, errorMessage: undefined, statusText: "参考音频转公网直链…" });
+          refUrl = await wanjuanUploadMediaToPublicUrl(refUrl, "audio", {
+            uploadMode: data.seedanceUploadMode,
+            tosConfig: data.tosConfig,
+            qiniuConfig: data.qiniuConfig,
+            customPublicUploadConfig: data.customPublicUploadConfig,
+          }, undefined, (msg) => updateNodeData(nodeId, { statusText: msg }));
+        } catch (error: any) {
+          updateNodeData(nodeId, { loading: false, statusText: undefined, errorMessage: `参考音频转公网失败：${error?.message || error}（可在设置里配置自定义公网直链/TOS/七牛，或直接填公网音频 URL）` });
+          data.onShowToast?.("参考音频转公网失败");
+          runningRef.current = false;
+          return;
+        }
       }
       body = buildSunoReferenceBody({ referenceClipId: refClipId, referenceUrl: refUrl, mv, prompt: effectivePrompt, tags, title, instrumental });
     } else {
@@ -253,13 +268,13 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
           {action === "cover" && (
             <div style={uiPanel}>
-              <span style={uiLabel}>参考音频：填公网音频 URL（如 Suno 生成的 cdn 链接），或连一个输出公网音频的节点</span>
-              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游音频；也可填公网音频 URL 覆盖" : "公网音频 URL（http/https）"} />
+              <span style={uiLabel}>参考音频：公网 URL 或本地音频都行（本地会自动转公网直链），也可连音频节点</span>
+              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游音频；也可填音频 URL 覆盖" : "音频 URL（公网/本地皆可）"} />
               {!coverAudioUrl && upstreamAudioUrl && (
                 <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将参考上游音频：{upstreamAudioUrl}</span>
               )}
               {!referenceClipId && effectiveCoverAudio && !/^https?:\/\//i.test(effectiveCoverAudio) && (
-                <span style={{ fontSize: 10, color: "#fbbf24" }}>⚠ 这不是公网 http(s) URL——此网关不支持本地文件上传，请用公网音频 URL 或已有 clip_id</span>
+                <span style={{ fontSize: 10, color: COL.textFaint }}>本地/私有音频将用「设置→上传」的公网直链配置自动上传后再翻唱</span>
               )}
               <span style={{ fontSize: 10, color: COL.textFaint }}>或直接填 Suno 内已有的 clip_id（填了优先用它）：</span>
               <input className="nodrag" style={uiInput} value={referenceClipId} onChange={(e) => setReferenceClipId(e.target.value)} placeholder="reference_clip_id（可选）" />
