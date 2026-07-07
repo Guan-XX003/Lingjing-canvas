@@ -444,9 +444,9 @@ function createMainWindow(baseUrl) {
           chromeObj.runtime.id ||= 'desktop';
           chromeObj.runtime.sendMessage ||= async () => {};
           chromeObj.runtime.getURL ||= (p) => {
-            const s = String(p == null ? '' : p).replace(/\\/g, '/');
-            if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return s; // 已是绝对 URL
-            return 'file:///' + s.replace(/^\/+/, ''); // 空 host 的合法 file URL（Windows 盘符路径亦正确）
+            const s = String(p == null ? '' : p);
+            if (s.indexOf('://') > -1) return s; // 已是绝对 URL
+            return 'file:///' + (s.charAt(0) === '/' ? s.slice(1) : s); // 空 host 的合法 file URL
           };
           window.chrome = chromeObj;
 
