@@ -111,6 +111,12 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   const runningRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // 外部（全局「停止」）把本节点 loading 置否时，中止正在进行的轮询，避免停止后又复活写回
+  useEffect(() => {
+    if (!data.loading && runningRef.current) abortRef.current?.abort();
+  }, [data.loading]);
 
   // 上游文本节点内容 → 歌词/描述
   const connections = useNodeConnections({ handleType: "target" });
@@ -142,6 +148,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       data.onShowToast?.("请先配置 Suno（听音）API");
       return;
     }
+    const ac = new AbortController();
+    abortRef.current = ac;
 
     let body: Record<string, any>;
     if (action === "generate") {
@@ -190,20 +198,24 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
         projectId: data.projectId, nodeId, status: "running", progress: 0, createdAt: Date.now(),
         prompt: (effectivePrompt || title || "Suno 音乐").slice(0, 120),
         modelName: mv, apiConfigId: configId, apiBaseUrl: url,
-        requestProfile: { requestType: "suno-newapi", submitPath: "/suno/generate", pollPath: "/suno/feed", action },
+        requestProfile: { requestType: "suno-newapi", submitPath: "/suno/submit/music", pollPath: "/suno/fetch", action },
       },
     ]);
 
     try {
       const taskId = await submitSunoMusic(url, key, body);
+      if (ac.signal.aborted) return; // 提交后若已被停止，不再继续
       updateNodeData(nodeId, { remoteTaskId: taskId });
       const { clips: resultClips } = await pollSunoTask(url, key, taskId, {
+        signal: ac.signal,
         onTick: (status, progress) => {
           const s = progress ? `${status} ${progress}` : status;
-          updateNodeData(nodeId, { statusText: s });
-          data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, statusText: s } : t)));
+          const pct = Math.max(0, Math.min(99, parseInt(String(progress), 10) || 0));
+          updateNodeData(nodeId, { statusText: s, progress: pct });
+          data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, statusText: s, progress: pct } : t)));
         },
       });
+      if (ac.signal.aborted) return; // 停止后不复活写回
       const first = resultClips.find((c) => c.audioUrl) || resultClips[0];
       const audioUrl = first?.audioUrl || "";
       updateNodeData(nodeId, {
@@ -214,12 +226,18 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       audioUrl && data.addTransitResource?.(audioUrl, "audio", `${first?.title || title || "Suno"}.mp3`);
       data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, status: "succeeded", progress: 100, resultUrl: audioUrl } : t)));
     } catch (error: any) {
+      if (ac.signal.aborted) { // 用户主动停止：静默收尾，不报错、不复活
+        updateNodeData(nodeId, { loading: false, statusText: undefined });
+        data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, status: "stopped" } : t)));
+        return;
+      }
       const msg = error?.message || "Suno 生成失败";
       updateNodeData(nodeId, { loading: false, errorMessage: msg, statusText: undefined });
       data.onShowToast?.(msg);
       data.updateGlobalTasks?.((items: any[]) => items.map((t) => (t.id === itemId ? { ...t, status: "failed", errorMsg: msg } : t)));
     } finally {
       runningRef.current = false;
+      if (abortRef.current === ac) abortRef.current = null;
     }
   };
 

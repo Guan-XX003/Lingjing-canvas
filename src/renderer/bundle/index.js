@@ -2799,7 +2799,7 @@ function WanJuanAppCanvas({
             `vectorengine-image-generation` :
             `gemini-generate-content`,
 	            selectedImageProtocolName =
-	            imageModelProtocolBindings?.[imageModelName],
+	            resolveModelProtocolBindingHelper(imageModelProtocolBindings, imageModelName),
 	            selectedImageProtocolDefinition =
 	            modelProtocolRegistry?.[selectedImageProtocolName],
 	            isLconaiImageApi =
@@ -4769,8 +4769,8 @@ ${combinedPrompt}`,
 		            /^(?:doubao-)?seedance(?:-2(?:\.|-)?0|-2-0)/i.test(modelName),
 		            modelProtocolDefinition =
 		            modelProtocolRegistry?.[
-	              seedanceSourceNode?.data?.videoModelProtocolBindings?.[modelName] ||
-	              videoModelProtocolBindings?.[modelName]
+	              resolveModelProtocolBindingHelper(seedanceSourceNode?.data?.videoModelProtocolBindings, modelName) ||
+	              resolveModelProtocolBindingHelper(videoModelProtocolBindings, modelName)
             ],
             parseVideoModelRequestProfiles = (value) => {
               if (!value) return {};
@@ -6939,7 +6939,7 @@ ${combinedPrompt}`,
                 effectiveFieldMapping.resolution === `resolution` ?
                 requestAspectRatioValue || videoSizeValue :
                 videoSizeValue);
-              if (effectiveVideoRequestProfile?.omitDuration !== true) {
+              if (effectiveVideoRequestProfile?.omitDuration !== true && effectiveFieldMapping.duration !== ``) {
                 let durationField = effectiveFieldMapping.duration || `duration`;
                 jsonBody[durationField] = getFieldValue(durationField, Number(durationValue) || durationValue);
               }!isVeoModel &&
@@ -7390,6 +7390,7 @@ ${combinedPrompt}`,
               })();
 	            if (
 	              (effectiveVideoRequestProfile?.omitDuration === true ||
+	                effectiveFieldMapping.duration === `` ||
 	                (() => {
 	                  let durationField = effectiveFieldMapping.duration || `seconds`;
 	                  formData.append(durationField, getFieldValue(durationField, durationValue));
@@ -7971,7 +7972,7 @@ ${combinedPrompt}`,
       async (nodeId, prompt, isRegenerate = false, extraOptions) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyUsageCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
-          let updateGlobalTaskList = updateTaskList,
+          let generatedText = ``, updateGlobalTaskList = updateTaskList,
             textModelName = (
               extraOptions ||
               textModel.split(`
@@ -8644,7 +8645,7 @@ ${combinedPrompt}`,
                 .join(``)
                 .trim() :
                 String(responseData?.choices?.[0]?.message?.content || ``).trim();
-	              updateTaskList = protocolMappedText || geminiText || messageText || String(responseData?.output_text || responseData?.text || ``).trim();
+	              generatedText = protocolMappedText || geminiText || messageText || String(responseData?.output_text || responseData?.text || ``).trim();
             } else {
               if (
                 (isRegenerate ?
@@ -8755,7 +8756,7 @@ ${combinedPrompt}`,
                 }
                 throw Error(errorMessage);
               }
-              updateTaskList = (await response.json()).choices?.[0]?.message?.content || ``;
+              generatedText = (await response.json()).choices?.[0]?.message?.content || ``;
             }
             (updateGlobalTaskList &&
               updateGlobalTaskList((taskList) =>
@@ -8765,7 +8766,7 @@ ${combinedPrompt}`,
                     ...task,
                     status: `completed`,
                     progress: 100,
-                    customResultData: updateTaskList,
+                    customResultData: generatedText,
                   } :
                   task,
                 ),
@@ -8774,7 +8775,7 @@ ${combinedPrompt}`,
               setDailyGenerationCount(dailyUsageCount + 1));
             if (isRegenerate)
               try {
-                let jsonText = updateTaskList.replace(/```json/g, ``)
+                let jsonText = generatedText.replace(/```json/g, ``)
                   .replace(/```/g, ``)
                   .trim(),
                   parsedItems = [];
@@ -8923,7 +8924,7 @@ ${combinedPrompt}`,
                         ...node2,
                         data: {
                           ...node2.data,
-                          text: updateTaskList,
+                          text: generatedText,
                           loading: false
                         }
                       } :
@@ -8939,14 +8940,14 @@ ${combinedPrompt}`,
                       ...node2,
                       data: {
                         ...node2.data,
-                        text: updateTaskList,
+                        text: generatedText,
                         loading: false
                       }
                     } :
                     node2,
                   ),
                 ),
-                addGeneratedAsset && addGeneratedAsset(updateTaskList, `text`, `generated`));
+                addGeneratedAsset && addGeneratedAsset(generatedText, `text`, `generated`));
             isRegenerate &&
               setNodes((nodes3) =>
                 nodes3.map((node2) =>
@@ -10322,7 +10323,10 @@ ${combinedPrompt}`,
               nodeType === `textNode` ||
               nodeType === `videoNode` ||
               nodeType === `seedanceNode` ||
-              nodeType === `tongyiWanxiangNode` ?
+              nodeType === `tongyiWanxiangNode` ||
+              nodeType === `audioNode` ||
+              nodeType === `ttsMusicNode` ||
+              nodeType === `musicNode` ?
               apiConfigs :
               undefined,
             modelProtocolRegistry: nodeType === `promptNode` ||
@@ -10353,7 +10357,6 @@ ${combinedPrompt}`,
 	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiKey : undefined,
 	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModel : undefined,
 	            audioModelApiBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelApiBindings : undefined,
-	            apiConfigs: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? apiConfigs : undefined,
 	            ttsMusicModels: nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `audioNode` ? ttsMusicModel : undefined,
             audioModelProtocolBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelProtocolBindings : undefined,
             projectId: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? projectIdRef.current : undefined,
@@ -14177,15 +14180,21 @@ time=${normalizedTtl}`,
               }),
               apiConfigs2.push(matchedApiConfig)),
             setApiConfigs(normalizeUnifiedApiConfigs(apiConfigs2));
-	          let nextProtocolRegistry =
-	            protocolName && protocolConfig && typeof protocolConfig == `object` ?
-	            {
-	              ...modelProtocolRegistry,
-	              [protocolName]: protocolConfig,
-	            } :
-	            modelProtocolRegistry;
-	          if (protocolName && protocolConfig && typeof protocolConfig == `object`)
-	            setModelProtocolRegistry(nextProtocolRegistry);
+	          let nextProtocolRegistry = modelProtocolRegistry;
+	          if (protocolName && protocolConfig && typeof protocolConfig == `object`) {
+	            let protocolConfigKey = JSON.stringify(protocolConfig || {}),
+	              existingProtocolName = Object.keys(modelProtocolRegistry).find(
+	                (existingName) => JSON.stringify(modelProtocolRegistry[existingName] || {}) === protocolConfigKey,
+	              );
+	            if (existingProtocolName) protocolName = existingProtocolName;
+	            else {
+	              let candidateName = protocolName, suffix = 2;
+	              for (; modelProtocolRegistry[candidateName];)((candidateName = `${protocolName}（${suffix}）`), (suffix += 1));
+	              protocolName = candidateName;
+	              nextProtocolRegistry = { ...modelProtocolRegistry, [protocolName]: protocolConfig };
+	              setModelProtocolRegistry(nextProtocolRegistry);
+	            }
+	          }
 	          if (category === `text`) {
 	            let textModelList = ensureModelInList(textModels, modelName),
 	              nextApiBindings = {

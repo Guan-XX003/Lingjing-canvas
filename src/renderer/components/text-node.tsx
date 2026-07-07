@@ -131,10 +131,12 @@ export const WanJuanTextNode = reactMemo(({
         };
         let sourceList = Array.isArray(oe) ? oe : [oe],
           images = [],
-          texts = [];
+          texts = [],
+          processedSourceIds = new Set();
         return (
           sourceList.forEach((sourceNode: any) => {
-            let matchedConnection = connections.find((connection) => connection.source === sourceNode?.id);
+            if (!sourceNode || processedSourceIds.has(sourceNode.id)) return; // 同源多条边只处理一次
+            processedSourceIds.add(sourceNode.id);
             if (
               (sourceNode?.data?.imageUrl &&
                 typeof sourceNode.data.imageUrl == `string` &&
@@ -146,18 +148,21 @@ export const WanJuanTextNode = reactMemo(({
 	                  url: sourceNode.data.imageUrl
 	                }),
                 sourceNode?.type === `videoExtractNode` && sourceNode?.data?.extractedImages)
-            )
-              if (matchedConnection && matchedConnection.sourceHandle && matchedConnection.sourceHandle.startsWith(`frame-`)) {
-                let frameIndex = parseInt(matchedConnection.sourceHandle.replace(`frame-`, ``), 10);
-                if (!(sourceNode.data.hiddenIndices || []).includes(frameIndex)) {
-                  let extractedImages = sourceNode.data.allExtractedImages;
-	                  extractedImages && extractedImages[frameIndex] && images.push({
-	                    id: `${sourceNode.id}-ext-${frameIndex}`,
-	                    sourceId: sourceNode.id,
-	                    url: extractedImages[frameIndex]
-	                  });
-                }
-              } else
+            ) {
+              let frameConnections = connections.filter((connection) => connection.source === sourceNode?.id && connection.sourceHandle && connection.sourceHandle.startsWith(`frame-`));
+              if (frameConnections.length)
+                frameConnections.forEach((matchedConnection) => { // 遍历该源每条 frame 边
+                  let frameIndex = parseInt(matchedConnection.sourceHandle.replace(`frame-`, ``), 10);
+                  if (!(sourceNode.data.hiddenIndices || []).includes(frameIndex)) {
+                    let extractedImages = sourceNode.data.allExtractedImages;
+	                    extractedImages && extractedImages[frameIndex] && images.push({
+	                      id: `${sourceNode.id}-ext-${frameIndex}`,
+	                      sourceId: sourceNode.id,
+	                      url: extractedImages[frameIndex]
+	                    });
+                  }
+                });
+              else
                 sourceNode.data.extractedImages.forEach((n, index) => {
 	                  images.push({
 	                    id: `${sourceNode.id}-ext-${index}`,
@@ -165,6 +170,7 @@ export const WanJuanTextNode = reactMemo(({
 	                    url: n
 	                  });
                 });
+            }
 	            (sourceNode?.type === `textNode` || sourceNode?.type === `promptNode`) &&
 	              sourceNode?.data?.text &&
 	              !sourceNode?.data?.imageUrl &&

@@ -467,10 +467,12 @@ export const WanJuanVideoNode = reactMemo(({
           videoRefs = [],
           audioRefs = [],
           seedanceResources = [],
-          nodeEntries = [];
+          nodeEntries = [],
+          processedSourceIds = new Set();
         return (
           sourceNodes.forEach((node: any) => {
-            let frameConnection = connections.find((connection) => connection.source === node?.id);
+            if (!node || processedSourceIds.has(node.id)) return; // 同源多条边只处理一次
+            processedSourceIds.add(node.id);
             if (
               (node?.data?.imageUrl &&
                 ((node.data.imageUrl.startsWith(`data:video/`) ||
@@ -530,8 +532,10 @@ export const WanJuanVideoNode = reactMemo(({
                     kind: `audio`,
                   })),
                 node?.type === `videoExtractNode` && node?.data?.extractedImages)
-            )
-              if (frameConnection && frameConnection.sourceHandle && frameConnection.sourceHandle.startsWith(`frame-`)) {
+            ) {
+              let frameConnections = connections.filter((connection) => connection.source === node?.id && connection.sourceHandle && connection.sourceHandle.startsWith(`frame-`));
+              if (frameConnections.length)
+                frameConnections.forEach((frameConnection) => {
                 let frameIndex = parseInt(frameConnection.sourceHandle.replace(`frame-`, ``), 10);
                 if (!(node.data.hiddenIndices || []).includes(frameIndex)) {
                   let extractedImages = node.data.allExtractedImages;
@@ -550,7 +554,8 @@ export const WanJuanVideoNode = reactMemo(({
                         kind: `image`,
                       }));
                 }
-              } else
+                });
+              else
                 node.data.extractedImages.forEach((n, index) => {
 	                  (images.push({
 	                      id: `${node.id}-ext-${index}`,
@@ -565,6 +570,7 @@ export const WanJuanVideoNode = reactMemo(({
 	                      kind: `image`,
 	                    }));
 	                });
+            }
 	            (node?.type === `textNode` || node?.type === `promptNode`) &&
 	              node?.data?.text &&
 	              !node?.data?.imageUrl &&

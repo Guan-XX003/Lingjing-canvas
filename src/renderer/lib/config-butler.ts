@@ -607,7 +607,7 @@ export const normalizeProtocolName = (protocolName: string, model: any) => {
 	          "openai-responses": `OpenAI Responses 原生`,
           "openai-images": `OpenAI 图片原生`,
           "gpt-image-2-async": `OpenAI 图片异步兼容`,
-          "vectorengine-image-generation": `Ark 图片原生`,
+          "vectorengine-image-generation": `向量引擎图片原生`,
           "ark-image-generation": `Ark 图片原生`,
           "openai-video": `OpenAI 视频兼容`,
           "multipart-video": `表单视频兼容`,

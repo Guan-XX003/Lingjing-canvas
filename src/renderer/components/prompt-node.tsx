@@ -162,10 +162,12 @@ export const WanJuanPromptNode = reactMemo(({
         };
         let sourceNodes = Array.isArray(sources) ? sources : [sources],
           images = [],
-          texts = [];
+          texts = [],
+          processedSourceIds = new Set();
         return (
           sourceNodes.forEach((node: any) => {
-            let edge = ie.find((edge2) => edge2.source === node?.id);
+            if (!node || processedSourceIds.has(node.id)) return; // 同源多条边只处理一次，避免重复/键冲突
+            processedSourceIds.add(node.id);
             if (
               (node?.data?.imageUrl && images.push({
 	                  id: node.id,
@@ -173,18 +175,21 @@ export const WanJuanPromptNode = reactMemo(({
 	                  url: node.data.imageUrl
 	                }),
                 node?.type === `videoExtractNode` && node?.data?.extractedImages)
-            )
-              if (edge && edge.sourceHandle && edge.sourceHandle.startsWith(`frame-`)) {
-                let frameIndex = parseInt(edge.sourceHandle.replace(`frame-`, ``), 10);
-                if (!(node.data.hiddenIndices || []).includes(frameIndex)) {
-                  let extractedImages = node.data.allExtractedImages;
-	                  extractedImages && extractedImages[frameIndex] && images.push({
-	                    id: `${node.id}-ext-${frameIndex}`,
-	                    sourceId: node.id,
-	                    url: extractedImages[frameIndex]
-	                  });
-                }
-              } else
+            ) {
+              let frameEdges = ie.filter((edge2) => edge2.source === node?.id && edge2.sourceHandle && edge2.sourceHandle.startsWith(`frame-`));
+              if (frameEdges.length)
+                frameEdges.forEach((edge) => { // 遍历该源的每一条 frame 边，而非只取第一条
+                  let frameIndex = parseInt(edge.sourceHandle.replace(`frame-`, ``), 10);
+                  if (!(node.data.hiddenIndices || []).includes(frameIndex)) {
+                    let extractedImages = node.data.allExtractedImages;
+	                    extractedImages && extractedImages[frameIndex] && images.push({
+	                      id: `${node.id}-ext-${frameIndex}`,
+	                      sourceId: node.id,
+	                      url: extractedImages[frameIndex]
+	                    });
+                  }
+                });
+              else
                 node.data.extractedImages.forEach((extractedImage, index) => {
 	                  images.push({
 	                    id: `${node.id}-ext-${index}`,
@@ -192,6 +197,7 @@ export const WanJuanPromptNode = reactMemo(({
 	                    url: extractedImage
 	                  });
                 });
+            }
 	            (node?.type === `textNode` || node?.type === `promptNode`) &&
 	              node?.data?.text &&
 	              !node?.data?.imageUrl &&
