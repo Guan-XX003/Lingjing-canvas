@@ -18126,9 +18126,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 			                let failedTasks = tasksArray.filter((item) => item?.status === `failed` && !item.stoppedByUser && getConfigButlerTaskFailureSignature(item) === failureSignature);
 			                if (!isManualTrigger && knownSignatures.size && !failedTasks.some((item) => !knownSignatures.has(item.id))) continue;
 			                let dedupeKey = `manual-latest::${failedTask.id || Date.now()}::${failureSignature}`;
-			                if (!isManualTrigger && (configButlerErrorAssistantSeenRef.current.has(dedupeKey) || configButlerErrorAssistantInFlightRef.current.has(dedupeKey))) continue;
-			                (configButlerErrorAssistantSeenRef.current.add(dedupeKey),
-			                  configButlerErrorAssistantInFlightRef.current.add(dedupeKey),
+			                if (configButlerErrorAssistantInFlightRef.current.has(dedupeKey)) continue; // 只按 in-flight 去重：诊断进行中的重复点击跳过（inFlightRef 在诊断结束时清理）；seenRef 从不清理故不用它以免永久挡住重查
+			                (configButlerErrorAssistantInFlightRef.current.add(dedupeKey),
 			                  runConfigButlerErrorDiagnosis({
 			                    task: failedTask,
 		                    failures: failedTasks.slice(0, 3),
