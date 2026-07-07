@@ -16143,7 +16143,7 @@ time=${normalizedTtl}`,
         `${getProtocolCategoryLabel(model?.category)}协议 ${requestType || `custom`}`.trim()
       );
     },
-    normalizeProtocolName = (e, model) => {
+    normalizeProtocolName = (protocolName, model) => {
       let requestType = String(model?.requestType || ``).trim(),
         category = String(model?.category || ``).trim(),
         labelMap = {
@@ -16166,7 +16166,7 @@ time=${normalizedTtl}`,
         category === `image` ?
         `Gemini 图片原生` :
         `Gemini 文本原生` :
-        labelMap || String(e || ``).trim() || `自定义协议`;
+        labelMap || String(protocolName || ``).trim() || `自定义协议`;
     },
     findExistingProtocolName = (protocolConfig) => {
       let serialized = JSON.stringify(protocolConfig || {});
@@ -16233,10 +16233,10 @@ time=${normalizedTtl}`,
               extractApifoxEndpointPaths = (indexText, baseUrl) => {
                 let host = (() => { try { return new URL(/^https?:/i.test(baseUrl) ? baseUrl : `http://${baseUrl}`).host; } catch { return ``; } })();
                 if (!host || !/apifox\./i.test(host)) return [];
-                let seen = new Set(), paths = [], re = new RegExp(`${host.replace(/[.]/g, `\\.`)}/(\\d+e0)`, `g`), match;
-                while ((match = re.exec(indexText)) !== null) {
-                  let id = match[1];
-                  if (!seen.has(id)) { seen.add(id); paths.push(`https://${host}/${id}`); }
+                let seen = new Set(), paths = [], pathRegex = new RegExp(`${host.replace(/[.]/g, `\\.`)}/(\\d+e0)`, `g`), match;
+                while ((match = pathRegex.exec(indexText)) !== null) {
+                  let matchedId = match[1];
+                  if (!seen.has(matchedId)) { seen.add(matchedId); paths.push(`https://${host}/${matchedId}`); }
                 }
                 return paths;
               },
@@ -16249,23 +16249,23 @@ time=${normalizedTtl}`,
                   // 接口正文起点：第一个标记命中处（"请求参数"/"Body 参数"/最后一个二级标题），取其前一点上下文到结尾。
                   let markers = [`请求参数`, `Body 参数`, `Body`, `请求体`, `application/json`];
                   let startIdx = -1;
-                  for (let mk of markers) { let i = text.indexOf(mk); if (i >= 0) { startIdx = i; break; } }
+                  for (let marker of markers) { let markerIndex = text.indexOf(marker); if (markerIndex >= 0) { startIdx = markerIndex; break; } }
                   // 标记往前回退 200 字保留接口标题/路径上下文。
                   if (startIdx > 200) return text.slice(startIdx - 200);
                   // 没命中字段标记：退而取最后一个二级标题之后（仍优于整页目录）。
                   let lastH2 = text.lastIndexOf(`\n## `);
                   return lastH2 > 0 ? text.slice(lastH2) : text.slice(0, 1500);
                 };
-                for (let i = 0; i < limited.length; i += batchSize) {
-                  let batch = limited.slice(i, i + batchSize);
+                for (let batchIndex = 0; batchIndex < limited.length; batchIndex += batchSize) {
+                  let batch = limited.slice(batchIndex, batchIndex + batchSize);
                   let texts = await Promise.all(batch.map(async (subUrl) => {
                     try {
-                      let t = await fetchWithTimeout(buildJinaUrl(subUrl));
-                      if (!t) return ``;
-                      return extractEndpointBody(t).slice(0, 2500);
+                      let response = await fetchWithTimeout(buildJinaUrl(subUrl));
+                      if (!response) return ``;
+                      return extractEndpointBody(response).slice(0, 2500);
                     } catch { return ``; }
                   }));
-                  for (let t of texts) t && results.push(t);
+                  for (let text of texts) text && results.push(text);
                 }
                 return results;
               };
@@ -16681,8 +16681,8 @@ ${curlText}`,
             } : {};
           },
           parameterAdapter = config.parameterAdapter && typeof config.parameterAdapter == `object` ? config.parameterAdapter : {},
-          mapValue = (e, valueMap) => {
-            let key = String(e || ``).trim(),
+          mapValue = (value, valueMap) => {
+            let key = String(value || ``).trim(),
               valueMap2 = valueMap && typeof valueMap == `object` ? valueMap : {};
             return Object.prototype.hasOwnProperty.call(valueMap2, key) ? valueMap2[key] : key;
           },
@@ -16747,10 +16747,10 @@ ${curlText}`,
                 applyCase(mappedAspectRatio, config.aspectRatioValueCase || parameterAdapter.aspectRatioValueCase),
             };
           },
-          o = {};
+          result = {};
         return (
           category === `text` ?
-          (o =
+          (result =
             config.requestType === `openai-responses` ?
             {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
@@ -16768,7 +16768,7 @@ ${curlText}`,
             }) :
 	          category === `image` ?
 	          ((parameterAdapter = u(`9:16`, `1K`, modelInfo.imageResolution || `2560x1440`)),
-            (o = {
+            (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test image`),
               ...buildField(fieldMapping.count || `n`, 1),
@@ -16777,7 +16777,7 @@ ${curlText}`,
             })) :
           category === `video` &&
           ((parameterAdapter = d(`720x1280`, `9:16`)),
-            (o = {
+            (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test video`),
               ...(config.omitDuration === !0 || fieldMapping.duration === `` ?
@@ -16791,7 +16791,7 @@ ${curlText}`,
             submitPath: config.submitPath || ``,
             pollPath: config.pollPath || ``,
             contentPath: config.contentPath || ``,
-            requestBody: o,
+            requestBody: result,
           }
         );
       },
@@ -16826,16 +16826,16 @@ ${curlText}`,
             unknownParam = errMsg.match(/unknown parameter[:\s]*'?([a-zA-Z_]+)'?/i),
             isPathErr = response.status === 404 || /not found|无效的?\s*(url|路径|endpoint)|invalid url/i.test(errMsg),
             isAuthErr = response.status === 401 || response.status === 403 || /无效的?令牌|invalid (api )?key|unauthorized|令牌/i.test(errMsg),
-            ok = response.ok && !errMsg;
+            requestSucceeded = response.ok && !errMsg;
           return {
             probed: true,
-            ok,
+            requestSucceeded,
             status: response.status,
             submitPath,
             errorMessage: errMsg.slice(0, 200),
-            errorType: ok ? `none` : unknownParam ? `unknown_parameter` : isPathErr ? `path` : isAuthErr ? `auth` : errMsg ? `upstream` : `unknown`,
+            errorType: requestSucceeded ? `none` : unknownParam ? `unknown_parameter` : isPathErr ? `path` : isAuthErr ? `auth` : errMsg ? `upstream` : `unknown`,
             unknownParameter: unknownParam ? unknownParam[1] : ``,
-            suggestion: ok ? `` :
+            suggestion: requestSucceeded ? `` :
               unknownParam ? `该模型不接受参数 ${unknownParam[1]}，应在协议 fieldMapping 里把它设为空字符串以跳过。` :
               isPathErr ? `提交路径 ${submitPath} 可能不正确，请核对文档接口路径。` :
               isAuthErr ? `令牌或鉴权方式可能不被该接口接受。` :
@@ -17050,7 +17050,7 @@ ${curlText}`,
 	          if (!value || typeof value != `object`) return ``;
 	          return String(value.id || value.name || value.model || value.modelName || value.slug || ``).trim();
 	        },
-	        extractButlerModelsFromPayload = (e) => {
+	        extractButlerModelsFromPayload = (payload) => {
 	          let results = [],
 	            seen = new Set(),
 	            collect = (value) => {
@@ -17072,10 +17072,10 @@ ${curlText}`,
 	                });
 	              }
 	            };
-	          return collect(e), results;
+	          return collect(payload), results;
 	        },
-	        inferButlerCategoryFromModelName = (e) => {
-	          let normalized = String(e || ``).toLowerCase();
+	        inferButlerCategoryFromModelName = (modelName) => {
+	          let normalized = String(modelName || ``).toLowerCase();
 	          return /suno|music|song|lyrics|concat|stems/.test(normalized) ?
 	            `music` :
 	            /tts|speech|voice|audio[-_]?speech|cosyvoice|fish|elevenlabs/.test(normalized) ?
@@ -18518,11 +18518,11 @@ ${batchDocText}`);
 	                    let badParam = probeResult.unknownParameter;
 	                    for (let item of groupItems) {
 	                      let cfg = item.protocol?.config; if (!cfg) continue;
-	                      let fm = cfg.fieldMapping && typeof cfg.fieldMapping == `object` ? { ...cfg.fieldMapping } : {}, touched = false;
-	                      for (let internalKey of Object.keys(fm)) { if (fm[internalKey] === badParam) { fm[internalKey] = ``; touched = true; } }
-	                      if (badParam === `response_format`) { fm.responseFormat = ``; touched = true; }
+	                      let fieldMapping = cfg.fieldMapping && typeof cfg.fieldMapping == `object` ? { ...cfg.fieldMapping } : {}, touched = false;
+	                      for (let internalKey of Object.keys(fieldMapping)) { if (fieldMapping[internalKey] === badParam) { fieldMapping[internalKey] = ``; touched = true; } }
+	                      if (badParam === `response_format`) { fieldMapping.responseFormat = ``; touched = true; }
 	                      if (touched) {
-	                        item.protocol.config = { ...cfg, fieldMapping: fm };
+	                        item.protocol.config = { ...cfg, fieldMapping: fieldMapping };
 	                        item.notes = `${item.notes || ``}${item.notes ? `；` : ``}探活修复：该接口不接受 ${badParam}，已在协议中跳过该参数`;
 	                        fixedCount += 1;
 	                      }
@@ -18782,7 +18782,7 @@ ${docText}`;
               });
             }
           }),
-          chrome.tabs.onUpdated.addListener((e, changeInfo, tab) => {
+          chrome.tabs.onUpdated.addListener((updatedTabId, changeInfo, tab) => {
             changeInfo.status === `complete` &&
               tab.active &&
               setCurrentPlatform({
@@ -18832,7 +18832,7 @@ ${docText}`;
                           (setTransitResources(mergedResources),
                             localforageModule.default
                             .setItem(`transitResources`, mergedResources)
-                            .catch((e) => console.error(e)));
+                            .catch((error) => console.error(error)));
                         } else setTransitResources(storedResources);
                       } else setTransitResources(storedResources);
                     else
@@ -19323,7 +19323,7 @@ ${docText}`;
                   settingsHydratedRef.current = !0;
                 },
               ),
-              chrome.runtime.onMessage.addListener((message, t, n) => {
+              chrome.runtime.onMessage.addListener((message, messageSender, sendResponse) => {
                 message.action === `resourceAdded` &&
                   (setTransitResources((prevResources) => {
                       if (prevResources.find((resource) => resource.id === message.resource.id)) return prevResources;
@@ -19658,11 +19658,11 @@ ${docText}`;
                   return;
                 }
                 let done = !1,
-                  finish = (ok) => {
+                  finish = (succeeded) => {
                     if (done) return;
                     done = !0;
                     clearTimeout(timer);
-                    resolve(ok);
+                    resolve(succeeded);
                   },
                   timer = setTimeout(() => finish(!1), 6e3);
                 if (type.startsWith(`image`)) {
@@ -20764,9 +20764,9 @@ ${docText}`;
         projectGroupList = normalizeProjectGroups(projectGroups),
         projectGroupIds = new Set(projectGroupList.map((group) => group.id)),
         projectGroupSearchText = String(projectGroupSearch || ``).trim().toLowerCase(),
-        projectMatchesGroupSearch = (e) =>
+        projectMatchesGroupSearch = (project) =>
         !projectGroupSearchText ||
-        String(e?.name || ``).toLowerCase().includes(projectGroupSearchText),
+        String(project?.name || ``).toLowerCase().includes(projectGroupSearchText),
         projectUngroupedAll = projects.filter((project) => !project.groupId || !projectGroupIds.has(project.groupId)),
         projectGroupedSectionsAll = projectGroupList.map((group) => ({
           ...group,
@@ -22049,8 +22049,8 @@ ${docText}`;
 	              reader.onerror = () => reject(reader.error || Error(`参考文件读取失败`));
 	              reader.readAsDataURL(file);
 	            }),
-	          sanitizeAgentConversationText = (e) =>
-	            String(e || ``).replace(/blob:https?:\/\/[^\\s'")，。；;]+/gi, `[本地临时视频地址]`),
+	          sanitizeAgentConversationText = (conversationText) =>
+	            String(conversationText || ``).replace(/blob:https?:\/\/[^\\s'")，。；;]+/gi, `[本地临时视频地址]`),
 	          removeAgentAttachment = (attachmentId) => {
 	            setAgentAttachments((attachments) => {
 	              let targetAttachment = attachments.find((attachment) => attachment.id === attachmentId);
@@ -22382,17 +22382,17 @@ ${docText}`;
                       return baseUrl;
                     }
                   })(),
-                  _ = resolveModelProtocolBindingHelper(
+                  protocolBinding = resolveModelProtocolBindingHelper(
                     textModelProtocolBindings,
                     modelName,
                     textModelProtocolBindings?.[modelName],
                   ),
-                  protocolConfig = modelProtocolRegistry?.[_],
+                  protocolConfig = modelProtocolRegistry?.[protocolBinding],
                   isVectorEngineHost = /(?:^|\.)api\.vectorengine\.ai$/i.test(String(apiHost || ``)),
                   requestType =
                   protocolConfig?.requestType ||
                   (/generatecontent/i.test(
-                      [modelName, _, protocolConfig?.requestType, protocolConfig?.submitPath].filter(Boolean).join(` `),
+                      [modelName, protocolBinding, protocolConfig?.requestType, protocolConfig?.submitPath].filter(Boolean).join(` `),
                     ) || /gemini/i.test(String(modelName || ``)) ?
                     `gemini-generate-content` :
                     `openai-chat`);
@@ -22674,40 +22674,40 @@ ${docText}`;
                     } : item,
                   ),
                 }));
-                storeAgentLongTermMemory(selectedAgent, messageContent, responseText).catch((e) =>
-                  (console.warn(`Mem0 memory store failed`, e),
-                    showToast2(e?.message || `Mem0 记忆写入失败`)),
+                storeAgentLongTermMemory(selectedAgent, messageContent, responseText).catch((error) =>
+                  (console.warn(`Mem0 memory store failed`, error),
+                    showToast2(error?.message || `Mem0 记忆写入失败`)),
                 );
               } catch (error) {
-                let e = error?.message || `智能体回复失败`;
+                let agentErrorMessage = error?.message || `智能体回复失败`;
                 (console.error(error),
-                  showToast2(e),
+                  showToast2(agentErrorMessage),
                   setAgentConversations((item) => ({
                     ...item,
-                    [selectedAgent.id]: (item[selectedAgent.id] || []).map((t) =>
-                      t.id === assistantMessageId ?
+                    [selectedAgent.id]: (item[selectedAgent.id] || []).map((conversationEntry) =>
+                      conversationEntry.id === assistantMessageId ?
                       {
-                        ...t,
-                        content: `请求失败：${e}`,
+                        ...conversationEntry,
+                        content: `请求失败：${agentErrorMessage}`,
                         createdAt: Date.now(),
                       } :
-                      t,
+                      conversationEntry,
                     ),
                   })));
               } finally {
                 selectedAttachments.forEach(releaseAgentAttachment);
               }
             },
-            formatAgentTime = (e) => {
-              if (!e) return `刚刚`;
-              let t = Date.now() - Number(e);
-              if (t < 6e4) return `刚刚`;
-              if (t < 36e5) return `${Math.max(1, Math.floor(t / 6e4))}分钟前`;
-              if (t < 864e5) return `${Math.max(1, Math.floor(t / 36e5))}小时前`;
-              return `${Math.max(1, Math.floor(t / 864e5))}天前`;
+            formatAgentTime = (timestamp) => {
+              if (!timestamp) return `刚刚`;
+              let elapsedMs = Date.now() - Number(timestamp);
+              if (elapsedMs < 6e4) return `刚刚`;
+              if (elapsedMs < 36e5) return `${Math.max(1, Math.floor(elapsedMs / 6e4))}分钟前`;
+              if (elapsedMs < 864e5) return `${Math.max(1, Math.floor(elapsedMs / 36e5))}小时前`;
+              return `${Math.max(1, Math.floor(elapsedMs / 864e5))}天前`;
             },
-		            compactGlobalTasks = (e) => {
-		              if (!Array.isArray(e)) return [];
+		            compactGlobalTasks = (tasks) => {
+		              if (!Array.isArray(tasks)) return [];
 		              let itemB = [],
 		                n = new Set(),
 		                r = new Map(),
@@ -22718,7 +22718,7 @@ ${docText}`;
 		                  if (!e || !e.id || n.has(e.id)) return !1;
 		                  return (n.add(e.id), itemB.push(e), !0);
 		                };
-		              [...e]
+		              [...tasks]
 		                .sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))
 		                .forEach((item) => {
 		                  if (!item || !item.id) return;
@@ -22738,19 +22738,19 @@ ${docText}`;
 		                });
 		              return itemB.slice(0, 1200).sort((itemA, t) => (t?.createdAt || 0) - (itemA?.createdAt || 0));
 		            },
-		            canManuallyRefreshGlobalTask = (e) => {
-		              return !!e && [`running`, `pending`, `failed`, `completed`].includes(e.status);
+		            canManuallyRefreshGlobalTask = (task) => {
+		              return !!task && [`running`, `pending`, `failed`, `completed`].includes(task.status);
 		            },
-		            canManualRecoverImageTask = (e) => {
-		              return !!e && !e.stoppedByUser && (e.type === `image` || e.customOutputType === `image`);
+		            canManualRecoverImageTask = (task) => {
+		              return !!task && !task.stoppedByUser && (task.type === `image` || task.customOutputType === `image`);
 		            },
-		            handleManualRecoverImageTask = async (e) => {
-		              if (!canManualRecoverImageTask(e)) return;
+		            handleManualRecoverImageTask = async (task) => {
+		              if (!canManualRecoverImageTask(task)) return;
 		              // 优先自动拉回：任务已记录中转站 remoteTaskId(或已有结果)时，直接交给
 		              // refreshGlobalTask 用已记录的 ID 去中转站查结果，无需用户手动粘贴 ID/URL。
 		              // 仅当确实没有 remoteTaskId 也没有结果时，才退回手动输入框作为兜底。
-		              if (e.remoteTaskId || e.customResultData || e.resultUrl) {
-		                refreshGlobalTask(e, {});
+		              if (task.remoteTaskId || task.customResultData || task.resultUrl) {
+		                refreshGlobalTask(task, {});
 		                return;
 		              }
 		              let t = await window.wanjuanDesktop?.showInputDialog?.({
@@ -22764,7 +22764,7 @@ ${docText}`;
 		                showToast2(`没有填写结果 URL 或任务 ID`);
 		                return;
 		              }
-		              refreshGlobalTask(e, {
+		              refreshGlobalTask(task, {
 		                manualImageValue: n
 		              });
 		            },
