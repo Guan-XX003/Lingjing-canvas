@@ -213,10 +213,6 @@ export function WanJuanTongyiWanxiangSettingsPanel({
                                       }),
                                     ],
                                   }),
-                                  jsx(`p`, {
-                                    className: `text-[10px] text-gray-500`,
-                                    children: `通义万相节点会按模式读取这里的模型列表，并使用上方 API 绑定调用智创聚合 /v1/videos。`,
-                                  }),
                                 ],
                               });
 }
