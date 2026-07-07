@@ -4,6 +4,7 @@ const http = require("http");
 const https = require("https");
 const { net } = require("../electron-refs.cjs");
 const { appendDesktopLog, formatErrorMessage } = require("../logging.cjs");
+const { assertPublicHttpUrl } = require("./security.cjs");
 
 // 并发与性能设置（由 IPC 的 set-performance-settings 更新）
 const DESKTOP_AI_GENERATE_CONCURRENCY = 3;
@@ -186,12 +187,31 @@ function proxyHttpRequestViaElectronNet(url, options = {}) {
       req = net.request({
         method,
         url,
-        useSessionCookies: true
+        useSessionCookies: true,
+        redirect: "manual" // 手动处理重定向，逐跳重校验目标，防 SSRF（否则默认 follow 可被 302 跳到内网）
       });
       for (const [key, value] of Object.entries(headers)) {
         if (!key || value == null) continue;
         req.setHeader(key, String(value));
       }
+
+      let redirectHops = 0;
+      req.on("redirect", (_statusCode, _redirectMethod, redirectUrl) => {
+        redirectHops += 1;
+        if (redirectHops > 5) {
+          if (req) req.abort();
+          finish(new Error("Proxy fetch exceeded redirect limit"));
+          return;
+        }
+        try {
+          assertPublicHttpUrl(redirectUrl, "重定向目标"); // 阻断跳向 127.0.0.1 / 169.254.169.254 / 内网
+        } catch (error) {
+          if (req) req.abort();
+          finish(error);
+          return;
+        }
+        req.followRedirect();
+      });
 
       req.on("response", (res) => {
         responseStream = res;

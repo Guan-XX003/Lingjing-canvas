@@ -6,6 +6,7 @@ const { sniffImageMime, guessMimeFromFilename } = require("../utils/mime.cjs");
 const { sha256Buffer } = require("../utils/crypto.cjs");
 const { localPathFromFileUrl } = require("../utils/paths.cjs");
 const { assertPublicHttpUrl } = require("../net/security.cjs");
+const { isLocalFilePathAllowed } = require("../net/file-access-filter.cjs");
 
 function normalizedMime(mime) {
   return String(mime || "").split(";")[0].trim().toLowerCase();
@@ -106,6 +107,11 @@ function normalizeImagePayload(buffer, mime) {
 
 function readLocalFilePayload(filePath) {
   const resolvedPath = path.resolve(String(filePath || ""));
+  // 只允许读取白名单媒体目录内的本地文件（与 file:// 渲染过滤同一套），
+  // 阻断被攻破渲染进程借上传/读取通道外泄 ~/.ssh、/etc/passwd 等任意本地文件。
+  if (!isLocalFilePathAllowed(resolvedPath)) {
+    throw new Error(`拒绝访问该本地路径（不在允许的媒体目录内）`);
+  }
   const buffer = fs.readFileSync(resolvedPath);
   return {
     buffer,

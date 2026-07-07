@@ -88,9 +88,23 @@ function localPathFromFileUrl(value) {
 // dataURL 只适合小文件；超过阈值的直接拒绝，要求走 file:// 协议链接，避免同步读大文件冻结 UI。
 const LOCAL_FILE_DATA_URL_MAX_BYTES = 50 * 1024 * 1024;
 
+// 敏感路径黑名单：即使渲染进程被攻破，也阻断经 dataURL 读取通道外泄密钥/凭据/系统文件。
+const SENSITIVE_LOCAL_PATH_PATTERNS = [
+  /(?:\/|^)\.(?:ssh|aws|gnupg|kube|docker)(?:\/|$)/i,
+  /(?:\/|^)\.(?:env|npmrc|netrc|pgpass|git-credentials)(?:$|\.)/i,
+  /(?:id_rsa|id_ed25519|id_ecdsa)/i,
+  /\.(?:pem|key|keychain|p12|pfx)$/i,
+  /^\/(?:etc|private\/etc|var\/root|root|proc|sys)\//i,
+  /\/(?:windows|winnt)\/(?:system32|system)\//i,
+];
+
 async function localFileToDataUrl(filePath) {
   const rawPath = String(filePath || "");
   const resolvedPath = localPathFromFileUrl(rawPath) || rawPath;
+  const probe = resolvedPath.replace(/\\/g, "/");
+  if (SENSITIVE_LOCAL_PATH_PATTERNS.some((re) => re.test(probe))) {
+    return { ok: false, error: "拒绝读取该路径（疑似敏感/系统文件）" };
+  }
   const stat = await fs.promises.stat(resolvedPath);
   if (stat.size > LOCAL_FILE_DATA_URL_MAX_BYTES) {
     return {

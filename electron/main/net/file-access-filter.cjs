@@ -93,4 +93,9 @@ function installFileAccessFilter() {
   appendDesktopLog("file-access-filter-installed", { roots: allowedFileRoots().length });
 }
 
-module.exports = { installFileAccessFilter, isPathAllowed, computeAllowedFileRoots };
+// 供 IPC 本地文件读取/上传路径复用同一套白名单（与 file:// 渲染过滤一致）。
+function isLocalFilePathAllowed(filePath) {
+  return Boolean(filePath) && isPathAllowed(filePath, allowedFileRoots());
+}
+
+module.exports = { installFileAccessFilter, isPathAllowed, computeAllowedFileRoots, isLocalFilePathAllowed };
