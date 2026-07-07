@@ -10093,11 +10093,11 @@ ${combinedPrompt}`,
             onGenerateTtsMusic: nodeType === `ttsMusicNode` || nodeType === `musicNode` ? void 0 : void 0,
             onAIAssist: nodeType === `customNode` ? handleAIAssist : void 0,
             onSaveTemplate: nodeType === `customNode` ?
-              (e, t) => {
+              (templateName, templateConfig) => {
                 addCustomNode && addCustomNode({
                   id: Date.now().toString(),
-                  name: e,
-                  config: t
+                  name: templateName,
+                  config: templateConfig
                 });
               } :
               void 0,
