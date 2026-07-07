@@ -758,163 +758,106 @@ export function videoEditorModal({
   }, [videoUrl, duration]);
   let selectionSeconds = Math.max(0, roundToTenth(endTime - startTime)),
     pct = (t) => (duration > 0 ? Math.max(0, Math.min(100, (t / duration) * 100)) : 0);
+  let inputStyle = { width: 64, background: `#0d0d0d`, border: `1px solid #333`, borderRadius: 4, padding: `4px 8px`, color: `#fff`, fontSize: 12 },
+    labelStyle = { display: `flex`, alignItems: `center`, gap: 4, fontSize: 12, color: `#9ca3af`, whiteSpace: `nowrap` };
   return createPortal(
     jsxs(`div`, {
-      className: `fixed inset-0 z-[9999] flex flex-col bg-[#0d0d0d] select-none`,
-      style: { WebkitAppRegion: `no-drag` },
+      style: { position: `fixed`, inset: 0, zIndex: 9999, display: `flex`, flexDirection: `column`, background: `#0d0d0d`, userSelect: `none`, WebkitAppRegion: `no-drag` },
       children: [
         jsxs(`div`, {
-          className: `flex items-center justify-between px-5 pt-8 pb-3 border-b border-[#222]`,
+          style: { flexShrink: 0, display: `flex`, alignItems: `center`, justifyContent: `space-between`, padding: `32px 20px 12px`, borderBottom: `1px solid #222` },
           children: [
             jsxs(`div`, {
-              className: `flex items-baseline gap-3`,
+              style: { display: `flex`, alignItems: `baseline`, gap: 12 },
               children: [
-                jsx(`span`, { className: `text-white font-semibold text-base`, children: `视频剪辑` }),
-                jsx(`span`, { className: `text-[11px] text-gray-500`, children: `拖动两端裁剪时长，保留完整画面` }),
+                jsx(`span`, { style: { color: `#fff`, fontWeight: 600, fontSize: 15 }, children: `视频剪辑` }),
+                jsx(`span`, { style: { fontSize: 11, color: `#6b7280` }, children: `拖动两端裁剪时长，保留完整画面` }),
               ],
             }),
             jsxs(`div`, {
-              className: `flex items-center gap-2`,
+              style: { display: `flex`, alignItems: `center`, gap: 8 },
               children: [
-                jsx(`button`, {
-                  onClick: onClose,
-                  className: `px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-[#222] transition-colors`,
-                  children: `关闭`,
-                }),
-                jsx(`button`, {
-                  onClick: exportClip,
-                  disabled: isExporting,
-                  className: `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${isExporting ? `bg-[#333] text-gray-500` : `bg-blue-600 hover:bg-blue-500 text-white`}`,
-                  children: isExporting ? `导出中…` : `完成并导出`,
-                }),
+                jsx(`button`, { onClick: onClose, style: { padding: `6px 12px`, borderRadius: 8, fontSize: 13, color: `#d1d5db`, background: `transparent`, border: `none`, cursor: `pointer` }, children: `关闭` }),
+                jsx(`button`, { onClick: exportClip, disabled: isExporting, style: { padding: `6px 16px`, borderRadius: 8, fontSize: 13, fontWeight: 500, border: `none`, cursor: isExporting ? `default` : `pointer`, background: isExporting ? `#333` : `#2563eb`, color: isExporting ? `#6b7280` : `#fff` }, children: isExporting ? `导出中…` : `完成并导出` }),
               ],
             }),
           ],
         }),
         jsxs(`div`, {
-          className: `flex-1 min-h-0 flex items-center justify-center bg-black relative p-4`,
+          style: { flex: `1 1 0%`, minHeight: 0, display: `flex`, alignItems: `center`, justifyContent: `center`, background: `#000`, position: `relative`, padding: 16 },
           children: [
             jsx(`video`, {
               ref: videoRef,
               src: videoUrl,
               controls: !1,
               playsInline: !0,
-              className: `max-w-full max-h-full object-contain rounded-lg shadow-2xl cursor-pointer`,
+              style: { maxWidth: `100%`, maxHeight: `100%`, objectFit: `contain`, borderRadius: 8, cursor: `pointer`, background: `#000` },
               onClick: togglePlayback,
               onTimeUpdate: (event) => {
                 let time = roundToTenth(event.currentTarget.currentTime || 0);
-                (setPlayheadTime(time),
-                  isPreviewing && time >= endTime && (event.currentTarget.pause(), setIsPreviewing(!1)));
+                (setPlayheadTime(time), isPreviewing && time >= endTime && (event.currentTarget.pause(), setIsPreviewing(!1)));
               },
               onLoadedMetadata: (event) => {
                 let dur = event.currentTarget.duration || 0;
-                (setDuration(dur),
-                  setStartTime(0),
-                  setEndTime(dur),
-                  setPlayheadTime(0),
-                  setVideoFrame({ width: event.currentTarget.videoWidth || 9, height: event.currentTarget.videoHeight || 16 }));
+                (setDuration(dur), setStartTime(0), setEndTime(dur), setPlayheadTime(0), setVideoFrame({ width: event.currentTarget.videoWidth || 9, height: event.currentTarget.videoHeight || 16 }));
               },
               onPlay: () => setIsPlaying(!0),
               onPause: () => setIsPlaying(!1),
               onEnded: () => { (setIsPlaying(!1), setIsPreviewing(!1)); },
             }),
-            previewError &&
-              jsx(`div`, {
-                className: `absolute inset-0 flex items-center justify-center text-red-400 text-sm px-6 text-center`,
-                children: previewError,
-              }),
+            previewError && jsx(`div`, { style: { position: `absolute`, inset: 0, display: `flex`, alignItems: `center`, justifyContent: `center`, color: `#f87171`, fontSize: 14, textAlign: `center`, padding: 24 }, children: previewError }),
           ],
         }),
         jsxs(`div`, {
-          className: `px-6 py-4 bg-[#141414] border-t border-[#222] flex flex-col gap-3`,
+          style: { flexShrink: 0, padding: `16px 24px`, background: `#141414`, borderTop: `1px solid #222`, display: `flex`, flexDirection: `column`, gap: 12 },
           children: [
             jsxs(`div`, {
-              className: `flex items-center gap-3`,
+              style: { display: `flex`, alignItems: `center`, gap: 12, flexWrap: `wrap` },
               children: [
-                jsx(`button`, {
-                  onClick: togglePlayback,
-                  className: `w-9 h-9 shrink-0 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center text-xs`,
-                  children: isPlaying ? `❚❚` : `▶`,
-                }),
-                jsx(`span`, { className: `text-xs text-gray-400 tabular-nums whitespace-nowrap`, children: `${formatTime(playheadTime)} / ${formatTime(duration)}` }),
-                jsx(`div`, { className: `flex-1` }),
-                jsxs(`label`, {
-                  className: `flex items-center gap-1 text-xs text-gray-400`,
-                  children: [
-                    `入点`,
-                    jsx(`input`, {
-                      type: `number`,
-                      step: `0.1`,
-                      min: `0`,
-                      value: startTime,
-                      onChange: (e) => setStartSeconds(parseFloat(e.target.value)),
-                      className: `w-16 bg-[#0d0d0d] border border-[#333] rounded px-2 py-1 text-white text-xs`,
-                    }),
-                  ],
-                }),
-                jsxs(`label`, {
-                  className: `flex items-center gap-1 text-xs text-gray-400`,
-                  children: [
-                    `出点`,
-                    jsx(`input`, {
-                      type: `number`,
-                      step: `0.1`,
-                      min: `0`,
-                      value: endTime,
-                      onChange: (e) => setEndSeconds(parseFloat(e.target.value)),
-                      className: `w-16 bg-[#0d0d0d] border border-[#333] rounded px-2 py-1 text-white text-xs`,
-                    }),
-                  ],
-                }),
-                jsx(`button`, {
-                  onClick: resetSelection,
-                  className: `px-2.5 py-1 rounded text-xs text-gray-400 hover:bg-[#222] transition-colors whitespace-nowrap`,
-                  children: `恢复全片`,
-                }),
-                jsx(`span`, { className: `text-xs text-gray-500 whitespace-nowrap`, children: `选段 ${formatTime(selectionSeconds)}` }),
+                jsx(`button`, { onClick: togglePlayback, style: { width: 36, height: 36, flexShrink: 0, borderRadius: `50%`, background: `#2563eb`, color: `#fff`, border: `none`, cursor: `pointer`, fontSize: 12 }, children: isPlaying ? `❚❚` : `▶` }),
+                jsx(`span`, { style: { fontSize: 12, color: `#9ca3af`, whiteSpace: `nowrap`, fontVariantNumeric: `tabular-nums` }, children: `${formatTime(playheadTime)} / ${formatTime(duration)}` }),
+                jsx(`div`, { style: { flex: 1, minWidth: 12 } }),
+                jsxs(`label`, { style: labelStyle, children: [`入点`, jsx(`input`, { type: `number`, step: `0.1`, min: `0`, value: startTime, onChange: (e) => setStartSeconds(parseFloat(e.target.value)), style: inputStyle })] }),
+                jsxs(`label`, { style: labelStyle, children: [`出点`, jsx(`input`, { type: `number`, step: `0.1`, min: `0`, value: endTime, onChange: (e) => setEndSeconds(parseFloat(e.target.value)), style: inputStyle })] }),
+                jsx(`button`, { onClick: resetSelection, style: { padding: `4px 10px`, borderRadius: 4, fontSize: 12, color: `#9ca3af`, background: `transparent`, border: `none`, cursor: `pointer`, whiteSpace: `nowrap` }, children: `恢复全片` }),
+                jsx(`span`, { style: { fontSize: 12, color: `#6b7280`, whiteSpace: `nowrap` }, children: `选段 ${formatTime(selectionSeconds)}` }),
               ],
             }),
             jsxs(`div`, {
               ref: timelineTrackRef,
-              className: `relative h-16 rounded-lg overflow-hidden bg-[#0a0a0a] cursor-pointer`,
+              style: { position: `relative`, height: 64, borderRadius: 8, overflow: `hidden`, background: `#0a0a0a`, cursor: `pointer` },
               onClick: (event) => {
                 let track = timelineTrackRef.current;
                 if (!track || !duration) return;
-                let rect = track.getBoundingClientRect(),
-                  ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+                let rect = track.getBoundingClientRect(), ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
                 seekToTime(ratio * duration);
               },
               children: [
                 jsx(`div`, {
-                  className: `absolute inset-0 flex`,
+                  style: { position: `absolute`, inset: 0, display: `flex` },
                   children: (filmstrip.length ? filmstrip : new Array(12).fill(``)).map((src, i) =>
-                    jsx(`div`, {
-                      className: `h-full flex-1 bg-[#1a1a1a] bg-cover bg-center`,
-                      style: src ? { backgroundImage: `url(${src})` } : undefined,
-                    }, `f${i}`),
+                    jsx(`div`, { style: { height: `100%`, flex: 1, background: src ? `center/cover no-repeat url(${src})` : `#1a1a1a` } }, `f${i}`),
                   ),
                 }),
-                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 left-0 bg-black/55 pointer-events-none`, style: { width: `${pct(startTime)}%` } }),
-                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 right-0 bg-black/55 pointer-events-none`, style: { width: `${100 - pct(endTime)}%` } }),
-                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 border-y-[3px] border-yellow-400 pointer-events-none`, style: { left: `${pct(startTime)}%`, right: `${100 - pct(endTime)}%` } }),
+                duration > 0 && jsx(`div`, { style: { position: `absolute`, top: 0, bottom: 0, left: 0, width: `${pct(startTime)}%`, background: `rgba(0,0,0,0.55)`, pointerEvents: `none` } }),
+                duration > 0 && jsx(`div`, { style: { position: `absolute`, top: 0, bottom: 0, right: 0, width: `${100 - pct(endTime)}%`, background: `rgba(0,0,0,0.55)`, pointerEvents: `none` } }),
+                duration > 0 && jsx(`div`, { style: { position: `absolute`, top: 0, bottom: 0, left: `${pct(startTime)}%`, right: `${100 - pct(endTime)}%`, borderTop: `3px solid #facc15`, borderBottom: `3px solid #facc15`, pointerEvents: `none` } }),
                 duration > 0 && jsx(`div`, {
-                  className: `absolute top-0 bottom-0 w-3 bg-yellow-400 rounded-l cursor-ew-resize flex items-center justify-center z-10`,
-                  style: { left: `${pct(startTime)}%` },
+                  style: { position: `absolute`, top: 0, bottom: 0, left: `${pct(startTime)}%`, width: 12, background: `#facc15`, borderTopLeftRadius: 6, borderBottomLeftRadius: 6, cursor: `ew-resize`, display: `flex`, alignItems: `center`, justifyContent: `center`, zIndex: 10 },
                   onMouseDown: beginTrimHandleDrag(`start`),
                   onClick: (e) => e.stopPropagation(),
-                  children: jsx(`div`, { className: `w-0.5 h-6 bg-black/45 rounded` }),
+                  children: jsx(`div`, { style: { width: 2, height: 24, background: `rgba(0,0,0,0.45)`, borderRadius: 2 } }),
                 }),
                 duration > 0 && jsx(`div`, {
-                  className: `absolute top-0 bottom-0 w-3 bg-yellow-400 rounded-r cursor-ew-resize flex items-center justify-center z-10`,
-                  style: { left: `calc(${pct(endTime)}% - 12px)` },
+                  style: { position: `absolute`, top: 0, bottom: 0, left: `calc(${pct(endTime)}% - 12px)`, width: 12, background: `#facc15`, borderTopRightRadius: 6, borderBottomRightRadius: 6, cursor: `ew-resize`, display: `flex`, alignItems: `center`, justifyContent: `center`, zIndex: 10 },
                   onMouseDown: beginTrimHandleDrag(`end`),
                   onClick: (e) => e.stopPropagation(),
-                  children: jsx(`div`, { className: `w-0.5 h-6 bg-black/45 rounded` }),
+                  children: jsx(`div`, { style: { width: 2, height: 24, background: `rgba(0,0,0,0.45)`, borderRadius: 2 } }),
                 }),
-                duration > 0 && jsx(`div`, { className: `absolute top-0 bottom-0 w-[2px] bg-white pointer-events-none z-20 shadow`, style: { left: `${pct(playheadTime)}%` } }),
+                duration > 0 && jsx(`div`, { style: { position: `absolute`, top: 0, bottom: 0, left: `${pct(playheadTime)}%`, width: 2, background: `#fff`, pointerEvents: `none`, zIndex: 20 } }),
               ],
             }),
-            jsx(`div`, { className: `text-[11px] text-gray-500 h-4`, children: isExporting ? statusMessage : `` }),
+            jsx(`div`, { style: { fontSize: 11, color: `#6b7280`, height: 16 }, children: isExporting ? statusMessage : `` }),
           ],
         }),
       ],
