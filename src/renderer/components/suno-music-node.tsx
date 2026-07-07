@@ -84,6 +84,8 @@ const COL = {
   textDim: v("muted", "#9aa0aa"),
   textFaint: v("muted", "#6b7280"),
   resultBg: v("surface-3", "#151515"),
+  // accent 填充上的文字：用主题 bg 色——accent 与 bg 天然高对比，任何主题都不会“白底白字”
+  onAccent: v("bg", "#111"),
 };
 const uiInput: CSSProperties = {
   width: "100%", boxSizing: "border-box", background: COL.input, border: `1px solid ${COL.border}`,
@@ -93,7 +95,8 @@ const uiInput: CSSProperties = {
 const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, whiteSpace: "nowrap" };
 const uiBtn = (active: boolean, activeColor = COL.yellow): CSSProperties => ({
   padding: "6px 8px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: "none",
-  background: active ? activeColor : COL.btnOff, color: active ? "#fff" : "#d1d5db", whiteSpace: "nowrap",
+  background: active ? activeColor : COL.btnOff, color: active ? COL.onAccent : "#d1d5db", whiteSpace: "nowrap",
+  fontWeight: active ? 600 : 400,
 });
 const uiPanel: CSSProperties = {
   display: "flex", flexDirection: "column", gap: 6, border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8,
@@ -386,7 +389,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
           )}
 
           {/* 生成按钮 */}
-          <button className="nodrag" onClick={run} disabled={!!data.loading} style={{ padding: "9px 12px", borderRadius: 6, fontSize: 14, fontWeight: 600, border: "none", cursor: data.loading ? "default" : "pointer", background: data.loading ? "#333" : COL.yellow, color: data.loading ? COL.textFaint : "#fff" }}>
+          <button className="nodrag" onClick={run} disabled={!!data.loading} style={{ padding: "9px 12px", borderRadius: 6, fontSize: 14, fontWeight: 600, border: "none", cursor: data.loading ? "default" : "pointer", background: data.loading ? COL.btnOff : COL.yellow, color: data.loading ? COL.textFaint : COL.onAccent }}>
             {data.loading ? (data.statusText ? `生成中… ${data.statusText}` : "生成中…") : action === "extend" ? "续写" : action === "cover" ? "翻唱生成" : "生成音乐"}
           </button>
 
