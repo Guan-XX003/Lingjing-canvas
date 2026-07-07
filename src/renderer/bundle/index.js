@@ -460,8 +460,8 @@ var wanjuanGlobalPreloadRegistry = Array.isArray(globalThis?.zr) ? globalThis.zr
         for (let node of mutation.addedNodes)
           node.tagName === `LINK` && node.rel === `modulepreload` && preloadLink(node);
   }).observe(document, {
-    childList: !0,
-    subtree: !0
+    childList: true,
+    subtree: true
   });
 
   function getFetchOptions(link) {
@@ -480,7 +480,7 @@ var wanjuanGlobalPreloadRegistry = Array.isArray(globalThis?.zr) ? globalThis.zr
 
   function preloadLink(link) {
     if (link.ep) return;
-    link.ep = !0;
+    link.ep = true;
     let fetchOptions = getFetchOptions(link);
     fetch(link.href, fetchOptions);
   }
@@ -525,7 +525,7 @@ var reactDomModule = wanjuanReactDomFactory(),
       preloadPromise = allSettled(
         deps.map((dep) => {
           if (((dep = wanjuanResolveModulePreloadUrl(dep, importerUrl)), dep in wanjuanModulePreloadSeen)) return;
-          wanjuanModulePreloadSeen[dep] = !0;
+          wanjuanModulePreloadSeen[dep] = true;
           let isCss = dep.endsWith(`.css`),
             relSelector = isCss ? `[rel="stylesheet"]` : ``;
           if (importerUrl)
@@ -556,7 +556,7 @@ var reactDomModule = wanjuanReactDomFactory(),
 
     function dispatchPreloadError(error) {
       let preloadErrorEvent = new Event(`vite:preloadError`, {
-        cancelable: !0
+        cancelable: true
       });
       if (((preloadErrorEvent.payload = error), window.dispatchEvent(preloadErrorEvent), !preloadErrorEvent.defaultPrevented))
         throw error;
@@ -736,9 +736,9 @@ function WanJuanAppCanvas({
   seedanceDurations: seedanceDurations = WANJUAN_JIXIN_BUILTIN_SEEDANCE_DURATIONS,
   seedanceResolutions: seedanceResolutions = WANJUAN_JIXIN_BUILTIN_SEEDANCE_RESOLUTIONS,
   seedanceRatios: seedanceRatios = WANJUAN_JIXIN_BUILTIN_SEEDANCE_RATIOS,
-  seedanceGenerateAudio: seedanceGenerateAudio = !0,
-  seedanceWatermark: seedanceWatermark = !1,
-  seedanceEnableWebSearch: seedanceEnableWebSearch = !1,
+  seedanceGenerateAudio: seedanceGenerateAudio = true,
+  seedanceWatermark: seedanceWatermark = false,
+  seedanceEnableWebSearch: seedanceEnableWebSearch = false,
   seedanceVirtualPortraits: seedanceVirtualPortraits = [],
   tongyiWanxiangTextModels: tongyiWanxiangTextModels = wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS),
   tongyiWanxiangReferenceImageModels: tongyiWanxiangReferenceImageModels = wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_REFERENCE_IMAGE_MODELS),
@@ -784,18 +784,18 @@ function WanJuanAppCanvas({
 	  tosConfig: tosConfig = {},
 	  customPublicUploadConfig: customPublicUploadConfig = {},
   qiniuConfig: qiniuConfig = {},
-  initialEmptyProject: initialEmptyProject = !1,
+  initialEmptyProject: initialEmptyProject = false,
   onInitialEmptyProjectReady: onInitialEmptyProjectReady,
 	}) {
   let [nodes, setNodes, onNodesChange] = useEdgesState([]),
 		    [edges, setEdges, onEdgesChange] = useNodesState(WANJUAN_STARTER_EDGES),
-		    [shouldFitView, setShouldFitView] = useState(!1),
+		    [shouldFitView, setShouldFitView] = useState(false),
 		    [menuPosition, setMenuPosition] = useState(null),
 		    lastCanvasMenuPositionRef = useRef(null),
 		    [contextToolGroupsOpen, setContextToolGroupsOpen] = useState({
-	      format: !1,
-	      tools: !1,
-	      extensions: !1,
+	      format: false,
+	      tools: false,
+	      extensions: false,
 	    }),
 	    wrapperRef = useRef(null),
     fileInputRef = useRef(null), {
@@ -807,8 +807,8 @@ function WanJuanAppCanvas({
     [previewImageUrl, setPreviewImageUrl] = useState(null),
     [imageEditState, setImageEditState] = useState(null),
 	    [videoEditState, setVideoEditState] = useState(null),
-	    [isResourceSubmenuOpen, setResourceSubmenuOpen] = useState(!1),
-	    [resourceSubmenuOpenAlt, setResourceSubmenuOpenAlt] = useState(!1),
+	    [isResourceSubmenuOpen, setResourceSubmenuOpen] = useState(false),
+	    [resourceSubmenuOpenAlt, setResourceSubmenuOpenAlt] = useState(false),
 	    abortControllersRef = useRef(new Map()),
 	    wanjuanPrevEdgesRef = useRef([]),
 	    [multiConnectIds, setMultiConnectIds] = useState(null),
@@ -824,11 +824,11 @@ function WanJuanAppCanvas({
 	    wanjuanViewportUpdateRef = useRef(0);
   (useEffect(() => {
       let groupNodes = [],
-        isDragging = !1;
+        isDragging = false;
       for (let node of nodes)
-        (node.type === `group` && groupNodes.push(node), node.dragging && (isDragging = !0));
+        (node.type === `group` && groupNodes.push(node), node.dragging && (isDragging = true));
       if (groupNodes.length === 0 || isDragging) return;
-      let hasChanges = !1,
+      let hasChanges = false,
         updatedNodes = [...nodes];
       for (let groupNode of groupNodes) {
         let childNodes = updatedNodes.filter((node) => node.parentId === groupNode.id);
@@ -857,7 +857,7 @@ function WanJuanAppCanvas({
           let newWidth = Math.max(contentWidth, groupNode.style?.width || 0, maxX),
             newHeight = Math.max(contentHeight, groupNode.style?.height || 0, maxY);
           if (newWidth !== groupNode.style?.width || newHeight !== groupNode.style?.height) {
-            hasChanges = !0;
+            hasChanges = true;
             let nodeIndex = updatedNodes.findIndex((node) => node.id === groupNode.id);
             updatedNodes[nodeIndex] = {
               ...groupNode,
@@ -874,7 +874,7 @@ function WanJuanAppCanvas({
           Math.abs(groupNode.style?.width - contentWidth) > 1 ||
           Math.abs(groupNode.style?.height - contentHeight) > 1
         ) {
-          hasChanges = !0;
+          hasChanges = true;
           let nodeIndex = updatedNodes.findIndex((node) => node.id === groupNode.id);
           if (
             ((updatedNodes[nodeIndex] = {
@@ -931,13 +931,13 @@ function WanJuanAppCanvas({
         return () => clearTimeout(_t);
       }
     }, [shouldFitView, fitView]));
-  let [isVisible, setIsVisible] = useState(!1),
+  let [isVisible, setIsVisible] = useState(false),
   [history, setHistory] = useState([]),
   [historyIndex, setHistoryIndex] = useState(-1),
-  isRestoringRef = useRef(!1),
+  isRestoringRef = useRef(false),
     historyIndexRef = useRef(-1),
     [dailyGenerationCount, setDailyGenerationCount] = useState(0),
-    LoadOnceRef = useRef(!1),
+    LoadOnceRef = useRef(false),
     planLimits = WANJUAN_PLAN_LIMITS[membership.type] || WANJUAN_PLAN_LIMITS.FREE;
   useEffect(() => {
     let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`;
@@ -1001,7 +1001,7 @@ function WanJuanAppCanvas({
 	    useEffect(() => {
 	      if (wanjuanResourceLocalUrlMap.size === 0) return;
 	      setNodes((nodes2) => {
-	        let changed = !1,
+	        let changed = false,
 	          nextNodes = nodes2.map((node) => {
 	            if (!node?.data) return node;
 	            let nextData = null;
@@ -1035,10 +1035,10 @@ function WanJuanAppCanvas({
 		                  kind: field === `videoUrl` ? `video` : field === `audioUrl` ? `audio` : `image`,
 		                  valueFormat: `file-url`,
 		                  sourceSignature: currentValue,
-		                  missing: !1,
+		                  missing: false,
 		                  lastCheckedAt: new Date().toISOString(),
 		                };
-	              changed = !0;
+	              changed = true;
 	            });
 	            return nextData ? {
 	              ...node,
@@ -1137,7 +1137,7 @@ function WanJuanAppCanvas({
               if (!persistedAsset?.ok || !persistedAsset.localPath || !persistedAsset.size || persistedAsset.size < 1024)
                 throw Error(persistedAsset?.error || `剪辑视频保存失败`);
               ((clipBinding = {
-                  ok: !0,
+                  ok: true,
                   assetId: persistedAsset.assetId,
                   mime: persistedAsset.mime,
                   filename: persistedAsset.filename,
@@ -1152,7 +1152,7 @@ function WanJuanAppCanvas({
                   portableDataRef: `project-asset-v2-${String(projectIdRef.current || `default`).replace(/[\\/:*?"<>|\\s]+/g, `-`).replace(/^\\.+/, ``) || `default`}-${String(clipNodeId || `node`).replace(/[\\/:*?"<>|\\s]+/g, `-`).replace(/^\\.+/, ``) || `node`}-media-imageUrl-portable`,
                   valueFormat: `file-url`,
                   sourceOrigin: `video-editor`,
-                  missing: !1,
+                  missing: false,
                 }),
                 (clipUrl = buildProjectMediaFileUrl(persistedAsset.localPath) || clipUrl));
 	            } catch (error) {
@@ -1164,7 +1164,7 @@ function WanJuanAppCanvas({
 	                    url: videoResult.url,
 	                    filename: clipLabel,
 	                    mime: videoResult.mime || `video/webm`,
-	                    saveAs: !1
+	                    saveAs: false
 	                  });
 	                  saved?.ok && showToast(`剪辑副本已保存到下载目录`);
 	                } catch (fallbackError) {
@@ -1185,8 +1185,8 @@ function WanJuanAppCanvas({
               ...sourceNode,
               id: clipNodeId,
               type: `imageNode`,
-              selected: !1,
-              dragging: !1,
+              selected: false,
+              dragging: false,
               style: sourceNode.type === `imageNode` && sourceNode.style ? sourceNode.style : {
                 width: 224,
                 height: 320
@@ -1199,7 +1199,7 @@ function WanJuanAppCanvas({
                 label: clipLabel,
                 projectAssetBindings: clipBinding ? {
                   imageUrl: clipBinding
-                } : void 0,
+                } : undefined,
               },
               position: {
                 x: (sourceNode.position?.x || 0) + 56,
@@ -1214,7 +1214,7 @@ function WanJuanAppCanvas({
     stopGeneration = useCallback(
       (nodeId, options = {}) => {
         let {
-          silent: silent = !1
+          silent: silent = false
         } = options,
         abortController = abortControllersRef.current.get(nodeId);
         updateTaskList &&
@@ -1227,7 +1227,7 @@ function WanJuanAppCanvas({
                   ...node,
                   status: `failed`,
                   errorMsg: `已手动停止`,
-                  stoppedByUser: !0,
+                  stoppedByUser: true,
                 } :
                 node;
             }),
@@ -1242,13 +1242,13 @@ function WanJuanAppCanvas({
                 ...node,
                 data: {
                   ...node.data,
-                  loading: !1,
+                  loading: false,
                   progress: 0,
-                  manuallyStopped: !0,
+                  manuallyStopped: true,
                   errorMessage: `已手动停止`,
-                  videoUrl: void 0,
-                  thumbnailUrl: void 0,
-                  resultData: void 0,
+                  videoUrl: undefined,
+                  thumbnailUrl: undefined,
+                  resultData: undefined,
                 },
               } :
               node,
@@ -1257,7 +1257,7 @@ function WanJuanAppCanvas({
           setEdges((edges2) =>
             edges2.map((edge) => (edge.target === nodeId ? {
               ...edge,
-              animated: !1
+              animated: false
             } : edge)),
           ));
       },
@@ -1316,7 +1316,7 @@ function WanJuanAppCanvas({
 	          ``,
 	        )),
 	        (canvasState = await externalizeProjectCanvasState(canvasState, currentProjectId, {
-	          persist: !0,
+	          persist: true,
 	        }));
 	        let safetyResult =
 	          globalThis.wanjuanProjectSafety?.beforeCanvasSave ?
@@ -1356,7 +1356,7 @@ function WanJuanAppCanvas({
             projectId: currentProjectId,
             directory: ``,
             references: [...globalThis.collectProjectFileReferences(canvasState)],
-            complete: !0,
+            complete: true,
           })),
           typeof chrome < `u` &&
           chrome.storage &&
@@ -1393,27 +1393,27 @@ function WanJuanAppCanvas({
     }, []),
     $e = useCallback(() => {
       if (historyIndex > 0) {
-        isRestoringRef.current = !0;
+        isRestoringRef.current = true;
         let previousSnapshot = history[historyIndex - 1];
         (setNodes(previousSnapshot.nodes),
           setEdges(previousSnapshot.edges),
           setHistoryIndex(historyIndex - 1),
           (historyIndexRef.current = historyIndex - 1),
           setTimeout(() => {
-            isRestoringRef.current = !1;
+            isRestoringRef.current = false;
           }, 600));
       }
     }, [history, historyIndex, setNodes, setEdges]),
     redo = useCallback(() => {
       if (historyIndex < history.length - 1) {
-        isRestoringRef.current = !0;
+        isRestoringRef.current = true;
         let nextSnapshot = history[historyIndex + 1];
         (setNodes(nextSnapshot.nodes),
           setEdges(nextSnapshot.edges),
           setHistoryIndex(historyIndex + 1),
           (historyIndexRef.current = historyIndex + 1),
           setTimeout(() => {
-            isRestoringRef.current = !1;
+            isRestoringRef.current = false;
           }, 600));
       }
     }, [history, historyIndex, setNodes, setEdges]),
@@ -1433,7 +1433,7 @@ function WanJuanAppCanvas({
       }
       let nodesCopy = JSON.parse(JSON.stringify(nodesRef.current)),
         relinkedCount = 0,
-        canceled = !1;
+        canceled = false;
       for (let entry of missingMediaEntries) {
         let node = nodesCopy.find((node2) => node2.id === entry.nodeId);
         if (!node?.data) continue;
@@ -1447,7 +1447,7 @@ function WanJuanAppCanvas({
             filters: getProjectAssetDialogFilters(bindingKind),
           });
         if (chosenFile?.canceled) {
-          canceled = !0;
+          canceled = true;
           break;
         }
         if (!chosenFile?.ok || !chosenFile.path) continue;
@@ -1469,12 +1469,12 @@ function WanJuanAppCanvas({
             `media-${entry.field}-portable`,
           ),
           portableData =
-          persistResult.value !== void 0 ?
+          persistResult.value !== undefined ?
           persistResult.value :
           entry.field === `text` || entry.field === `resultData` ?
           node.data[entry.field] :
           buildProjectMediaFileUrl(persistResult.localPath);
-        portableData !== void 0 && (await localforageModule.default.setItem(storageKey, portableData));
+        portableData !== undefined && (await localforageModule.default.setItem(storageKey, portableData));
         let revivedValue = reviveProjectMediaBindingValue({
           portableData: portableData,
           valueFormat: persistResult.valueFormat || binding.valueFormat,
@@ -1487,12 +1487,12 @@ function WanJuanAppCanvas({
             portableDataRef: storageKey,
             valueFormat: persistResult.valueFormat || binding.valueFormat,
             sourceOrigin: `relinked`,
-            missing: !1,
+            missing: false,
             lastRelinkedAt: new Date().toISOString(),
           }),
           (node.data = {
             ...node.data,
-            [entry.field]: revivedValue !== void 0 ?
+            [entry.field]: revivedValue !== undefined ?
               revivedValue :
               entry.field === `text` || entry.field === `resultData` ?
               node.data[entry.field] :
@@ -1505,7 +1505,7 @@ function WanJuanAppCanvas({
         nodesCopy.flatMap((node) =>
           Object.values(node?.data?.projectAssetBindings || {})
           .filter((node2) => node2?.localPath)
-          .map((binding) => [binding.localPath, !0]),
+          .map((binding) => [binding.localPath, true]),
         ),
       );
       ((nodesCopy = nodesCopy.map((node) => globalThis.applyProjectMediaBindingsToNode(node, localPathMap))),
@@ -1569,13 +1569,13 @@ function WanJuanAppCanvas({
             mediaKind = String(selectedCandidate.kind || ``).toLowerCase();
           if (mediaKind === `video`) {
             let videoEl = document.createElement(`video`);
-            ((videoEl.src = mediaUrl), (videoEl.controls = !0), (videoEl.muted = !0), Object.assign(videoEl.style, {
+            ((videoEl.src = mediaUrl), (videoEl.controls = true), (videoEl.muted = true), Object.assign(videoEl.style, {
               maxWidth: `100%`,
               maxHeight: `100%`,
             }), previewEl.appendChild(videoEl));
           } else if (mediaKind === `audio`) {
             let audioEl = document.createElement(`audio`);
-            ((audioEl.src = mediaUrl), (audioEl.controls = !0), Object.assign(audioEl.style, {
+            ((audioEl.src = mediaUrl), (audioEl.controls = true), Object.assign(audioEl.style, {
               width: `92%`,
             }), previewEl.appendChild(audioEl));
           } else if (mediaKind === `image`) {
@@ -1683,7 +1683,7 @@ function WanJuanAppCanvas({
         return;
       }
       let resolvedPaths = new Map((searchResult.matches || []).filter((match) => match.path).map((match) => [`${match.nodeId}|${match.field}`, match.path])),
-        candidateCanceled = !1;
+        candidateCanceled = false;
       for (let entry of missingMediaEntries) {
         let entryKey = `${entry.nodeId}|${entry.field}`;
         if (resolvedPaths.has(entryKey)) continue;
@@ -1692,7 +1692,7 @@ function WanJuanAppCanvas({
         if (!candidates.length) continue;
         let dialogResult = await showProjectAssetCandidateDialog(entry, candidates);
         if (dialogResult?.action === `cancel`) {
-          candidateCanceled = !0;
+          candidateCanceled = true;
           break;
         }
         dialogResult?.action === `use` && dialogResult.path && resolvedPaths.set(entryKey, dialogResult.path);
@@ -1726,12 +1726,12 @@ function WanJuanAppCanvas({
             `media-${entry.field}-portable`,
           ),
           portableData =
-          persistResult.value !== void 0 ?
+          persistResult.value !== undefined ?
           persistResult.value :
           entry.field === `text` || entry.field === `resultData` ?
           node.data[entry.field] :
           buildProjectMediaFileUrl(persistResult.localPath);
-        portableData !== void 0 && (await localforageModule.default.setItem(storageKey, portableData));
+        portableData !== undefined && (await localforageModule.default.setItem(storageKey, portableData));
         let revivedValue = reviveProjectMediaBindingValue({
           portableData: portableData,
           valueFormat: persistResult.valueFormat || binding.valueFormat,
@@ -1744,12 +1744,12 @@ function WanJuanAppCanvas({
             portableDataRef: storageKey,
             valueFormat: persistResult.valueFormat || binding.valueFormat,
             sourceOrigin: `relinked`,
-            missing: !1,
+            missing: false,
             lastRelinkedAt: new Date().toISOString(),
           }),
           (node.data = {
             ...node.data,
-            [entry.field]: revivedValue !== void 0 ?
+            [entry.field]: revivedValue !== undefined ?
               revivedValue :
               entry.field === `text` || entry.field === `resultData` ?
               node.data[entry.field] :
@@ -1762,7 +1762,7 @@ function WanJuanAppCanvas({
         nodesCopy.flatMap((node) =>
           Object.values(node?.data?.projectAssetBindings || {})
           .filter((node2) => node2?.localPath)
-          .map((binding) => [binding.localPath, !0]),
+          .map((binding) => [binding.localPath, true]),
         ),
       );
       ((nodesCopy = nodesCopy.map((node) => globalThis.applyProjectMediaBindingsToNode(node, localPathMap))),
@@ -1786,8 +1786,8 @@ function WanJuanAppCanvas({
         window.alert(`没有在该文件夹里匹配到缺失素材，请确认选择的是导出时生成的外部素材文件夹`));
     }, [setNodes, saveCanvasState, showProjectAssetCandidateDialog]);
   (useEffect(() => {
-      ((shouldFitViewRef.current = !1),
-        setShouldFitView(!1),
+      ((shouldFitViewRef.current = false),
+        setShouldFitView(false),
         (async () => {
           let storageKey = `${canvasStateKeyPrefix}${projectId}`;
           if (initialEmptyProject) {
@@ -1803,7 +1803,7 @@ function WanJuanAppCanvas({
               console.warn(`清理新项目画布缓存失败`, error);
 	            } finally {
 	              setTimeout(() => {
-	                (setShouldFitView(!0), (shouldFitViewRef.current = !0), (LoadOnceRef.current = !0));
+	                (setShouldFitView(true), (shouldFitViewRef.current = true), (LoadOnceRef.current = true));
 	                typeof onInitialEmptyProjectReady == `function` &&
 	                  onInitialEmptyProjectReady(projectId);
 	              }, 80);
@@ -1848,9 +1848,9 @@ function WanJuanAppCanvas({
                 let nodeIdSet = new Set();
                 nodes2 = nodes2
                   .filter((node) => {
-                    if (!node || typeof node != `object` || !node.id) return !1;
+                    if (!node || typeof node != `object` || !node.id) return false;
                     nodeIdSet.add(node.id);
-                    return !0;
+                    return true;
                   })
                   .map((node, index) => ({
                     ...node,
@@ -1873,7 +1873,7 @@ function WanJuanAppCanvas({
                     checkResult = await window.wanjuanDesktop.checkProjectAssets(assetPaths);
                   Array.isArray(checkResult?.assets) &&
                     (bindingMap = new Map(
-                      checkResult.assets.map((asset) => [asset.path, asset.exists !== !1]),
+                      checkResult.assets.map((asset) => [asset.path, asset.exists !== false]),
                     ));
                 } catch (error) {
                   console.warn(`Project asset check skipped`, error);
@@ -1892,9 +1892,9 @@ function WanJuanAppCanvas({
                           .sort((task, taskA) => (taskA.createdAt || 0) - (task.createdAt || 0))[0];
                         let newerNodeTask = wanjuanNewestNodeTask(GlobalTasks || [], hydratedNode, projectIdRef.current, activeTask);
                         newerNodeTask && (activeTask = newerNodeTask);
-                        let invalidVideoTaskBinding = !1;
+                        let invalidVideoTaskBinding = false;
                         if (activeTask && !wanjuanVideoTaskCanAttachToNode(activeTask, hydratedNode, projectIdRef.current))
-                          ((activeTask = null), (invalidVideoTaskBinding = !0));
+                          ((activeTask = null), (invalidVideoTaskBinding = true));
                         if (!activeTask && !taskId) {
                           let promptText = String(hydratedNode.data?.prompt || ``).trim();
                           activeTask =
@@ -1910,12 +1910,12 @@ function WanJuanAppCanvas({
 	                            ...hydratedNode,
 	                            data: {
 	                              ...wanjuanClearProjectAssetBindingsFromData(hydratedNode.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-	                              taskId: void 0,
-	                              seedanceTaskId: void 0,
-                              videoUrl: void 0,
-                              thumbnailUrl: void 0,
-                              resultData: void 0,
-                              loading: !1,
+	                              taskId: undefined,
+	                              seedanceTaskId: undefined,
+                              videoUrl: undefined,
+                              thumbnailUrl: undefined,
+                              resultData: undefined,
+                              loading: false,
                               progress: 0,
                             },
                           });
@@ -1929,15 +1929,15 @@ function WanJuanAppCanvas({
 	                            ...hydratedNode,
 	                            data: {
 	                              ...wanjuanClearProjectAssetBindingsFromData(hydratedNode.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-	                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? void 0 : activeTask.id,
-	                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : void 0,
+	                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? undefined : activeTask.id,
+	                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : undefined,
 	                              tianjiExecuteId: activeTask.provider === `tianji-seedance` ? activeTask.id : hydratedNode.data.tianjiExecuteId,
-	                              videoUrl: void 0,
-	                              thumbnailUrl: void 0,
-	                              resultData: void 0,
-	                              loading: !0,
+	                              videoUrl: undefined,
+	                              thumbnailUrl: undefined,
+	                              resultData: undefined,
+	                              loading: true,
 	                              progress: activeTask.progress || hydratedNode.data.progress || 0,
-                              errorMessage: void 0,
+                              errorMessage: undefined,
                             },
                           };
                         else if (activeTask?.status === `completed`)
@@ -1945,8 +1945,8 @@ function WanJuanAppCanvas({
                             ...hydratedNode,
                             data: {
                               ...hydratedNode.data,
-                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? void 0 : activeTask.id,
-                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : void 0,
+                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? undefined : activeTask.id,
+                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : undefined,
                               tianjiExecuteId: activeTask.provider === `tianji-seedance` ? activeTask.id : hydratedNode.data.tianjiExecuteId,
                               resultData: activeTask.customResultData || hydratedNode.data.resultData,
                               text: activeTask.customOutputType === `text` ?
@@ -1960,9 +1960,9 @@ function WanJuanAppCanvas({
                                 WanJuanTtsMusicTaskAudioUrl(activeTask) || hydratedNode.data.audioUrl :
                                 hydratedNode.data.audioUrl,
                               thumbnailUrl: activeTask.thumbnailUrl || hydratedNode.data.thumbnailUrl,
-                              loading: !1,
+                              loading: false,
                               progress: 100,
-                              errorMessage: void 0,
+                              errorMessage: undefined,
                             },
                           };
                         else if (activeTask?.status === `failed`)
@@ -1970,10 +1970,10 @@ function WanJuanAppCanvas({
                             ...hydratedNode,
                             data: {
                               ...hydratedNode.data,
-                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? void 0 : activeTask.id,
-                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : void 0,
+                              taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? undefined : activeTask.id,
+                              seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : undefined,
                               tianjiExecuteId: activeTask.provider === `tianji-seedance` ? activeTask.id : hydratedNode.data.tianjiExecuteId,
-                              loading: !1,
+                              loading: false,
                               errorMessage: activeTask.errorMsg ||
                                 hydratedNode.data.errorMessage ||
                                 `视频生成失败`,
@@ -1987,7 +1987,7 @@ function WanJuanAppCanvas({
 	                            ...hydratedNode,
 	                            data: {
 	                              ...wanjuanClearProjectAssetBindingsFromData(hydratedNode.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-	                              loading: !1,
+	                              loading: false,
 	                              errorMessage: hydratedNode.data.errorMessage ||
                                 `任务状态待确认，请在任务清单刷新或重新生成`,
                             },
@@ -2004,7 +2004,7 @@ function WanJuanAppCanvas({
             (console.error(`Failed to load canvas state`, error), setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
 	          } finally {
             setTimeout(() => {
-              (setShouldFitView(!0), (shouldFitViewRef.current = !0), (LoadOnceRef.current = !0));
+              (setShouldFitView(true), (shouldFitViewRef.current = true), (LoadOnceRef.current = true));
             }, 300);
           }
         })());
@@ -2012,7 +2012,7 @@ function WanJuanAppCanvas({
     useEffect(() => {
       if (!shouldFitView || !Array.isArray(GlobalTasks) || GlobalTasks.length === 0) return;
       setNodes((nodes2) => {
-            let changed = !1,
+            let changed = false,
           updatedNodes = nodes2.map((node) => {
             let taskId = node.data?.seedanceTaskId || node.data?.taskId;
             if (!taskId && node.data?.loading && (node.type === `seedanceNode` || node.type === `tongyiWanxiangNode` || node.type === `videoNode`))
@@ -2024,9 +2024,9 @@ function WanJuanAppCanvas({
               .sort((taskB, taskA) => (taskA.createdAt || 0) - (taskB.createdAt || 0))[0];
             let newerNodeTask = wanjuanNewestNodeTask(GlobalTasks, node, projectIdRef.current, matchedTask);
             newerNodeTask && (matchedTask = newerNodeTask);
-            let taskWasReset = !1;
+            let taskWasReset = false;
             if (matchedTask && !wanjuanVideoTaskCanAttachToNode(matchedTask, node, projectIdRef.current))
-              ((matchedTask = null), (taskWasReset = !0));
+              ((matchedTask = null), (taskWasReset = true));
             if (!matchedTask && !taskId) {
               let promptText = String(node.data?.prompt || ``).trim();
               matchedTask =
@@ -2039,15 +2039,15 @@ function WanJuanAppCanvas({
             if (taskWasReset && (node.type === `seedanceNode` || node.type === `tongyiWanxiangNode`)) {
               let updatedData = {
                 ...node.data,
-                taskId: void 0,
-                seedanceTaskId: void 0,
-                videoUrl: void 0,
-                thumbnailUrl: void 0,
-                resultData: void 0,
-                loading: !1,
+                taskId: undefined,
+                seedanceTaskId: undefined,
+                videoUrl: undefined,
+                thumbnailUrl: undefined,
+                resultData: undefined,
+                loading: false,
                 progress: 0,
               };
-              return ((changed = !0), {
+              return ((changed = true), {
                 ...node,
                 data: updatedData,
               });
@@ -2059,17 +2059,17 @@ function WanJuanAppCanvas({
               ...node.data
             };
             if (wanjuanTaskUsesSeedanceSlot(matchedTask, node))
-              ((updatedData.seedanceTaskId = matchedTask.id), (updatedData.taskId = void 0));
-            else ((updatedData.taskId = matchedTask.id), (updatedData.seedanceTaskId = void 0));
+              ((updatedData.seedanceTaskId = matchedTask.id), (updatedData.taskId = undefined));
+            else ((updatedData.taskId = matchedTask.id), (updatedData.seedanceTaskId = undefined));
             matchedTask.provider === `tianji-seedance` && (updatedData.tianjiExecuteId = matchedTask.id);
             if (matchedTask.status === `pending` || matchedTask.status === `running`)
               ((updatedData = wanjuanClearProjectAssetBindingsFromData(updatedData, [`videoUrl`, `thumbnailUrl`, `resultData`])),
-                (updatedData.videoUrl = void 0),
-                (updatedData.thumbnailUrl = void 0),
-                (updatedData.resultData = void 0),
-                (updatedData.loading = !0),
+                (updatedData.videoUrl = undefined),
+                (updatedData.thumbnailUrl = undefined),
+                (updatedData.resultData = undefined),
+                (updatedData.loading = true),
                 (updatedData.progress = matchedTask.progress || updatedData.progress || 0),
-                (updatedData.errorMessage = void 0));
+                (updatedData.errorMessage = undefined));
             else if (matchedTask.status === `completed`)
               ((updatedData = wanjuanClearProjectAssetBindingsFromData(updatedData, [`videoUrl`, `thumbnailUrl`, `resultData`])),
                 (updatedData.resultData = matchedTask.customResultData || updatedData.resultData),
@@ -2083,15 +2083,15 @@ function WanJuanAppCanvas({
                 matchedTask.customOutputType === `audio` &&
                 (updatedData.audioUrl = WanJuanTtsMusicTaskAudioUrl(matchedTask) || updatedData.audioUrl),
                 (updatedData.thumbnailUrl = matchedTask.thumbnailUrl || updatedData.thumbnailUrl),
-                (updatedData.loading = !1),
+                (updatedData.loading = false),
                 (updatedData.progress = 100),
-                (updatedData.errorMessage = void 0));
+                (updatedData.errorMessage = undefined));
             else if (matchedTask.status === `failed`)
-              ((updatedData.loading = !1),
+              ((updatedData.loading = false),
                 (updatedData.errorMessage = matchedTask.errorMsg || updatedData.errorMessage || `视频生成失败`));
             return JSON.stringify(updatedData) === JSON.stringify(node.data) ?
               node :
-              ((changed = !0), {
+              ((changed = true), {
                 ...node,
                 data: updatedData
               });
@@ -2103,10 +2103,10 @@ function WanJuanAppCanvas({
 	      if (!shouldFitView) return;
 	      let loadingMap = new Map(nodes.map((node) => [node.id, !!node.data?.loading]));
 	      setEdges((edges2) => {
-	        let changed = !1,
+	        let changed = false,
 	          updatedEdges = edges2.map((edge) => {
 	            let shouldAnimate = !!loadingMap.get(edge.target);
-	            return edge.animated === shouldAnimate ? edge : ((changed = !0), {
+	            return edge.animated === shouldAnimate ? edge : ((changed = true), {
 	              ...edge,
 	              animated: shouldAnimate
 	            });
@@ -2130,12 +2130,12 @@ function WanJuanAppCanvas({
 	      wanjuanPrevEdgesRef.current = edges;
 	      if (!shouldFitView || removedTargetIds.size === 0) return;
 	      setNodes((nodes2) => {
-	        let changed = !1,
+	        let changed = false,
 	          updatedNodes = nodes2.map((node) =>
 	            removedTargetIds.has(node.id) &&
 	            Array.isArray(node.data?.selectedContextResources) &&
 	            node.data.selectedContextResources.length > 0 ?
-	            ((changed = !0), {
+	            ((changed = true), {
 	              ...node,
 	              data: {
 	                ...node.data,
@@ -2321,7 +2321,7 @@ function WanJuanAppCanvas({
 	            menuOrigin: clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
 	            menuBottom: containerRect.height - (clientY - containerRect.top),
 	            type: `canvas`
-          }), setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+          }), setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
         }
       },
       [setMenuPosition],
@@ -2339,7 +2339,7 @@ function WanJuanAppCanvas({
               type: `node`,
               nodeId: contextNode.id,
             }),
-            setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+            setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
       },
       [setMenuPosition],
     ),
@@ -2355,7 +2355,7 @@ function WanJuanAppCanvas({
               menuBottom: containerRect.height - (event.clientY - containerRect.top),
               type: `selection`,
             }),
-            setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+            setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
       },
       [setMenuPosition],
     ),
@@ -2372,7 +2372,7 @@ function WanJuanAppCanvas({
                   menuBottom: containerRect.height - (event.clientY - containerRect.top),
                   type: `selection`,
                 }),
-                setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+                setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
           }
         }, 50);
       },
@@ -2406,7 +2406,7 @@ function WanJuanAppCanvas({
       [multiConnectIds, setEdges, showToast],
     ),
     handleCancel = useCallback(() => {
-      (setMenuPosition(null), setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1), multiConnectIds && (setMultiConnectIds(null), showToast(`已取消多项连接`)));
+      (setMenuPosition(null), setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false), multiConnectIds && (setMultiConnectIds(null), showToast(`已取消多项连接`)));
     }, [setMenuPosition, multiConnectIds, showToast]),
     handleNoop = useCallback((noopArgA, noopArgB) => {}, []),
     handleCancel2 = useCallback((unusedEvent) => {}, []),
@@ -2625,7 +2625,7 @@ function WanJuanAppCanvas({
             resolveModelApiBindingIdHelper(
               imageModelApiBindings,
               imageModelName,
-              void 0,
+              undefined,
             ) ||
             imageSourceNode?.data?.selectedApiConfigId ||
             imageSourceNode?.data?.apiConfigId,
@@ -2720,12 +2720,12 @@ function WanJuanAppCanvas({
                   ...node,
                   data: {
                     ...node.data,
-	                    loading: !0,
+	                    loading: true,
 	                    taskId: imageTaskId,
-	                    seedanceTaskId: void 0,
+	                    seedanceTaskId: undefined,
 	                    progress: 0,
-	                    manuallyStopped: !1,
-	                    errorMessage: void 0,
+	                    manuallyStopped: false,
+	                    errorMessage: undefined,
                   },
                 } :
                 node,
@@ -2734,7 +2734,7 @@ function WanJuanAppCanvas({
             setEdges((edges2) =>
               edges2.map((edge) => (edge.target === nodeId ? {
                 ...edge,
-                animated: !0
+                animated: true
               } : edge)),
             ));
           try {
@@ -3040,12 +3040,12 @@ ${combinedPrompt}`,
 	                openAiImageSize = mapOpenAiImageSize(requestParams.aspectRatio, requestParams.imageSize, imageModelName),
                 vectorengineOpenAiCompatSize =
                 requestParams.imageSize ||
-                (requestParams.aspectRatio && requestParams.aspectRatio !== `Auto` ? `2K` : void 0) ||
+                (requestParams.aspectRatio && requestParams.aspectRatio !== `Auto` ? `2K` : undefined) ||
                 `2K`,
 	                vectorengineOpenAiCompatAspectRatio =
 		                !isImageResolutionMode && requestParams.aspectRatio && requestParams.aspectRatio !== `Auto` ?
 		                requestParams.aspectRatio :
-		                void 0,
+		                undefined,
 	                isLconaiDoubaoImage =
 	                /^doubao-seedream/i.test(imageModelName) &&
 	                /(^|\.)lconai\.com$/i.test(imageApiHost),
@@ -3088,7 +3088,7 @@ ${combinedPrompt}`,
 		                  imageProtocolProfile.editSubmitPath ||
 		                  imageProtocolProfile.contentType ||
 		                  imageProtocolProfile.parameterAdapter ||
-		                  imageProtocolProfile.useAspectRatioAsSize === !0
+		                  imageProtocolProfile.useAspectRatioAsSize === true
 		                ),
 		                coerceImageProtocolValue = (fieldName, value) => {
 		                  let fieldName2 = String(fieldName || ``).trim(),
@@ -3100,12 +3100,12 @@ ${combinedPrompt}`,
 		                    valueType === `number` ?
 		                    Number(value) :
 		                    valueType === `boolean` ?
-		                    value === !0 || value === `true` :
+		                    value === true || value === `true` :
 		                    value;
 		                },
 		                putImageProtocolField = (fieldName, target, value) => {
 		                  let fieldName2 = String(fieldName || ``).trim();
-		                  fieldName2 && value !== void 0 && value !== null && value !== `` && (target[fieldName2] = coerceImageProtocolValue(fieldName2, value));
+		                  fieldName2 && value !== undefined && value !== null && value !== `` && (target[fieldName2] = coerceImageProtocolValue(fieldName2, value));
 		                },
 		                imageParameterAdapter =
 		                imageProtocolProfile.parameterAdapter &&
@@ -3168,7 +3168,7 @@ ${combinedPrompt}`,
 		                  if (sizeValueMode === `aspect-ratio` || sizeValueMode === `ratio`) return imageAspectRatioValue();
 		                  if (
 			                    !isImageResolutionMode &&
-			                    imageProtocolProfile.useAspectRatioAsSize === !0 &&
+			                    imageProtocolProfile.useAspectRatioAsSize === true &&
 		                    requestParams.aspectRatio &&
 		                    requestParams.aspectRatio !== `Auto`
 		                  )
@@ -3272,7 +3272,7 @@ ${combinedPrompt}`,
 		                if (imageProtocolHasDynamicMapping) {
 		                  let appendField = (key, value) => {
 		                    let trimmedKey = String(key || ``).trim();
-		                    trimmedKey && value !== void 0 && value !== null && value !== `` && formData.append(trimmedKey, coerceImageProtocolValue(trimmedKey, value));
+		                    trimmedKey && value !== undefined && value !== null && value !== `` && formData.append(trimmedKey, coerceImageProtocolValue(trimmedKey, value));
 		                  };
 		                  (appendField(imageProtocolFieldMapping.model, imageModelName),
 		                    appendField(imageProtocolFieldMapping.prompt, seedreamPrompt || ` `),
@@ -3280,7 +3280,7 @@ ${combinedPrompt}`,
 		                    appendField(imageProtocolFieldMapping.size, getProtocolImageSizeValue()),
 			                    !isImageResolutionMode &&
 			                    (imageProtocolProfile.fieldMapping?.aspectRatio ||
-			                      imageProtocolProfile.useAspectRatioAsSize === !0) &&
+			                      imageProtocolProfile.useAspectRatioAsSize === true) &&
 		                    imageProtocolFieldMapping.aspectRatio &&
 		                    imageProtocolFieldMapping.aspectRatio !== imageProtocolFieldMapping.size &&
 		                    requestParams.aspectRatio &&
@@ -3369,7 +3369,7 @@ ${combinedPrompt}`,
 	                      imageProtocolProfile.editPath || imageProtocolProfile.editSubmitPath,
 	                      `${seedreamBaseUrl}/v1/images/edits`,
 	                    ))) :
-                  (seedreamRequestInit = void 0);
+                  (seedreamRequestInit = undefined);
 	              } else {
 		                let requestBody =
 		                  imageProtocolHasDynamicMapping ?
@@ -3386,7 +3386,7 @@ ${combinedPrompt}`,
 		                      ),
 			                      !isImageResolutionMode &&
 			                      (imageProtocolProfile.fieldMapping?.aspectRatio ||
-			                        imageProtocolProfile.useAspectRatioAsSize === !0) &&
+			                        imageProtocolProfile.useAspectRatioAsSize === true) &&
 		                      imageProtocolFieldMapping.aspectRatio &&
 		                      imageProtocolFieldMapping.aspectRatio !== imageProtocolFieldMapping.size &&
 		                      requestParams.aspectRatio &&
@@ -3416,7 +3416,7 @@ ${combinedPrompt}`,
 	                    n: 1,
 	                    type: `normal`,
 	                    size: lconaiDoubaoImageSize,
-	                    watermark: !1,
+	                    watermark: false,
 	                  } :
 	                  imageRequestProtocol === `openai-images` ?
 	                  {
@@ -3437,8 +3437,8 @@ ${combinedPrompt}`,
                     prompt: seedreamPrompt || ` `,
                     size: requestParams.imageSize || `2K`,
                     response_format: `url`,
-                    stream: !1,
-                    watermark: !1,
+                    stream: false,
+                    watermark: false,
                   };
 	                seedreamReferenceImages.length > 0 &&
 	                  (imageProtocolHasDynamicMapping ?
@@ -3522,9 +3522,9 @@ ${combinedPrompt}`,
 		              (localStorage.setItem(apiBindingId, (audioApiKey + 1).toString()), setDailyGenerationCount(audioApiKey + 1));
 		              let readImageProtocolResponsePath = (source, path) => {
 		                  let trimmedPath = String(path || ``).trim();
-		                  if (!trimmedPath) return void 0;
+		                  if (!trimmedPath) return undefined;
 	                  return trimmedPath.split(`.`).reduce((current, segment) => {
-	                    if (current === void 0 || current === null) return void 0;
+	                    if (current === undefined || current === null) return undefined;
 	                    let arrayMatch = segment.match(/^(.+)\[(\d+)\]$/);
 		                    return arrayMatch ?
 		                      current?.[arrayMatch[1]]?.[Number(arrayMatch[2])] :
@@ -3715,12 +3715,12 @@ ${combinedPrompt}`,
 	                      valueFormat: seedreamAsset.valueFormat || `file-url`,
 	                      sourceOrigin: `generated`,
 	                      sourceSignature: seedreamImage,
-	                      missing: !1,
+	                      missing: false,
 	                    };
 	                    localforageModule.default &&
 	                      (await localforageModule.default.setItem(
 	                        seedreamPortableRef,
-	                        seedreamAsset.value !== void 0 ?
+	                        seedreamAsset.value !== undefined ?
 	                        seedreamAsset.value :
 	                        seedreamDisplayImage,
 	                      ));
@@ -3763,8 +3763,8 @@ ${combinedPrompt}`,
 	                              ...(node.data?.projectAssetBindings || {}),
 	                              imageUrl: seedreamAssetBinding,
 	                            } : node.data?.projectAssetBindings,
-	                            loading: !1,
-	                            errorMessage: void 0,
+	                            loading: false,
+	                            errorMessage: undefined,
                           },
                         } :
                         node,
@@ -3786,7 +3786,7 @@ ${combinedPrompt}`,
                     setEdges((edges3) =>
                       edges3.map((edge) => (edge.target === nodeId ? {
                         ...edge,
-                        animated: !1
+                        animated: false
                       } : edge)),
                     ),
 	                    addGeneratedAsset && seedreamDisplayImage && addGeneratedAsset(seedreamDisplayImage, `image`, `generated`),
@@ -3809,8 +3809,8 @@ ${combinedPrompt}`,
 	                              ...(node.data?.projectAssetBindings || {}),
 	                              imageUrl: seedreamAssetBinding,
 	                            } : node.data?.projectAssetBindings,
-	                            loading: !1,
-                            errorMessage: void 0,
+	                            loading: false,
+                            errorMessage: undefined,
                           },
                         } :
                         node,
@@ -3832,7 +3832,7 @@ ${combinedPrompt}`,
                     setEdges((edges3) =>
                       edges3.map((edge) => (edge.target === nodeId ? {
                         ...edge,
-                        animated: !1
+                        animated: false
                       } : edge)),
                     ),
                     showToast(
@@ -4032,7 +4032,7 @@ ${combinedPrompt}`,
                   }
                   return ``;
                 },
-                suChuangDone = !1,
+                suChuangDone = false,
                 suChuangPollCount = 0,
                 suChuangRetryCount = 0,
                 suChuangNetworkErrorCount = 0,
@@ -4115,7 +4115,7 @@ ${combinedPrompt}`,
                 let imageUrl = suChuangFindImageUrl(pollResult.data || pollResult);
                 if (status === 2 || imageUrl) {
                   if (!imageUrl) throw Error(`GPT-Image-2 已完成但未返回图片地址`);
-                  suChuangDone = !0;
+                  suChuangDone = true;
                   let imageUrl2 = imageUrl;
                   abortControllersRef.current.delete(nodeId);
                   let image = new Image();
@@ -4149,9 +4149,9 @@ ${combinedPrompt}`,
                               data: {
                                 ...node.data,
                                 imageUrl: imageUrl2,
-                                loading: !1,
+                                loading: false,
                                 progress: 100,
-                                errorMessage: void 0,
+                                errorMessage: undefined,
                               },
                             } :
                             node,
@@ -4173,7 +4173,7 @@ ${combinedPrompt}`,
                         setEdges((edges3) =>
                           edges3.map((edge) => (edge.target === nodeId ? {
                             ...edge,
-                            animated: !1
+                            animated: false
                           } : edge)),
                         ),
                         addGeneratedAsset && imageUrl2 && addGeneratedAsset(imageUrl2, `image`, `generated`),
@@ -4188,9 +4188,9 @@ ${combinedPrompt}`,
                               data: {
                                 ...node.data,
                                 imageUrl: imageUrl2,
-                                loading: !1,
+                                loading: false,
                                 progress: 100,
-                                errorMessage: void 0,
+                                errorMessage: undefined,
                               },
                             } :
                             node,
@@ -4212,7 +4212,7 @@ ${combinedPrompt}`,
                         setEdges((edges3) =>
                           edges3.map((edge) => (edge.target === nodeId ? {
                             ...edge,
-                            animated: !1
+                            animated: false
                           } : edge)),
                         ),
                         showToast(`GPT-Image-2 生成成功 (预览加载失败)`));
@@ -4332,8 +4332,8 @@ ${combinedPrompt}`,
                           data: {
                             ...node.data,
                             imageUrl: imageDataUrl,
-                            loading: !1,
-                            errorMessage: void 0,
+                            loading: false,
+                            errorMessage: undefined,
                           },
                         } :
                         node,
@@ -4355,7 +4355,7 @@ ${combinedPrompt}`,
                     setEdges((edges3) =>
                       edges3.map((edge) => (edge.target === nodeId ? {
                         ...edge,
-                        animated: !1
+                        animated: false
                       } : edge)),
                     ),
                     addGeneratedAsset ?
@@ -4384,8 +4384,8 @@ ${combinedPrompt}`,
                           data: {
                             ...node.data,
                             imageUrl: imageDataUrl,
-                            loading: !1,
-                            errorMessage: void 0,
+                            loading: false,
+                            errorMessage: undefined,
                           },
                         } :
                         node,
@@ -4394,7 +4394,7 @@ ${combinedPrompt}`,
                     setEdges((edges3) =>
                       edges3.map((edge) => (edge.target === nodeId ? {
                         ...edge,
-                        animated: !1
+                        animated: false
                       } : edge)),
                     ),
                     showToast(`生成成功 (预览加载失败)`));
@@ -4412,7 +4412,7 @@ ${combinedPrompt}`,
 	                        ...node,
 	                        status: `failed`,
 	                        errorMsg: errorMessage,
-	                        canManualRecover: !0,
+	                        canManualRecover: true,
 	                      } :
 	                      node,
 	                    ),
@@ -4424,7 +4424,7 @@ ${combinedPrompt}`,
 	                        ...node,
 	                        data: {
 	                          ...node.data,
-	                          loading: !1,
+	                          loading: false,
 	                          errorMessage: errorMessage,
 	                        },
 	                      } :
@@ -4434,7 +4434,7 @@ ${combinedPrompt}`,
 	                  setEdges((edges2) =>
 	                    edges2.map((edge) => (edge.target === nodeId ? {
 	                      ...edge,
-	                      animated: !1
+	                      animated: false
 	                    } : edge)),
 	                  ),
 	                  showToast(errorMessage));
@@ -4456,7 +4456,7 @@ ${combinedPrompt}`,
                         ...node,
                         status: `failed`,
                         errorMsg: `已取消`,
-                        stoppedByUser: !0,
+                        stoppedByUser: true,
                       } :
                       node,
                     ),
@@ -4469,7 +4469,7 @@ ${combinedPrompt}`,
                         ...node,
                         data: {
                           ...node.data,
-                          loading: !1,
+                          loading: false,
                           errorMessage: `已取消`,
                         },
                       } :
@@ -4479,7 +4479,7 @@ ${combinedPrompt}`,
                   setEdges((edges2) =>
 	                    edges2.map((edge) => (edge.target === nodeId ? {
 	                      ...edge,
-	                      animated: !1
+	                      animated: false
 	                    } : edge)),
 	                  )) :
 	                (console.log(`Fetch aborted by user`),
@@ -4512,7 +4512,7 @@ ${combinedPrompt}`,
                     ...node,
                     data: {
                       ...node.data,
-                      loading: !1,
+                      loading: false,
                       errorMessage: error.message
                     },
                   } :
@@ -4522,7 +4522,7 @@ ${combinedPrompt}`,
               setEdges((edges2) =>
                 edges2.map((edge) => (edge.target === nodeId ? {
                   ...edge,
-                  animated: !1
+                  animated: false
                 } : edge)),
               ));
           }
@@ -4553,10 +4553,10 @@ ${combinedPrompt}`,
 	              seedanceOfficialModel = WanJuanGetPreferredModel(
 	                seedanceOfficialModelText || modelName,
 	                seedanceSourceNode?.data?.seedanceSelectedModel || modelName || ``,
-	                void 0,
+	                undefined,
 	                {
-	                  manual: seedanceSourceNode?.data?.seedanceModelManual === !0,
-	                  auto: seedanceSourceNode?.data?.wanjuanModelAuto === !0,
+	                  manual: seedanceSourceNode?.data?.seedanceModelManual === true,
+	                  auto: seedanceSourceNode?.data?.wanjuanModelAuto === true,
 	                },
 	              );
 	            seedanceOfficialModel && (modelName = normalizeVideoModelName(seedanceOfficialModel));
@@ -4573,14 +4573,14 @@ ${combinedPrompt}`,
               isVideoApiBoundSourceNode ?
               seedanceSourceNode?.data?.selectedApiConfigId ||
               seedanceSourceNode?.data?.apiConfigId ||
-              void 0 :
-              void 0,
+              undefined :
+              undefined,
             ) ||
             (isVideoApiBoundSourceNode ?
               seedanceSourceNode?.data?.selectedApiConfigId ||
               seedanceSourceNode?.data?.apiConfigId ||
-              void 0 :
-              void 0),
+              undefined :
+              undefined),
             explicitVideoConfig = selectedVideoApiConfigId ?
             apiConfigs.find((apiConfig) => apiConfig.id === selectedVideoApiConfigId) :
             null,
@@ -4743,16 +4743,16 @@ ${combinedPrompt}`,
 	                  ...node,
 	                  data: {
 	                    ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-	                    loading: !0,
-	                    manuallyStopped: !1,
+	                    loading: true,
+	                    manuallyStopped: false,
                     progress: 0,
-                    taskId: void 0,
-                    seedanceTaskId: void 0,
-                    errorMessage: void 0,
-                    videoUrl: void 0,
-                    thumbnailUrl: void 0,
-                    videoAspectRatio: void 0,
-                    resultData: void 0,
+                    taskId: undefined,
+                    seedanceTaskId: undefined,
+                    errorMessage: undefined,
+                    videoUrl: undefined,
+                    thumbnailUrl: undefined,
+                    videoAspectRatio: undefined,
+                    resultData: undefined,
                   },
                 } :
                 node,
@@ -4761,7 +4761,7 @@ ${combinedPrompt}`,
             setEdges((edges2) =>
               edges2.map((edge) => (edge.target === nodeId ? {
                 ...edge,
-                animated: !0
+                animated: true
               } : edge)),
             ));
           try {
@@ -4851,7 +4851,7 @@ ${combinedPrompt}`,
                 addVideoReferenceImage(wanjuanSeedanceAssetUrl(sourceNode.data.seedanceAssetId), {
                   seedanceAssetId: sourceNode.data.seedanceAssetId,
                   virtualPortraitId: sourceNode.data.virtualPortraitId,
-                  isSeedanceVirtualPortrait: !0,
+                  isSeedanceVirtualPortrait: true,
                   sourceOrigin: sourceNode.data.sourceOrigin || `seedance-virtual-portrait`,
                 });
                 return;
@@ -4883,7 +4883,7 @@ ${combinedPrompt}`,
                   addVideoReferenceImage(imageUrl, {
                     tianjiPortraitAssetId: sourceNode.data.tianjiPortraitAssetId,
                     tianjiPortraitGroupType: sourceNode.data.tianjiPortraitGroupType,
-                    isTianjiPortrait: !0,
+                    isTianjiPortrait: true,
                     sourceOrigin: sourceNode.data.sourceOrigin || `tianji-portrait`,
                   }) :
                   imageUrl.startsWith(`data:image/`) ||
@@ -5209,9 +5209,9 @@ ${combinedPrompt}`,
 	                      data: {
 	                        ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
 	                        taskId: taskId,
-	                        videoUrl: void 0,
-	                        thumbnailUrl: void 0,
-	                        resultData: void 0
+	                        videoUrl: undefined,
+	                        thumbnailUrl: undefined,
+	                        resultData: undefined
 	                      }
 	                    } :
                     node,
@@ -5219,16 +5219,16 @@ ${combinedPrompt}`,
 	                ),
 	                await persistVideoNodeState({}, {
 	                  taskId: taskId,
-	                  videoUrl: void 0,
-	                  thumbnailUrl: void 0,
-	                  resultData: void 0
+	                  videoUrl: undefined,
+	                  thumbnailUrl: undefined,
+	                  resultData: undefined
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
                 localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
                 setDailyGenerationCount(edgesList + 1),
                 showToast(`通义万相任务提交成功，正在生成中...`));
-              let isDone = !1,
+              let isDone = false,
                 pollCount = 0,
                 errorCount = 0,
                 timeoutMs = Math.max(5e3, (Number(timeoutSeconds) || 600) * 1e3),
@@ -5265,9 +5265,9 @@ ${combinedPrompt}`,
                     pollData.result?.videoUrl ||
                     pollData.url,
                     tongyiProgress =
-                    pollData.progress !== void 0 && pollData.progress !== null ?
+                    pollData.progress !== undefined && pollData.progress !== null ?
                     parseInt(pollData.progress) :
-                    pollData.data?.progress !== void 0 && pollData.data?.progress !== null ?
+                    pollData.data?.progress !== undefined && pollData.data?.progress !== null ?
                     parseInt(pollData.data.progress) :
                     Math.min(99, pollCount * 2);
                   if (
@@ -5276,7 +5276,7 @@ ${combinedPrompt}`,
                         status,
                       ) || tongyiVideoUrl)
                   ) {
-                    isDone = !0;
+                    isDone = true;
                     let videoUrl =
                       typeof tongyiVideoUrl == `string` ?
                       tongyiVideoUrl.replace(/[`\s]/g, ``) :
@@ -5329,9 +5329,9 @@ ${combinedPrompt}`,
 	                              ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
 	                              videoUrl: videoUrl,
                               videoAspectRatio: tongyiNodeRatio,
-                              loading: !1,
+                              loading: false,
                               progress: 100,
-                              errorMessage: void 0,
+                              errorMessage: undefined,
                             },
                           } :
                           node,
@@ -5343,16 +5343,16 @@ ${combinedPrompt}`,
                       }, {
                         videoUrl: videoUrl,
                         videoAspectRatio: tongyiNodeRatio,
-                        loading: !1,
+                        loading: false,
 	                        progress: 100,
-	                        errorMessage: void 0,
+	                        errorMessage: undefined,
 	                      }, {
 	                        clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                      }),
                       setEdges((edges2) =>
                         edges2.map((edge) => (edge.target === nodeId ? {
                           ...edge,
-                          animated: !1
+                          animated: false
                         } : edge)),
                       ),
                       addGeneratedAsset && videoUrl && addGeneratedAsset(videoUrl, `video`, `generated`),
@@ -5510,7 +5510,7 @@ ${combinedPrompt}`,
                     ...entry,
                     kind: entry.kind || defaultKind,
                     url: url,
-                    seedanceAssetId: assetId || void 0,
+                    seedanceAssetId: assetId || undefined,
                   };
                 },
                 seedanceMediaKey = (source, kind) => {
@@ -5534,9 +5534,9 @@ ${combinedPrompt}`,
                   try {
                     let urlObj = new URL(url),
                       hostname = urlObj.hostname.toLowerCase();
-                    if (urlObj.protocol !== `http:` && urlObj.protocol !== `https:`) return !1;
-                    if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return !1;
-                    if (hostname === `::1` || hostname === `[::1]`) return !1;
+                    if (urlObj.protocol !== `http:` && urlObj.protocol !== `https:`) return false;
+                    if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return false;
+                    if (hostname === `::1` || hostname === `[::1]`) return false;
                     let ipMatch = hostname.match(/^\d+\.\d+\.\d+\.\d+$/);
                     if (ipMatch) {
                       let [firstOctet, secondOctet] = hostname.split(`.`).map(Number);
@@ -5548,9 +5548,9 @@ ${combinedPrompt}`,
                         (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31)
                       );
                     }
-                    return !0;
+                    return true;
                   } catch {
-                    return !1;
+                    return false;
                   }
                 },
                 seedanceIsArkMediaRef = (url) =>
@@ -5569,9 +5569,9 @@ ${combinedPrompt}`,
                       /\.(mp3|wav|m4a|aac|ogg|flac|mpeg)(?:$|[?#])/i.test(pathAndQuery) ||
                       /(?:^|[?&])(?:mime|content[-_]?type|response-content-type)=audio(?:\/|%2f)/i.test(queryString) ||
                       /(?:^|[?&])filename=[^&]+\.(mp3|wav|m4a|aac|ogg|flac|mpeg)(?:$|&)/i.test(queryString) :
-                      !0;
+                      true;
                   } catch {
-                    return !1;
+                    return false;
                   }
                 },
                 seedanceUploadPublicMedia = async (url, kind = `video`) => {
@@ -5874,9 +5874,9 @@ ${combinedPrompt}`,
                 ratio: seedanceRatio,
                 resolution: seedanceResolution,
                 duration: seedanceDuration,
-                generate_audio: seedanceSourceNode?.data?.generateAudio !== !1,
-                watermark: seedanceSourceNode?.data?.watermark === !0,
-                return_last_frame: !0,
+                generate_audio: seedanceSourceNode?.data?.generateAudio !== false,
+                watermark: seedanceSourceNode?.data?.watermark === true,
+                return_last_frame: true,
 	              };
 	              seedanceSourceNode?.data?.enableWebSearch &&
 	                seedanceConnectedImageRefs.length === 0 &&
@@ -5952,9 +5952,9 @@ ${combinedPrompt}`,
 	                      data: {
 	                        ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
 	                        seedanceTaskId: taskId,
-	                        videoUrl: void 0,
-	                        thumbnailUrl: void 0,
-	                        resultData: void 0
+	                        videoUrl: undefined,
+	                        thumbnailUrl: undefined,
+	                        resultData: undefined
 	                      }
 	                    } :
                     node,
@@ -5962,16 +5962,16 @@ ${combinedPrompt}`,
 	                ),
 	                await persistVideoNodeState({}, {
 	                  seedanceTaskId: taskId,
-	                  videoUrl: void 0,
-	                  thumbnailUrl: void 0,
-	                  resultData: void 0
+	                  videoUrl: undefined,
+	                  thumbnailUrl: undefined,
+	                  resultData: undefined
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
 	                localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
                 setDailyGenerationCount(edgesList + 1),
                 showToast(`Seedance 任务提交成功，正在生成中...`));
-              let done = !1,
+              let done = false,
                 pollCount = 0,
                 errorCount = 0,
                 seedancePollingTimeoutMs = Math.max(5e3, (Number(timeoutSeconds) || 600) * 1e3),
@@ -6008,7 +6008,7 @@ ${combinedPrompt}`,
 		                        (item) =>
 		                        item &&
 		                        typeof item == `object` &&
-		                        (item.status || item.content || item.video_url || item.videoUrl || item.error || item.progress !== void 0),
+		                        (item.status || item.content || item.video_url || item.videoUrl || item.error || item.progress !== undefined),
 		                      ) || seedanceItems[0] :
 		                      null,
 	                      seedanceItemError = seedanceItem?.error,
@@ -6176,7 +6176,7 @@ ${combinedPrompt}`,
                           `done`,
                         ].includes(seedanceStatus) || seedanceVideoUrl)
                     ) {
-                      done = !0;
+                      done = true;
                       if (!seedanceVideoUrl)
                         throw Error(`Seedance 任务已完成，但未返回视频地址`);
                       let videoUrl = seedanceVideoUrl,
@@ -6239,9 +6239,9 @@ ${combinedPrompt}`,
 	                                videoUrl: videoUrl,
                                 thumbnailUrl: thumbUrl,
                                 videoAspectRatio: seedanceNodeRatio,
-                                loading: !1,
+                                loading: false,
                                 progress: 100,
-                                errorMessage: void 0,
+                                errorMessage: undefined,
                               },
                             } :
                             node,
@@ -6254,16 +6254,16 @@ ${combinedPrompt}`,
                           videoUrl: videoUrl,
                           thumbnailUrl: thumbUrl,
                           videoAspectRatio: seedanceNodeRatio,
-                          loading: !1,
+                          loading: false,
 	                          progress: 100,
-	                          errorMessage: void 0,
+	                          errorMessage: undefined,
 	                        }, {
 	                          clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                        }),
                         setEdges((edges2) =>
                           edges2.map((edge) => (edge.target === nodeId ? {
                             ...edge,
-                            animated: !1
+                            animated: false
                           } : edge)),
                         ),
                         addGeneratedAsset && videoUrl && addGeneratedAsset(videoUrl, `video`, `generated`),
@@ -6291,14 +6291,14 @@ ${combinedPrompt}`,
                       throw Error(`[SEEDANCE_TASK_FAILED]${errorMessage}`);
                     } else {
 	                      let progress =
-	                        seedanceItem?.progress !== void 0 &&
+	                        seedanceItem?.progress !== undefined &&
 	                        seedanceItem?.progress !== null ?
 	                        parseInt(seedanceItem.progress) :
-	                        responseData.progress !== void 0 && responseData.progress !== null ?
+	                        responseData.progress !== undefined && responseData.progress !== null ?
 	                        parseInt(responseData.progress) :
-                        responseData.data?.progress !== void 0 && responseData.data?.progress !== null ?
+                        responseData.data?.progress !== undefined && responseData.data?.progress !== null ?
                         parseInt(responseData.data.progress) :
-                        responseData.content?.progress !== void 0 &&
+                        responseData.content?.progress !== undefined &&
                         responseData.content?.progress !== null ?
                         parseInt(responseData.content.progress) :
                         Math.min(99, pollCount * 2);
@@ -6398,7 +6398,7 @@ ${combinedPrompt}`,
                   !/(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl) &&
                   ((requestProfile.submitPath = `/v1/videos`),
                     (requestProfile.pollPath = requestProfile.pollPath || `/v1/videos/{taskId}`),
-                    requestProfile.contentPath === void 0 &&
+                    requestProfile.contentPath === undefined &&
                     (requestProfile.contentPath = `/v1/videos/{taskId}/content`)),
                   modelConfig.category === `video` &&
                   /^veo/i.test(String(modelConfig.modelName || ``)) &&
@@ -6411,8 +6411,8 @@ ${combinedPrompt}`,
 	                    delete requestProfile.referenceImageMode,
 	                    delete requestProfile.referenceImageAsArray,
 	                    delete requestProfile.referenceImageItemShape,
-	                    (requestProfile.requiresReferenceImage = !0),
-                    (requestProfile.omitDuration = !0),
+	                    (requestProfile.requiresReferenceImage = true),
+                    (requestProfile.omitDuration = true),
                     (requestProfile.fieldMapping = {
                       ...(requestProfile.fieldMapping || {}),
                       prompt: `prompt`,
@@ -6475,7 +6475,7 @@ ${combinedPrompt}`,
                     (requestProfile.submitPath = `/v1/videos`),
                     (requestProfile.pollPath = `/v1/videos/{taskId}`),
                     (requestProfile.referenceImageMode = `url`),
-                    (requestProfile.referenceImageAsArray = !0),
+                    (requestProfile.referenceImageAsArray = true),
                     (requestProfile.referenceImageItemShape = `image_url_object`),
                     (requestProfile.fieldMapping = {
                       ...(requestProfile.fieldMapping || {}),
@@ -6499,10 +6499,10 @@ ${combinedPrompt}`,
                   ((requestProfile.requestType = `json-video`),
                     (requestProfile.submitPath = `/v1/video/create`),
                     (requestProfile.pollPath = `/v1/video/query?id={taskId}`),
-                    (requestProfile.omitDuration = !0),
-                    (requestProfile.requiresReferenceImage = !0),
+                    (requestProfile.omitDuration = true),
+                    (requestProfile.requiresReferenceImage = true),
                     (requestProfile.referenceImageMode = `url`),
-                    (requestProfile.referenceImageAsArray = !0),
+                    (requestProfile.referenceImageAsArray = true),
                     (requestProfile.fieldMapping = {
                       ...(requestProfile.fieldMapping || {}),
                       resolution: `size`,
@@ -6530,11 +6530,11 @@ ${combinedPrompt}`,
 	              referenceVideosAsUrls =
 	              effectiveVideoRequestProfile?.referenceVideoMode === `url`,
               referenceImagesAsArray =
-              effectiveVideoRequestProfile?.referenceImageAsArray === !0,
+              effectiveVideoRequestProfile?.referenceImageAsArray === true,
               requiresReferenceImage =
-              effectiveVideoRequestProfile?.requiresReferenceImage === !0,
+              effectiveVideoRequestProfile?.requiresReferenceImage === true,
               requiresReferenceVideo =
-              effectiveVideoRequestProfile?.requiresReferenceVideo === !0,
+              effectiveVideoRequestProfile?.requiresReferenceVideo === true,
               videoGatewayFormatOverride =
               !modelProtocolDefinition &&
               videoConfig?.protocolFormat && videoConfig.protocolFormat !== `auto`
@@ -6550,7 +6550,7 @@ ${combinedPrompt}`,
               contentPathTemplate =
               effectiveVideoRequestProfile?.contentPath || ``,
               useAspectRatioAsSize =
-              effectiveVideoRequestProfile?.useAspectRatioAsSize === !0,
+              effectiveVideoRequestProfile?.useAspectRatioAsSize === true,
               uploadReferenceMediaForUrlOnlyModel = async (url, mediaKind = `image`) => {
                   url = wanjuanNormalizeReferenceMediaUrl(url, mediaKind);
                   if (!url) return ``;
@@ -6808,7 +6808,7 @@ ${combinedPrompt}`,
                 effectiveFieldMapping.resolution === `resolution` ?
                 requestAspectRatioValue || videoSizeValue :
                 videoSizeValue);
-              if (effectiveVideoRequestProfile?.omitDuration !== !0) {
+              if (effectiveVideoRequestProfile?.omitDuration !== true) {
                 let durationField = effectiveFieldMapping.duration || `duration`;
                 jsonBody[durationField] = getFieldValue(durationField, Number(durationValue) || durationValue);
               }!isVeoModel &&
@@ -6877,7 +6877,7 @@ ${combinedPrompt}`,
                     .toLowerCase());
                 jsonBody.preset || (jsonBody.preset = `custom`);
                 aspectRatio &&
-                  jsonBody.aspect_ratio === void 0 &&
+                  jsonBody.aspect_ratio === undefined &&
                   (jsonBody.aspect_ratio = aspectRatio);
                 if (Array.isArray(referenceImages)) {
                   let imageReferences2 = referenceImages
@@ -6886,7 +6886,7 @@ ${combinedPrompt}`,
                     )
                     .filter(Boolean);
                   imageReferences2.length > 0 &&
-                    jsonBody.image_references === void 0 &&
+                    jsonBody.image_references === undefined &&
                     (jsonBody.image_references = imageReferences2);
                 }
               }
@@ -6983,9 +6983,9 @@ ${combinedPrompt}`,
 	                      data: {
 	                        ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
 	                        taskId: taskId,
-	                        videoUrl: void 0,
-	                        thumbnailUrl: void 0,
-	                        resultData: void 0
+	                        videoUrl: undefined,
+	                        thumbnailUrl: undefined,
+	                        resultData: undefined
 	                      }
 	                    } :
                     node,
@@ -6993,16 +6993,16 @@ ${combinedPrompt}`,
 	                ),
 	                await persistVideoNodeState({}, {
 	                  taskId: taskId,
-	                  videoUrl: void 0,
-	                  thumbnailUrl: void 0,
-	                  resultData: void 0
+	                  videoUrl: undefined,
+	                  thumbnailUrl: undefined,
+	                  resultData: undefined
 	                }, {
 	                  clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	                }),
                 localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
                 setDailyGenerationCount(edgesList + 1),
                 showToast(`任务提交成功，正在生成中...`));
-              let done = !1,
+              let done = false,
                 pollCount = 0,
                 errorCount = 0,
                 videoPollingTimeoutMs = Math.max(5e3, (Number(timeoutSeconds) || 600) * 1e3),
@@ -7076,7 +7076,7 @@ ${combinedPrompt}`,
                       fileId ||
                       directVideoUrl)
                   ) {
-                    done = !0;
+                    done = true;
                     console.info(
                       `Video API poll completed: ${JSON.stringify({
 			                      modelName: modelName,
@@ -7152,7 +7152,7 @@ ${combinedPrompt}`,
 	                              videoUrl: videoUrl,
                               thumbnailUrl: thumbUrl,
                               videoAspectRatio: aspectRatio2,
-                              loading: !1,
+                              loading: false,
                               progress: 100,
                             },
                           } :
@@ -7166,7 +7166,7 @@ ${combinedPrompt}`,
                         videoUrl: videoUrl,
                         thumbnailUrl: thumbUrl,
                         videoAspectRatio: aspectRatio2,
-	                        loading: !1,
+	                        loading: false,
 	                        progress: 100,
 	                      }, {
 	                        clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
@@ -7178,7 +7178,7 @@ ${combinedPrompt}`,
                     throw Error(extractVideoTaskErrorHelper(data));
                   } else {
                     let progress =
-                      data.progress !== void 0 && data.progress !== null ?
+                      data.progress !== undefined && data.progress !== null ?
                       parseInt(data.progress) :
                       Math.min(99, pollCount * 2);
                     progress = Math.min(99, Math.max(0, isNaN(progress) ? pollCount * 2 : progress));
@@ -7258,7 +7258,7 @@ ${combinedPrompt}`,
                   );
               })();
 	            if (
-	              (effectiveVideoRequestProfile?.omitDuration === !0 ||
+	              (effectiveVideoRequestProfile?.omitDuration === true ||
 	                (() => {
 	                  let durationField = effectiveFieldMapping.duration || `seconds`;
 	                  formData.append(durationField, getFieldValue(durationField, durationValue));
@@ -7415,9 +7415,9 @@ ${combinedPrompt}`,
                   // 数据驱动优先：若协议 responseMapping 配了视频结果路径(videoUrl/video_url/url/resultUrl 任一)，
                   // 先按协议路径取;取不到再回退下面的硬编码字段瀑布(保证未配协议的旧中转站仍可用)。
                   let readRespPath = (source, path) => {
-                    let trimmedPath = String(path || ``).trim(); if (!trimmedPath) return void 0;
+                    let trimmedPath = String(path || ``).trim(); if (!trimmedPath) return undefined;
                     return trimmedPath.split(`.`).reduce((cur, seg) => {
-                      if (cur == null) return void 0;
+                      if (cur == null) return undefined;
                       let arrayIndexMatch = seg.match(/^(.+)\[(\d+)\]$/);
                       return arrayIndexMatch ? cur?.[arrayIndexMatch[1]]?.[Number(arrayIndexMatch[2])] : /^\d+$/.test(seg) ? cur?.[Number(seg)] : cur?.[seg];
                     }, source);
@@ -7501,9 +7501,9 @@ ${combinedPrompt}`,
 	                    data: {
 	                      ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
 	                      taskId: taskId,
-	                      videoUrl: void 0,
-	                      thumbnailUrl: void 0,
-	                      resultData: void 0
+	                      videoUrl: undefined,
+	                      thumbnailUrl: undefined,
+	                      resultData: undefined
 	                    }
 	                  } :
                   node,
@@ -7511,16 +7511,16 @@ ${combinedPrompt}`,
 	              ),
 	              await persistVideoNodeState({}, {
 	                taskId: taskId,
-	                videoUrl: void 0,
-	                thumbnailUrl: void 0,
-	                resultData: void 0
+	                videoUrl: undefined,
+	                thumbnailUrl: undefined,
+	                resultData: undefined
 	              }, {
 	                clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
 	              }),
               localStorage.setItem(dailyLimitKey, (edgesList + 1).toString()),
               setDailyGenerationCount(edgesList + 1),
               showToast(`任务提交成功，正在生成中...`));
-            let isCompleted = !1,
+            let isCompleted = false,
               pollCount = 0,
               failureCount = 0,
               multipartPollingTimeoutMs = Math.max(5e3, (Number(timeoutSeconds) || 600) * 1e3),
@@ -7549,7 +7549,7 @@ ${combinedPrompt}`,
                         let responseMapping = effectiveVideoRequestProfile?.responseMapping;
                         let statusPathSpec = responseMapping && typeof responseMapping == `object` ? (responseMapping.status || responseMapping.statusPath) : null;
                         statusPathSpec = Array.isArray(statusPathSpec) ? statusPathSpec : statusPathSpec ? [statusPathSpec] : [];
-                        for (let statusPathEntry of statusPathSpec) { let statusValue = String(statusPathEntry||``).trim().split(`.`).reduce((reduceAccumulator,pathSegment)=>reduceAccumulator==null?void 0:reduceAccumulator[pathSegment], pollResult); if (statusValue != null && statusValue !== ``) return statusValue; }
+                        for (let statusPathEntry of statusPathSpec) { let statusValue = String(statusPathEntry||``).trim().split(`.`).reduce((reduceAccumulator,pathSegment)=>reduceAccumulator==null?undefined:reduceAccumulator[pathSegment], pollResult); if (statusValue != null && statusValue !== ``) return statusValue; }
                         return pollResult.status || pollResult.data?.status || pollResult.output?.status || pollResult.result?.status || pollResult.task?.status;
                       })(),
                     ),
@@ -7572,7 +7572,7 @@ ${combinedPrompt}`,
                     return completedValuesSpec.length ? completedValuesSpec : [`completed`, `complete`, `success`, `succeeded`, `done`, `finished`, `ready`, `succeed`];
                   })();
                   if (((failureCount = 0), completedValueSet.includes(status) || genericDirectVideoUrl)) {
-                    isCompleted = !0;
+                    isCompleted = true;
                     let {
                       videoUrl: videoUrl,
                       thumbnailUrl: thumbnailUrl
@@ -7630,7 +7630,7 @@ ${combinedPrompt}`,
 	                              videoUrl: videoUrl,
                               thumbnailUrl: thumbnailUrl,
                               videoAspectRatio: seedanceNodeRatio,
-                              loading: !1,
+                              loading: false,
                               progress: 100,
                             },
                           } :
@@ -7644,7 +7644,7 @@ ${combinedPrompt}`,
                         videoUrl: videoUrl,
                         thumbnailUrl: thumbnailUrl,
                         videoAspectRatio: seedanceNodeRatio,
-	                        loading: !1,
+	                        loading: false,
 	                        progress: 100,
 	                      }, {
 	                        clearProjectAssetBindings: [`videoUrl`, `thumbnailUrl`, `resultData`]
@@ -7677,9 +7677,9 @@ ${combinedPrompt}`,
                     );
                   } else {
                     let progress =
-                      pollResult.progress !== void 0 && pollResult.progress !== null ?
+                      pollResult.progress !== undefined && pollResult.progress !== null ?
                       parseInt(pollResult.progress) :
-                      pollResult.data?.progress !== void 0 &&
+                      pollResult.data?.progress !== undefined &&
                       pollResult.data?.progress !== null ?
                       parseInt(pollResult.data.progress) :
                       Math.min(99, pollCount * 2);
@@ -7762,7 +7762,7 @@ ${combinedPrompt}`,
                         referenceImageField: videoModelRequestProfile?.fieldMapping?.referenceImage || `input_reference`,
                         referenceImageCount: 0,
                         referenceVideoCount: 0,
-                        requiresReferenceImage: videoModelRequestProfile?.requiresReferenceImage === !0,
+                        requiresReferenceImage: videoModelRequestProfile?.requiresReferenceImage === true,
                       },
                       projectId: projectIdAtStart,
                       nodeId: nodeId,
@@ -7776,7 +7776,7 @@ ${combinedPrompt}`,
                 ),
                 shouldApplyVideoError &&
                 (await persistVideoNodeState({}, {
-                  loading: !1,
+                  loading: false,
                   errorMessage: error.message,
                 }, ),
                 setNodes((nodes2) =>
@@ -7789,7 +7789,7 @@ ${combinedPrompt}`,
                       ...node,
                       data: {
                         ...node.data,
-                        loading: !1,
+                        loading: false,
                         errorMessage: error.message,
                       },
                     } :
@@ -7809,7 +7809,7 @@ ${combinedPrompt}`,
               setEdges((edges2) =>
                 edges2.map((edge) => (edge.target === nodeId ? {
                   ...edge,
-                  animated: !1
+                  animated: false
                 } : edge)),
               ));
           }
@@ -7837,7 +7837,7 @@ ${combinedPrompt}`,
         ],
     ),
     generateText = useCallback(
-      async (nodeId, prompt, isRegenerate = !1, extraOptions) => {
+      async (nodeId, prompt, isRegenerate = false, extraOptions) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyUsageCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
           if (false && dailyUsageCount >= planLimits.dailyGenerations) {
@@ -7915,11 +7915,11 @@ ${combinedPrompt}`,
                   ...node,
                   data: {
                     ...node.data,
-                    loading: !0,
+                    loading: true,
                     taskId: textTaskId,
-                    seedanceTaskId: void 0,
-                    manuallyStopped: !1,
-                    errorMessage: void 0,
+                    seedanceTaskId: undefined,
+                    manuallyStopped: false,
+                    errorMessage: undefined,
                   },
                 } :
                 node,
@@ -7943,7 +7943,7 @@ ${combinedPrompt}`,
             setEdges((edges2) =>
               edges2.map((edge) => (edge.target === nodeId ? {
                 ...edge,
-                animated: !0
+                animated: true
               } : edge)),
             ));
           try {
@@ -8006,9 +8006,9 @@ ${combinedPrompt}`,
                 try {
                   let parsedUrl = new URL(url),
                     hostname = parsedUrl.hostname.toLowerCase();
-                  if (parsedUrl.protocol !== `http:` && parsedUrl.protocol !== `https:`) return !1;
-                  if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return !1;
-                  if (hostname === `::1` || hostname === `[::1]`) return !1;
+                  if (parsedUrl.protocol !== `http:` && parsedUrl.protocol !== `https:`) return false;
+                  if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return false;
+                  if (hostname === `::1` || hostname === `[::1]`) return false;
                   let ipv4Match = hostname.match(/^\d+\.\d+\.\d+\.\d+$/);
                   if (ipv4Match) {
                     let [firstOctet, secondOctet] = hostname.split(`.`).map(Number);
@@ -8020,9 +8020,9 @@ ${combinedPrompt}`,
                       (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31)
                     );
                   }
-                  return !0;
+                  return true;
                 } catch {
-                  return !1;
+                  return false;
                 }
               },
               textNodeVideoLooksLikeDirectUrl = (url) => {
@@ -8037,7 +8037,7 @@ ${combinedPrompt}`,
                     /(?:^|[?&])filename=[^&]+\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|&)/i.test(queryString)
                   );
                 } catch {
-                  return !1;
+                  return false;
                 }
               },
               normalizeTextNodeChatVideoUrl = async (url) => {
@@ -8150,18 +8150,18 @@ ${combinedPrompt}`,
 	                    valueType === `number` ?
 	                    Number(value) :
 	                    valueType === `boolean` ?
-	                    value === !0 || value === `true` :
+	                    value === true || value === `true` :
 	                    value;
 	                },
 	                putTextProtocolField = (fieldKey, target, value) => {
 	                  let normalizedKey = String(fieldKey || ``).trim();
-	                  normalizedKey && value !== void 0 && value !== null && value !== `` && (target[normalizedKey] = coerceTextProtocolValue(normalizedKey, value));
+	                  normalizedKey && value !== undefined && value !== null && value !== `` && (target[normalizedKey] = coerceTextProtocolValue(normalizedKey, value));
 	                },
 	                readTextProtocolResponsePath = (obj, path) => {
 	                  let normalizedPath = String(path || ``).trim();
-	                  if (!normalizedPath) return void 0;
+	                  if (!normalizedPath) return undefined;
 	                  return normalizedPath.split(`.`).reduce((acc, segment) => {
-	                    if (acc === void 0 || acc === null) return void 0;
+	                    if (acc === undefined || acc === null) return undefined;
 	                    let arrayMatch = segment.match(/^(.+)\[(\d+)\]$/);
 	                    return arrayMatch ?
 	                      acc?.[arrayMatch[1]]?.[Number(arrayMatch[2])] :
@@ -8416,7 +8416,7 @@ ${combinedPrompt}`,
 	                      {
 	                        type: `json_object`
 	                      } :
-	                      void 0,
+	                      undefined,
 	                  }),
                 headers = {
                   "Content-Type": String(textProtocolDefinition?.contentType || `application/json`)
@@ -8606,7 +8606,7 @@ ${combinedPrompt}`,
                     {
                       type: `json_object`
                     } :
-                    void 0,
+                    undefined,
                 }),
                 signal: abortController.signal,
               });
@@ -8688,7 +8688,7 @@ ${combinedPrompt}`,
                         data: {
                           text: textContent2,
                           label: title,
-                          expanded: !1,
+                          expanded: false,
                           onGenerateText: generateText,
                           presetPrompts: presetPrompts,
                           splitSourceId: nodeId,
@@ -8740,17 +8740,17 @@ ${combinedPrompt}`,
                                   x: newNode.position.x + (targetNode.position.x - sourceNode.position.x),
                                   y: newNode.position.y + (targetNode.position.y - sourceNode.position.y),
                                 },
-                                selected: !1,
+                                selected: false,
                                 data: {
                                   ...targetNode.data,
-	                                  loading: !1,
-	                                  errorMessage: void 0,
-	                                  selectedContextResources: void 0,
+	                                  loading: false,
+	                                  errorMessage: undefined,
+	                                  selectedContextResources: undefined,
 	                                  imageUrl: targetNode.type === `imageNode` ||
 	                                    targetNode.type === `promptNode` ?
-                                    void 0 :
+                                    undefined :
                                     targetNode.data.imageUrl,
-                                  expanded: !1,
+                                  expanded: false,
                                   splitSourceId: nodeId,
                                 },
                               };
@@ -8797,7 +8797,7 @@ ${combinedPrompt}`,
                         data: {
                           ...node2.data,
                           text: updateTaskList,
-                          loading: !1
+                          loading: false
                         }
                       } :
                       node2,
@@ -8813,7 +8813,7 @@ ${combinedPrompt}`,
                       data: {
                         ...node2.data,
                         text: updateTaskList,
-                        loading: !1
+                        loading: false
                       }
                     } :
                     node2,
@@ -8827,7 +8827,7 @@ ${combinedPrompt}`,
                     ...node2,
                     data: {
                       ...node2.data,
-                      loading: !1
+                      loading: false
                     }
                   } : node2,
                 ),
@@ -8858,7 +8858,7 @@ ${combinedPrompt}`,
                     ...node,
                     data: {
                       ...node.data,
-                      loading: !1,
+                      loading: false,
                       errorMessage: error.message
                     },
                   } :
@@ -8872,7 +8872,7 @@ ${combinedPrompt}`,
                     ...node,
                     data: {
                       ...node.data,
-                      loading: !1
+                      loading: false
                     }
                   } : node,
                 ),
@@ -8880,7 +8880,7 @@ ${combinedPrompt}`,
               setEdges((edges2) =>
                 edges2.map((edge) => (edge.target === nodeId ? {
                   ...edge,
-                  animated: !1
+                  animated: false
                 } : edge)),
               ));
           }
@@ -8990,12 +8990,12 @@ ${combinedPrompt}`,
                   ...node2,
                   data: {
                     ...node2.data,
-                    loading: !0,
+                    loading: true,
                     progress: 0,
-                    errorMessage: void 0,
-                    taskId: void 0,
-                    seedanceTaskId: void 0,
-                    resultData: void 0,
+                    errorMessage: undefined,
+                    taskId: undefined,
+                    seedanceTaskId: undefined,
+                    resultData: undefined,
                   },
                 } :
                 node2,
@@ -9004,7 +9004,7 @@ ${combinedPrompt}`,
             setEdges((edges2) =>
               edges2.map((edge) => (edge.target === nodeId ? {
                 ...edge,
-                animated: !0
+                animated: true
               } : edge)),
             ));
           let taskId = null;
@@ -9129,7 +9129,7 @@ ${combinedPrompt}`,
             } catch (error) {
               console.warn(`Failed to parse polling headers`, error);
             }
-            let requestPayload = config.method === `GET` ? void 0 : requestBody;
+            let requestPayload = config.method === `GET` ? undefined : requestBody;
             if (requestPayload && headers[`Content-Type`] === `multipart/form-data`)
               try {
                 let formFields = JSON.parse(requestBody),
@@ -9176,7 +9176,7 @@ ${combinedPrompt}`,
             });
             if (!response.ok) throw Error(`API 请求失败: ${response.status}`);
             let contentType = response.headers.get(`content-type`) || ``,
-              isBinaryResponse = !1,
+              isBinaryResponse = false,
               binaryPayload;
             if (
               contentType.includes(`audio/`) ||
@@ -9184,7 +9184,7 @@ ${combinedPrompt}`,
               contentType.includes(`video/`) ||
               contentType.includes(`application/octet-stream`)
             ) {
-              isBinaryResponse = !0;
+              isBinaryResponse = true;
               let blob = await response.blob();
               binaryPayload = await new Promise((resolve, reject) => {
                 let fileReader = new FileReader();
@@ -9221,7 +9221,7 @@ ${combinedPrompt}`,
                       result.join(`
 `) :
                       JSON.stringify(result, null, 2))),
-                  result === void 0)
+                  result === undefined)
               )
                 throw Error(`无法提取结果`);
               (setNodes((nodes2) =>
@@ -9230,7 +9230,7 @@ ${combinedPrompt}`,
                       let updatedData = {
                         ...node2.data,
                         resultData: result,
-                        loading: !1
+                        loading: false
                       };
                       return (
                         config.outputType === `text` && (updatedData.text = result),
@@ -9281,7 +9281,7 @@ ${combinedPrompt}`,
                   node2,
                 ),
               );
-              let isCompleted = !1,
+              let isCompleted = false,
                 attempts = 0,
                 pollingUrl = (config.pollingUrl || config.apiUrl).replace(`{{task_id}}`, taskId2);
               Object.entries(variables).forEach(([key, value]) => {
@@ -9336,7 +9336,7 @@ ${combinedPrompt}`,
                   (resultPath = resultPath.replace(/\{\{task_id\}\}/g, taskId2));
                 let pollingStatus = extractByPath(responseBody, resultPath);
                 if (pollingStatus === config.pollingCompletedValue) {
-                  isCompleted = !0;
+                  isCompleted = true;
                   let resultDataPath = config.pollingResultDataPath || config.resultPath;
                   resultDataPath &&
                     resultDataPath.includes(`{{task_id}}`) &&
@@ -9372,7 +9372,7 @@ ${combinedPrompt}`,
                           let updatedData = {
                             ...node2.data,
                             resultData: resultData,
-                            loading: !1,
+                            loading: false,
                             progress: 100,
                           };
                           return (
@@ -9465,7 +9465,7 @@ ${combinedPrompt}`,
                       ...node2,
                       data: {
                         ...node2.data,
-                        loading: !1,
+                        loading: false,
                         errorMessage: error.message
                       },
                     } :
@@ -9478,7 +9478,7 @@ ${combinedPrompt}`,
               setEdges((edges2) =>
                 edges2.map((edge) => (edge.target === nodeId ? {
                   ...edge,
-                  animated: !1
+                  animated: false
                 } : edge)),
               ));
           }
@@ -9498,8 +9498,8 @@ ${combinedPrompt}`,
                     ...node2,
                     data: {
                       ...node2.data,
-                      tianjiPortraitAssetId: void 0,
-                      isTianjiPortrait: !1,
+                      tianjiPortraitAssetId: undefined,
+                      isTianjiPortrait: false,
                       sourceOrigin: `tianji-portrait`,
                       tianjiPortraitBindingStatus: `reviewing`,
                       tianjiPortraitBindingMessage: `正在提交天玑人像审核...`,
@@ -9529,13 +9529,13 @@ ${combinedPrompt}`,
                         tianjiPortraitPreviewUrl: finalPortrait.imageUrl || node2.data?.imageUrl || imageUrl,
                         tianjiPortraitBindingLookupUrl: bindingLookupUrl,
                         tianjiPortraitBindingName: bindingName,
-                        isTianjiPortrait: !0,
+                        isTianjiPortrait: true,
                         sourceOrigin: `tianji-portrait`,
                         tianjiPortraitBindingStatus: `ready`,
                         tianjiPortraitBindingMessage: `已绑定天玑素材库最终人像 ID`,
                       } : {
-                        tianjiPortraitAssetId: void 0,
-                        isTianjiPortrait: !1,
+                        tianjiPortraitAssetId: undefined,
+                        isTianjiPortrait: false,
                         tianjiPortraitBindingLookupUrl: bindingLookupUrl,
                         tianjiPortraitBindingName: bindingName,
                         tianjiPortraitBindingStatus: `pending`,
@@ -9585,7 +9585,7 @@ ${combinedPrompt}`,
                             tianjiPortraitAssetId: resolved.assetId,
                             tianjiPortraitGroupType: resolved.groupType || node2.data.tianjiPortraitGroupType || `AIGC`,
                             tianjiPortraitPreviewUrl: resolved.imageUrl || node2.data.tianjiPortraitPreviewUrl || node2.data.imageUrl,
-                            isTianjiPortrait: !0,
+                            isTianjiPortrait: true,
                             sourceOrigin: `tianji-portrait`,
                             tianjiPortraitBindingStatus: `ready`,
                             tianjiPortraitBindingMessage: `已自动绑定天玑素材库最终人像 ID`,
@@ -9614,8 +9614,8 @@ ${combinedPrompt}`,
                     ...node2,
                     data: {
                       ...node2.data,
-                      tianjiPortraitAssetId: void 0,
-                      isTianjiPortrait: !1,
+                      tianjiPortraitAssetId: undefined,
+                      isTianjiPortrait: false,
                       sourceOrigin: `tianji-portrait`,
                       tianjiPortraitBindingStatus: `failed`,
                       tianjiPortraitBindingMessage: errorMessage || `绑定失败，需手动从天玑人像库选择`,
@@ -9659,7 +9659,7 @@ ${combinedPrompt}`,
 		`,
 	        )[0]
 	        .trim() :
-	        void 0;
+	        undefined;
 	    },
 	    runNodeChain = useCallback(
 	      async (nodeId) => {
@@ -9701,26 +9701,26 @@ ${combinedPrompt}`,
                 for (;;) {
                   let node = getNodes().find((node2) => node2.id === nodeId2);
                   if (!node) return {
-                    ok: !1,
+                    ok: false,
                     error: `节点不存在`
                   };
                   let nodeData = node.data || {};
                   if (nodeData.errorMessage) return {
-                    ok: !1,
+                    ok: false,
                     error: nodeData.errorMessage
                   };
                   if (!nodeData.loading && (!isInputNode(node) || hasOutput(node))) return {
-                    ok: !0,
+                    ok: true,
                     node: node
                   };
                   if (!nodeData.loading && isInputNode(node) && Date.now() - startTime > 3e3 && !hasOutput(node))
                     return {
-                      ok: !1,
+                      ok: false,
                       error: `节点没有生成可用结果`
                     };
                   if (Date.now() - startTime > timeout)
                     return {
-                      ok: !1,
+                      ok: false,
                       error: `等待节点完成超时`
                     };
                   await delay(500);
@@ -9746,13 +9746,13 @@ ${combinedPrompt}`,
 	`,
                     )[0]
                     .trim() :
-                    void 0,
+                    undefined,
                   ) :
                   node.type === `textNode` ?
                   await generateText(
                     nodeId2,
                     nodeData.prompt || ``,
-                    nodeData.autoSplit || !1,
+                    nodeData.autoSplit || false,
                     nodeData.selectedModel ?
                     nodeData.selectedModel :
                     nodeData.textModel ?
@@ -9762,7 +9762,7 @@ ${combinedPrompt}`,
 	`,
                     )[0]
                     .trim() :
-                    void 0,
+                    undefined,
                   ) :
                   node.type === `videoNode` ||
                   node.type === `seedanceNode` ||
@@ -9782,7 +9782,7 @@ ${combinedPrompt}`,
                     String(nodeData.videoDurations || ``)
                     .split(/[\s,，、]+/)[0]
                     ?.trim() :
-                    void 0,
+                    undefined,
                   ) :
                   node.type === `audioNode` ?
                   nodeData.onGenerateAudio && (await nodeData.onGenerateAudio(nodeId2)) :
@@ -9901,26 +9901,26 @@ ${combinedPrompt}`,
                 for (;;) {
                   let node = getNodes().find((node2) => node2.id === nodeId);
                   if (!node) return {
-                    ok: !1,
+                    ok: false,
                     error: `节点不存在`
                   };
                   let nodeData = node.data || {};
                   if (nodeData.errorMessage) return {
-                    ok: !1,
+                    ok: false,
                     error: nodeData.errorMessage
                   };
                   if (!nodeData.loading && (!isGeneratingNode(node) || hasOutput(node))) return {
-                    ok: !0,
+                    ok: true,
                     node: node
                   };
                   if (!nodeData.loading && isGeneratingNode(node) && Date.now() - startTime > 3e3 && !hasOutput(node))
                     return {
-                      ok: !1,
+                      ok: false,
                       error: `节点没有生成可用结果`
                     };
                   if (Date.now() - startTime > timeout)
                     return {
-                      ok: !1,
+                      ok: false,
                       error: `等待节点完成超时`
                     };
                   await delay(500);
@@ -9946,13 +9946,13 @@ ${combinedPrompt}`,
 	`,
                       )[0]
                       .trim() :
-                      void 0,
+                      undefined,
                     ) :
                     node.type === `textNode` ?
                     await generateText(
                       nodeId,
                       nodeData.prompt || ``,
-                      nodeData.autoSplit || !1,
+                      nodeData.autoSplit || false,
                       nodeData.selectedModel ?
                       nodeData.selectedModel :
                       nodeData.textModel ?
@@ -9962,7 +9962,7 @@ ${combinedPrompt}`,
 	`,
                       )[0]
                       .trim() :
-                      void 0,
+                      undefined,
                     ) :
                     node.type === `videoNode` ||
                     node.type === `seedanceNode` ||
@@ -9982,7 +9982,7 @@ ${combinedPrompt}`,
                       String(nodeData.videoDurations || ``)
                       .split(/[\s,，、]+/)[0]
                       ?.trim() :
-                      void 0,
+                      undefined,
                     ) :
                     node.type === `audioNode` ?
                     nodeData.onGenerateAudio && (await nodeData.onGenerateAudio(nodeId)) :
@@ -10078,20 +10078,20 @@ ${combinedPrompt}`,
               width: 340,
               height: 430
             } :
-            void 0,
+            undefined,
           data: {
             ...cleanNodeData,
-            expanded: cleanNodeData.expanded === void 0 ?
+            expanded: cleanNodeData.expanded === undefined ?
               nodeType === `promptNode` || nodeType === `textNode` || nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ?
-              !0 :
-              void 0 :
+              true :
+              undefined :
               cleanNodeData.expanded,
-            onGenerate: nodeType === `promptNode` ? generateImage : void 0,
-            onGenerateText: nodeType === `textNode` ? generateText : void 0,
-            onGenerateVideo: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? generateVideo : void 0,
-            onGenerateCustom: nodeType === `customNode` ? handleGenerateCustom : void 0,
-            onGenerateTtsMusic: nodeType === `ttsMusicNode` || nodeType === `musicNode` ? void 0 : void 0,
-            onAIAssist: nodeType === `customNode` ? handleAIAssist : void 0,
+            onGenerate: nodeType === `promptNode` ? generateImage : undefined,
+            onGenerateText: nodeType === `textNode` ? generateText : undefined,
+            onGenerateVideo: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? generateVideo : undefined,
+            onGenerateCustom: nodeType === `customNode` ? handleGenerateCustom : undefined,
+            onGenerateTtsMusic: nodeType === `ttsMusicNode` || nodeType === `musicNode` ? undefined : undefined,
+            onAIAssist: nodeType === `customNode` ? handleAIAssist : undefined,
             onSaveTemplate: nodeType === `customNode` ?
               (templateName, templateConfig) => {
                 addCustomNode && addCustomNode({
@@ -10100,8 +10100,8 @@ ${combinedPrompt}`,
                   config: templateConfig
                 });
               } :
-              void 0,
-            onCrop: nodeType === `imageNode` || nodeType === `promptNode` ? handleCrop : void 0,
+              undefined,
+            onCrop: nodeType === `imageNode` || nodeType === `promptNode` ? handleCrop : undefined,
             onVideoEdit: nodeType === `imageNode` ||
               nodeType === `videoNode` ||
 	              nodeType === `seedanceNode` ||
@@ -10111,18 +10111,18 @@ ${combinedPrompt}`,
 	              nodeType === `videoFaceBlurNode` ||
 	              nodeType === `qwenTtsCloneNode` ?
               openVideoEditor :
-              void 0,
-            onSplit: nodeType === `gridSplitNode` ? handleSplit : void 0,
-            onSplitOne: nodeType === `gridSplitNode` ? handleSplitOne : void 0,
+              undefined,
+            onSplit: nodeType === `gridSplitNode` ? handleSplit : undefined,
+            onSplitOne: nodeType === `gridSplitNode` ? handleSplitOne : undefined,
             onZoom: openImagePreview,
-            onEdit: nodeType === `imageNode` || nodeType === `promptNode` ? openImageEditor : void 0,
+            onEdit: nodeType === `imageNode` || nodeType === `promptNode` ? openImageEditor : undefined,
             onAddImage: nodeType === `promptNode` ||
               nodeType === `textNode` ||
               nodeType === `videoNode` ||
               nodeType === `seedanceNode` ||
               nodeType === `tongyiWanxiangNode` ?
               createImageNode :
-              void 0,
+              undefined,
             onStop: nodeType === `promptNode` ||
               nodeType === `textNode` ||
               nodeType === `videoNode` ||
@@ -10134,7 +10134,7 @@ ${combinedPrompt}`,
               nodeType === `seedanceNode` ||
               nodeType === `videoExtractNode` ?
               stopGeneration :
-              void 0,
+              undefined,
             onShowToast: nodeType === `textNode` ||
               nodeType === `audioNode` ||
               nodeType === `ttsMusicNode` ||
@@ -10147,20 +10147,20 @@ ${combinedPrompt}`,
               nodeType === `videoFaceBlurNode` ||
               nodeType === `qwenTtsCloneNode` ?
               showToast :
-              void 0,
+              undefined,
             presetPrompts: presetPrompts,
-            onSendToActiveTab: nodeType === `promptNode` || nodeType === `imageNode` ? sendToActiveTab : void 0,
-            onTianjiPortraitReview: nodeType === `promptNode` || nodeType === `imageNode` ? handleTianjiPortraitReview : void 0,
-            seedanceNode: nodeType === `seedanceNode` ? !0 : void 0,
-            tongyiWanxiangNode: nodeType === `tongyiWanxiangNode` ? !0 : void 0,
-            tongyiWanxiangMode: nodeType === `tongyiWanxiangNode` ? `text-to-video` : void 0,
-            tongyiWanxiangTextModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangTextModels : void 0,
-            tongyiWanxiangReferenceImageModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangReferenceImageModels : void 0,
-            tongyiWanxiangImageModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangImageModels : void 0,
-            tongyiWanxiangEditModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangEditModels : void 0,
-            tongyiWanxiangDurations: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : void 0,
-            tongyiWanxiangResolutions: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangResolutions : void 0,
-            tongyiWanxiangRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : void 0,
+            onSendToActiveTab: nodeType === `promptNode` || nodeType === `imageNode` ? sendToActiveTab : undefined,
+            onTianjiPortraitReview: nodeType === `promptNode` || nodeType === `imageNode` ? handleTianjiPortraitReview : undefined,
+            seedanceNode: nodeType === `seedanceNode` ? true : undefined,
+            tongyiWanxiangNode: nodeType === `tongyiWanxiangNode` ? true : undefined,
+            tongyiWanxiangMode: nodeType === `tongyiWanxiangNode` ? `text-to-video` : undefined,
+            tongyiWanxiangTextModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangTextModels : undefined,
+            tongyiWanxiangReferenceImageModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangReferenceImageModels : undefined,
+            tongyiWanxiangImageModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangImageModels : undefined,
+            tongyiWanxiangEditModels: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangEditModels : undefined,
+            tongyiWanxiangDurations: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : undefined,
+            tongyiWanxiangResolutions: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangResolutions : undefined,
+            tongyiWanxiangRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : undefined,
             videoModel: nodeType === `seedanceNode` ?
               cleanNodeData.seedanceMode === `tianji` ?
               tianjiSeedanceModel :
@@ -10169,35 +10169,35 @@ ${combinedPrompt}`,
               tongyiWanxiangTextModels :
               nodeType === `videoNode` ?
               videoModel :
-              void 0,
-            videoDurations: nodeType === `seedanceNode` ? seedanceDurations : nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : nodeType === `videoNode` ? videoDurations : void 0,
-            seedanceModel: nodeType === `seedanceNode` ? seedanceModel : void 0,
-            tianjiSeedanceModel: nodeType === `seedanceNode` ? tianjiSeedanceModel : void 0,
+              undefined,
+            videoDurations: nodeType === `seedanceNode` ? seedanceDurations : nodeType === `tongyiWanxiangNode` ? tongyiWanxiangDurations : nodeType === `videoNode` ? videoDurations : undefined,
+            seedanceModel: nodeType === `seedanceNode` ? seedanceModel : undefined,
+            tianjiSeedanceModel: nodeType === `seedanceNode` ? tianjiSeedanceModel : undefined,
             videoResolutions: nodeType === `seedanceNode` ?
               seedanceRatios :
               nodeType === `tongyiWanxiangNode` ?
               tongyiWanxiangRatios :
               nodeType === `videoNode` ?
               videoResolutions :
-              void 0,
-            videoAspectRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : nodeType === `videoNode` ? videoAspectRatios : void 0,
-            seedanceResolutions: nodeType === `seedanceNode` ? seedanceResolutions : void 0,
-            seedanceRatios: nodeType === `seedanceNode` ? seedanceRatios : void 0,
-            generateAudio: nodeType === `seedanceNode` ? seedanceGenerateAudio : void 0,
-            watermark: nodeType === `seedanceNode` ? seedanceWatermark : void 0,
-            enableWebSearch: nodeType === `seedanceNode` ? seedanceEnableWebSearch : void 0,
-            seedanceVirtualPortraits: nodeType === `seedanceNode` ? seedanceVirtualPortraits : void 0,
-            seedanceUploadMode: nodeType === `fileToLinkNode` ? seedanceUploadMode : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? seedanceUploadMode : void 0,
-            tosConfig: nodeType === `fileToLinkNode` ? tosConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? tosConfig : void 0,
-            customPublicUploadConfig: nodeType === `fileToLinkNode` ? customPublicUploadConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? customPublicUploadConfig : void 0,
-            qiniuConfig: nodeType === `fileToLinkNode` ? qiniuConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? qiniuConfig : void 0,
+              undefined,
+            videoAspectRatios: nodeType === `tongyiWanxiangNode` ? tongyiWanxiangRatios : nodeType === `videoNode` ? videoAspectRatios : undefined,
+            seedanceResolutions: nodeType === `seedanceNode` ? seedanceResolutions : undefined,
+            seedanceRatios: nodeType === `seedanceNode` ? seedanceRatios : undefined,
+            generateAudio: nodeType === `seedanceNode` ? seedanceGenerateAudio : undefined,
+            watermark: nodeType === `seedanceNode` ? seedanceWatermark : undefined,
+            enableWebSearch: nodeType === `seedanceNode` ? seedanceEnableWebSearch : undefined,
+            seedanceVirtualPortraits: nodeType === `seedanceNode` ? seedanceVirtualPortraits : undefined,
+            seedanceUploadMode: nodeType === `fileToLinkNode` ? seedanceUploadMode : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? seedanceUploadMode : undefined,
+            tosConfig: nodeType === `fileToLinkNode` ? tosConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? tosConfig : undefined,
+            customPublicUploadConfig: nodeType === `fileToLinkNode` ? customPublicUploadConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? customPublicUploadConfig : undefined,
+            qiniuConfig: nodeType === `fileToLinkNode` ? qiniuConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? qiniuConfig : undefined,
             apiConfigs: nodeType === `promptNode` ||
               nodeType === `textNode` ||
               nodeType === `videoNode` ||
               nodeType === `seedanceNode` ||
               nodeType === `tongyiWanxiangNode` ?
               apiConfigs :
-              void 0,
+              undefined,
             modelProtocolRegistry: nodeType === `promptNode` ||
               nodeType === `textNode` ||
               nodeType === `videoNode` ||
@@ -10207,31 +10207,31 @@ ${combinedPrompt}`,
               nodeType === `seedanceNode` ||
               nodeType === `tongyiWanxiangNode` ?
               modelProtocolRegistry :
-              void 0,
-            textModelApiBindings: nodeType === `textNode` ? textModelApiBindings : void 0,
-            textModelProtocolBindings: nodeType === `textNode` ? textModelProtocolBindings : void 0,
-            imageModelApiBindings: nodeType === `promptNode` ? imageModelApiBindings : void 0,
-	            imageModelProtocolBindings: nodeType === `promptNode` ? imageModelProtocolBindings : void 0,
-	            imageCompatResolutions: nodeType === `promptNode` ? imageCompatResolutions : void 0,
+              undefined,
+            textModelApiBindings: nodeType === `textNode` ? textModelApiBindings : undefined,
+            textModelProtocolBindings: nodeType === `textNode` ? textModelProtocolBindings : undefined,
+            imageModelApiBindings: nodeType === `promptNode` ? imageModelApiBindings : undefined,
+	            imageModelProtocolBindings: nodeType === `promptNode` ? imageModelProtocolBindings : undefined,
+	            imageCompatResolutions: nodeType === `promptNode` ? imageCompatResolutions : undefined,
             videoModelProtocolBindings: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ?
               videoModelProtocolBindings :
-              void 0,
-            videoModelApiBindings: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? videoModelApiBindings : void 0,
+              undefined,
+            videoModelApiBindings: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? videoModelApiBindings : undefined,
             videoModelRequestProfiles: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ?
               videoModelRequestProfiles :
-              void 0,
-            drawingModel: nodeType === `promptNode` ? drawingModel : void 0,
-            textModel: nodeType === `textNode` ? textModel : void 0,
-	            audioApiUrl: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiUrl : void 0,
-	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiKey : void 0,
-	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModel : void 0,
-	            audioModelApiBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelApiBindings : void 0,
-	            apiConfigs: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? apiConfigs : void 0,
-	            ttsMusicModels: nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `audioNode` ? ttsMusicModel : void 0,
-            audioModelProtocolBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelProtocolBindings : void 0,
-            projectId: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? projectIdRef.current : void 0,
-            updateGlobalTasks: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? updateTaskList : void 0,
-            addTransitResource: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `videoFaceBlurNode` || nodeType === `qwenTtsCloneNode` ? addGeneratedAsset : void 0,
+              undefined,
+            drawingModel: nodeType === `promptNode` ? drawingModel : undefined,
+            textModel: nodeType === `textNode` ? textModel : undefined,
+	            audioApiUrl: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiUrl : undefined,
+	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiKey : undefined,
+	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModel : undefined,
+	            audioModelApiBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelApiBindings : undefined,
+	            apiConfigs: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? apiConfigs : undefined,
+	            ttsMusicModels: nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `audioNode` ? ttsMusicModel : undefined,
+            audioModelProtocolBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelProtocolBindings : undefined,
+            projectId: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? projectIdRef.current : undefined,
+            updateGlobalTasks: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? updateTaskList : undefined,
+            addTransitResource: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `videoFaceBlurNode` || nodeType === `qwenTtsCloneNode` ? addGeneratedAsset : undefined,
           },
         };
       if ((setNodes((nodes2) => nodes2.concat(newNode)), connection)) {
@@ -10248,7 +10248,7 @@ ${combinedPrompt}`,
             nodeType === `textNode` ||
             nodeType === `videoNode` ||
             nodeType === `seedanceNode`) &&
-          (newEdge.animated = !0),
+          (newEdge.animated = true),
           setEdges((edges2) => edges2.concat(newEdge)));
       }
       setMenuPosition(null);
@@ -10435,7 +10435,7 @@ ${combinedPrompt}`,
                           x: position.x + (node.position.x - centerX),
                           y: position.y + (node.position.y - centerY),
                         },
-                        selected: !0,
+                        selected: true,
                         data: clonedData,
                       };
                     }),
@@ -10444,7 +10444,7 @@ ${combinedPrompt}`,
 	                      id: `e-${idMap.get(edge.source)}-${idMap.get(edge.target)}`,
 	                      source: idMap.get(edge.source),
 	                      target: idMap.get(edge.target),
-	                      selected: !0,
+	                      selected: true,
 	                      type: `custom`,
 	                    })).filter((edge) => edge.source && edge.target),
 	                    remappedReferenceEdges =
@@ -10455,18 +10455,18 @@ ${combinedPrompt}`,
 	                      ...edge,
 	                      id: `e-${edge.source}-${idMap.get(edge.target)}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
 	                      target: idMap.get(edge.target),
-	                      selected: !0,
+	                      selected: true,
 	                      type: `custom`,
 	                    })).filter((edge) => edge.source && edge.target) :
 	                    [];
 	                  if (
 	                    (setNodes((nodes3) => nodes3.map((item) => ({
 	                        ...item,
-	                        selected: !1
+	                        selected: false
 	                      })).concat(newNodes)),
 	                      setEdges((item) => item.map((edge) => ({
 	                        ...edge,
-	                        selected: !1
+	                        selected: false
 	                      })).concat(newEdges, remappedReferenceEdges)),
                       connection && newNodes.length > 0)
                   ) {
@@ -10504,7 +10504,7 @@ ${combinedPrompt}`,
                         imageUrl: imageUrl,
                         label: `提取帧 ${index + 1}`
                       },
-                      selected: !0,
+                      selected: true,
                       style: {
                         width: 120,
                         height: 120
@@ -10513,7 +10513,7 @@ ${combinedPrompt}`,
                   });
                   (setNodes((nodes2) => nodes2.map((node) => ({
                       ...node,
-                      selected: !1
+                      selected: false
                     })).concat(imageNodes)),
                     setMenuPosition(null),
                     showToast(`已粘贴 ${images.length} 张提取的图片`));
@@ -10543,7 +10543,7 @@ ${combinedPrompt}`,
                               imageUrl: imageUrl,
                               label: `提取帧 ${index + 1}`
                             },
-                            selected: !0,
+                            selected: true,
                             style: {
                               width: 120,
                               height: 120
@@ -10553,7 +10553,7 @@ ${combinedPrompt}`,
                         (setNodes((currentNodes) =>
                             currentNodes.map((node) => ({
                               ...node,
-                              selected: !1
+                              selected: false
                             })).concat(imageNodes),
                           ),
                           setMenuPosition(null),
@@ -10594,7 +10594,7 @@ ${combinedPrompt}`,
                     } catch {}
                     (createNodeAt(`textNode`, position, {
                         text: clipboardText.trim(),
-                        expanded: !1
+                        expanded: false
                       }, connection),
                       setMenuPosition(null));
                     return;
@@ -10619,7 +10619,7 @@ ${combinedPrompt}`,
         [menuPosition.nodeId] :
         [];
       (item.forEach((selectedNodeId) => stopGeneration(selectedNodeId, {
-          silent: !0
+          silent: true
         })),
         item.length > 0 &&
         (setNodes((prevNodes) => prevNodes.filter((node) => !item.includes(node.id))),
@@ -10818,7 +10818,7 @@ ${combinedPrompt}`,
                             stroke: `#ff0072`,
                             strokeWidth: 2,
                           },
-                          animated: !0,
+                          animated: true,
                         }),
                       ),
                       setMenuPosition({
@@ -10831,7 +10831,7 @@ ${combinedPrompt}`,
                           dropPosition: position,
                         },
                       }),
-                      setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+                      setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
                   }, 50);
               }
             },
@@ -10911,7 +10911,7 @@ ${combinedPrompt}`,
         let nodeData = {
             ...WanJuanStripRuntimeNodeData(node.data || {})
           },
-          hasChanged = !1;
+          hasChanged = false;
         return (
           (node.type === `promptNode` ||
             node.type === `textNode` ||
@@ -10919,145 +10919,145 @@ ${combinedPrompt}`,
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode`) &&
           nodeData.presetPrompts !== presetPrompts &&
-          ((nodeData.presetPrompts = presetPrompts), (hasChanged = !0)),
+          ((nodeData.presetPrompts = presetPrompts), (hasChanged = true)),
           node.type === `videoExtractNode` &&
-          (nodeData.onExtractFrames !== handleExtractFrames && ((nodeData.onExtractFrames = handleExtractFrames), (hasChanged = !0)),
-            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+          (nodeData.onExtractFrames !== handleExtractFrames && ((nodeData.onExtractFrames = handleExtractFrames), (hasChanged = true)),
+            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
 	          node.type === `promptNode` &&
-	          (nodeData.onGenerate !== generateImage && ((nodeData.onGenerate = generateImage), (hasChanged = !0)),
-	            nodeData.drawingModel !== drawingModel && ((nodeData.drawingModel = drawingModel), (hasChanged = !0)),
+	          (nodeData.onGenerate !== generateImage && ((nodeData.onGenerate = generateImage), (hasChanged = true)),
+	            nodeData.drawingModel !== drawingModel && ((nodeData.drawingModel = drawingModel), (hasChanged = true)),
 	            nodeData.imageCompatResolutions !== imageCompatResolutions &&
-	            ((nodeData.imageCompatResolutions = imageCompatResolutions), (hasChanged = !0)),
+	            ((nodeData.imageCompatResolutions = imageCompatResolutions), (hasChanged = true)),
 	            nodeData.apiConfigs !== apiConfigs &&
-            ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
+            ((nodeData.apiConfigs = apiConfigs), (hasChanged = true)),
             nodeData.modelProtocolRegistry !== modelProtocolRegistry &&
-            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = !0)),
+            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = true)),
             nodeData.imageModelApiBindings !== imageModelApiBindings &&
-            ((nodeData.imageModelApiBindings = imageModelApiBindings), (hasChanged = !0)),
+            ((nodeData.imageModelApiBindings = imageModelApiBindings), (hasChanged = true)),
             nodeData.imageModelProtocolBindings !== imageModelProtocolBindings &&
             ((nodeData.imageModelProtocolBindings = imageModelProtocolBindings),
-              (hasChanged = !0))),
+              (hasChanged = true))),
           node.type === `textNode` &&
-          (nodeData.onGenerateText !== generateText && ((nodeData.onGenerateText = generateText), (hasChanged = !0)),
-            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0)),
-            nodeData.textModel !== textModel && ((nodeData.textModel = textModel), (hasChanged = !0)),
+          (nodeData.onGenerateText !== generateText && ((nodeData.onGenerateText = generateText), (hasChanged = true)),
+            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true)),
+            nodeData.textModel !== textModel && ((nodeData.textModel = textModel), (hasChanged = true)),
             nodeData.apiConfigs !== apiConfigs &&
-            ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
+            ((nodeData.apiConfigs = apiConfigs), (hasChanged = true)),
             nodeData.modelProtocolRegistry !== modelProtocolRegistry &&
-            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = !0)),
+            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = true)),
             nodeData.textModelApiBindings !== textModelApiBindings &&
-            ((nodeData.textModelApiBindings = textModelApiBindings), (hasChanged = !0)),
+            ((nodeData.textModelApiBindings = textModelApiBindings), (hasChanged = true)),
             nodeData.textModelProtocolBindings !== textModelProtocolBindings &&
             ((nodeData.textModelProtocolBindings = textModelProtocolBindings),
-              (hasChanged = !0))),
+              (hasChanged = true))),
           (node.type === `videoNode` ||
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode`) &&
-          (nodeData.onGenerateVideo !== generateVideo && ((nodeData.onGenerateVideo = generateVideo), (hasChanged = !0)),
+          (nodeData.onGenerateVideo !== generateVideo && ((nodeData.onGenerateVideo = generateVideo), (hasChanged = true)),
             node.type === `seedanceNode` ?
-            (nodeData.seedanceNode !== !0 && ((nodeData.seedanceNode = !0), (hasChanged = !0)),
-              nodeData.tongyiWanxiangNode !== void 0 &&
-              ((nodeData.tongyiWanxiangNode = void 0), (hasChanged = !0)),
+            (nodeData.seedanceNode !== true && ((nodeData.seedanceNode = true), (hasChanged = true)),
+              nodeData.tongyiWanxiangNode !== undefined &&
+              ((nodeData.tongyiWanxiangNode = undefined), (hasChanged = true)),
               nodeData.seedanceModel !== seedanceModel &&
-              ((nodeData.seedanceModel = seedanceModel), (hasChanged = !0)),
+              ((nodeData.seedanceModel = seedanceModel), (hasChanged = true)),
 	              nodeData.tianjiSeedanceModel !== tianjiSeedanceModel &&
-	              ((nodeData.tianjiSeedanceModel = tianjiSeedanceModel), (hasChanged = !0)),
+	              ((nodeData.tianjiSeedanceModel = tianjiSeedanceModel), (hasChanged = true)),
 	              nodeData.videoModel !==
 	              (nodeData.seedanceMode === `tianji` ? tianjiSeedanceModel : seedanceModel) &&
 	              ((nodeData.videoModel = nodeData.seedanceMode === `tianji` ? tianjiSeedanceModel : seedanceModel),
-	                (hasChanged = !0)),
+	                (hasChanged = true)),
 	              (() => {
-	                let officialSelectedModel = WanJuanGetPreferredModel(seedanceModel, nodeData.seedanceSelectedModel || nodeData.selectedModel || ``, void 0, {
-	                    manual: nodeData.seedanceModelManual === !0,
-	                    auto: nodeData.wanjuanModelAuto === !0,
+	                let officialSelectedModel = WanJuanGetPreferredModel(seedanceModel, nodeData.seedanceSelectedModel || nodeData.selectedModel || ``, undefined, {
+	                    manual: nodeData.seedanceModelManual === true,
+	                    auto: nodeData.wanjuanModelAuto === true,
 	                  }),
-	                  tianjiSelectedModel = WanJuanGetPreferredModel(tianjiSeedanceModel, nodeData.tianjiSelectedModel || nodeData.selectedModel || ``, void 0, {
-	                    manual: nodeData.tianjiModelManual === !0,
-	                    auto: nodeData.wanjuanModelAuto === !0,
+	                  tianjiSelectedModel = WanJuanGetPreferredModel(tianjiSeedanceModel, nodeData.tianjiSelectedModel || nodeData.selectedModel || ``, undefined, {
+	                    manual: nodeData.tianjiModelManual === true,
+	                    auto: nodeData.wanjuanModelAuto === true,
 	                  }),
 	                  nextSelectedModel = nodeData.seedanceMode === `tianji` ? tianjiSelectedModel : officialSelectedModel;
 	                officialSelectedModel &&
 	                  !WanJuanSameModelId(nodeData.seedanceSelectedModel, officialSelectedModel) &&
 	                  WanJuanShouldAutoPreferredModel(seedanceModel, nodeData.seedanceSelectedModel || nodeData.selectedModel || ``, {
-	                    manual: nodeData.seedanceModelManual === !0,
-	                    auto: nodeData.wanjuanModelAuto === !0,
+	                    manual: nodeData.seedanceModelManual === true,
+	                    auto: nodeData.wanjuanModelAuto === true,
 	                  }) &&
-	                  ((nodeData.seedanceSelectedModel = officialSelectedModel), (hasChanged = !0));
+	                  ((nodeData.seedanceSelectedModel = officialSelectedModel), (hasChanged = true));
 	                tianjiSelectedModel &&
 	                  !WanJuanSameModelId(nodeData.tianjiSelectedModel, tianjiSelectedModel) &&
 	                  WanJuanShouldAutoPreferredModel(tianjiSeedanceModel, nodeData.tianjiSelectedModel || nodeData.selectedModel || ``, {
-	                    manual: nodeData.tianjiModelManual === !0,
-	                    auto: nodeData.wanjuanModelAuto === !0,
+	                    manual: nodeData.tianjiModelManual === true,
+	                    auto: nodeData.wanjuanModelAuto === true,
 	                  }) &&
-	                  ((nodeData.tianjiSelectedModel = tianjiSelectedModel), (hasChanged = !0));
+	                  ((nodeData.tianjiSelectedModel = tianjiSelectedModel), (hasChanged = true));
 	                nextSelectedModel &&
 	                  !WanJuanSameModelId(nodeData.selectedModel, nextSelectedModel) &&
-	                  ((nodeData.selectedModel = nextSelectedModel), (hasChanged = !0));
+	                  ((nodeData.selectedModel = nextSelectedModel), (hasChanged = true));
 	              })(),
 	              nodeData.videoDurations !== seedanceDurations &&
-	              ((nodeData.videoDurations = seedanceDurations), (hasChanged = !0)),
+	              ((nodeData.videoDurations = seedanceDurations), (hasChanged = true)),
               nodeData.seedanceResolutions !== seedanceResolutions &&
-              ((nodeData.seedanceResolutions = seedanceResolutions), (hasChanged = !0)),
+              ((nodeData.seedanceResolutions = seedanceResolutions), (hasChanged = true)),
               nodeData.seedanceRatios !== seedanceRatios &&
-              ((nodeData.seedanceRatios = seedanceRatios), (hasChanged = !0)),
+              ((nodeData.seedanceRatios = seedanceRatios), (hasChanged = true)),
               nodeData.generateAudio !== seedanceGenerateAudio &&
-              ((nodeData.generateAudio = seedanceGenerateAudio), (hasChanged = !0)),
+              ((nodeData.generateAudio = seedanceGenerateAudio), (hasChanged = true)),
               nodeData.watermark !== seedanceWatermark &&
-              ((nodeData.watermark = seedanceWatermark), (hasChanged = !0)),
+              ((nodeData.watermark = seedanceWatermark), (hasChanged = true)),
               nodeData.enableWebSearch !== seedanceEnableWebSearch &&
-              ((nodeData.enableWebSearch = seedanceEnableWebSearch), (hasChanged = !0)),
+              ((nodeData.enableWebSearch = seedanceEnableWebSearch), (hasChanged = true)),
               nodeData.seedanceVirtualPortraits !== seedanceVirtualPortraits &&
-              ((nodeData.seedanceVirtualPortraits = seedanceVirtualPortraits), (hasChanged = !0)),
+              ((nodeData.seedanceVirtualPortraits = seedanceVirtualPortraits), (hasChanged = true)),
               ![`public`, `tos`, `custom`, `qiniu`].includes(nodeData.seedanceUploadMode) &&
-              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = !0)),
+              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = true)),
               nodeData.tosConfig !== tosConfig &&
-              ((nodeData.tosConfig = tosConfig), (hasChanged = !0)),
+              ((nodeData.tosConfig = tosConfig), (hasChanged = true)),
               nodeData.customPublicUploadConfig !== customPublicUploadConfig &&
               ((nodeData.customPublicUploadConfig = customPublicUploadConfig),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.qiniuConfig !== qiniuConfig &&
               ((nodeData.qiniuConfig = qiniuConfig),
-                (hasChanged = !0))) :
+                (hasChanged = true))) :
             node.type === `tongyiWanxiangNode` ?
-            ((nodeData.tongyiWanxiangNode !== !0 || nodeData.seedanceNode !== void 0) &&
-              ((nodeData.tongyiWanxiangNode = !0),
-                (nodeData.seedanceNode = void 0),
-                (hasChanged = !0)),
+            ((nodeData.tongyiWanxiangNode !== true || nodeData.seedanceNode !== undefined) &&
+              ((nodeData.tongyiWanxiangNode = true),
+                (nodeData.seedanceNode = undefined),
+                (hasChanged = true)),
               nodeData.tongyiWanxiangMode ||
-              ((nodeData.tongyiWanxiangMode = `text-to-video`), (hasChanged = !0)),
+              ((nodeData.tongyiWanxiangMode = `text-to-video`), (hasChanged = true)),
               nodeData.tongyiWanxiangTextModels !== tongyiWanxiangTextModels &&
               ((nodeData.tongyiWanxiangTextModels = tongyiWanxiangTextModels),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.tongyiWanxiangReferenceImageModels !==
               tongyiWanxiangReferenceImageModels &&
               ((nodeData.tongyiWanxiangReferenceImageModels =
                   tongyiWanxiangReferenceImageModels),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.tongyiWanxiangImageModels !== tongyiWanxiangImageModels &&
               ((nodeData.tongyiWanxiangImageModels = tongyiWanxiangImageModels),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.tongyiWanxiangEditModels !== tongyiWanxiangEditModels &&
               ((nodeData.tongyiWanxiangEditModels = tongyiWanxiangEditModels),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.videoDurations !== tongyiWanxiangDurations &&
-              ((nodeData.videoDurations = tongyiWanxiangDurations), (hasChanged = !0)),
+              ((nodeData.videoDurations = tongyiWanxiangDurations), (hasChanged = true)),
               nodeData.tongyiWanxiangResolutions !== tongyiWanxiangResolutions &&
               ((nodeData.tongyiWanxiangResolutions = tongyiWanxiangResolutions),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.videoResolutions !== tongyiWanxiangRatios &&
-              ((nodeData.videoResolutions = tongyiWanxiangRatios), (hasChanged = !0)),
+              ((nodeData.videoResolutions = tongyiWanxiangRatios), (hasChanged = true)),
               nodeData.videoAspectRatios !== tongyiWanxiangRatios &&
-              ((nodeData.videoAspectRatios = tongyiWanxiangRatios), (hasChanged = !0)),
+              ((nodeData.videoAspectRatios = tongyiWanxiangRatios), (hasChanged = true)),
               nodeData.selectedAspectRatio ||
               ((nodeData.selectedAspectRatio =
                   parseSeedanceList(tongyiWanxiangRatios)[0] || `16:9`),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               (!nodeData.size ||
                 !parseSeedanceList(tongyiWanxiangRatios).includes(nodeData.size)) &&
               ((nodeData.size =
                   parseSeedanceList(tongyiWanxiangRatios)[0] ||
                   `16:9`),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               (!nodeData.selectedResolution ||
                 !parseSeedanceList(tongyiWanxiangResolutions).includes(
                   nodeData.selectedResolution,
@@ -11065,17 +11065,17 @@ ${combinedPrompt}`,
               ((nodeData.selectedResolution =
                   parseSeedanceList(tongyiWanxiangResolutions)[0] ||
                   `720P`),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               ![`public`, `tos`, `custom`, `qiniu`].includes(nodeData.seedanceUploadMode) &&
-              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = !0)),
+              ((nodeData.seedanceUploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE), (hasChanged = true)),
               nodeData.tosConfig !== tosConfig &&
-              ((nodeData.tosConfig = tosConfig), (hasChanged = !0)),
+              ((nodeData.tosConfig = tosConfig), (hasChanged = true)),
               nodeData.customPublicUploadConfig !== customPublicUploadConfig &&
               ((nodeData.customPublicUploadConfig = customPublicUploadConfig),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               nodeData.qiniuConfig !== qiniuConfig &&
               ((nodeData.qiniuConfig = qiniuConfig),
-                (hasChanged = !0)),
+                (hasChanged = true)),
               (() => {
                 let videoModel2 =
                     nodeData.tongyiWanxiangMode === `reference-image-to-video` ?
@@ -11085,79 +11085,79 @@ ${combinedPrompt}`,
                     nodeData.tongyiWanxiangMode === `video-edit` ?
                     tongyiWanxiangEditModels :
                     tongyiWanxiangTextModels,
-                  selectedModel = WanJuanGetPreferredModel(videoModel2, nodeData.selectedModel || ``, void 0, {
-                    manual: nodeData.wanjuanModelManual === !0,
-                    auto: nodeData.wanjuanModelAuto === !0,
+                  selectedModel = WanJuanGetPreferredModel(videoModel2, nodeData.selectedModel || ``, undefined, {
+                    manual: nodeData.wanjuanModelManual === true,
+                    auto: nodeData.wanjuanModelAuto === true,
                   });
-                (nodeData.videoModel !== videoModel2 && ((nodeData.videoModel = videoModel2), (hasChanged = !0)),
+                (nodeData.videoModel !== videoModel2 && ((nodeData.videoModel = videoModel2), (hasChanged = true)),
                   selectedModel &&
                   !WanJuanSameModelId(nodeData.selectedModel, selectedModel) &&
                   WanJuanShouldAutoPreferredModel(videoModel2, nodeData.selectedModel || ``, {
-                    manual: nodeData.wanjuanModelManual === !0,
-                    auto: nodeData.wanjuanModelAuto === !0,
+                    manual: nodeData.wanjuanModelManual === true,
+                    auto: nodeData.wanjuanModelAuto === true,
                   }) &&
                   ((nodeData.selectedModel = selectedModel),
-                    (nodeData.wanjuanModelAuto = !0),
-                    (nodeData.wanjuanModelManual = !1),
-                    (hasChanged = !0)));
+                    (nodeData.wanjuanModelAuto = true),
+                    (nodeData.wanjuanModelManual = false),
+                    (hasChanged = true)));
               })()) :
-            (nodeData.videoModel !== videoModel && ((nodeData.videoModel = videoModel), (hasChanged = !0)),
-              nodeData.videoDurations !== videoDurations && ((nodeData.videoDurations = videoDurations), (hasChanged = !0)),
-              nodeData.videoResolutions !== videoResolutions && ((nodeData.videoResolutions = videoResolutions), (hasChanged = !0)),
+            (nodeData.videoModel !== videoModel && ((nodeData.videoModel = videoModel), (hasChanged = true)),
+              nodeData.videoDurations !== videoDurations && ((nodeData.videoDurations = videoDurations), (hasChanged = true)),
+              nodeData.videoResolutions !== videoResolutions && ((nodeData.videoResolutions = videoResolutions), (hasChanged = true)),
               nodeData.videoAspectRatios !== videoAspectRatios &&
-              ((nodeData.videoAspectRatios = videoAspectRatios), (hasChanged = !0))),
+              ((nodeData.videoAspectRatios = videoAspectRatios), (hasChanged = true))),
             nodeData.apiConfigs !== apiConfigs &&
-            ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
+            ((nodeData.apiConfigs = apiConfigs), (hasChanged = true)),
             nodeData.modelProtocolRegistry !== modelProtocolRegistry &&
-            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = !0)),
+            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = true)),
             nodeData.videoModelProtocolBindings !== videoModelProtocolBindings &&
             ((nodeData.videoModelProtocolBindings = videoModelProtocolBindings),
-              (hasChanged = !0)),
+              (hasChanged = true)),
             nodeData.videoModelApiBindings !== videoModelApiBindings &&
-            ((nodeData.videoModelApiBindings = videoModelApiBindings), (hasChanged = !0)),
+            ((nodeData.videoModelApiBindings = videoModelApiBindings), (hasChanged = true)),
             nodeData.videoModelRequestProfiles !== videoModelRequestProfiles &&
             ((nodeData.videoModelRequestProfiles = videoModelRequestProfiles),
-              (hasChanged = !0))),
+              (hasChanged = true))),
           node.type === `audioNode` &&
-          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = !0)),
-            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = !0)),
-	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = !0)),
+          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = true)),
+            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = true)),
+	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = true)),
 	            nodeData.audioModelApiBindings !== audioModelApiBindings &&
-	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = !0)),
-	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
+	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = true)),
+	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = true)),
 	            nodeData.ttsMusicModels !== ttsMusicModel &&
-            ((nodeData.ttsMusicModels = ttsMusicModel), (hasChanged = !0)),
+            ((nodeData.ttsMusicModels = ttsMusicModel), (hasChanged = true)),
             nodeData.modelProtocolRegistry !== modelProtocolRegistry &&
-            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = !0)),
+            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = true)),
             nodeData.audioModelProtocolBindings !== audioModelProtocolBindings &&
             ((nodeData.audioModelProtocolBindings = audioModelProtocolBindings),
-              (hasChanged = !0)),
-            nodeData.projectId !== node && ((nodeData.projectId = node), (hasChanged = !0)),
-            nodeData.updateGlobalTasks !== updateTaskList && ((nodeData.updateGlobalTasks = updateTaskList), (hasChanged = !0)),
-            nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = !0)),
-            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+              (hasChanged = true)),
+            nodeData.projectId !== node && ((nodeData.projectId = node), (hasChanged = true)),
+            nodeData.updateGlobalTasks !== updateTaskList && ((nodeData.updateGlobalTasks = updateTaskList), (hasChanged = true)),
+            nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = true)),
+            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
           (node.type === `ttsMusicNode` || node.type === `musicNode`) &&
-          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = !0)),
-            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = !0)),
-	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = !0)),
+          (nodeData.audioApiUrl !== audioApiUrl && ((nodeData.audioApiUrl = audioApiUrl), (hasChanged = true)),
+            nodeData.audioApiKey !== audioApiKey && ((nodeData.audioApiKey = audioApiKey), (hasChanged = true)),
+	            nodeData.audioModel !== audioModel && ((nodeData.audioModel = audioModel), (hasChanged = true)),
 	            nodeData.audioModelApiBindings !== audioModelApiBindings &&
-	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = !0)),
-	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = !0)),
+	            ((nodeData.audioModelApiBindings = audioModelApiBindings), (hasChanged = true)),
+	            nodeData.apiConfigs !== apiConfigs && ((nodeData.apiConfigs = apiConfigs), (hasChanged = true)),
 	            nodeData.ttsMusicModels !== ttsMusicModel &&
-            ((nodeData.ttsMusicModels = ttsMusicModel), (hasChanged = !0)),
+            ((nodeData.ttsMusicModels = ttsMusicModel), (hasChanged = true)),
 	            nodeData.modelProtocolRegistry !== modelProtocolRegistry &&
-            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = !0)),
+            ((nodeData.modelProtocolRegistry = modelProtocolRegistry), (hasChanged = true)),
             nodeData.audioModelProtocolBindings !== audioModelProtocolBindings &&
             ((nodeData.audioModelProtocolBindings = audioModelProtocolBindings),
-              (hasChanged = !0)),
+              (hasChanged = true)),
             nodeData.projectId !== projectIdRef.current &&
-            ((nodeData.projectId = projectIdRef.current), (hasChanged = !0)),
-            nodeData.updateGlobalTasks !== updateTaskList && ((nodeData.updateGlobalTasks = updateTaskList), (hasChanged = !0)),
-            nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = !0)),
-            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+            ((nodeData.projectId = projectIdRef.current), (hasChanged = true)),
+            nodeData.updateGlobalTasks !== updateTaskList && ((nodeData.updateGlobalTasks = updateTaskList), (hasChanged = true)),
+            nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = true)),
+            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
 	          node.type === `customNode` &&
-	          (nodeData.onGenerateCustom !== handleGenerateCustom && ((nodeData.onGenerateCustom = handleGenerateCustom), (hasChanged = !0)),
-	            nodeData.onAIAssist !== handleAIAssist && ((nodeData.onAIAssist = handleAIAssist), (hasChanged = !0)),
+	          (nodeData.onGenerateCustom !== handleGenerateCustom && ((nodeData.onGenerateCustom = handleGenerateCustom), (hasChanged = true)),
+	            nodeData.onAIAssist !== handleAIAssist && ((nodeData.onAIAssist = handleAIAssist), (hasChanged = true)),
             typeof nodeData.onSaveTemplate != `function` &&
             ((nodeData.onSaveTemplate = (templateName, templateData) => {
                 addCustomNode && addCustomNode({
@@ -11166,64 +11166,64 @@ ${combinedPrompt}`,
                   config: templateData
                 });
               }),
-	              (hasChanged = !0)),
-	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+	              (hasChanged = true)),
+	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
 	          node.type === `fileToLinkNode` &&
 	          (nodeData.seedanceUploadMode !== seedanceUploadMode &&
-	            ((nodeData.seedanceUploadMode = seedanceUploadMode), (hasChanged = !0)),
+	            ((nodeData.seedanceUploadMode = seedanceUploadMode), (hasChanged = true)),
 	            nodeData.tosConfig !== tosConfig &&
-	            ((nodeData.tosConfig = tosConfig), (hasChanged = !0)),
+	            ((nodeData.tosConfig = tosConfig), (hasChanged = true)),
 	            nodeData.customPublicUploadConfig !== customPublicUploadConfig &&
-	            ((nodeData.customPublicUploadConfig = customPublicUploadConfig), (hasChanged = !0)),
+	            ((nodeData.customPublicUploadConfig = customPublicUploadConfig), (hasChanged = true)),
 	            nodeData.qiniuConfig !== qiniuConfig &&
-	            ((nodeData.qiniuConfig = qiniuConfig), (hasChanged = !0)),
-	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+	            ((nodeData.qiniuConfig = qiniuConfig), (hasChanged = true)),
+	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
 	          node.type === `videoFaceBlurNode` &&
-	          (nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = !0)),
-	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = !0))),
+	          (nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = true)),
+	            nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
 	          node.type === `qwenTtsCloneNode` &&
 	          nodeData.onShowToast !== showToast &&
-	          ((nodeData.onShowToast = showToast), (hasChanged = !0)),
+	          ((nodeData.onShowToast = showToast), (hasChanged = true)),
 	          (node.type === `promptNode` ||
             node.type === `textNode` ||
             node.type === `videoNode` ||
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode`) &&
           nodeData.onAddImage !== createImageNode &&
-          ((nodeData.onAddImage = createImageNode), (hasChanged = !0)),
+          ((nodeData.onAddImage = createImageNode), (hasChanged = true)),
           (node.type === `promptNode` ||
             node.type === `textNode` ||
             node.type === `videoNode` ||
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode`) &&
           nodeData.onStop !== stopGeneration &&
-          ((nodeData.onStop = stopGeneration), (hasChanged = !0)),
+          ((nodeData.onStop = stopGeneration), (hasChanged = true)),
           (node.type === `imageNode` || node.type === `promptNode`) &&
           nodeData.onCrop !== handleCrop &&
-          ((nodeData.onCrop = handleCrop), (hasChanged = !0)),
+          ((nodeData.onCrop = handleCrop), (hasChanged = true)),
           (node.type === `imageNode` ||
             node.type === `videoNode` ||
             node.type === `seedanceNode` ||
             node.type === `tongyiWanxiangNode` ||
             node.type === `videoExtractNode`) &&
           nodeData.onVideoEdit !== openVideoEditor &&
-          ((nodeData.onVideoEdit = openVideoEditor), (hasChanged = !0)),
+          ((nodeData.onVideoEdit = openVideoEditor), (hasChanged = true)),
           (node.type === `imageNode` || node.type === `promptNode`) &&
           nodeData.onEdit !== openImageEditor &&
-          ((nodeData.onEdit = openImageEditor), (hasChanged = !0)),
+          ((nodeData.onEdit = openImageEditor), (hasChanged = true)),
           node.type === `gridSplitNode` &&
-          (nodeData.onSplit !== handleSplit && ((nodeData.onSplit = handleSplit), (hasChanged = !0)),
-            nodeData.onSplitOne !== handleSplitOne && ((nodeData.onSplitOne = handleSplitOne), (hasChanged = !0))),
+          (nodeData.onSplit !== handleSplit && ((nodeData.onSplit = handleSplit), (hasChanged = true)),
+            nodeData.onSplitOne !== handleSplitOne && ((nodeData.onSplitOne = handleSplitOne), (hasChanged = true))),
           node.type === `cropNode` &&
-          (nodeData.onCropComplete !== handleNoop && ((nodeData.onCropComplete = handleNoop), (hasChanged = !0)),
-            nodeData.onCancel !== handleCancel2 && ((nodeData.onCancel = handleCancel2), (hasChanged = !0))),
-          nodeData.onZoom !== openImagePreview && ((nodeData.onZoom = openImagePreview), (hasChanged = !0)),
+          (nodeData.onCropComplete !== handleNoop && ((nodeData.onCropComplete = handleNoop), (hasChanged = true)),
+            nodeData.onCancel !== handleCancel2 && ((nodeData.onCancel = handleCancel2), (hasChanged = true))),
+          nodeData.onZoom !== openImagePreview && ((nodeData.onZoom = openImagePreview), (hasChanged = true)),
           (node.type === `promptNode` || node.type === `imageNode`) &&
           nodeData.onSendToActiveTab !== sendToActiveTab &&
-          ((nodeData.onSendToActiveTab = sendToActiveTab), (hasChanged = !0)),
+          ((nodeData.onSendToActiveTab = sendToActiveTab), (hasChanged = true)),
           (node.type === `promptNode` || node.type === `imageNode`) &&
           nodeData.onTianjiPortraitReview !== handleTianjiPortraitReview &&
-          ((nodeData.onTianjiPortraitReview = handleTianjiPortraitReview), (hasChanged = !0)),
+          ((nodeData.onTianjiPortraitReview = handleTianjiPortraitReview), (hasChanged = true)),
           hasChanged ? {
             ...node,
             data: nodeData
@@ -11304,7 +11304,7 @@ ${combinedPrompt}`,
 	            nodes2.map((node2) =>
 	              node2.selected ? {
 	                ...node2,
-	                selected: !1
+	                selected: false
 	              } : node2,
 	            ),
 	          ),
@@ -11327,7 +11327,7 @@ ${combinedPrompt}`,
   }, [menuPosition, setNodes, setEdges]);
   let autoLayout = useCallback(() => {
       let dagreGraph = new dagreModule.default.graphlib.Graph({
-        compound: !0
+        compound: true
       });
       (dagreGraph.setDefaultEdgeLabel(() => ({})),
         dagreGraph.setGraph({
@@ -11425,7 +11425,7 @@ ${combinedPrompt}`,
                 x: node.position.x - (minX - 40),
                 y: node.position.y - (minY - 40),
               },
-              selected: !1,
+              selected: false,
             } :
             node,
           ),
@@ -11443,8 +11443,8 @@ ${combinedPrompt}`,
                 node.parentId === groupId ?
                 {
                   ...node,
-                  parentId: void 0,
-                  extent: void 0,
+                  parentId: undefined,
+                  extent: undefined,
                   position: {
                     x: node.position.x + groupNode.position.x,
                     y: node.position.y + groupNode.position.y,
@@ -11483,7 +11483,7 @@ ${combinedPrompt}`,
 	        let referenceSources = wanjuanSelectedReferenceSourcesByTarget.get(node.id),
 	          renderMode = WanJuanComputeNodeRenderMode(node, wanjuanViewport, wanjuanViewportSize),
 	          data = node.data || {},
-	          nextReferenceSources = referenceSources && referenceSources.length ? referenceSources : void 0,
+	          nextReferenceSources = referenceSources && referenceSources.length ? referenceSources : undefined,
 	          hasReferenceChange =
 	            (nextReferenceSources && data.wanjuanSelectedReferenceSourceIds !== nextReferenceSources) ||
 	            (!nextReferenceSources && Array.isArray(data.wanjuanSelectedReferenceSourceIds)),
@@ -11496,10 +11496,10 @@ ${combinedPrompt}`,
 	              ...(nextReferenceSources ? {
 	                wanjuanSelectedReferenceSourceIds: nextReferenceSources
 	              } : {
-	                wanjuanSelectedReferenceSourceIds: void 0
+	                wanjuanSelectedReferenceSourceIds: undefined
 	              }),
 	              wanjuanRenderMode: renderMode,
-	              wanjuanRenderRuntime: !0
+	              wanjuanRenderRuntime: true
 	            },
 	          } :
 	          node;
@@ -11539,7 +11539,7 @@ ${combinedPrompt}`,
 		    },
 			    clipboardHasPastePayload = async () => {
 			      let text = await navigator.clipboard?.readText?.().catch(() => ``);
-			      if (text && text.trim()) return !0;
+			      if (text && text.trim()) return true;
 			      let items = await navigator.clipboard?.read?.().catch(() => []);
 			      return Array.isArray(items) && items.some((item) =>
 			        Array.from(item.types || []).some((type) => /^image\//i.test(type) || type === `text/plain`),
@@ -11599,9 +11599,9 @@ ${combinedPrompt}`,
 			            selectedModel: String(template.modelName || ``),
 			            seedanceMode: params.seedanceMode === `tianji` || template.sourceProvider === `tianji-seedance` ? `tianji` : `official`,
 			            tianjiSeedanceGenerationMode: params.tianjiSeedanceGenerationMode || template.generationMode || `text-to-video`,
-			            selectedSeconds: params.selectedSeconds || void 0,
-			            selectedResolution: params.selectedResolution || void 0,
-			            size: params.size || void 0,
+			            selectedSeconds: params.selectedSeconds || undefined,
+			            selectedResolution: params.selectedResolution || undefined,
+			            size: params.size || undefined,
 			            generateAudio: params.generateAudio,
 			            watermark: params.watermark,
 			            workspaceTemplateId: template.id || ``,
@@ -11715,7 +11715,7 @@ ${combinedPrompt}`,
             selectedNodeIds.length > 0 &&
               (event.preventDefault(),
                 selectedNodeIds.forEach((nodeId) => stopGeneration(nodeId, {
-                  silent: !0
+                  silent: true
                 })),
                 setNodes((nodes2) => nodes2.filter((node) => !selectedNodeIds.includes(node.id))),
                 setEdges((edges2) =>
@@ -11730,7 +11730,7 @@ ${combinedPrompt}`,
             try {
               let parsedData = JSON.parse(clipboardText.trim());
               if (parsedData && parsedData.type === `canvas-clipboard-nodes`) {
-                (event.preventDefault(), handlePaste(void 0, void 0, clipboardText.trim()));
+                (event.preventDefault(), handlePaste(undefined, undefined, clipboardText.trim()));
                 return;
               }
             } catch {}
@@ -11804,16 +11804,16 @@ ${combinedPrompt}`,
           onDrop: onDrop,
           onConnectEnd: onConnectEnd,
           deleteKeyCode: [`Backspace`, `Delete`],
-          fitView: !0,
+          fitView: true,
           minZoom: 0.05,
           maxZoom: 4,
-          onlyRenderVisibleElements: !0,
-          elevateNodesOnSelect: !1,
-          elevateEdgesOnSelect: !1,
+          onlyRenderVisibleElements: true,
+          elevateNodesOnSelect: false,
+          elevateEdgesOnSelect: false,
           nodeDragThreshold: 4,
           className: `bg-[#121212]`,
           proOptions: {
-            hideAttribution: !0
+            hideAttribution: true
           },
           children: [
 	            jsxs(Panel, {
@@ -12560,7 +12560,7 @@ ${combinedPrompt}`,
                                           }), {
                                             label: item.name,
                                             config: item.config,
-                                            configMode: !1,
+                                            configMode: false,
                                             variables: variables,
                                           },
                                           menuPosition.connection,
@@ -12602,13 +12602,13 @@ ${combinedPrompt}`,
 		                            (event.stopPropagation(),
 		                              setContextToolGroupsOpen((prev) =>
 		                                prev.format ? {
-		                                  format: !1,
-		                                  tools: !1,
-		                                  extensions: !1,
+		                                  format: false,
+		                                  tools: false,
+		                                  extensions: false,
 		                                } : {
-		                                  format: !0,
-		                                  tools: !1,
-		                                  extensions: !1,
+		                                  format: true,
+		                                  tools: false,
+		                                  extensions: false,
 		                                },
 		                              ));
 		                          },
@@ -12757,13 +12757,13 @@ ${combinedPrompt}`,
 		                            (event.stopPropagation(),
 		                              setContextToolGroupsOpen((prev) =>
 		                                prev.tools ? {
-		                                  format: !1,
-		                                  tools: !1,
-		                                  extensions: !1,
+		                                  format: false,
+		                                  tools: false,
+		                                  extensions: false,
 		                                } : {
-		                                  format: !1,
-		                                  tools: !0,
-		                                  extensions: !1,
+		                                  format: false,
+		                                  tools: true,
+		                                  extensions: false,
 		                                },
 		                              ));
 		                          },
@@ -12907,13 +12907,13 @@ ${combinedPrompt}`,
 		                            (event.stopPropagation(),
 		                              setContextToolGroupsOpen((prev) =>
 		                                prev.extensions ? {
-		                                  format: !1,
-		                                  tools: !1,
-		                                  extensions: !1,
+		                                  format: false,
+		                                  tools: false,
+		                                  extensions: false,
 		                                } : {
-		                                  format: !1,
-		                                  tools: !1,
-		                                  extensions: !0,
+		                                  format: false,
+		                                  tools: false,
+		                                  extensions: true,
 		                                },
 		                              ));
 		                          },
@@ -13215,7 +13215,7 @@ ${combinedPrompt}`,
                                     text: resource.url,
                                     label: resource.pageTitle || `文本素材`,
                                   },
-                                  void 0,
+                                  undefined,
                                 ) :
 		                                wanjuanResourceKind(resource) === `video` ?
 		                                createNodeAt(
@@ -13227,7 +13227,7 @@ ${combinedPrompt}`,
 	                                    sourceOrigin: `external-upload`,
 	                                    mediaKind: `video`,
 	                                  },
-	                                  void 0,
+	                                  undefined,
 	                                ) :
 	                                wanjuanResourceKind(resource) === `audio` ?
 	                                createNodeAt(
@@ -13236,7 +13236,7 @@ ${combinedPrompt}`,
                                     audioUrl: resource.url,
                                     audioName: resource.pageTitle || `音频素材`,
                                   },
-                                  void 0,
+                                  undefined,
                                 ) :
                                 createNodeAt(
                                   `imageNode`,
@@ -13244,14 +13244,14 @@ ${combinedPrompt}`,
                                     imageUrl: resource.url,
                                     label: resource.pageTitle || `图片素材`,
                                   },
-                                  void 0,
+                                  undefined,
                                 ),
-                                setResourceSubmenuOpen(!1),
-                                setResourceSubmenuOpenAlt(!1),
+                                setResourceSubmenuOpen(false),
+                                setResourceSubmenuOpenAlt(false),
                                 setMenuPosition(null));
                             },
                             onClose: () => {
-                              (setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
+                              (setResourceSubmenuOpen(false), setResourceSubmenuOpenAlt(false));
                             },
                           }),
                         }),
@@ -13678,31 +13678,31 @@ ${combinedPrompt}`,
 
 function WanJuanAppRoot() {
   let [globalTasks, setGlobalTasks] = useState([]),
-  [isOpen, setIsOpen] = useState(!1),
+  [isOpen, setIsOpen] = useState(false),
   [users, setUsers] = useState([]),
   [selectedUser, setSelectedUser] = useState(null),
-  [isLoading, setIsLoading] = useState(!1),
-  [isPluginEnv, setIsPluginEnv] = useState(!0),
-	  [hasCurrentTab, setHasCurrentTab] = useState(!1),
+  [isLoading, setIsLoading] = useState(false),
+  [isPluginEnv, setIsPluginEnv] = useState(true),
+	  [hasCurrentTab, setHasCurrentTab] = useState(false),
 	  [transitResources, setTransitResources] = useState([]),
 	  [resourceTypeFilter, setResourceTypeFilter] = useState(`all`),
 	  [resourceSourceFilter, setResourceSourceFilter] = useState(`all`),
-	  [resourceFavoriteOnly, setResourceFavoriteOnly] = useState(!1),
-	  [resourceCleanupBusy, setResourceCleanupBusy] = useState(!1),
+	  [resourceFavoriteOnly, setResourceFavoriteOnly] = useState(false),
+	  [resourceCleanupBusy, setResourceCleanupBusy] = useState(false),
 	  [wjResourceFullscreen, setWjResourceFullscreen] = useState(null),
 	  [transitGridCols, setTransitGridCols] = useState(4),
   [currentPage, setCurrentPage] = useState(1),
   [activeView, setActiveView] = useState(`canvas`),
   [activeSettingsTab, setActiveSettingsTab] = useState(`oneStop`),
-	  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(!0),
+	  [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(true),
   [settingsNavUnlockClicks, setSettingsNavUnlockClicks] = useState(0),
-  [isAddingAccount, setIsAddingAccount] = useState(!1),
+  [isAddingAccount, setIsAddingAccount] = useState(false),
   [accountNameInput, setAccountNameInput] = useState(``),
   [editingAccountId, setEditingAccountId] = useState(null),
   [cookieInput, setCookieInput] = useState(``),
-  [isAccountBusy, setIsAccountBusy] = useState(!1),
+  [isAccountBusy, setIsAccountBusy] = useState(false),
   [currentPlatform, setCurrentPlatform] = useState(null),
-  [showToast, setShowToast] = useState(!1),
+  [showToast, setShowToast] = useState(false),
   [toastMessage, setToastMessage] = useState(``),
   [textApiUrl, setTextApiUrl] = useState(``),
   [textApiKey, setTextApiKey] = useState(``),
@@ -13904,50 +13904,50 @@ Suno 音乐生成`,
     ``,
   ),
   [configButlerResultText, setConfigButlerResultText] = useState(``),
-  [configButlerLoading, setConfigButlerLoading] = useState(!1),
+  [configButlerLoading, setConfigButlerLoading] = useState(false),
   [configButlerMode, setConfigButlerMode] = useState(`single`),
-  [configButlerBatchLoading, setConfigButlerBatchLoading] = useState(!1),
+  [configButlerBatchLoading, setConfigButlerBatchLoading] = useState(false),
   [configButlerBatchItems, setConfigButlerBatchItems] = useState([]),
   [configButlerBatchActiveCategory, setConfigButlerBatchActiveCategory] = useState(`text`),
-  [configButlerBatchModalOpen, setConfigButlerBatchModalOpen] = useState(!1),
+  [configButlerBatchModalOpen, setConfigButlerBatchModalOpen] = useState(false),
   [configButlerErrorAssistant, setConfigButlerErrorAssistant] = useState(null),
-  [configButlerErrorAssistantMinimized, setConfigButlerErrorAssistantMinimized] = useState(!1),
-  [configButlerManualProtocolOpen, setConfigButlerManualProtocolOpen] = useState(!1),
+  [configButlerErrorAssistantMinimized, setConfigButlerErrorAssistantMinimized] = useState(false),
+  [configButlerManualProtocolOpen, setConfigButlerManualProtocolOpen] = useState(false),
   [configButlerManualProtocolText, setConfigButlerManualProtocolText] = useState(``),
   [configButlerManualProtocolName, setConfigButlerManualProtocolName] = useState(``),
   [configButlerManualProblemPart, setConfigButlerManualProblemPart] = useState(`submit`),
   [configButlerRepairHistory, setConfigButlerRepairHistory] = useState([]),
-  [configButlerRepairHistoryOpen, setConfigButlerRepairHistoryOpen] = useState(!1),
-  [configButlerExpanded, setConfigButlerExpanded] = useState(!0),
+  [configButlerRepairHistoryOpen, setConfigButlerRepairHistoryOpen] = useState(false),
+  [configButlerExpanded, setConfigButlerExpanded] = useState(true),
   [jixinModelScanNotice, setJixinModelScanNotice] = useState(null),
-  [jixinModelScanBusy, setJixinModelScanBusy] = useState(!1),
+  [jixinModelScanBusy, setJixinModelScanBusy] = useState(false),
   [configButlerAgentExpanded, setConfigButlerAgentExpanded] = useState(
-    !0,
+    true,
   ),
-  [globalConfigPresetsExpanded, setGlobalConfigPresetsExpanded] = useState(!0),
+  [globalConfigPresetsExpanded, setGlobalConfigPresetsExpanded] = useState(true),
   [storedGlobalConfigs, setStoredGlobalConfigs] = useState([]),
   [activeStoredGlobalConfigId, setActiveStoredGlobalConfigId] = useState(``),
-  [protocolFormatsExpanded, setProtocolFormatsExpanded] = useState(!1),
-  [textProtocolBindingsExpanded, setTextProtocolBindingsExpanded] = useState(!1),
-  [imageProtocolBindingsExpanded, setImageProtocolBindingsExpanded] = useState(!1),
-  [videoProtocolBindingsExpanded, setVideoProtocolBindingsExpanded] = useState(!1),
-  [audioProtocolBindingsExpanded, setAudioProtocolBindingsExpanded] = useState(!1),
-  [textModelSettingsExpanded, setTextModelSettingsExpanded] = useState(!1),
-  [imageModelSettingsExpanded, setImageModelSettingsExpanded] = useState(!1),
-  [videoModelSettingsExpanded, setVideoModelSettingsExpanded] = useState(!1),
-  [audioModelSettingsExpanded, setAudioModelSettingsExpanded] = useState(!1),
-  [ttsMusicSettingsExpanded, setTtsMusicSettingsExpanded] = useState(!1),
-  [seedanceSettingsExpanded, setSeedanceSettingsExpanded] = useState(!1),
+  [protocolFormatsExpanded, setProtocolFormatsExpanded] = useState(false),
+  [textProtocolBindingsExpanded, setTextProtocolBindingsExpanded] = useState(false),
+  [imageProtocolBindingsExpanded, setImageProtocolBindingsExpanded] = useState(false),
+  [videoProtocolBindingsExpanded, setVideoProtocolBindingsExpanded] = useState(false),
+  [audioProtocolBindingsExpanded, setAudioProtocolBindingsExpanded] = useState(false),
+  [textModelSettingsExpanded, setTextModelSettingsExpanded] = useState(false),
+  [imageModelSettingsExpanded, setImageModelSettingsExpanded] = useState(false),
+  [videoModelSettingsExpanded, setVideoModelSettingsExpanded] = useState(false),
+  [audioModelSettingsExpanded, setAudioModelSettingsExpanded] = useState(false),
+  [ttsMusicSettingsExpanded, setTtsMusicSettingsExpanded] = useState(false),
+  [seedanceSettingsExpanded, setSeedanceSettingsExpanded] = useState(false),
   [tianjiSeedanceSettingsMode, setTianjiSeedanceSettingsMode] = useState(`official`),
-  [tongyiWanxiangSettingsExpanded, setTongyiWanxiangSettingsExpanded] = useState(!1),
+  [tongyiWanxiangSettingsExpanded, setTongyiWanxiangSettingsExpanded] = useState(false),
   [themeMode, setThemeMode] = useState(`graphite`),
   [appLanguage, setAppLanguage] = useState(`zh-CN`),
   [downloadDirectory, setDownloadDirectory] = useState(``),
-  [autoDownloadGeneratedResults, setAutoDownloadGeneratedResults] = useState(!1),
-  [storageOptimizationEnabled, setStorageOptimizationEnabled] = useState(!1),
-  [storageOptimizationPaused, setStorageOptimizationPaused] = useState(!1),
+  [autoDownloadGeneratedResults, setAutoDownloadGeneratedResults] = useState(false),
+  [storageOptimizationEnabled, setStorageOptimizationEnabled] = useState(false),
+  [storageOptimizationPaused, setStorageOptimizationPaused] = useState(false),
   [storageOptimizationStatus, setStorageOptimizationStatus] = useState(null),
-  [storageOptimizationBusy, setStorageOptimizationBusy] = useState(!1),
+  [storageOptimizationBusy, setStorageOptimizationBusy] = useState(false),
   [storageOptimizationLastResult, setStorageOptimizationLastResult] = useState(``),
   [videoResolutions, setVideoResolutions] = useState(`1280x720
 		720x1280
@@ -13973,11 +13973,11 @@ Suno 音乐生成`,
   [seedanceDurations, setSeedanceDurations] = useState(wanjuanTianjiSeedanceDefaults.durations),
   [seedanceResolutions, setSeedanceResolutions] = useState(wanjuanTianjiSeedanceDefaults.resolutions),
   [seedanceRatios, setSeedanceRatios] = useState(wanjuanTianjiSeedanceDefaults.ratios),
-  [seedanceGenerateAudio, setSeedanceGenerateAudio] = useState(!0),
-  [seedanceWatermark, setSeedanceWatermark] = useState(!1),
-  [seedanceEnableWebSearch, setSeedanceEnableWebSearch] = useState(!1),
+  [seedanceGenerateAudio, setSeedanceGenerateAudio] = useState(true),
+  [seedanceWatermark, setSeedanceWatermark] = useState(false),
+  [seedanceEnableWebSearch, setSeedanceEnableWebSearch] = useState(false),
   [seedanceVirtualPortraits, setSeedanceVirtualPortraits] = useState([]),
-  [seedancePortraitLibraryExpanded, setSeedancePortraitLibraryExpanded] = useState(!1),
+  [seedancePortraitLibraryExpanded, setSeedancePortraitLibraryExpanded] = useState(false),
   [seedancePortraitEditingId, setSeedancePortraitEditingId] = useState(``),
   [seedancePortraitForm, setSeedancePortraitForm] = useState({
     name: ``,
@@ -14013,13 +14013,13 @@ Suno 音乐生成`,
     domain: ``,
     prefix: `wanjuan/seedance`,
   }),
-  [tosUploadConfigExpanded, setTosUploadConfigExpanded] = useState(!1),
-  [qiniuUploadConfigExpanded, setQiniuUploadConfigExpanded] = useState(!1),
-  [customUploadConfigExpanded, setCustomUploadConfigExpanded] = useState(!1),
-  [qiniuJsonImportOpen, setQiniuJsonImportOpen] = useState(!1),
+  [tosUploadConfigExpanded, setTosUploadConfigExpanded] = useState(false),
+  [qiniuUploadConfigExpanded, setQiniuUploadConfigExpanded] = useState(false),
+  [customUploadConfigExpanded, setCustomUploadConfigExpanded] = useState(false),
+  [qiniuJsonImportOpen, setQiniuJsonImportOpen] = useState(false),
   [qiniuJsonImportText, setQiniuJsonImportText] = useState(``),
-  [showTosSecretKey, setShowTosSecretKey] = useState(!1),
-  [showQiniuSecretKey, setShowQiniuSecretKey] = useState(!1),
+  [showTosSecretKey, setShowTosSecretKey] = useState(false),
+  [showQiniuSecretKey, setShowQiniuSecretKey] = useState(false),
   [extensionToolStatus, setExtensionToolStatus] = useState({}),
   [extensionToolInstalling, setExtensionToolInstalling] = useState({}),
   [performanceProfile, setPerformanceProfile] = useState(() => WanJuanReadPerformanceProfile()),
@@ -14057,7 +14057,7 @@ Suno 音乐生成`,
 	    wanjuanBuildJixinAudioProtocolBindings(), ),
 	  [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
 	  [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
-  [isReady, setIsReady] = useState(!1),
+  [isReady, setIsReady] = useState(false),
   normalizeThemeMode = (themeName) => ({
     "mist-blue": `light`,
     "chrome-blue": `light`,
@@ -14211,12 +14211,12 @@ Suno 音乐生成`,
 	        showToast2(`拓展工具安装能力不可用，请重启应用`);
 	        return;
 	      }
-	      setExtensionToolInstalling((prev) => ({ ...prev, [toolName]: !0 }));
+	      setExtensionToolInstalling((prev) => ({ ...prev, [toolName]: true }));
 	      setExtensionToolStatus((prev) => ({
 	        ...prev,
 	        [toolName]: {
 	          ...(prev[toolName] || {}),
-	          installing: !0,
+	          installing: true,
 	          error: ``,
 	        },
 	      }));
@@ -14236,7 +14236,7 @@ Suno 音乐生成`,
 	      }));
 	      showToast2(`${toolLabel} 安装失败：${errorMessage}`);
 	    } finally {
-	      setExtensionToolInstalling((prev) => ({ ...prev, [toolName]: !1 }));
+	      setExtensionToolInstalling((prev) => ({ ...prev, [toolName]: false }));
 	    }
 	  };
 	  const importExtensionToolPack = async () => {
@@ -14246,7 +14246,7 @@ Suno 音乐生成`,
 	        showToast2(`离线工具包导入能力不可用，请重启应用`);
 	        return;
 	      }
-	      setExtensionToolInstalling((prev) => ({ ...prev, toolpack: !0 }));
+	      setExtensionToolInstalling((prev) => ({ ...prev, toolpack: true }));
 	      let importResult = await window.wanjuanDesktop.importExtensionToolPack();
 	      if (importResult?.canceled) return;
 	      if (!importResult?.ok) {
@@ -14259,7 +14259,7 @@ Suno 音乐生成`,
 	    } catch (error) {
 	      showToast2(`离线工具包导入失败：${error?.message || error}`);
 	    } finally {
-	      setExtensionToolInstalling((prev) => ({ ...prev, toolpack: !1 }));
+	      setExtensionToolInstalling((prev) => ({ ...prev, toolpack: false }));
 	    }
 	  };
 	  const formatExtensionToolError = (status) => {
@@ -14407,11 +14407,11 @@ Suno 音乐生成`,
           ),
             rootElement.classList.add(`theme-${resolvedTheme}`));
         };
-        window.__wanjuanThemeTransitionReady === !0 &&
+        window.__wanjuanThemeTransitionReady === true &&
         !rootElement.classList.contains(`theme-${resolvedTheme}`) &&
         wanjuanRunThemeTransition(resolvedTheme, updateThemeClasses) ?
-          (window.__wanjuanThemeTransitionReady = !0) :
-          (updateThemeClasses(), (window.__wanjuanThemeTransitionReady = !0));
+          (window.__wanjuanThemeTransitionReady = true) :
+          (updateThemeClasses(), (window.__wanjuanThemeTransitionReady = true));
       };
     return (
       applyTheme(),
@@ -14436,9 +14436,9 @@ Suno 音乐生成`,
   [membershipCode, setMembershipCode] = useState(``),
   [deviceId, setDeviceId] = useState(``),
   [updateInfo, setUpdateInfo] = useState(null),
-  [settingsNotificationChecking, setSettingsNotificationChecking] = useState(!1),
+  [settingsNotificationChecking, setSettingsNotificationChecking] = useState(false),
   [systemNotifications, setSystemNotifications] = useState(() => WanJuanLoadCachedAppNotifications()),
-  [systemNotificationPanelOpen, setSystemNotificationPanelOpen] = useState(!1),
+  [systemNotificationPanelOpen, setSystemNotificationPanelOpen] = useState(false),
   [systemNotificationDialog, setSystemNotificationDialog] = useState(null),
   [systemNotificationDismissedIds, setSystemNotificationDismissedIds] = useState(() => WanJuanLoadDismissedAppNotificationIds()),
   [systemNotificationError, setSystemNotificationError] = useState(``),
@@ -14472,13 +14472,13 @@ Suno 音乐生成`,
 	    }]),
 	    [activeProjectId, setActiveProjectId] = useState(`default`),
 	    [projectGroups, setProjectGroups] = useState([]),
-	    [projectGroupPanelOpen, setProjectGroupPanelOpen] = useState(!1),
+	    [projectGroupPanelOpen, setProjectGroupPanelOpen] = useState(false),
 	    [projectGroupSearch, setProjectGroupSearch] = useState(``),
 	    [projectGroupDraft, setProjectGroupDraft] = useState(``),
 	    [editingProjectGroupId, setEditingProjectGroupId] = useState(null),
 	    [editingProjectGroupName, setEditingProjectGroupName] = useState(``),
 	    [newProjectIds, setNewProjectIds] = useState([]),
-	    [projectMenuOpen, setProjectMenuOpen] = useState(!1),
+	    [projectMenuOpen, setProjectMenuOpen] = useState(false),
     [newProjectName, setNewProjectName] = useState(``),
     [newProjectGroupId, setNewProjectGroupId] = useState(``),
     [renameProjectId, setRenameProjectId] = useState(null),
@@ -14496,21 +14496,21 @@ Suno 音乐生成`,
     [agentComposer, setAgentComposer] = useState(``),
     [agentAttachments, setAgentAttachments] = useState([]),
     [agentSearch, setAgentSearch] = useState(``),
-    [agentConfigOpen, setAgentConfigOpen] = useState(!1),
+    [agentConfigOpen, setAgentConfigOpen] = useState(false),
     [presetPrompts, setPresetPrompts] = useState([{
         title: `三视图`,
         prompt: `三视图，包括前视图、侧视图和后视图，白色背景，高品质，8k分辨率，角色设计`,
         type: `all`,
-        enabled: !0,
+        enabled: true,
       },
       {
         title: `九宫格`,
         prompt: `九宫格构图，9个不同的画面，高细节，一致的风格，连贯的叙事`,
         type: `all`,
-        enabled: !0,
+        enabled: true,
       },
     ]),
-    [expanded, setExpanded] = useState(!1),
+    [expanded, setExpanded] = useState(false),
     agentAttachmentInputRef = useRef(null),
     agentMessagesScrollRef = useRef(null),
     seedancePortraitFileInputRef = useRef(null),
@@ -14656,9 +14656,9 @@ Suno 音乐生成`,
     },
     showToast2 = (message) => {
       (setToastMessage(message),
-        setShowToast(!0),
+        setShowToast(true),
         setTimeout(() => {
-          setShowToast(!1);
+          setShowToast(false);
         }, 2e3));
     },
     notificationLevelLabel = (level) =>
@@ -14695,7 +14695,7 @@ Suno 音乐生成`,
     refreshSystemNotifications = async (options = {}) => {
       if (systemNotificationFetchRef.current) return systemNotificationFetchRef.current;
       let run = (async () => {
-        options.silent || setSettingsNotificationChecking(!0);
+        options.silent || setSettingsNotificationChecking(true);
         try {
           let fetchedNotifications = await WanJuanFetchAppNotifications(),
             filteredNotifications = WanJuanFilterAppNotifications(fetchedNotifications);
@@ -14711,16 +14711,16 @@ Suno 音乐生成`,
           return cachedNotifications;
         } finally {
           systemNotificationFetchRef.current = null;
-          options.silent || setSettingsNotificationChecking(!1);
+          options.silent || setSettingsNotificationChecking(false);
         }
       })();
       return (systemNotificationFetchRef.current = run);
     },
     openSystemNotificationPanel = async () => {
-      (setSystemNotificationPanelOpen(!0),
+      (setSystemNotificationPanelOpen(true),
         await refreshSystemNotifications({
           source: `panel`,
-          silent: !1,
+          silent: false,
         }));
     },
     renderSystemNotificationBanner = () => {
@@ -14803,7 +14803,7 @@ Suno 音乐生成`,
         {},
         nextConfig = buildSyncedTianjiConfigFromJixinApi(currentConfig, jixinConfig, {
           ...options,
-	          force: options.force === !0,
+	          force: options.force === true,
         });
       JSON.stringify(currentConfig) !== JSON.stringify(nextConfig) &&
         (await wanjuanTianjiStorageSet({
@@ -14814,25 +14814,25 @@ Suno 音乐生成`,
     getCustomApiConfigCount = (configs = apiConfigs) =>
     (Array.isArray(configs) ? configs : []).filter((config) => !isJixinDefaultApiConfig(config)).length,
     unlockAdvancedSettings = () => {
-      (setAdvancedSettingsUnlocked(!0),
+      (setAdvancedSettingsUnlocked(true),
         setSettingsNavUnlockClicks(0));
       try {
         localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
         typeof chrome < `u` &&
           chrome.storage?.local?.set?.({
-            advancedSettingsUnlocked: !0,
+            advancedSettingsUnlocked: true,
           });
       } catch {}
       showToast2(`高级设置已解锁`);
     },
 	    lockAdvancedSettings = () => {
-	      (setAdvancedSettingsUnlocked(!0),
+	      (setAdvancedSettingsUnlocked(true),
 	        setSettingsNavUnlockClicks(0));
 	      try {
 	        localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
 	        typeof chrome < `u` &&
 	          chrome.storage?.local?.set?.({
-	            advancedSettingsUnlocked: !0,
+	            advancedSettingsUnlocked: true,
 	          });
 	      } catch {}
 	      showToast2(`高级设置已默认开放`);
@@ -14841,8 +14841,8 @@ Suno 音乐生成`,
 	      setActiveView(`settings`);
 	      setSettingsNavUnlockClicks(0);
 	    },
-    settingsHydratedRef = useRef(!1),
-    projectHydratedRef = useRef(!1),
+    settingsHydratedRef = useRef(false),
+    projectHydratedRef = useRef(false),
     nonModelSettingsSaveTimerRef = useRef(null),
     apiModelCloudSettingsSaveTimerRef = useRef(null),
     saveNonModelSettings = () => {
@@ -14892,7 +14892,7 @@ time=${normalizedTtl}`,
         };
       (setCustomPublicUploadConfig(nextConfig),
         setSeedanceUploadMode(`custom`),
-        setCustomUploadConfigExpanded(!0),
+        setCustomUploadConfigExpanded(true),
         typeof chrome < `u` &&
         chrome.storage?.local?.set?.({
           customPublicUploadConfig: nextConfig,
@@ -14967,9 +14967,9 @@ time=${normalizedTtl}`,
         setSeedanceDurations(patch.seedanceDurations),
         setSeedanceResolutions(patch.seedanceResolutions),
         setSeedanceRatios(patch.seedanceRatios),
-        setSeedanceGenerateAudio(!0),
-        setSeedanceWatermark(!1),
-        setSeedanceEnableWebSearch(!1),
+        setSeedanceGenerateAudio(true),
+        setSeedanceWatermark(false),
+        setSeedanceEnableWebSearch(false),
         setTongyiWanxiangTextModels(patch.tongyiWanxiangTextModels),
         setTongyiWanxiangReferenceImageModels(patch.tongyiWanxiangReferenceImageModels),
         setTongyiWanxiangImageModels(patch.tongyiWanxiangImageModels),
@@ -15196,7 +15196,7 @@ time=${normalizedTtl}`,
           projectName: portrait.projectName || ``,
           notes: portrait.notes || ``,
         }),
-        setSeedancePortraitLibraryExpanded(!0));
+        setSeedancePortraitLibraryExpanded(true));
     },
     removeSeedancePortrait = (portraitId) => {
       persistSeedanceVirtualPortraits(seedanceVirtualPortraits.filter((portrait) => portrait.id !== portraitId));
@@ -15393,8 +15393,8 @@ time=${normalizedTtl}`,
       requestType: `multipart-video`,
       submitPath: `/v1/videos`,
       pollPath: `/v1/videos/{taskId}`,
-      requiresReferenceImage: !0,
-      omitDuration: !0,
+      requiresReferenceImage: true,
+      omitDuration: true,
       fieldMapping: {
         model: `model`,
         prompt: `prompt`,
@@ -15428,7 +15428,7 @@ time=${normalizedTtl}`,
         ],
       },
       validationNotes: [`已按 X-See Veo 帧转/参考视频模型规则启用 input_reference 并要求参考图`],
-      __wanjuanButlerValidated: !0,
+      __wanjuanButlerValidated: true,
     }),
     isXSeeVeoReferenceVideoModel = (modelName, apiUrl = ``) =>
     /^veo/i.test(String(modelName || ``).trim()) &&
@@ -15580,13 +15580,13 @@ time=${normalizedTtl}`,
         repairedConfig.videoApiConfigId && setVideoApiConfigId(repairedConfig.videoApiConfigId),
         repairedConfig.audioApiConfigId && setAudioApiConfigId(repairedConfig.audioApiConfigId),
         repairedConfig.textApiUrl && setTextApiUrl(repairedConfig.textApiUrl),
-        repairedConfig.textApiKey !== void 0 && setTextApiKey(repairedConfig.textApiKey),
+        repairedConfig.textApiKey !== undefined && setTextApiKey(repairedConfig.textApiKey),
         repairedConfig.imageApiUrl && setImageApiUrl(repairedConfig.imageApiUrl),
-        repairedConfig.imageApiKey !== void 0 && setImageApiKey(repairedConfig.imageApiKey),
+        repairedConfig.imageApiKey !== undefined && setImageApiKey(repairedConfig.imageApiKey),
         repairedConfig.videoApiUrl && setVideoApiUrl(repairedConfig.videoApiUrl),
-        repairedConfig.videoApiKey !== void 0 && setVideoApiKey(repairedConfig.videoApiKey),
+        repairedConfig.videoApiKey !== undefined && setVideoApiKey(repairedConfig.videoApiKey),
         repairedConfig.audioApiUrl && setAudioApiUrl(repairedConfig.audioApiUrl),
-        repairedConfig.audioApiKey !== void 0 && setAudioApiKey(repairedConfig.audioApiKey),
+        repairedConfig.audioApiKey !== undefined && setAudioApiKey(repairedConfig.audioApiKey),
 	        repairedConfig.textModel && _e(repairedConfig.textModel),
 	        repairedConfig.drawingModel && setImageModels(repairedConfig.drawingModel),
 	        repairedConfig.imageCompatResolutions && setImageCompatResolutions(repairedConfig.imageCompatResolutions),
@@ -15602,9 +15602,9 @@ time=${normalizedTtl}`,
         repairedConfig.seedanceDurations && setSeedanceDurations(repairedConfig.seedanceDurations),
         repairedConfig.seedanceResolutions && setSeedanceResolutions(repairedConfig.seedanceResolutions),
         repairedConfig.seedanceRatios && setSeedanceRatios(repairedConfig.seedanceRatios),
-        repairedConfig.seedanceGenerateAudio !== void 0 && setSeedanceGenerateAudio(repairedConfig.seedanceGenerateAudio),
-        repairedConfig.seedanceWatermark !== void 0 && setSeedanceWatermark(repairedConfig.seedanceWatermark),
-        repairedConfig.seedanceEnableWebSearch !== void 0 && setSeedanceEnableWebSearch(repairedConfig.seedanceEnableWebSearch),
+        repairedConfig.seedanceGenerateAudio !== undefined && setSeedanceGenerateAudio(repairedConfig.seedanceGenerateAudio),
+        repairedConfig.seedanceWatermark !== undefined && setSeedanceWatermark(repairedConfig.seedanceWatermark),
+        repairedConfig.seedanceEnableWebSearch !== undefined && setSeedanceEnableWebSearch(repairedConfig.seedanceEnableWebSearch),
         Array.isArray(repairedConfig.seedanceVirtualPortraits) && setSeedanceVirtualPortraits(wanjuanNormalizeSeedanceVirtualPortraits(repairedConfig.seedanceVirtualPortraits)),
         repairedConfig.tongyiWanxiangTextModels && setTongyiWanxiangTextModels(repairedConfig.tongyiWanxiangTextModels),
         repairedConfig.tongyiWanxiangReferenceImageModels && setTongyiWanxiangReferenceImageModels(repairedConfig.tongyiWanxiangReferenceImageModels),
@@ -15614,7 +15614,7 @@ time=${normalizedTtl}`,
         repairedConfig.tongyiWanxiangResolutions && setTongyiWanxiangResolutions(repairedConfig.tongyiWanxiangResolutions),
         repairedConfig.tongyiWanxiangRatios && setTongyiWanxiangRatios(repairedConfig.tongyiWanxiangRatios),
         repairedConfig.modelProtocolRegistry && typeof repairedConfig.modelProtocolRegistry == `object` && setModelProtocolRegistry(cloneBackupValue(repairedConfig.modelProtocolRegistry)),
-        repairedConfig.configButlerDocUrl !== void 0 && setConfigButlerDocUrl(repairedConfig.configButlerDocUrl),
+        repairedConfig.configButlerDocUrl !== undefined && setConfigButlerDocUrl(repairedConfig.configButlerDocUrl),
         repairedConfig.configButlerMode && setConfigButlerMode(repairedConfig.configButlerMode === `batch` ? `batch` : `single`),
         repairedConfig.configButlerTargetCategory && setConfigButlerTargetCategory(repairedConfig.configButlerTargetCategory),
         repairedConfig.configButlerTargetApiConfigId && setConfigButlerTargetApiConfigId(repairedConfig.configButlerTargetApiConfigId),
@@ -15903,7 +15903,7 @@ time=${normalizedTtl}`,
             /\/v1\/videos/i.test(String(normalizedModel.submitPath || normalizedModel.pollPath || ``))) &&
           ((normalizedModel.submitPath = `/v1/videos`),
             (normalizedModel.pollPath = `/v1/videos/{taskId}`),
-            normalizedModel.contentPath === void 0 && (normalizedModel.contentPath = `/v1/videos/{taskId}/content`),
+            normalizedModel.contentPath === undefined && (normalizedModel.contentPath = `/v1/videos/{taskId}/content`),
             validationNotes.push(`已按 OpenAI/Sora 视频接口修正 submitPath、pollPath、contentPath`)),
           normalizedModel.requestType === `openai-video` &&
           !normalizedModel.submitPath &&
@@ -15993,8 +15993,8 @@ time=${normalizedTtl}`,
 	            delete normalizedModel.referenceImageMode,
 	            delete normalizedModel.referenceImageAsArray,
 	            delete normalizedModel.referenceImageItemShape,
-	            (normalizedModel.requiresReferenceImage = !0),
-          (normalizedModel.omitDuration = !0),
+	            (normalizedModel.requiresReferenceImage = true),
+          (normalizedModel.omitDuration = true),
           (normalizedModel.fieldMapping = {
             ...normalizedModel.fieldMapping,
             prompt: `prompt`,
@@ -16039,7 +16039,7 @@ time=${normalizedTtl}`,
         ((normalizedModel.requestType = `openai-images`),
           (normalizedModel.submitPath = `/v1/images/generations`),
           (normalizedModel.editPath = `/v1/images/edits`),
-          (normalizedModel.useAspectRatioAsSize = !0),
+          (normalizedModel.useAspectRatioAsSize = true),
           (normalizedModel.fieldMapping = {
             model: `model`,
             prompt: `prompt`,
@@ -16063,7 +16063,7 @@ time=${normalizedTtl}`,
           (normalizedModel.extraBody = {
             n: 1,
             type: `normal`,
-            watermark: !1,
+            watermark: false,
             ...normalizedModel.extraBody,
           }),
           (normalizedModel.responseMapping = {
@@ -16076,7 +16076,7 @@ time=${normalizedTtl}`,
           })),
         validationNotes.length > 0 &&
         (normalizedModel.validationNotes = butlerUniquePaths(normalizedModel.validationNotes, validationNotes)),
-        (normalizedModel.__wanjuanButlerValidated = !0),
+        (normalizedModel.__wanjuanButlerValidated = true),
         normalizedModel
       );
     },
@@ -16089,7 +16089,7 @@ time=${normalizedTtl}`,
             normalizeModelCategory,
           });
       } catch {}
-      return !0;
+      return true;
     })(),
     coerceProtocolFieldValue = (fieldName, model, value) => {
       let fieldKey = String(fieldName || ``).trim(),
@@ -16311,16 +16311,16 @@ time=${normalizedTtl}`,
           let startIndex = text.search(/\{\s*"(?:openapi|swagger)"/i);
           if (startIndex < 0) return ``;
           let braceDepth = 0,
-            inString = !1,
-            escaped = !1;
+            inString = false,
+            escaped = false;
           for (let index = startIndex; index < text.length; index++) {
             let char = text[index];
             if (inString) {
-              escaped ? (escaped = !1) : char === `\\` ? (escaped = !0) : char === `"` && (inString = !1);
+              escaped ? (escaped = false) : char === `\\` ? (escaped = true) : char === `"` && (inString = false);
               continue;
             }
             if (char === `"`) {
-              inString = !0;
+              inString = true;
               continue;
             }
             if (char === `{`) braceDepth += 1;
@@ -16581,7 +16581,7 @@ ${curlText}`,
               aspectRatioValueMode: `omit`,
               ...config.parameterAdapter,
             }),
-            (config.omitDuration = !0),
+            (config.omitDuration = true),
             (protocolName = hasVariantSuffix ? `X-See Veo 逆向` : `X-See Veo 普通`),
             notes.push(`已按文档多视频端点规则拆分 Veo 协议：${submitPath}，并省略固定时长字段`));
         }
@@ -16590,8 +16590,8 @@ ${curlText}`,
             (config.submitPath = `/v1/videos`),
             (config.pollPath = `/v1/videos/{taskId}`),
             delete config.contentPath,
-            (config.requiresReferenceImage = !0),
-            (config.omitDuration = !0),
+            (config.requiresReferenceImage = true),
+            (config.omitDuration = true),
             (config.fieldMapping = {
               ...config.fieldMapping,
               model: config.fieldMapping.model || `model`,
@@ -16619,7 +16619,7 @@ ${curlText}`,
             hasField = (field) => fieldSet.has(String(field || ``).toLowerCase());
           if (docFields.length) {
             let durationField = String(config.fieldMapping?.duration || ``).trim();
-            durationField && !hasField(durationField) && ((config.fieldMapping.duration = ``), (config.omitDuration = !0), notes.push(`文档请求体未声明 ${durationField}，已省略时长字段`));
+            durationField && !hasField(durationField) && ((config.fieldMapping.duration = ``), (config.omitDuration = true), notes.push(`文档请求体未声明 ${durationField}，已省略时长字段`));
             let resolutionField = String(config.fieldMapping?.resolution || ``).trim();
             resolutionField &&
               !hasField(resolutionField) &&
@@ -16676,7 +16676,7 @@ ${curlText}`,
           fieldMapping = config.fieldMapping && typeof config.fieldMapping == `object` ? config.fieldMapping : {},
           buildField = (fieldName, value) => {
             let key = String(fieldName || ``).trim();
-            return key && value !== `` && value !== void 0 && value !== null ? {
+            return key && value !== `` && value !== undefined && value !== null ? {
               [key]: value
             } : {};
           },
@@ -16780,7 +16780,7 @@ ${curlText}`,
             (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test video`),
-              ...(config.omitDuration === !0 || fieldMapping.duration === `` ?
+              ...(config.omitDuration === true || fieldMapping.duration === `` ?
                 {} :
                 buildField(fieldMapping.duration || `seconds`, config.fieldValueTypes?.[fieldMapping.duration || `seconds`] === `number` ? 5 : `5`)),
               ...buildField(fieldMapping.resolution || `size`, parameterAdapter.resolution),
@@ -16958,7 +16958,7 @@ ${curlText}`,
               validateAndRepairConfigButlerResult,
             });
         } catch {}
-        return !0;
+        return true;
       })(),
       callConfigButlerModel = async (prompt, options = {}) => {
           let butlerApiUrl = String(options.apiUrl ?? configButlerApiUrl ?? ``),
@@ -17513,7 +17513,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 			                wanjuanButlerBuildProviderProtocol,
 			              });
 			          } catch {}
-			          return !0;
+			          return true;
 			        })(),
 			        buildButlerFallbackProtocol = (modelName) => {
 		          let options = arguments.length > 1 && arguments[1] ? arguments[1] : {},
@@ -17683,7 +17683,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	              let payload = await response.json(),
 	                models = extractButlerModelsFromPayload(payload).filter(Boolean);
 	              if (models.length)
-	                return options.filterLatestTwo === !1 ? models : filterButlerLatestTwoGenerations(models);
+	                return options.filterLatestTwo === false ? models : filterButlerLatestTwoGenerations(models);
 	              errorMessages.push(`${url}: 未返回模型列表`);
 	            } catch (error) {
 	              errorMessages.push(`${url}: ${error.message}`);
@@ -17722,10 +17722,10 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            return null;
 	          }
 	          try {
-	            setJixinModelScanBusy(!0);
+	            setJixinModelScanBusy(true);
 	            let rawModels = await scanButlerTargetModels({
 	                apiConfig: jixinConfig,
-	                filterLatestTwo: !1,
+	                filterLatestTwo: false,
 	              }),
 	              filteredModels = filterButlerLatestTwoGenerations(rawModels),
 	              docText = await fetchDocAsPlainText(WANJUAN_JIXIN_DOC_URL).catch(() => ``),
@@ -17769,7 +17769,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            options.force && showToast2(`极鑫模型扫描失败：${error.message || error}`);
 	            return null;
 	          } finally {
-	            setJixinModelScanBusy(!1);
+	            setJixinModelScanBusy(false);
 	          }
 	        },
 	        runJixinGatewaySync = async () => {
@@ -17789,7 +17789,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	          setConfigButlerTargetApiConfigId(jixinConfig.id);
 	          setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
 	          setConfigButlerMode(`batch`);
-	          setConfigButlerExpanded(!0);
+	          setConfigButlerExpanded(true);
 	          await runConfigButlerBatch({
 	            apiConfig: jixinConfig,
 	            docUrl: WANJUAN_JIXIN_DOC_URL,
@@ -17823,8 +17823,8 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL),
 	            setConfigButlerTargetApiConfigId(jixinConfig.id),
 	            setConfigButlerMode(`batch`),
-	            setConfigButlerExpanded(!0),
-	            setConfigButlerAgentExpanded(!0));
+	            setConfigButlerExpanded(true),
+	            setConfigButlerAgentExpanded(true));
 	          writeChromeStorage({
 	            configButlerApiUrl: butlerConfig.apiUrl,
 	            configButlerApiKey: butlerConfig.apiKey,
@@ -17836,7 +17836,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	          });
 	          showToast2(`正在同步极鑫中转站模型...`);
 	          let scanResult = await scanJixinGatewayModels({
-	            force: !0,
+	            force: true,
 	            apiConfig: jixinConfig,
 	          });
 	          if (!scanResult?.filteredModels?.length) {
@@ -17848,8 +17848,8 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            docUrl: WANJUAN_JIXIN_DOC_URL,
 	            models: scanResult.filteredModels,
 	            butlerConfig: butlerConfig,
-	            autoApply: !0,
-	            silentToast: !0,
+	            autoApply: true,
+	            silentToast: true,
 	          });
 	          batchResult?.applyResult?.importedCount ?
 	            showToast2(`极鑫中转站模型已同步：${batchResult.applyResult.importedCount} 个模型`) :
@@ -18169,8 +18169,8 @@ ${model.apiConfigName || ``}`.toLowerCase();
               ),
               setActiveProtocolName(protocolName),
               setActiveProtocolConfigText(JSON.stringify(protocolConfig, null, 2)),
-              setProtocolFormatsExpanded(!0));
-	          setConfigButlerExpanded(!0);
+              setProtocolFormatsExpanded(true));
+	          setConfigButlerExpanded(true);
 	          showToast2(`配置管家已应用 ${modelName} 的配置`);
 	        },
 	        applyConfigButlerBatchResults = (options = {}) => {
@@ -18331,8 +18331,8 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            setModelProtocolRegistry(repairedGlobalConfig.modelProtocolRegistry || protocolRegistry),
 	            setProtocolNamesText(Object.keys(repairedGlobalConfig.modelProtocolRegistry || protocolRegistry).join(`
 `)),
-	            setConfigButlerBatchModalOpen(!1),
-	            setConfigButlerExpanded(!0),
+	            setConfigButlerBatchModalOpen(false),
+	            setConfigButlerExpanded(true),
 	            typeof chrome < `u` && chrome.storage?.local?.set({
 	              storedGlobalConfigs: nextStoredConfigs,
 	              activeStoredGlobalConfigId: configId,
@@ -18382,7 +18382,7 @@ ${model.apiConfigName || ``}`.toLowerCase();
 	            let targetApiConfig = options.apiConfig || getSelectedButlerTargetApiConfig();
 	            if (!targetApiConfig || !String(targetApiConfig.url || ``).trim() || !String(targetApiConfig.key || ``).trim())
 	              throw Error(`请先选择一个已填写 base URL 和 API Key 的统一 API 配置`);
-	            setConfigButlerBatchLoading(!0);
+	            setConfigButlerBatchLoading(true);
 	            let scannedModels = Array.isArray(options.models) && options.models.length ?
 	              options.models :
 	              await scanButlerTargetModels({ apiConfig: targetApiConfig }),
@@ -18542,7 +18542,7 @@ ${batchDocText}`);
 	                docUrl: docUrlForBatch,
 	                silentToast: options.silentToast,
 	              });
-	              setConfigButlerBatchModalOpen(!1);
+	              setConfigButlerBatchModalOpen(false);
 	              return {
 	                items: normalizedBatchItems,
 	                applyResult: applyResult,
@@ -18561,7 +18561,7 @@ ${batchDocText}`);
 	                models: normalizedBatchItems,
 	                toolContext: toolContext,
 	              }, null, 2)),
-	              setConfigButlerBatchModalOpen(!0),
+	              setConfigButlerBatchModalOpen(true),
 	              showToast2(`已识别 ${normalizedBatchItems.length} 个模型，请确认后导入`));
 	            return {
 	              items: normalizedBatchItems,
@@ -18572,7 +18572,7 @@ ${batchDocText}`);
 	            (console.error(`Config butler batch failed`, error),
 	              showToast2(`批量配置分析失败：${error.message}`));
 	          } finally {
-	            setConfigButlerBatchLoading(!1);
+	            setConfigButlerBatchLoading(false);
 	          }
 	        },
         runConfigButler = async () => {
@@ -18582,7 +18582,7 @@ ${batchDocText}`);
             let targetApiConfig = getSelectedButlerTargetApiConfig();
             if (!targetApiConfig || !String(targetApiConfig.url || ``).trim() || !String(targetApiConfig.key || ``).trim())
               throw Error(`请先选择一个已填写 base URL 和 API Key 的统一 API 配置`);
-            setConfigButlerLoading(!0);
+            setConfigButlerLoading(true);
             let docText = await fetchDocAsPlainText(configButlerDocUrl.trim()),
               toolContext = buildConfigButlerToolContext(docText, configButlerDocUrl.trim(), {
                 modelName: configButlerTargetModel.trim(),
@@ -18652,7 +18652,7 @@ ${docText}`;
             (console.error(`Config butler failed`, error),
               showToast2(`配置管家分析失败：${error.message}`));
           } finally {
-            setConfigButlerLoading(!1);
+            setConfigButlerLoading(false);
           }
         };
 	  useEffect(() => {
@@ -18660,7 +18660,7 @@ ${docText}`;
 	      localStorage.setItem(`wanjuanAdvancedSettingsUnlocked`, `true`);
 	      typeof chrome < `u` &&
 	        chrome.storage?.local?.set?.({
-	          advancedSettingsUnlocked: !0,
+	          advancedSettingsUnlocked: true,
 	        });
 	    } catch {}
 	  }, []);
@@ -18691,14 +18691,14 @@ ${docText}`;
   useEffect(() => {
     refreshSystemNotifications({
       source: `startup`,
-      silent: !0,
+      silent: true,
     });
   }, []);
   useEffect(() => {
     if (activeView !== `canvas` && activeView !== `settings`) return;
     refreshSystemNotifications({
       source: activeView,
-      silent: !0,
+      silent: true,
     });
   }, [activeView]);
   useEffect(() => {
@@ -18753,7 +18753,7 @@ ${docText}`;
       (setIsPluginEnv(!!isExtension),
         isExtension &&
         chrome.tabs.getCurrent((currentTab) => {
-          currentTab && setHasCurrentTab(!0);
+          currentTab && setHasCurrentTab(true);
         }));
       let deviceId2 = wanjuanGetOrCreateDeviceId();
       (setDeviceId(deviceId2),
@@ -18766,12 +18766,12 @@ ${docText}`;
           updateInfo2.hasUpdate && (setUpdateInfo(updateInfo2), showToast2(`发现新版本 v${updateInfo2.version}`));
         })());
       let timeoutId = setTimeout(() => {
-        setIsLoading(!1);
+        setIsLoading(false);
       }, 2e3);
       if (isExtension) {
         (chrome.tabs.query({
-            active: !0,
-            currentWindow: !0
+            active: true,
+            currentWindow: true
           }, (tabs) => {
             if (tabs && tabs.length > 0) {
               let tab = tabs[0];
@@ -18871,10 +18871,10 @@ ${docText}`;
                         (lastOpenedProjectId && result2.projects.some((project) => project.id === lastOpenedProjectId) ?
                           setActiveProjectId(lastOpenedProjectId) :
                           setActiveProjectId(result2.projects[0].id),
-                          (projectHydratedRef.current = !0),
-                          setTimeout(() => setIsReady(!0), 100));
+                          (projectHydratedRef.current = true),
+                          setTimeout(() => setIsReady(true), 100));
                       })) :
-                    ((projectHydratedRef.current = !0), setTimeout(() => setIsReady(!0), 100)),
+                    ((projectHydratedRef.current = true), setTimeout(() => setIsReady(true), 100)),
                     result2.presetPrompts &&
                     result2.presetPrompts.length > 0 &&
                     setPresetPrompts(result2.presetPrompts),
@@ -19067,7 +19067,7 @@ ${docText}`;
                   Object.keys(jixinDocUrlStoragePatch).length > 0 &&
                     typeof chrome < `u` &&
                     chrome.storage?.local?.set(jixinDocUrlStoragePatch);
-	                  let storedAdvancedSettingsUnlocked = !0;
+	                  let storedAdvancedSettingsUnlocked = true;
                   (Array.isArray(settings.apiConfigs) &&
                     (() => {
                       let normalizedApiConfigs = normalizeUnifiedApiConfigs(settings.apiConfigs);
@@ -19079,19 +19079,19 @@ ${docText}`;
                     })(),
 
                     settings.textApiConfigId && setTextApiConfigId(settings.textApiConfigId),
-                    storedAdvancedSettingsUnlocked && setAdvancedSettingsUnlocked(!0),
+                    storedAdvancedSettingsUnlocked && setAdvancedSettingsUnlocked(true),
                     settings.imageApiConfigId && setImageApiConfigId(settings.imageApiConfigId),
                     settings.videoApiConfigId && setVideoApiConfigId(settings.videoApiConfigId),
                     settings.audioApiConfigId && setAudioApiConfigId(settings.audioApiConfigId),
-                    settings.globalPollingInterval !== void 0 &&
+                    settings.globalPollingInterval !== undefined &&
                     setPollingInterval(settings.globalPollingInterval),
-                    settings.globalMaxPollingDuration !== void 0 &&
+                    settings.globalMaxPollingDuration !== undefined &&
                     setMaxPollingDuration(settings.globalMaxPollingDuration),
                     settings.layeredRunConcurrencyOptions &&
                     setLayeredRunConcurrencyOptions(
                       settings.layeredRunConcurrencyOptions,
                     ),
-                    settings.layeredRunMaxConcurrency !== void 0 &&
+                    settings.layeredRunMaxConcurrency !== undefined &&
                     setLayeredRunMaxConcurrency(
                       Number(settings.layeredRunMaxConcurrency) || 1,
                     ),
@@ -19145,7 +19145,7 @@ ${docText}`;
 			                      `gpt-5.5` :
 			                      settings.configButlerModel,
 			                    ),
-		                    settings.configButlerDocUrl !== void 0 &&
+		                    settings.configButlerDocUrl !== undefined &&
 		                    setConfigButlerDocUrl(settings.configButlerDocUrl),
 		                    settings.configButlerMode &&
 	                    setConfigButlerMode(
@@ -19196,17 +19196,17 @@ ${docText}`;
                     settings.seedanceResolutions &&
                     setSeedanceResolutions(settings.seedanceResolutions),
                     settings.seedanceRatios && setSeedanceRatios(settings.seedanceRatios),
-                    settings.seedanceGenerateAudio !== void 0 &&
+                    settings.seedanceGenerateAudio !== undefined &&
                     setSeedanceGenerateAudio(settings.seedanceGenerateAudio),
-                    settings.seedanceWatermark !== void 0 &&
+                    settings.seedanceWatermark !== undefined &&
                     setSeedanceWatermark(settings.seedanceWatermark),
-                    settings.seedanceEnableWebSearch !== void 0 &&
+                    settings.seedanceEnableWebSearch !== undefined &&
                     setSeedanceEnableWebSearch(settings.seedanceEnableWebSearch),
                     Array.isArray(settings.seedanceVirtualPortraits) &&
                     setSeedanceVirtualPortraits(
                       wanjuanNormalizeSeedanceVirtualPortraits(settings.seedanceVirtualPortraits),
                     ),
-                    settings.tianjiSeedanceSettingsMode !== void 0 &&
+                    settings.tianjiSeedanceSettingsMode !== undefined &&
                     setTianjiSeedanceSettingsMode(
                       storedAdvancedSettingsUnlocked && settings.tianjiSeedanceSettingsMode === `tianji` ?
                       `tianji` :
@@ -19254,12 +19254,12 @@ ${docText}`;
                       globalThis.wanjuanI18nRuntime?.setLanguage?.(settings.appLanguage || settings.uiLanguage)),
                     settings.downloadDirectory &&
                     setDownloadDirectory(settings.downloadDirectory),
-                    settings.autoDownloadGeneratedResults !== void 0 &&
-                    setAutoDownloadGeneratedResults(settings.autoDownloadGeneratedResults === !0 || settings.autoDownloadGeneratedResults === `true` || settings.autoDownloadGeneratedResults === 1),
-                    settings.storageOptimizationEnabled === !0 &&
-                    setStorageOptimizationEnabled(!0),
-                    settings.storageOptimizationPaused === !0 &&
-                    setStorageOptimizationPaused(!0),
+                    settings.autoDownloadGeneratedResults !== undefined &&
+                    setAutoDownloadGeneratedResults(settings.autoDownloadGeneratedResults === true || settings.autoDownloadGeneratedResults === `true` || settings.autoDownloadGeneratedResults === 1),
+                    settings.storageOptimizationEnabled === true &&
+                    setStorageOptimizationEnabled(true),
+                    settings.storageOptimizationPaused === true &&
+                    setStorageOptimizationPaused(true),
                     Array.isArray(settings.backupExportSelection) &&
                     settings.backupExportSelection.length > 0 &&
                     setBackupExportSelection(settings.backupExportSelection),
@@ -19320,7 +19320,7 @@ ${docText}`;
                         }),
                         chrome.storage.local.remove(`membership`));
                   }
-                  settingsHydratedRef.current = !0;
+                  settingsHydratedRef.current = true;
                 },
               ),
               chrome.runtime.onMessage.addListener((message, messageSender, sendResponse) => {
@@ -19339,23 +19339,23 @@ ${docText}`;
                     }),
                     setActiveView(`transit`));
               }),
-              setIsLoading(!1),
+              setIsLoading(false),
               clearTimeout(timeoutId));
           });
         } catch (error) {
           (console.error(`Storage get error:`, error),
-            (settingsHydratedRef.current = !0),
-            (projectHydratedRef.current = !0),
-            setIsLoading(!1),
-            setIsReady(!0),
+            (settingsHydratedRef.current = true),
+            (projectHydratedRef.current = true),
+            setIsLoading(false),
+            setIsReady(true),
             clearTimeout(timeoutId));
         }
       } else
-        ((settingsHydratedRef.current = !0),
-          (projectHydratedRef.current = !0),
+        ((settingsHydratedRef.current = true),
+          (projectHydratedRef.current = true),
           setUsers(wanjuanChildWindowRefs),
-          setIsLoading(!1),
-          setIsReady(!0),
+          setIsLoading(false),
+          setIsReady(true),
           clearTimeout(timeoutId));
       return () => clearTimeout(timeoutId);
     }, []),
@@ -19387,7 +19387,7 @@ ${docText}`;
       let timer = setInterval(() => {
         let hasActiveTask = globalTasks.some((task) => task?.status === `running` || task?.status === `pending`);
         if (hasActiveTask || Date.now() - Number(globalThis.__wanjuanLastCanvasActivityAt || 0) < 3e4) return;
-        globalThis.__wanjuanRunNextStorageMigration?.(!0);
+        globalThis.__wanjuanRunNextStorageMigration?.(true);
       }, 15e3);
       return () => clearInterval(timer);
     }, [storageOptimizationEnabled, storageOptimizationPaused, globalTasks, activeProjectId]),
@@ -19399,7 +19399,7 @@ ${docText}`;
     useEffect(() => {
       if (!storageOptimizationEnabled) return;
       let previous = globalThis.__wanjuanStorageOptimizationDirectory;
-      if (previous !== void 0 && previous !== downloadDirectory)
+      if (previous !== undefined && previous !== downloadDirectory)
         setStorageOptimizationLastResult(`下载目录已更改。新结果写入新媒体库，旧媒体库保持只读可用；如需集中存放，请手动搬迁。`);
       globalThis.__wanjuanStorageOptimizationDirectory = downloadDirectory;
     }, [storageOptimizationEnabled, downloadDirectory]),
@@ -19437,8 +19437,8 @@ ${docText}`;
     restoreCookies = async (account) => {
         if (isPluginEnv && account.cookies && account.cookies.length > 0) {
           let [activeTab] = await chrome.tabs.query({
-            active: !0,
-            currentWindow: !0
+            active: true,
+            currentWindow: true
           });
           if (activeTab?.url && activeTab.url.startsWith(`http`))
             for (let cookie of account.cookies)
@@ -19469,8 +19469,8 @@ ${docText}`;
       openAccountSite = async (account) => {
           if ((await restoreCookies(account), isPluginEnv && account.siteUrl)) {
             let [activeTab] = await chrome.tabs.query({
-              active: !0,
-              currentWindow: !0
+              active: true,
+              currentWindow: true
             });
             activeTab && chrome.tabs.update(activeTab.id, {
               url: account.siteUrl
@@ -19478,7 +19478,7 @@ ${docText}`;
           }
           setSelectedUser(account);
         },
-        addAccount = async (shouldClear = !1) => {
+        addAccount = async (shouldClear = false) => {
             if (false && users.length >= currentLimits.accounts) {
               alert(
                 `当前${currentLimits.name}最多支持 ${currentLimits.accounts} 个账号，请升级会员解锁更多`,
@@ -19489,7 +19489,7 @@ ${docText}`;
               cookieInput2 = shouldClear ? `` : cookieInput,
               editingId = shouldClear ? null : editingAccountId,
               accountName = nameInput.trim();
-            (!accountName && currentPlatform && (accountName = currentPlatform.title), (accountName ||= `新建环境`), setIsAccountBusy(!0));
+            (!accountName && currentPlatform && (accountName = currentPlatform.title), (accountName ||= `新建环境`), setIsAccountBusy(true));
             try {
               let cookies = [],
                 siteName = `未知网站`,
@@ -19514,7 +19514,7 @@ ${docText}`;
                               value: cookieValue.trim(),
                               domain: new URL(siteUrl || `https://example.com`).hostname,
                               path: `/`,
-                              secure: !0,
+                              secure: true,
                             } :
                             null;
                         })
@@ -19532,13 +19532,13 @@ ${docText}`;
                   (alert(
                       `Cookie 格式错误，请输入有效的 JSON 数组或 key=value; 格式字符串`,
                     ),
-                    setIsAccountBusy(!1));
+                    setIsAccountBusy(false));
                   return;
                 }
               else if (isPluginEnv) {
                 let [activeTab] = await chrome.tabs.query({
-                  active: !0,
-                  currentWindow: !0
+                  active: true,
+                  currentWindow: true
                 });
                 activeTab?.url &&
                   ((siteUrl = activeTab.url),
@@ -19561,7 +19561,7 @@ ${docText}`;
                 cookies.length === 0 &&
                 !confirm(`当前页面未检测到 Cookie，且未手动输入，确定要保存吗？`)
               ) {
-                setIsAccountBusy(!1);
+                setIsAccountBusy(false);
                 return;
               }
               let cookieData = cookies.map((cookie) => ({
@@ -19600,11 +19600,11 @@ ${docText}`;
                 };
                 updatedUsers = [...users, newAccount];
               }
-              (saveUsers(updatedUsers), setAccountNameInput(``), setCookieInput(``), setEditingAccountId(null), setIsAddingAccount(!1));
+              (saveUsers(updatedUsers), setAccountNameInput(``), setCookieInput(``), setEditingAccountId(null), setIsAddingAccount(false));
             } catch (error) {
               (console.error(error), alert(`添加失败，请重试`));
             } finally {
-              setIsAccountBusy(!1);
+              setIsAccountBusy(false);
             }
           },
           [pendingDeleteId, setPendingDeleteId] = useState(null),
@@ -19641,49 +19641,49 @@ ${docText}`;
               new Promise((resolve) => {
                 let type = String(resource?.type || resource?.mediaKind || ``).toLowerCase();
                 if (type.startsWith(`text`)) {
-                  resolve(!0);
+                  resolve(true);
                   return;
                 }
                 if (resource?.tianjiPortraitAssetId || resource?.seedanceAssetId || resource?.isTianjiPortrait || resource?.isSeedanceVirtualPortrait) {
-                  resolve(!0);
+                  resolve(true);
                   return;
                 }
                 let mediaUrl = String(type.startsWith(`image`) ? resource?.thumbnailUrl || resource?.previewUrl || resource?.url || `` : resource?.url || ``).trim();
                 if (!mediaUrl) {
-                  resolve(!1);
+                  resolve(false);
                   return;
                 }
                 if (/^data:/i.test(mediaUrl)) {
-                  resolve(!0);
+                  resolve(true);
                   return;
                 }
-                let done = !1,
+                let done = false,
                   finish = (succeeded) => {
                     if (done) return;
-                    done = !0;
+                    done = true;
                     clearTimeout(timer);
                     resolve(succeeded);
                   },
-                  timer = setTimeout(() => finish(!1), 6e3);
+                  timer = setTimeout(() => finish(false), 6e3);
                 if (type.startsWith(`image`)) {
                   let image = new Image();
                   image.onload = () => finish(image.naturalWidth > 0 || image.width > 0);
-                  image.onerror = () => finish(!1);
+                  image.onerror = () => finish(false);
                   image.src = mediaUrl;
                   return;
                 }
                 if (type.startsWith(`video`) || type.startsWith(`audio`)) {
                   let media = document.createElement(type.startsWith(`video`) ? `video` : `audio`);
                   media.preload = `metadata`;
-                  media.muted = !0;
-                  media.onloadedmetadata = () => finish(!0);
-                  media.oncanplay = () => finish(!0);
-                  media.onerror = () => finish(!1);
+                  media.muted = true;
+                  media.onloadedmetadata = () => finish(true);
+                  media.oncanplay = () => finish(true);
+                  media.onerror = () => finish(false);
                   media.src = mediaUrl;
                   try {
                     media.load();
                   } catch {
-                    finish(!1);
+                    finish(false);
                   }
                   return;
                 }
@@ -19696,7 +19696,7 @@ ${docText}`;
                 showToast2(`没有需要检查的媒体素材`);
                 return;
               }
-              setResourceCleanupBusy(!0);
+              setResourceCleanupBusy(true);
               showToast2(`正在检查失效素材...`);
               try {
                 let invalidIds = new Set();
@@ -19720,7 +19720,7 @@ ${docText}`;
               } catch (error) {
                 (console.error(`Clean invalid resources failed`, error), showToast2(`清理失败，请稍后重试`));
               } finally {
-                setResourceCleanupBusy(!1);
+                setResourceCleanupBusy(false);
               }
             };
   let filteredTransitResources = transitResources.filter((resource) => wanjuanResourceMatchesFilter(resource, resourceTypeFilter, resourceSourceFilter, resourceFavoriteOnly)),
@@ -19866,7 +19866,7 @@ ${docText}`;
     let nodes = Array.isArray(setMaxPollingDuration.current) ? setMaxPollingDuration.current : [],
       audioResources = [],
       isAudioUrl = (value) => {
-        if (!value || typeof value != `string`) return !1;
+        if (!value || typeof value != `string`) return false;
         let trimmed = value.trim();
         return /^(https?:\/\/|file:\/\/|blob:|data:audio\/)/i.test(trimmed) || /\.(mp3|wav|ogg|m4a|aac|flac)(?:$|[?#])/i.test(trimmed);
       },
@@ -19977,7 +19977,7 @@ ${docText}`;
         localPath: persisted.localPath,
         originalUrl: resource.originalUrl || resource.url,
         projectAssetBinding: {
-          ok: !0,
+          ok: true,
           assetId: persisted.assetId,
           localPath: persisted.localPath,
           filename: persisted.filename,
@@ -20019,7 +20019,7 @@ ${docText}`;
 	        ...(localResourcePath ? {
 	          localPath: localResourcePath,
 	          projectAssetBinding: {
-	            ok: !0,
+	            ok: true,
 	            localPath: localResourcePath,
 	            filename: resourceName || ``,
 	            mime: mimeType,
@@ -20118,8 +20118,8 @@ ${docText}`;
             return;
           }
           let [activeTab] = await chrome.tabs.query({
-            active: !0,
-            currentWindow: !0
+            active: true,
+            currentWindow: true
           });
           if (!activeTab?.id) {
             showToast2(`未找到活动标签页`);
@@ -20152,10 +20152,10 @@ ${docText}`;
                 )?.set;
                 (filesSetter ? filesSetter.call(targetInput, dataTransfer.files) : (targetInput.files = dataTransfer.files),
                   targetInput.dispatchEvent(new Event(`change`, {
-                    bubbles: !0
+                    bubbles: true
                   })),
                   targetInput.dispatchEvent(new Event(`input`, {
-                    bubbles: !0
+                    bubbles: true
                   })));
                 let originalBorder = targetInput.style.border;
                 return (
@@ -20163,7 +20163,7 @@ ${docText}`;
                   setTimeout(() => {
                     targetInput.style.border = originalBorder;
                   }, 1e3),
-                  !0
+                  true
                 );
               },
               args: [mediaDataUrl, mimeType, extension],
@@ -20242,7 +20242,7 @@ ${docText}`;
 	            setActiveProjectId(newProject.id),
             setNewProjectName(``),
             setNewProjectGroupId(selectedNewProjectGroupId),
-            setProjectMenuOpen(!1),
+            setProjectMenuOpen(false),
             isPluginEnv && chrome.storage.local.set({
               projects: updatedProjects,
               projectGroups: normalizedGroupsForNewProject
@@ -20283,7 +20283,7 @@ ${docText}`;
           let updatedGroups = [...existingGroups, {
             id: `group-${Date.now()}`,
             name: groupName,
-            collapsed: !1,
+            collapsed: false,
             order: existingGroups.length
           }];
           (persistProjectGroups(updatedGroups), setProjectGroupDraft(``), showToast2(`分组已创建`));
@@ -20476,11 +20476,11 @@ ${docText}`;
           result?.ok && (await refreshStorageOptimizationStatus());
           return result;
         },
-        runStorageMigrationForProject = async (projectId, automatic = !1) => {
+        runStorageMigrationForProject = async (projectId, automatic = false) => {
           if (!storageOptimizationEnabled) {
             automatic || showToast2(`请先启用存储优化`);
             return {
-              ok: !1,
+              ok: false,
               error: `STORAGE_OPTIMIZATION_DISABLED`
             };
           }
@@ -20488,15 +20488,15 @@ ${docText}`;
             persistProjectsWithStorageState(projectId, `queued`, `切换到其他项目后将在空闲时迁移`);
             automatic || showToast2(`当前项目已加入优先队列，切换项目后执行`);
             return {
-              ok: !1,
+              ok: false,
               error: `CURRENT_PROJECT_MUST_BE_CLOSED`
             };
           }
           if (globalThis.__wanjuanStorageMigrationRunning) return {
-            ok: !1,
+            ok: false,
             error: `STORAGE_MIGRATION_BUSY`
           };
-          globalThis.__wanjuanStorageMigrationRunning = !0;
+          globalThis.__wanjuanStorageMigrationRunning = true;
           persistProjectsWithStorageState(projectId, `migrating`, ``);
           try {
             let result = await globalThis.runForcedArchiveMigration(projectId, downloadDirectory, {
@@ -20513,24 +20513,24 @@ ${docText}`;
             setStorageOptimizationLastResult(`项目迁移失败并已恢复：${message}`);
             automatic || showToast2(`迁移失败，原项目已恢复`);
             return {
-              ok: !1,
+              ok: false,
               error: message
             };
           } finally {
-            globalThis.__wanjuanStorageMigrationRunning = !1;
+            globalThis.__wanjuanStorageMigrationRunning = false;
           }
         },
         runNextStorageMigration =
-        (globalThis.__wanjuanRunNextStorageMigration = async (automatic = !1) => {
+        (globalThis.__wanjuanRunNextStorageMigration = async (automatic = false) => {
           if (!storageOptimizationEnabled || storageOptimizationPaused || globalThis.__wanjuanStorageMigrationRunning) return;
-          let candidate = projects.find((project) => project.id !== activeProjectId && [`queued`, `unoptimized`, void 0].includes(project.storageStatus));
+          let candidate = projects.find((project) => project.id !== activeProjectId && [`queued`, `unoptimized`, undefined].includes(project.storageStatus));
           if (!candidate) {
             if (automatic && Date.now() - Number(globalThis.__wanjuanLastTrashPurgeAt || 0) > 864e5) {
               globalThis.__wanjuanLastTrashPurgeAt = Date.now();
               await window.wanjuanDesktop?.purgeStorageTrash?.({
                 directory: downloadDirectory,
                 olderThanDays: 30,
-                confirm: !0,
+                confirm: true,
               });
             }
             return;
@@ -20554,19 +20554,19 @@ ${docText}`;
             storageStatus: project.storageStatus === `optimized` ? `optimized` : `queued`,
             storageDetail: project.id === activeProjectId ? `切换项目后迁移` : `等待空闲迁移`,
           }));
-          (setStorageOptimizationEnabled(!0),
-            setStorageOptimizationPaused(!1),
+          (setStorageOptimizationEnabled(true),
+            setStorageOptimizationPaused(false),
             setProjects(updatedProjects),
             chrome.storage.local.set({
-              storageOptimizationEnabled: !0,
-              storageOptimizationPaused: !1,
+              storageOptimizationEnabled: true,
+              storageOptimizationPaused: false,
               projects: updatedProjects,
             }),
             setStorageOptimizationLastResult(`已启用，等待应用空闲后迁移旧项目`));
         },
         scanStorageOptimization = async () => {
-          setStorageOptimizationBusy(!0);
-          globalThis.__wanjuanStorageMaintenanceRunning = !0;
+          setStorageOptimizationBusy(true);
+          globalThis.__wanjuanStorageMaintenanceRunning = true;
           try {
             await new Promise((resolve) => setTimeout(resolve, 300));
             let index = await buildCompleteStorageReferenceIndex();
@@ -20581,13 +20581,13 @@ ${docText}`;
             setStorageOptimizationLastResult(scan?.ok ? `扫描完成：${scan.candidateCount} 个文件，可释放 ${formatStorageBytes(scan.candidateBytes)}` : `扫描失败：${scan?.error || `未知错误`}`);
             await refreshStorageOptimizationStatus();
           } finally {
-            globalThis.__wanjuanStorageMaintenanceRunning = !1;
-            setStorageOptimizationBusy(!1);
+            globalThis.__wanjuanStorageMaintenanceRunning = false;
+            setStorageOptimizationBusy(false);
           }
         },
         cleanStorageOptimization = async () => {
-          setStorageOptimizationBusy(!0);
-          globalThis.__wanjuanStorageMaintenanceRunning = !0;
+          setStorageOptimizationBusy(true);
+          globalThis.__wanjuanStorageMaintenanceRunning = true;
           try {
             await new Promise((resolve) => setTimeout(resolve, 300));
             let index = await buildCompleteStorageReferenceIndex();
@@ -20605,13 +20605,13 @@ ${docText}`;
             if (!confirm(`将 ${scan.candidateCount} 个未引用文件（${formatStorageBytes(scan.candidateBytes)}）移入 30 天回收区？`)) return;
             let result = await window.wanjuanDesktop.moveUnreferencedMediaToTrash({
               directory: downloadDirectory,
-              confirm: !0,
+              confirm: true,
             });
             setStorageOptimizationLastResult(result?.ok ? `已移入回收区：${result.movedCount} 个文件` : `清理失败：${result?.error || `未知错误`}`);
             await refreshStorageOptimizationStatus();
           } finally {
-            globalThis.__wanjuanStorageMaintenanceRunning = !1;
-            setStorageOptimizationBusy(!1);
+            globalThis.__wanjuanStorageMaintenanceRunning = false;
+            setStorageOptimizationBusy(false);
           }
         },
         restoreStorageOptimizationTrash = async () => {
@@ -20626,7 +20626,7 @@ ${docText}`;
           let result = await window.wanjuanDesktop?.purgeStorageTrash?.({
             directory: downloadDirectory,
             olderThanDays: 30,
-            confirm: !0,
+            confirm: true,
           });
           setStorageOptimizationLastResult(result?.ok ? `已永久删除 ${result.purgedFiles} 个过期文件` : `永久删除失败`);
           await refreshStorageOptimizationStatus();
@@ -20714,7 +20714,7 @@ ${docText}`;
               className: `flex flex-wrap gap-2`,
               children: [
                 jsx(`button`, {
-                  onClick: () => runNextStorageMigration(!1),
+                  onClick: () => runNextStorageMigration(false),
                   disabled: !storageOptimizationEnabled || storageOptimizationBusy,
                   className: `rounded-lg border border-[#444] px-3 py-1.5 text-xs text-gray-200 hover:border-blue-500 disabled:opacity-40`,
                   children: `立即处理下一个项目`,
@@ -20802,7 +20802,7 @@ ${docText}`;
         .filter((line) => line !== ``),
         filteredAgentItems = agentItems.filter((agent) => {
           let searchQuery = agentSearch.trim().toLowerCase();
-          if (!searchQuery) return !0;
+          if (!searchQuery) return true;
           return [agent.name, agent.description, agent.model, agent.knowledge]
             .filter(Boolean)
             .some((field) => String(field).toLowerCase().includes(searchQuery));
@@ -22120,7 +22120,7 @@ ${docText}`;
                 systemPrompt: `请根据角色设定和知识库内容完成用户任务。`,
                 knowledge: ``,
                 knowledgeFiles: [],
-                memoryEnabled: !1,
+                memoryEnabled: false,
                 memoryBaseUrl: ``,
                 memoryApiKey: ``,
                 memoryUserId: `default-user`,
@@ -22225,9 +22225,9 @@ ${docText}`;
                   try {
                     let parsedUrl = new URL(url),
                       hostname = parsedUrl.hostname.toLowerCase();
-                    if (parsedUrl.protocol !== `http:` && parsedUrl.protocol !== `https:`) return !1;
-                    if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return !1;
-                    if (hostname === `::1` || hostname === `[::1]`) return !1;
+                    if (parsedUrl.protocol !== `http:` && parsedUrl.protocol !== `https:`) return false;
+                    if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return false;
+                    if (hostname === `::1` || hostname === `[::1]`) return false;
                     let ipv4Match = hostname.match(/^\d+\.\d+\.\d+\.\d+$/);
                     if (ipv4Match) {
                       let [firstOctet, secondOctet] = hostname.split(`.`).map(Number);
@@ -22239,9 +22239,9 @@ ${docText}`;
                         (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31)
                       );
                     }
-                    return !0;
+                    return true;
                   } catch {
-                    return !1;
+                    return false;
                   }
                 },
                 isNonVideoUrl = (url) => {
@@ -22260,7 +22260,7 @@ ${docText}`;
                       )
                     );
                   } catch {
-                    return !1;
+                    return false;
                   }
                 },
                 resolveFileUri = async (attachment) => {
@@ -22325,7 +22325,7 @@ ${docText}`;
                         filename: attachment?.name || `agent-video-${Date.now()}.mp4`,
                       }) :
                       null;
-	                    if (uploadResult?.ok === !1) throw Error(uploadResult?.error || `上传服务没有返回可用地址`);
+	                    if (uploadResult?.ok === false) throw Error(uploadResult?.error || `上传服务没有返回可用地址`);
 	                    return /^https?:\/\//i.test(uploadResult?.url || ``) && isPublicUrl(uploadResult.url) ?
 	                      uploadResult.url :
                       /^https?:\/\//i.test(mediaUrl) && isPublicUrl(mediaUrl) ?
@@ -22715,8 +22715,8 @@ ${docText}`;
 		                hasImageOutput = (task) =>
 		                !!(task?.remoteTaskId || task?.asyncImageDetailUrl || task?.customResultData || task?.resultUrl),
 		                registerTask = (task) => {
-		                  if (!task || !task.id || seenTaskKeys.has(task.id)) return !1;
-		                  return (seenTaskKeys.add(task.id), itemB.push(task), !0);
+		                  if (!task || !task.id || seenTaskKeys.has(task.id)) return false;
+		                  return (seenTaskKeys.add(task.id), itemB.push(task), true);
 		                };
 		              [...tasks]
 		                .sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))
@@ -22812,7 +22812,7 @@ ${docText}`;
 		                  isServerErrorRegex ?
 		                  `建议稍后重试、换同中转站其他模型，或在中转站后台确认该模型通道是否可用。` :
 		                  `建议打开配置管家填入该中转站 API 文档后重新诊断。`,
-			                shouldApplyPatch: !1,
+			                shouldApplyPatch: false,
 			              };
 			            },
 				            normalizeConfigButlerDiagnosis = (diagnosis, task = {}, protocolBinding = null, protocolConfig = null) => {
@@ -22883,7 +22883,7 @@ ${docText}`;
 			                  `当前中转站返回 Invalid URL (POST /v1/grok/videos)，说明这个路由在 xpclaw 上不可用。`,
 			                ]).slice(0, 5);
 			                normalizedDiagnosis.suggestedFix = `不要应用 /v1/grok/videos 这条修复。请以 xpclaw 文档里的真实 Grok 视频创建和查询端点重新生成单模型协议；在未验证 submitPath/pollPath 前，配置管家不会再允许把该路径写入模型绑定。`;
-			                normalizedDiagnosis.shouldApplyPatch = !1;
+			                normalizedDiagnosis.shouldApplyPatch = false;
 			              }
 			              return normalizedDiagnosis;
 			            },
@@ -22999,7 +22999,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 			                    summary: jsonBlock.summary || `诊断完成`,
 			                    evidence: Array.isArray(jsonBlock.evidence) ? jsonBlock.evidence.slice(0, 5) : [],
 			                    suggestedFix: jsonBlock.suggestedFix || ``,
-			                    shouldApplyPatch: jsonBlock.shouldApplyPatch === !0,
+			                    shouldApplyPatch: jsonBlock.shouldApplyPatch === true,
 			                    suggestedProtocol: suggestedConfigFromModel?.protocol || jsonBlock.suggestedProtocol || null,
 			                  };
 			                repairedDiagnosis = normalizeConfigButlerDiagnosis(repairedDiagnosis, task, suggestedConfig, protocolConfig);
@@ -23031,8 +23031,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 			                .map((item) => item.id),
 			              ),
 			                tasksArray = Array.isArray(tasksInput) ? tasksInput : [],
-			                isManualTrigger = triggerOptions?.manual === !0;
-			              if (!isManualTrigger) return !1;
+			                isManualTrigger = triggerOptions?.manual === true;
+			              if (!isManualTrigger) return false;
 			              if (!isManualTrigger && configButlerErrorAssistant?.status === `checking`) return;
 			              for (let failedTask of [...tasksArray].sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))) {
 			                if (!failedTask || failedTask.status !== `failed` || failedTask.stoppedByUser || !failedTask.nodeId) continue;
@@ -23050,22 +23050,22 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		                    signature: failureSignature,
 		                    triggeredAt: Date.now(),
 		                  }, dedupeKey));
-		                return !0;
+		                return true;
 		              }
-		              return !1;
+		              return false;
 		            },
 		            runManualConfigButlerErrorQuery = () => {
 		              let scanId = `manual-scan-${Date.now()}`;
 		              if (configButlerErrorAssistant && configButlerErrorAssistantMinimized) {
-		                setConfigButlerErrorAssistantMinimized(!1);
+		                setConfigButlerErrorAssistantMinimized(false);
 		                return;
 		              }
 		              showToast2(`配置管家正在查询最近错误`);
-		              setConfigButlerErrorAssistantMinimized(!1);
+		              setConfigButlerErrorAssistantMinimized(false);
 		              setConfigButlerErrorAssistant({
 		                id: scanId,
 		                status: `checking`,
-		                manualScan: !0,
+		                manualScan: true,
 			                title: `配置管家正在扫描最新错误`,
 			                task: {
 			                  modelName: `最近任务记录`,
@@ -23078,7 +23078,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		              });
 		              window.setTimeout(() => {
 		                let triggerResult = maybeTriggerConfigButlerErrorDiagnosis(globalTasks, [], {
-		                  manual: !0,
+		                  manual: true,
 		                });
 		                triggerResult ||
 		                  setConfigButlerErrorAssistant((prevAssistant) =>
@@ -23098,7 +23098,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 			                          `配置管家现在只在手动点击错误查询时，读取最新一条失败任务进行诊断。`,
 			                        ],
 			                        suggestedFix: `如果刚刚的节点已经报错，请先确认任务清单里出现失败记录，然后再次点击错误查询。`,
-			                        shouldApplyPatch: !1,
+			                        shouldApplyPatch: false,
 		                      },
 		                    } : prevAssistant,
 		                  );
@@ -23161,7 +23161,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		              (setConfigButlerManualProtocolName(protocolName),
 		                setConfigButlerManualProtocolText(JSON.stringify(normalizedConfig, null, 2)),
 		                setConfigButlerManualProblemPart(inferConfigButlerProblemPart(errorAssistant)),
-		                setConfigButlerManualProtocolOpen(!0));
+		                setConfigButlerManualProtocolOpen(true));
 		            },
 		            applyConfigButlerProtocolRepair = (protocolBinding, repairLabel = `配置管家修复`) => {
 		              let errorAssistant = configButlerErrorAssistant,
@@ -23351,17 +23351,17 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                 typeof window < `u` &&
                   (window.__wanjuanConfigButlerDiagnostics = {
 	                    triggerWithTasks: (tasks) => maybeTriggerConfigButlerErrorDiagnosis(compactGlobalTasks(tasks), [], {
-	                      manual: !0,
+	                      manual: true,
 	                    }),
                     getState: () => configButlerErrorAssistant,
                     clear: () => setConfigButlerErrorAssistant(null),
                   });
               } catch {}
-              return !0;
+              return true;
             })(),
-	            configButlerStoredTaskScanEffect = !0,
+	            configButlerStoredTaskScanEffect = true,
 	            refreshGlobalTask = async (task, manualRefreshOptions = {}) => {
-	                let notify = manualRefreshOptions?.silent === !0 ? () => {} : showToast2;
+	                let notify = manualRefreshOptions?.silent === true ? () => {} : showToast2;
 	                try {
                     if (task.type === `audio` || task.customOutputType === `audio`) {
                       let audioUrl = WanJuanTtsMusicTaskAudioUrl(task);
@@ -23375,7 +23375,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 progress: 100,
                                 customOutputType: `audio`,
                                 resultUrl: audioUrl,
-                                errorMsg: void 0,
+                                errorMsg: undefined,
                               } :
                               task2,
                             ),
@@ -23392,9 +23392,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   audioName: node.data?.audioName || task.audioName || task.title || `音频结果`,
                                   resultData: task.customResultData || node.data?.resultData,
                                   text: audioUrl,
-                                  loading: !1,
+                                  loading: false,
                                   progress: 100,
-                                  errorMessage: void 0,
+                                  errorMessage: undefined,
                                 },
                               } :
                               node,
@@ -23422,7 +23422,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         if (looksLikeSunoTask && sunoApiUrl && sunoApiKey) {
                           let response = await fetch(WanJuanTtsMusicApiUrl(sunoApiUrl, `/suno/fetch/${encodeURIComponent(task.remoteTaskId)}`), {
                             method: `GET`,
-                            headers: WanJuanSunoHeaders(sunoApiKey, !1)
+                            headers: WanJuanSunoHeaders(sunoApiKey, false)
                           });
                           if (!response.ok) {
                             let errorText = await response.text().catch(() => response.statusText);
@@ -23460,7 +23460,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     resultUrl: refreshedAudioUrl,
                                     remoteTaskId: refreshedTaskId,
                                     clipId: refreshedClipId,
-                                    errorMsg: void 0,
+                                    errorMsg: undefined,
                                   } :
                                   task2,
                                 ),
@@ -23478,9 +23478,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                       text: refreshedAudioUrl,
                                       remoteTaskId: refreshedTaskId,
                                       clipId: refreshedClipId,
-                                      loading: !1,
+                                      loading: false,
                                       progress: 100,
-                                      errorMessage: void 0,
+                                      errorMessage: undefined,
                                     },
                                   } :
                                   node,
@@ -23514,7 +23514,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   ...node,
                                   data: {
                                     ...node.data,
-                                    loading: !0,
+                                    loading: true,
                                     resultData: refreshedResultData,
                                     remoteTaskId: refreshedTaskId,
                                     clipId: refreshedClipId,
@@ -23538,7 +23538,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 customResultData: refreshedResultData,
                                 remoteTaskId: refreshedTaskId,
                                 clipId: refreshedClipId,
-                                errorMsg: void 0,
+                                errorMsg: undefined,
                               } :
                               task2,
                             ),
@@ -23634,7 +23634,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		                                  customOutputType: `image`,
 		                                  customResultData: manualImageUrl,
 		                                  resultUrl: manualImageUrl,
-		                                  errorMsg: void 0,
+		                                  errorMsg: undefined,
 		                                } :
 		                                task2,
 		                              ),
@@ -23647,9 +23647,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 		                                  data: {
 		                                    ...node.data,
 		                                    imageUrl: manualImageUrl,
-		                                    loading: !1,
+		                                    loading: false,
 		                                    progress: 100,
-		                                    errorMessage: void 0,
+		                                    errorMessage: undefined,
 		                                  },
 		                                } :
 		                                node,
@@ -23684,7 +23684,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             customOutputType: `image`,
                             customResultData: existingImageUrl,
                             resultUrl: existingImageUrl,
-                            errorMsg: void 0,
+                            errorMsg: undefined,
                           } :
                           task2,
                         ),
@@ -23698,11 +23698,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             data: {
                               ...node.data,
                               taskId: task.id,
-                              seedanceTaskId: void 0,
+                              seedanceTaskId: undefined,
                               imageUrl: existingImageUrl,
-                              loading: !1,
+                              loading: false,
                               progress: 100,
-                              errorMessage: void 0,
+                              errorMessage: undefined,
                             },
                           } :
                           node,
@@ -23809,7 +23809,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   customOutputType: `image`,
                                   customResultData: imageUrl,
                                   resultUrl: imageUrl,
-                                  errorMsg: void 0,
+                                  errorMsg: undefined,
                                 } :
                                 task2,
                               ),
@@ -23823,11 +23823,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   data: {
                                     ...node.data,
                                     taskId: task.id,
-                                    seedanceTaskId: void 0,
+                                    seedanceTaskId: undefined,
                                     imageUrl: imageUrl,
-                                    loading: !1,
+                                    loading: false,
                                     progress: 100,
-                                    errorMessage: void 0,
+                                    errorMessage: undefined,
                                   },
                                 } :
                                 node,
@@ -23907,15 +23907,15 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 ...node,
                                 data: {
                                   ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-                                  taskId: void 0,
+                                  taskId: undefined,
                                   seedanceTaskId: task.id,
                                   tianjiExecuteId: task.id,
                                   videoUrl: videoUrl,
                                   thumbnailUrl: thumbUrl,
-                                  loading: !1,
+                                  loading: false,
                                   progress: 100,
-                                  errorMessage: void 0,
-                                  loadingText: void 0,
+                                  errorMessage: undefined,
+                                  loadingText: undefined,
                                 },
                               } :
                               node,
@@ -24022,7 +24022,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       );
                     if (response.ok) {
                       let data = await response.json(),
-                        isCompleted = !1,
+                        isCompleted = false,
                         status = task.status,
                         progress = task.progress,
                         errorMsg = task.errorMsg,
@@ -24043,7 +24043,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                              (item) =>
 	                              item &&
 	                              typeof item == `object` &&
-	                              (item.status || item.content || item.video_url || item.videoUrl || item.error || item.progress !== void 0),
+	                              (item.status || item.content || item.video_url || item.videoUrl || item.error || item.progress !== undefined),
 	                            ) || seedanceItems[0] :
 	                            null,
 	                          seedanceItemError = seedanceItem?.error,
@@ -24210,7 +24210,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           `success`,
                           `done`,
                         ].includes(status2) || videoUrl ?
-                          ((isCompleted = !0), (status = `completed`), (progress = 100), (resultUrl = videoUrl), (thumbnailUrl = thumbnailUrl2)) :
+                          ((isCompleted = true), (status = `completed`), (progress = 100), (resultUrl = videoUrl), (thumbnailUrl = thumbnailUrl2)) :
                           [
 	                            `failed`,
 	                            `fail`,
@@ -24231,15 +24231,15 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               `视频生成失败`)) :
 	                          ((status = `running`),
 	                            (progress =
-	                              seedanceItem?.progress !== void 0 &&
+	                              seedanceItem?.progress !== undefined &&
 	                              seedanceItem?.progress !== null ?
 	                              parseInt(seedanceItem.progress) :
-	                              data.progress !== void 0 && data.progress !== null ?
+	                              data.progress !== undefined && data.progress !== null ?
 	                              parseInt(data.progress) :
-                              data.data?.progress !== void 0 &&
+                              data.data?.progress !== undefined &&
                               data.data?.progress !== null ?
                               parseInt(data.data.progress) :
-                              data.content?.progress !== void 0 &&
+                              data.content?.progress !== undefined &&
                               data.content?.progress !== null ?
                               parseInt(data.content.progress) :
                               progress || 0));
@@ -24327,7 +24327,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             console.warn(`Failed to retrieve video content by contentPath`, error);
                           }
                         if ([`completed`, `complete`, `success`, `succeeded`, `done`].includes(statusText) || videoUrl)
-                          ((isCompleted = !0), (status = `completed`), (progress = 100), (resultUrl = videoUrl), (thumbnailUrl = thumbnailUrl2));
+                          ((isCompleted = true), (status = `completed`), (progress = 100), (resultUrl = videoUrl), (thumbnailUrl = thumbnailUrl2));
                         else if ([`failed`, `error`, `fail`, `expired`, `canceled`, `cancelled`, `rejected`].includes(statusText)) {
                           status = `failed`;
                           let errorMsg2 = `视频生成失败`;
@@ -24339,9 +24339,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         } else
                           ((status = `running`),
                             (progress =
-                              data.progress !== void 0 && data.progress !== null ?
+                              data.progress !== undefined && data.progress !== null ?
                               parseInt(data.progress) :
-                              data.data?.progress !== void 0 && data.data?.progress !== null ?
+                              data.data?.progress !== undefined && data.data?.progress !== null ?
                               parseInt(data.data.progress) :
                               progress || 0));
                       }
@@ -24369,13 +24369,13 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 ...node,
                                 data: {
                                   ...wanjuanClearProjectAssetBindingsFromData(node.data, [`videoUrl`, `thumbnailUrl`, `resultData`]),
-                                  taskId: wanjuanTaskUsesSeedanceSlot(task, node) ? void 0 : task.id,
-                                  seedanceTaskId: wanjuanTaskUsesSeedanceSlot(task, node) ? task.id : void 0,
+                                  taskId: wanjuanTaskUsesSeedanceSlot(task, node) ? undefined : task.id,
+                                  seedanceTaskId: wanjuanTaskUsesSeedanceSlot(task, node) ? task.id : undefined,
                                   videoUrl: resultUrl,
                                   thumbnailUrl: thumbnailUrl,
-                                  loading: !1,
+                                  loading: false,
                                   progress: 100,
-                                  errorMessage: void 0,
+                                  errorMessage: undefined,
                                 },
                               } :
                               node,
@@ -24390,7 +24390,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                }
 	              },
 	              wanjuanAutoRefreshGlobalTasksRef = useRef(globalTasks),
-	              wanjuanAutoRefreshGlobalTasksBusyRef = useRef(!1),
+	              wanjuanAutoRefreshGlobalTasksBusyRef = useRef(false),
 	              wanjuanAutoRefreshGlobalTaskRefreshRef = useRef(null),
 	              wanjuanAutoRefreshGlobalTasksCurrent = (wanjuanAutoRefreshGlobalTasksRef.current = globalTasks),
 	              wanjuanAutoRefreshGlobalTaskRefreshCurrent = (wanjuanAutoRefreshGlobalTaskRefreshRef.current = refreshGlobalTask),
@@ -24399,8 +24399,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                  if (wanjuanAutoRefreshGlobalTasksBusyRef.current) return;
 	                  let activeTasks = (wanjuanAutoRefreshGlobalTasksRef.current || [])
 	                    .filter((task) => {
-	                      if (!task || task.stoppedByUser || !task.id) return !1;
-	                      if (task.status !== `running` && task.status !== `pending`) return !1;
+	                      if (!task || task.stoppedByUser || !task.id) return false;
+	                      if (task.status !== `running` && task.status !== `pending`) return false;
 	                      let provider = String(task.provider || ``).toLowerCase(),
 	                        outputType = String(task.type || task.customOutputType || ``).toLowerCase(),
 	                        modelName = String(task.modelName || ``).toLowerCase();
@@ -24414,14 +24414,14 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                    .sort((taskA, taskB) => (taskB.createdAt || 0) - (taskA.createdAt || 0))
 	                    .slice(0, 5);
 	                  if (!activeTasks.length) return;
-	                  wanjuanAutoRefreshGlobalTasksBusyRef.current = !0;
+	                  wanjuanAutoRefreshGlobalTasksBusyRef.current = true;
 	                  (async () => {
 	                    try {
 	                      for (let task of activeTasks) await wanjuanAutoRefreshGlobalTaskRefreshRef.current?.(task, {
-	                        silent: !0
+	                        silent: true
 	                      });
 	                    } finally {
-	                      wanjuanAutoRefreshGlobalTasksBusyRef.current = !1;
+	                      wanjuanAutoRefreshGlobalTasksBusyRef.current = false;
 	                    }
 	                  })();
 	                };
@@ -24448,7 +24448,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   title: `新预设`,
                   prompt: ``,
                   type: `all`,
-                  enabled: !0
+                  enabled: true
                 }]);
               },
               handleRemovePreset = (index) => {
@@ -24668,7 +24668,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
         key.startsWith(PROJECT_CANVAS_STORAGE_PREFIX) ||
         key.startsWith(DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX) ||
         key.startsWith(PROJECT_ASSET_STORAGE_PREFIX) ?
-        void 0 :
+        undefined :
         (settings[key] = value);
       return {
         settings: settings,
@@ -24867,7 +24867,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	              for (let [key, value] of Object.entries(container)) {
 	                if (typeof value == `string` && key.endsWith(PROJECT_ASSET_REF_SUFFIX)) {
 	                  let baseKey = key.slice(0, -PROJECT_ASSET_REF_SUFFIX.length);
-	                  if (baseKey && container[baseKey] === void 0 && localforageModule.default)
+	                  if (baseKey && container[baseKey] === undefined && localforageModule.default)
 	                    try {
 	                      let storedValue = await localforageModule.default.getItem(value);
                       if (wanjuanShouldSkipHydratedProjectAssetValue(storedValue)) {
@@ -25077,21 +25077,21 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                 return mediaString;
               },
               getExistingProjectMediaPortableValue = async (binding) => {
-                  if (!binding || typeof binding != `object`) return void 0;
-                  if (binding.portableData !== void 0 && binding.portableData !== null && binding.portableData !== ``)
+                  if (!binding || typeof binding != `object`) return undefined;
+                  if (binding.portableData !== undefined && binding.portableData !== null && binding.portableData !== ``)
                     return binding.portableData;
                   if (typeof binding.portableDataRef == `string` && binding.portableDataRef && localforageModule.default)
                     try {
                       let storedValue = await localforageModule.default.getItem(binding.portableDataRef);
-                      if (storedValue !== void 0 && storedValue !== null && storedValue !== ``) return storedValue;
+                      if (storedValue !== undefined && storedValue !== null && storedValue !== ``) return storedValue;
                     } catch {}
-                  return void 0;
+                  return undefined;
                 },
                 shouldReuseProjectMediaBinding = (binding, signature) => {
-                  if (!binding || typeof binding != `object` || typeof signature != `string` || !signature) return !1;
-                  if (binding.sourceSignature === signature) return !0;
-                  if (binding.localPath && buildProjectMediaFileUrl(binding.localPath) === signature) return !0;
-                  return !1;
+                  if (!binding || typeof binding != `object` || typeof signature != `string` || !signature) return false;
+                  if (binding.sourceSignature === signature) return true;
+                  if (binding.localPath && buildProjectMediaFileUrl(binding.localPath) === signature) return true;
+                  return false;
                 },
                 isProjectMediaExternalReference = (value) =>
                 typeof value == `string` &&
@@ -25116,19 +25116,19 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                 [binding?.originalName, binding?.filename, data?.originalName, data?.label, data?.name]
                 .some((value) => /\.(png|jpe?g|webp|gif|bmp|svg|avif|heic|heif|tiff?|ico|mp4|webm|mov|m4v|avi|mkv|flv|mpeg|mpg|3gp|3g2|ts|mts|m2ts|wmv|mp3|wav|ogg|oga|m4a|aac|flac|opus|weba|amr|aiff?|caf)$/i.test(String(value || ``).trim())),
                 isExternalUploadedProjectAssetBinding = (binding, bindingKey, data = {}) => {
-                  if (!binding || typeof binding != `object`) return !1;
+                  if (!binding || typeof binding != `object`) return false;
                   let kind = String(binding.kind || getProjectMediaBindingKind(bindingKey, {
                     data: data
                   }) || ``).toLowerCase(),
                     mime = String(binding.mime || ``).toLowerCase(),
                     isMediaBinding = bindingKey === `imageUrl` || bindingKey === `videoUrl` || bindingKey === `audioUrl` || [`image`, `video`, `audio`].includes(kind) || /^image\//i.test(mime) || /^video\//i.test(mime) || /^audio\//i.test(mime);
-                  if (!isMediaBinding) return !1;
+                  if (!isMediaBinding) return false;
                   let origin = getProjectMediaBindingOrigin(binding, data).toLowerCase();
-                  if (!origin) return !1;
-                  if (EXTERNAL_PROJECT_ASSET_ORIGINS.has(origin)) return !0;
-                  if (GENERATED_PROJECT_ASSET_ORIGIN_PATTERN.test(origin)) return !1;
-                  if (origin === `media` && hasExternalUploadLikeFileName(binding, data)) return !0;
-                  return !1;
+                  if (!origin) return false;
+                  if (EXTERNAL_PROJECT_ASSET_ORIGINS.has(origin)) return true;
+                  if (GENERATED_PROJECT_ASSET_ORIGIN_PATTERN.test(origin)) return false;
+                  if (origin === `media` && hasExternalUploadLikeFileName(binding, data)) return true;
+                  return false;
                 },
                 isProjectMediaFileBackedBinding = (binding, bindingKind, fallbackKind) => {
                   let mime = String(binding?.mime || ``).toLowerCase(),
@@ -25172,7 +25172,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     )
                       return null;
                     if (bindingKey === `text` || bindingKey === `resultData`) {
-                      if (value === void 0 || value === null || value === ``) return null;
+                      if (value === undefined || value === null || value === ``) return null;
                       let textValue =
                         typeof value == `string` ?
                         value :
@@ -25230,7 +25230,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
                   })(),
                   reviveProjectMediaBindingValue = (binding) => {
-                    if (!binding) return void 0;
+                    if (!binding) return undefined;
                     let portableData = binding.portableData;
                     if (typeof portableData != `string`) return portableData;
                     if (binding.valueFormat === `json`)
@@ -25262,7 +25262,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                      let strippedBinding = stripLargeProjectMediaPortablePayload(binding, bindingKey, binding?.kind),
 	                        value = data[bindingKey],
 		                        fileExists = strippedBinding?.localPath ?
-		                        presenceMap.has(strippedBinding.localPath) && presenceMap.get(strippedBinding.localPath) !== !1 ||
+		                        presenceMap.has(strippedBinding.localPath) && presenceMap.get(strippedBinding.localPath) !== false ||
 		                        !!strippedBinding?.portableData ||
 		                        typeof value == `string` &&
 	                        !!value &&
@@ -25273,7 +25273,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                        !!strippedBinding?.portableData,
 	                        resolvedBinding = {
 	                          ...strippedBinding,
-	                          missing: strippedBinding?.localPath ? !fileExists : !1,
+	                          missing: strippedBinding?.localPath ? !fileExists : false,
 	                          lastCheckedAt: new Date().toISOString(),
 	                        };
 	                      (nextBindings[bindingKey] = resolvedBinding),
@@ -25284,14 +25284,14 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         let fileUrl = buildProjectMediaFileUrl(resolvedBinding.localPath);
                         fileUrl &&
                           (bindingKey === `audioUrl` ||
-                            data[bindingKey] === void 0 ||
+                            data[bindingKey] === undefined ||
                             data[bindingKey] === null ||
                             data[bindingKey] === `` ||
                             (typeof data[bindingKey] == `string` && data[bindingKey].startsWith(`data:`))) &&
                           (data[bindingKey] = fileUrl);
                       } else
-                        (data[bindingKey] === void 0 || data[bindingKey] === null || data[bindingKey] === ``) &&
-                        revivedValue !== void 0 &&
+                        (data[bindingKey] === undefined || data[bindingKey] === null || data[bindingKey] === ``) &&
+                        revivedValue !== undefined &&
                         (data[bindingKey] = revivedValue);
                     }
                     return {
@@ -25363,7 +25363,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           field: pathParts.join(`.`) || `file`,
                           kind: `binary`,
                           directory: context.directory,
-                          forceArchiveExistingFile: !0,
+                          forceArchiveExistingFile: true,
                           migrationId: context.migrationId,
                         });
                         if (archivedAsset?.ok && archivedAsset.localPath)
@@ -25418,7 +25418,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                kind: kind,
 	                                valueFormat: `file-url`,
 	                                sourceSignature: fileValue,
-	                                missing: !1,
+	                                missing: false,
 	                              };
 	                            } else {
 	                              delete data[bindingKey];
@@ -25452,7 +25452,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     kind: kind,
                                     assetId: binding.assetId,
                                     directory: persistOptions,
-                                    forceArchiveExistingFile: !0,
+                                    forceArchiveExistingFile: true,
                                     migrationId: options.migrationId,
                                   });
                                 if (!archivedAsset?.ok || !archivedAsset.localPath)
@@ -25466,12 +25466,12 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   ...binding,
                                   ...archivedAsset,
                                   field: bindingKey,
-                                  portableDataRef: void 0,
-                                  portableData: void 0,
+                                  portableDataRef: undefined,
+                                  portableData: undefined,
                                   value: archivedFileUrl,
                                   sourceSignature: archivedFileUrl,
                                   valueFormat: archivedAsset.valueFormat || binding.valueFormat,
-                                  missing: !1,
+                                  missing: false,
                                 };
                                 continue;
                               } catch (error) {
@@ -25489,14 +25489,14 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 ...strippedBinding,
                                 field: bindingKey,
                                 kind: kind,
-                                missing: !1,
+                                missing: false,
                               }),
                               (binding = bindings[bindingKey]));
                             continue;
                           }
                           let
                             existingPortableValue = await getExistingProjectMediaPortableValue(binding);
-                          if (existingPortableValue !== void 0 && shouldReuseProjectMediaBinding(binding, fieldValue)) {
+                          if (existingPortableValue !== undefined && shouldReuseProjectMediaBinding(binding, fieldValue)) {
                             bindings[bindingKey] = {
                               ...binding,
                               field: bindingKey,
@@ -25511,7 +25511,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             continue;
                           }
                           if (
-                            existingPortableValue !== void 0 &&
+                            existingPortableValue !== undefined &&
                             typeof fieldValue == `string` &&
                             isProjectMediaExternalReference(fieldValue)
                           ) {
@@ -25559,7 +25559,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 ...binding,
                                 ...persistedAsset,
                                 field: bindingKey,
-                                portableDataRef: fileBacked ? void 0 : storageKey,
+                                portableDataRef: fileBacked ? undefined : storageKey,
                                 sourceSignature: fileBacked ?
                                   buildProjectMediaFileUrl(persistedAsset.localPath) :
                                   sourceSignature,
@@ -25569,7 +25569,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   data.mediaSourceOrigin ||
                                   (bindingKey === `text` || bindingKey === `resultData` ? `generated-text` : `media`),
                                 originalName: binding.originalName || data.originalName || data.label || data.name || ``,
-                                missing: !1,
+                                missing: false,
                               });
                           } catch (error) {
                             console.warn(`Project media persist skipped`, error);
@@ -25630,7 +25630,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         migrationId: migrationId
                       }) :
                       {
-                        ok: !1,
+                        ok: false,
                         error: `MIGRATION_NOT_FOUND`
                       };
                   }),
@@ -25642,7 +25642,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         migrationId: migrationId
                       }) :
                       {
-                        ok: !1,
+                        ok: false,
                         error: `MIGRATION_NOT_FOUND`
                       };
                   }),
@@ -25682,7 +25682,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         projectId,
                         directory,
                         {
-                          forceRehomeExistingFiles: !0,
+                          forceRehomeExistingFiles: true,
                           migrationId: migrationId,
                         },
                       );
@@ -25694,11 +25694,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       let committed = await window.wanjuanDesktop.commitProjectMigration({
                         migrationId: migrationId,
                         references: references,
-                        requireGlobalBlobs: !0,
+                        requireGlobalBlobs: true,
                       });
                       if (!committed?.ok) throw Error(committed?.error || `Migration commit failed`);
                       return {
-                        ok: !0,
+                        ok: true,
                         migrationId: migrationId,
                         state: migratedState,
                         references: references,
@@ -25808,7 +25808,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   ]),
                   PROJECT_ASSET_MANIFEST_STORAGE_PREFIX = `external-asset-file:`,
                   buildBackupExternalAssetStorageValue = (file = {}) => ({
-                    __wanjuanExternalAssetFile: !0,
+                    __wanjuanExternalAssetFile: true,
                     filePath: file.filePath || ``,
                     filename: file.filename || ``,
                     originalName: file.originalName || ``,
@@ -25817,14 +25817,14 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     sha256: file.sha256 || ``,
                   }),
                   backupExternalAssetMatchesBinding = (asset = {}, binding = {}) => {
-                    if (!asset?.filePath) return !1;
+                    if (!asset?.filePath) return false;
                     let bindingSize = Number(binding?.size || 0),
                       assetSize = Number(asset?.size || 0);
-                    if (bindingSize && assetSize && bindingSize !== assetSize) return !1;
+                    if (bindingSize && assetSize && bindingSize !== assetSize) return false;
                     let bindingHash = String(binding?.sha256 || ``).trim().toLowerCase(),
                       assetHash = String(asset?.sha256 || ``).trim().toLowerCase();
-                    if (bindingHash && assetHash && bindingHash !== assetHash) return !1;
-                    return !0;
+                    if (bindingHash && assetHash && bindingHash !== assetHash) return false;
+                    return true;
                   },
                   applyExternalAssetBundleToBackupPayload = (backup, importResult) => {
                     if (!importResult?.files?.length || !backup?.modules?.projects?.localforage) return backup;
@@ -25856,7 +25856,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             size: matchedFile.size || binding.size,
                             sha256: matchedFile.sha256 || binding.sha256,
                             mime: matchedFile.mime || binding.mime,
-                            missing: !1,
+                            missing: false,
                           },
                             assets[storageKey] = buildBackupExternalAssetStorageValue(matchedFile));
                         }
@@ -25946,7 +25946,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         projectState = await globalThis.prepareProjectMediaStateForPersistence(projectState, projectId, ``);
                         let externalizedState = await externalizeProjectCanvasState(projectState, projectId, {
                           assetMap: assetMap,
-                          persist: !1,
+                          persist: false,
                         });
                         ((canvasStates[projectId] = externalizedState), extractProjectAssetRefs(externalizedState).forEach((assetRef) => assetRefs.add(assetRef)));
                       }
@@ -26078,7 +26078,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       for (let storageKey of assetRefs)
                         try {
                           let storedValue = await localforageModule.default.getItem(storageKey);
-                          storedValue !== void 0 && (canvasStates[storageKey] = storedValue);
+                          storedValue !== undefined && (canvasStates[storageKey] = storedValue);
                         } catch {}
                       return canvasStates;
                     },
@@ -26490,8 +26490,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   TRANSIT_RESOURCES_STORAGE_KEY,
                                 ) ?
                                 cloneBackupValue(resourcePayload[TRANSIT_RESOURCES_STORAGE_KEY]) :
-                                void 0,
-                                mergedTransitResources = void 0,
+                                undefined,
+                                mergedTransitResources = undefined,
                                 pendingWrites = [];
                               if (restoreSettings || restoreProjects || restoreResources || shouldRestoreAgents)
                                 await new Promise((resolvePromise, reject) => {
@@ -26540,13 +26540,13 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                         }));
                                     }
                                     if (restoreResources)
-                                      transitResources2 !== void 0 ?
+                                      transitResources2 !== undefined ?
                                       ((mergedTransitResources = cloneBackupValue(transitResources2)),
                                         (storage[TRANSIT_RESOURCES_STORAGE_KEY] = cloneBackupValue(mergedTransitResources))) :
                                       (delete storage[TRANSIT_RESOURCES_STORAGE_KEY],
                                         removedKeys.push(TRANSIT_RESOURCES_STORAGE_KEY),
-                                        (mergedTransitResources = void 0));
-                                    else if (restoreProjects && transitResources2 !== void 0) {
+                                        (mergedTransitResources = undefined));
+                                    else if (restoreProjects && transitResources2 !== undefined) {
                                       let transitResourceEntries = Array.isArray(storage[TRANSIT_RESOURCES_STORAGE_KEY]) ?
                                         storage[TRANSIT_RESOURCES_STORAGE_KEY] :
                                         [];
@@ -26657,9 +26657,9 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   await localforageModule.default.setItem(storageKey, assetEntry);
                                 }
                               }
-                              (restoreResources || (restoreProjects && transitResources2 !== void 0)) &&
+                              (restoreResources || (restoreProjects && transitResources2 !== undefined)) &&
                               localforageModule.default &&
-                                (mergedTransitResources !== void 0 ?
+                                (mergedTransitResources !== undefined ?
                                   await localforageModule.default.setItem(TRANSIT_RESOURCES_STORAGE_KEY, mergedTransitResources) :
                                   restoreResources && (await localforageModule.default.removeItem(TRANSIT_RESOURCES_STORAGE_KEY)));
                               let restoreReport = buildBackupRestoreReport({
@@ -26897,7 +26897,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
           ),
           mime: `application/json`,
           filename: exportFilename,
-          saveAsFolder: !0,
+          saveAsFolder: true,
           folderName: exportFolderName,
           externalAssetFiles,
           externalAssetFolderName,
@@ -27094,7 +27094,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                        }),
 	                        jsx(`button`, {
 	                          "aria-pressed": resourceFavoriteOnly,
-	                          "data-active": resourceFavoriteOnly ? `true` : void 0,
+	                          "data-active": resourceFavoriteOnly ? `true` : undefined,
 	                          className: `wanjuan-resource-favorite-filter w-8 h-8 rounded-lg transition-colors inline-flex items-center justify-center text-sm ${resourceFavoriteOnly ? `wanjuan-resource-favorite-filter-active` : ``}`,
 	                          title: resourceFavoriteOnly ? wanjuanT(`显示全部收藏筛选`) : wanjuanT(`只看收藏`),
 	                          onClick: () => {
@@ -27215,7 +27215,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     jsx(`video`, {
                                       src: resource.url,
                                       className: `w-full h-full object-contain`,
-                                      controls: !0,
+                                      controls: true,
                                     }) :
                                     resource.type.startsWith(`audio`) ?
                                     jsxs(`div`, {
@@ -27232,7 +27232,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                         }),
                                         jsx(`audio`, {
                                           src: resource.url,
-                                          controls: !0,
+                                          controls: true,
                                           className: `w-full`,
                                         }),
                                       ],
@@ -27490,13 +27490,13 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           ],
                         }),
                         jsx(`button`, {
-                          onClick: () => setProjectGroupPanelOpen(!0),
+                          onClick: () => setProjectGroupPanelOpen(true),
                           className: `bg-[#2a2a2a] text-gray-300 text-xs rounded px-2 py-1 border border-[#333] hover:border-blue-500 hover:text-blue-300`,
                           title: `项目分组管理`,
                           children: `分组`,
                         }),
                         jsx(`button`, {
-                          onClick: () => runStorageMigrationForProject(activeProjectId, !1),
+                          onClick: () => runStorageMigrationForProject(activeProjectId, false),
                           className: `bg-[#2a2a2a] text-gray-300 text-[10px] rounded px-2 py-1 border border-[#333] hover:border-blue-500 hover:text-blue-300`,
                           title: projects.find((project) => project.id === activeProjectId)?.storageDetail || `优先优化此项目`,
                           children: projectStorageLabel(projects.find((project) => project.id === activeProjectId)),
@@ -27506,7 +27506,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             let activeProject = projects.find((project) => project.id === activeProjectId),
                               currentProjectGroupId = activeProject?.groupId || ``;
                             setNewProjectGroupId(projectGroupIds.has(currentProjectGroupId) ? currentProjectGroupId : ``);
-                            setProjectMenuOpen(!0);
+                            setProjectMenuOpen(true);
                           },
                           className: `text-gray-400 hover:text-white p-1`,
                           title: `新建项目`,
@@ -27681,7 +27681,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   children: `清空已结束`,
                                 }),
                                 jsx(`button`, {
-                                  onClick: () => setIsOpen(!1),
+                                  onClick: () => setIsOpen(false),
                                   className: `text-gray-400 hover:text-white wanjuan-task-drawer-action`,
                                   children: `✕`,
                                 }),
@@ -27873,7 +27873,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           className: `flex items-center gap-1`,
                           children: [
                             jsx(`div`, {
-                              onClick: () => setConfigButlerErrorAssistantMinimized(!0),
+                              onClick: () => setConfigButlerErrorAssistantMinimized(true),
                               role: `button`,
                               tabIndex: 0,
                               className: `wanjuan-config-error-assistant-action rounded px-2 py-1 text-[11px]`,
@@ -27889,7 +27889,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             }),
                             jsx(`div`, {
                               onClick: () => {
-                                setConfigButlerErrorAssistantMinimized(!1);
+                                setConfigButlerErrorAssistantMinimized(false);
                                 setConfigButlerErrorAssistant(null);
                               },
                               role: `button`,
@@ -28057,7 +28057,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                       children: `问题字段`,
                                     }),
                                     jsx(`div`, {
-                                      onClick: () => setConfigButlerManualProtocolOpen(!1),
+                                      onClick: () => setConfigButlerManualProtocolOpen(false),
                                       role: `button`,
                                       tabIndex: 0,
                                       className: `wanjuan-config-error-assistant-action rounded px-2 py-1`,
@@ -28128,7 +28128,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     color: configErrorAssistantTheme.textPrimary,
                                     WebkitTextFillColor: configErrorAssistantTheme.textPrimary,
                                   },
-                                  spellCheck: !1,
+                                  spellCheck: false,
                                 }),
                                 jsx(`div`, {
                                   onClick: applyConfigButlerManualProtocolFix,
@@ -28257,7 +28257,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               },
                               children: `稍后处理`,
                             }),
-                            configButlerErrorAssistant.diagnosis?.shouldApplyPatch === !0 &&
+                            configButlerErrorAssistant.diagnosis?.shouldApplyPatch === true &&
                             configButlerErrorAssistant.diagnosis?.suggestedProtocol?.config &&
                             configButlerErrorAssistant.diagnosis?.suggestedProtocol?.config?.requestType !== `custom` &&
                             configButlerErrorAssistant.status !== `applied` &&
@@ -28393,7 +28393,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             ],
                           }),
                           jsx(`button`, {
-                            onClick: () => setProjectGroupPanelOpen(!1),
+                            onClick: () => setProjectGroupPanelOpen(false),
                             className: `text-gray-400 hover:text-white text-lg leading-none`,
                             children: `×`,
                           }),
@@ -28465,7 +28465,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   children: [
                                     jsx(`button`, {
                                       onClick: () => {
-                                        (setActiveProjectId(project.id), setProjectGroupPanelOpen(!1));
+                                        (setActiveProjectId(project.id), setProjectGroupPanelOpen(false));
                                       },
                                       className: `flex-1 text-left text-xs truncate ${project.id === activeProjectId ? `text-blue-300 font-semibold` : `text-gray-200 hover:text-white`}`,
                                       title: project.name,
@@ -28529,7 +28529,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                             setEditingProjectGroupName(``));
                                       },
                                       className: `wanjuan-project-group-input flex-1 min-w-0 bg-[#15181d] border border-blue-500/60 rounded px-2 py-1 text-xs text-gray-100 outline-none`,
-                                      autoFocus: !0,
+                                      autoFocus: true,
                                     }) :
                                     jsx(`span`, {
                                       className: `flex-1 text-xs font-semibold text-gray-200 truncate`,
@@ -28583,7 +28583,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                       children: [
                                         jsx(`button`, {
                                           onClick: () => {
-                                            (setActiveProjectId(project.id), setProjectGroupPanelOpen(!1));
+                                            (setActiveProjectId(project.id), setProjectGroupPanelOpen(false));
                                           },
                                           className: `flex-1 text-left text-xs truncate ${project.id === activeProjectId ? `text-blue-300 font-semibold` : `text-gray-200 hover:text-white`}`,
                                           title: project.name,
@@ -28633,7 +28633,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         placeholder: `项目名称`,
                         value: newProjectName,
                         onChange: (event) => setNewProjectName(event.target.value),
-                        autoFocus: !0,
+                        autoFocus: true,
                       }),
                       jsxs(`label`, {
                         className: `block mb-3`,
@@ -28667,7 +28667,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         children: [
                           jsx(`button`, {
                             onClick: () => {
-                              setProjectMenuOpen(!1);
+                              setProjectMenuOpen(false);
                               setNewProjectGroupId(``);
                             },
                             className: `text-gray-400 hover:text-white text-xs px-2 py-1`,
@@ -28702,7 +28702,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         onKeyDown: (event) => {
                           event.key === `Enter` && ConfirmRenameProject();
                         },
-                        autoFocus: !0,
+                        autoFocus: true,
                       }),
                       jsxs(`div`, {
                         className: `flex justify-end gap-2`,
@@ -28861,7 +28861,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               children: [
                                 jsxs(`div`, {
                                   className: `absolute inset-y-3 left-0 w-[3px] rounded-r-full ${selectedAgentId === agent.id ? `` : `bg-transparent group-hover:bg-[#3b4554]`}`,
-                                  style: selectedAgentId === agent.id ? { background: agentTheme.accentText } : void 0,
+                                  style: selectedAgentId === agent.id ? { background: agentTheme.accentText } : undefined,
                                 }),
                                 jsxs(`div`, {
                                   className: `flex items-start gap-3`,
@@ -29080,7 +29080,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           className: `flex items-center gap-2 flex-shrink-0 min-w-0`,
                           children: [
                             jsx(`button`, {
-                              onClick: () => setAgentConfigOpen(!0),
+                              onClick: () => setAgentConfigOpen(true),
                               className: `inline-flex items-center gap-2 rounded-full border border-[#54565a] bg-[linear-gradient(180deg,rgba(72,74,78,0.82),rgba(56,58,61,0.92))] px-3 py-1.5 text-[11px] text-[#d7dadd] hover:border-[#6a6c70]/60 hover:text-white transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
                               title: `编辑智能体配置`,
                               children: `编辑`,
@@ -29507,11 +29507,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   ref: agentAttachmentInputRef,
                                   type: `file`,
 	                                  accept: `image/*,video/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.json,.rtf,application/pdf,text/plain,text/markdown,application/json`,
-                                  multiple: !0,
+                                  multiple: true,
 	                                  className: `hidden`,
 	                                  onChange: handleAgentReferenceSelection,
 	                                }),
-		                                !1 && agentAttachments.length > 0 &&
+		                                false && agentAttachments.length > 0 &&
 		                                jsx(`div`, {
 	                                  className: `custom-scrollbar`,
 	                                  style: {
@@ -29574,7 +29574,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                          className: `inline-flex items-center rounded-full border border-[#54565a] bg-[linear-gradient(180deg,rgba(72,74,78,0.82),rgba(56,58,61,0.92))] px-3 py-1.5 text-[11px] text-[#d7dadd] hover:border-[#6a6c70]/60 hover:text-white transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`,
 	                                          children: `＋ 参考`,
 	                                        }),
-	                                        !1 && agentAttachments.length > 0 &&
+	                                        false && agentAttachments.length > 0 &&
 	                                        jsx(`div`, {
 	                                          className: `flex max-w-[42vw] items-center gap-2 overflow-x-auto py-1 custom-scrollbar`,
 	                                          style: {
@@ -29872,7 +29872,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               ],
                             }),
                             jsx(`button`, {
-                              onClick: () => setAgentConfigOpen(!1),
+                              onClick: () => setAgentConfigOpen(false),
                               className: `inline-flex items-center justify-center rounded-full px-4 py-1.5 text-[11px] font-medium transition-colors`,
                               style: {
                                 border: `1px solid ${agentTheme.accentBorder}`,
@@ -31016,7 +31016,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                              onClick: async (event) => {
 	                                                let button = event.currentTarget;
 	                                                if (button.disabled) return;
-	                                                button.disabled = !0;
+	                                                button.disabled = true;
 	                                                let oldText = button.textContent;
 	                                                button.textContent = `检查中…`;
 	                                                try {
@@ -31024,7 +31024,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                                } catch (error) {
 	                                                  console.warn(`check for updates failed`, error);
 	                                                } finally {
-	                                                  button.disabled = !1;
+	                                                  button.disabled = false;
 	                                                  button.textContent = oldText || `检查更新`;
 	                                                }
 	                                              },
@@ -31074,7 +31074,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   jsx(`button`, {
                                     onClick: handleAddPreset,
                                     className: `text-xs px-3 py-1.5 rounded-lg transition-colors bg-[#222] text-gray-300 hover:bg-[#2a2a2a] hover:text-blue-400 wanjuan-settings-button`,
-                                    disabled: !1,
+                                    disabled: false,
                                     title: `添加预设`,
                                     children: `+ 添加新预设`,
                                   }),
@@ -31095,7 +31095,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                               children: jsx(
                                                 `input`, {
                                                   type: `checkbox`,
-                                                  checked: rule.enabled !== !1,
+                                                  checked: rule.enabled !== false,
                                                   onChange: (event) =>
                                                     updatePresetField(
                                                       promptIndex,
@@ -31503,7 +31503,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                     }),
                                                     jsx(`button`, {
                                                       type: `button`,
-                                                      onClick: () => setQiniuJsonImportOpen(!1),
+                                                      onClick: () => setQiniuJsonImportOpen(false),
                                                       className: `text-[11px] text-gray-500 hover:text-gray-200`,
                                                       children: `关闭`,
                                                     }),
@@ -31527,7 +31527,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                     jsx(`button`, {
                                                       type: `button`,
                                                       onClick: () => {
-                                                        setQiniuJsonImportOpen(!1);
+                                                        setQiniuJsonImportOpen(false);
                                                         setQiniuJsonImportText(``);
                                                       },
                                                       className: `px-3 py-1.5 text-xs bg-[#222] hover:bg-[#333] text-gray-300 rounded transition-colors`,
@@ -31548,7 +31548,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                                             domain: parsedConfig.domain || parsedConfig.publicBaseUrl || parsedConfig.publicUrlBase || prevConfig.domain || ``,
                                                             prefix: parsedConfig.prefix || parsedConfig.objectPrefix || prevConfig.prefix || `wanjuan/seedance`,
                                                           }));
-                                                          setQiniuJsonImportOpen(!1);
+                                                          setQiniuJsonImportOpen(false);
                                                           setQiniuJsonImportText(``);
                                                           showToast2(`七牛云配置已导入并自动保存`);
                                                         } catch (error) {
@@ -31975,7 +31975,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                          jsx(`input`, {
 	                                            className: `flex-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-all wanjuan-settings-control`,
 	                                            value: downloadDirectory,
-	                                            readOnly: !0,
+	                                            readOnly: true,
 	                                            placeholder: `默认保存到“下载/万卷灵境”`,
 	                                          }),
 	                                          jsx(`button`, {
@@ -32055,7 +32055,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                              jsx(`input`, {
 	                                                type: `checkbox`,
 	                                                checked: autoDownloadGeneratedResults,
-	                                                readOnly: !0,
+	                                                readOnly: true,
 	                                                "data-wanjuan-auto-download-toggle": `true`,
 	                                              }),
 	                                            ],
@@ -32177,7 +32177,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 				                                  jsx(`button`, {
                                     onClick: handleAddPreset,
                                     className: `text-xs px-3 py-1.5 rounded-lg transition-colors bg-[#222] text-gray-300 hover:bg-[#2a2a2a] hover:text-blue-400 wanjuan-settings-button`,
-                                    disabled: !1,
+                                    disabled: false,
                                     title: `添加预设`,
                                     children: `+ 添加新预设`,
                                   }),
@@ -32197,7 +32197,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                               className: `flex flex-col gap-2 pt-1.5`,
                                               children: jsx(`input`, {
                                                 type: `checkbox`,
-                                                checked: rule.enabled !== !1,
+                                                checked: rule.enabled !== false,
                                                 onChange: (event) =>
                                                   updatePresetField(
                                                     index,
@@ -32930,7 +32930,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                               }),
                             ],
                           }),
-                          !1 &&
+                          false &&
                           activeSettingsTab === `api` &&
                           jsxs(`div`, {
                             className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
@@ -32962,7 +32962,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                       }),
                                       jsx(`button`, {
                                         type: `button`,
-                                        onClick: () => scanJixinGatewayModels({ force: !0 }),
+                                        onClick: () => scanJixinGatewayModels({ force: true }),
                                         disabled: jixinModelScanBusy,
                                         className: `px-3 py-1.5 rounded-lg border border-[#333] bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] disabled:opacity-50 transition-colors`,
                                         children: jixinModelScanBusy ? `扫描中` : `立即扫描`,
@@ -33523,7 +33523,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                      }) :
 	                                      jsx(`button`, {
 	                                        type: `button`,
-	                                        onClick: () => setConfigButlerBatchModalOpen(!0),
+	                                        onClick: () => setConfigButlerBatchModalOpen(true),
 	                                        disabled: !configButlerBatchItems.length,
 	                                        className: `px-4 py-2 rounded-lg bg-[#222] text-gray-200 text-xs font-medium hover:bg-[#2a2a2a] disabled:opacity-50 transition-colors`,
 	                                        children: `查看批量识别结果`,
@@ -34916,7 +34916,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                    }),
 	                                    jsx(`button`, {
 	                                      type: `button`,
-	                                      onClick: () => setConfigButlerBatchModalOpen(!1),
+	                                      onClick: () => setConfigButlerBatchModalOpen(false),
 	                                      className: `px-3 py-1.5 rounded-lg bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] transition-colors`,
 	                                      children: `关闭`,
 	                                    }),
@@ -35076,7 +35076,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
 	                                      children: [
 	                                        jsx(`button`, {
 	                                          type: `button`,
-	                                          onClick: () => setConfigButlerBatchModalOpen(!1),
+	                                          onClick: () => setConfigButlerBatchModalOpen(false),
 	                                          className: `px-4 py-2 rounded-lg bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] transition-colors`,
 	                                          children: `取消`,
 	                                        }),
@@ -35920,7 +35920,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       }),
                     ],
                   }),
-                  !0 === !1 &&
+                  true === false &&
                   jsx(`div`, {
                     className: `rounded-lg border border-[#3f4651] bg-[#252a32] px-4 py-3 text-xs text-gray-400 flex-shrink-0`,
                     children: ``,
@@ -36055,8 +36055,8 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               }),
               jsx(`video`, {
                 src: wjResourceFullscreen.url,
-                controls: !0,
-                autoPlay: !0,
+                controls: true,
+                autoPlay: true,
                 className: `max-w-[96vw] max-h-[92vh] object-contain rounded-lg shadow-2xl`,
                 style: {
                   maxWidth: `96vw`,
@@ -36077,7 +36077,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
         jsx(`div`, {
           className: `wanjuan-system-notification-overlay`,
           onClick: (event) => {
-            event.target === event.currentTarget && setSystemNotificationPanelOpen(!1);
+            event.target === event.currentTarget && setSystemNotificationPanelOpen(false);
           },
           children: jsxs(`div`, {
             className: `wanjuan-system-notification-panel`,
@@ -36106,14 +36106,14 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         disabled: settingsNotificationChecking,
                         onClick: () => refreshSystemNotifications({
                           source: `panel-refresh`,
-                          silent: !1,
+                          silent: false,
                         }),
                         children: settingsNotificationChecking ? `刷新中` : `刷新`,
                       }),
                       jsx(`button`, {
                         type: `button`,
                         className: `wanjuan-system-notification-close-button`,
-                        onClick: () => setSystemNotificationPanelOpen(!1),
+                        onClick: () => setSystemNotificationPanelOpen(false),
                         title: `关闭`,
                         children: `×`,
                       }),
@@ -36259,7 +36259,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
           }),
           jsx(`button`, {
             onClick: () => {
-              (setIsPluginEnv(!0), setIsLoading(!1));
+              (setIsPluginEnv(true), setIsLoading(false));
             },
             className: `text-blue-500 hover:text-blue-400 underline`,
             children: `开发模式：模拟进入`,
