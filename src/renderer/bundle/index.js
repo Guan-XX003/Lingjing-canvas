@@ -342,6 +342,9 @@ import { useVideoGeneration } from "../hooks/useVideoGeneration";
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { useCustomNodeGeneration } from "../hooks/useCustomNodeGeneration";
 import { useUngroupNode } from "../hooks/useUngroupNode";
+import { useSelectedRefSources } from "../hooks/useSelectedRefSources";
+import { useCanvasNodes } from "../hooks/useCanvasNodes";
+import { useResourceLocalUrlMap } from "../hooks/useResourceLocalUrlMap";
 import { useHandleEdgeClick } from "../hooks/useHandleEdgeClick";
 import { useMultiConnect } from "../hooks/useMultiConnect";
 import { useHandleConnect } from "../hooks/useHandleConnect";
@@ -1155,42 +1158,7 @@ function WanJuanAppCanvas({
 	    edgesRef = useRef(edges),
 	    projectIdRef = useRef(projectId),
 	    shouldFitViewRef = useRef(shouldFitView);
-	  let wanjuanResourceLocalUrlMap = useMemo(() => {
-	      let localResourceMap = new Map();
-	      (Array.isArray(resources) ? resources : []).forEach((resource) => {
-	        if (!resource || typeof resource != `object`) return;
-	        let localUrl =
-	          typeof resource.url == `string` && /^file:\/\//i.test(resource.url) ?
-	          resource.url :
-	          buildProjectMediaFileUrl(resource.localPath || resource.projectAssetBinding?.localPath || ``);
-	        if (!localUrl) return;
-	        [
-	          resource.originalUrl,
-	          resource.remoteUrl,
-	          resource.sourceUrl,
-	          resource.resultUrl,
-	          resource.mediaUrl,
-	          resource.projectAssetBinding?.sourceSignature,
-	          typeof resource.url == `string` && !/^file:\/\//i.test(resource.url) ? resource.url : ``,
-	        ].forEach((candidate) => {
-	          typeof candidate == `string` && candidate && candidate !== localUrl && localResourceMap.set(candidate, {
-	            url: localUrl,
-	            resource,
-	          });
-	        });
-	        resource.projectAssetBinding?.assetId &&
-	          localResourceMap.set(`asset:${resource.projectAssetBinding.assetId}`, {
-	            url: localUrl,
-	            resource,
-	          });
-	        resource.projectAssetBinding?.sha256 &&
-	          localResourceMap.set(`sha256:${resource.projectAssetBinding.sha256}`, {
-	            url: localUrl,
-	            resource,
-	          });
-	      });
-	      return localResourceMap;
-	    }, [resources]),
+	  let wanjuanResourceLocalUrlMap = useResourceLocalUrlMap({ resources, useMemo }).wanjuanResourceLocalUrlMap,
 	    resolveWanjuanPlayableTaskUrl = (currentValue, taskValue) => {
 	      let current = typeof currentValue == `string` ? currentValue : ``,
 	        task = typeof taskValue == `string` ? taskValue : ``,
@@ -2809,55 +2777,8 @@ function WanJuanAppCanvas({
   let autoLayout = useAutoLayout({ dagreModule, edgesRef, fitView, nodesRef, setNodes, showToast }).autoLayout,
     groupSelectedNodes = useGroupNodes({ nodesRef, setNodes, showToast }).groupSelectedNodes,
     ungroupNode = useUngroupNode({ setNodes, showToast }).ungroupNode;
-	  let wanjuanSelectedReferenceSourcesByTarget = useMemo(() => {
-	      let edgesByTarget = new Map();
-	      let nodeById = new Map(nodes.map((node) => [node.id, node]));
-	      return (
-	        edges.forEach((edge) => {
-	          if (
-	            !edge?.selected ||
-	            edge.animated ||
-	            !edge.target ||
-	            !edge.source ||
-	            nodeById.get(edge.target)?.data?.loading
-	          )
-	            return;
-	          let sources = edgesByTarget.get(edge.target) || [];
-	          sources.includes(edge.source) || sources.push(edge.source);
-	          edgesByTarget.set(edge.target, sources);
-	        }),
-	        edgesByTarget
-	      );
-	    }, [edges, nodes]),
-		    wanjuanCanvasNodes = useMemo(
-		      () =>
-		      nodes.map((node) => {
-	        let referenceSources = wanjuanSelectedReferenceSourcesByTarget.get(node.id),
-	          renderMode = WanJuanComputeNodeRenderMode(node, wanjuanViewport, wanjuanViewportSize),
-	          data = node.data || {},
-	          nextReferenceSources = referenceSources && referenceSources.length ? referenceSources : undefined,
-	          hasReferenceChange =
-	            (nextReferenceSources && data.wanjuanSelectedReferenceSourceIds !== nextReferenceSources) ||
-	            (!nextReferenceSources && Array.isArray(data.wanjuanSelectedReferenceSourceIds)),
-	          hasRenderModeChange = data.wanjuanRenderMode !== renderMode;
-	        return hasReferenceChange || hasRenderModeChange ?
-	          {
-	            ...node,
-	            data: {
-	              ...data,
-	              ...(nextReferenceSources ? {
-	                wanjuanSelectedReferenceSourceIds: nextReferenceSources
-	              } : {
-	                wanjuanSelectedReferenceSourceIds: undefined
-	              }),
-	              wanjuanRenderMode: renderMode,
-	              wanjuanRenderRuntime: true
-	            },
-	          } :
-	          node;
-		      }),
-		      [nodes, wanjuanSelectedReferenceSourcesByTarget, wanjuanViewport, wanjuanViewportSize],
-		    );
+	  let wanjuanSelectedReferenceSourcesByTarget = useSelectedRefSources({ edges, nodes, useMemo }).wanjuanSelectedReferenceSourcesByTarget,
+		    wanjuanCanvasNodes = useCanvasNodes({ WanJuanComputeNodeRenderMode, nodes, useMemo, wanjuanSelectedReferenceSourcesByTarget, wanjuanViewport, wanjuanViewportSize }).wanjuanCanvasNodes;
 		  const getShortcutNodePosition = () => {
 		      let rect = wrapperRef.current?.getBoundingClientRect(),
 		        activeMenu =
