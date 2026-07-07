@@ -2024,9 +2024,9 @@ function WanJuanAppCanvas({
               .sort((taskB, taskA) => (taskA.createdAt || 0) - (taskB.createdAt || 0))[0];
             let newerNodeTask = wanjuanNewestNodeTask(GlobalTasks, node, projectIdRef.current, matchedTask);
             newerNodeTask && (matchedTask = newerNodeTask);
-            let o = !1;
+            let taskWasReset = !1;
             if (matchedTask && !wanjuanVideoTaskCanAttachToNode(matchedTask, node, projectIdRef.current))
-              ((matchedTask = null), (o = !0));
+              ((matchedTask = null), (taskWasReset = !0));
             if (!matchedTask && !taskId) {
               let promptText = String(node.data?.prompt || ``).trim();
               matchedTask =
@@ -2036,7 +2036,7 @@ function WanJuanAppCanvas({
                 .sort((taskB, taskA) => (taskA.createdAt || 0) - (taskB.createdAt || 0))[0] :
                 null;
             }
-            if (o && (node.type === `seedanceNode` || node.type === `tongyiWanxiangNode`)) {
+            if (taskWasReset && (node.type === `seedanceNode` || node.type === `tongyiWanxiangNode`)) {
               let updatedData = {
                 ...node.data,
                 taskId: void 0,
@@ -2052,7 +2052,7 @@ function WanJuanAppCanvas({
                 data: updatedData,
               });
             }
-            if (o) return node;
+            if (taskWasReset) return node;
             if (!matchedTask) return node;
             if (matchedTask.stoppedByUser) return node;
             let updatedData = {
@@ -2326,8 +2326,8 @@ function WanJuanAppCanvas({
       },
       [setMenuPosition],
     ),
-    ft = useCallback(
-      (event, t) => {
+    handleNodeContextMenu = useCallback(
+      (event, contextNode) => {
         event.preventDefault();
         let containerRect = wrapperRef.current?.getBoundingClientRect();
         containerRect &&
@@ -2337,14 +2337,14 @@ function WanJuanAppCanvas({
               menuOrigin: event.clientY - containerRect.top > containerRect.height / 2 ? `bottom` : `top`,
               menuBottom: containerRect.height - (event.clientY - containerRect.top),
               type: `node`,
-              nodeId: t.id,
+              nodeId: contextNode.id,
             }),
             setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1));
       },
       [setMenuPosition],
     ),
-    pt = useCallback(
-      (event, t) => {
+    handleSelectionContextMenu = useCallback(
+      (event, contextSelectionNode) => {
         event.preventDefault();
         let containerRect = wrapperRef.current?.getBoundingClientRect();
         containerRect &&
@@ -2359,7 +2359,7 @@ function WanJuanAppCanvas({
       },
       [setMenuPosition],
     ),
-    mt = useCallback(
+    handleDelayedSelectionMenu = useCallback(
       (event) => {
         setTimeout(() => {
           if (nodesRef.current.filter((node) => node.selected).length > 1) {
@@ -2378,7 +2378,7 @@ function WanJuanAppCanvas({
       },
       [setMenuPosition],
     ),
-    ht = useCallback(
+    handleMultiConnectToTarget = useCallback(
       (event, targetNode) => {
         multiConnectIds &&
           multiConnectIds.length > 0 &&
@@ -2408,8 +2408,8 @@ function WanJuanAppCanvas({
     handleCancel = useCallback(() => {
       (setMenuPosition(null), setResourceSubmenuOpen(!1), setResourceSubmenuOpenAlt(!1), multiConnectIds && (setMultiConnectIds(null), showToast(`已取消多项连接`)));
     }, [setMenuPosition, multiConnectIds, showToast]),
-    _t = useCallback((e, t) => {}, []),
-    handleCancel2 = useCallback((e) => {}, []),
+    handleNoop = useCallback((noopArgA, noopArgB) => {}, []),
+    handleCancel2 = useCallback((unusedEvent) => {}, []),
     handleCrop = useCallback((nodeId, imageUrl) => {
       setImageEditState({
         id: nodeId,
@@ -2418,7 +2418,7 @@ function WanJuanAppCanvas({
       });
     }, []),
     handleSplitOne = useCallback(
-      async (nodeId, imageUrl, gridSize, sliceIndex, i) => {
+      async (nodeId, imageUrl, gridSize, sliceIndex, attemptIndex) => {
           try {
             let imageSrc = imageUrl;
             if (!imageSrc) {
@@ -2471,7 +2471,7 @@ function WanJuanAppCanvas({
                   onCrop: handleCrop,
                   onZoom: openImagePreview,
                   onEdit: openImageEditor,
-                  label: i,
+                  label: attemptIndex,
                 },
               };
             (setNodes((prevNodes) => prevNodes.concat(newNode)),
@@ -3202,9 +3202,9 @@ ${combinedPrompt}`,
 		                    imagePresetSizeValue() :
 		                    imageAspectRatioValue();
 		                },
-		                buildImageProtocolUrl = (e, t) => {
-		                  let path = String(e || ``).trim();
-		                  if (!path) return t;
+		                buildImageProtocolUrl = (pathOrUrl, fallbackUrl) => {
+		                  let path = String(pathOrUrl || ``).trim();
+		                  if (!path) return fallbackUrl;
 		                  if (/^https?:\/\//i.test(path)) return path;
 		                  let baseUrl = String(seedreamBaseUrl || ``).replace(/\/$/, ``);
 		                  return (
@@ -6690,12 +6690,12 @@ ${combinedPrompt}`,
                 ``,
                 normalizedVideoSize,
               ),
-              requestAspectRatioValue = ((aspectRatioValue, t) => {
+              requestAspectRatioValue = ((aspectRatioValue, sizeValue) => {
                 if (!isVectorEngineGrokVideo3) return aspectRatioValue;
                 if ([`2:3`, `3:2`, `1:1`].includes(aspectRatioValue)) return aspectRatioValue;
                 let ratioMatch =
                   String(aspectRatioValue || ``).match(/^(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$/) ||
-                  String(t || ``).match(/^(\d+)\s*x\s*(\d+)$/i),
+                  String(sizeValue || ``).match(/^(\d+)\s*x\s*(\d+)$/i),
                   ratio = ratioMatch ? Number(ratioMatch[1]) / Number(ratioMatch[2]) : 1;
                 return ratio > 1.05 ? `3:2` : ratio < 0.95 ? `2:3` : `1:1`;
               })(aspectRatio, normalizedVideoSize),
@@ -7837,7 +7837,7 @@ ${combinedPrompt}`,
         ],
     ),
     generateText = useCallback(
-      async (nodeId, prompt, i = !1, a) => {
+      async (nodeId, prompt, isRegenerate = !1, extraOptions) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyUsageCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
           if (false && dailyUsageCount >= planLimits.dailyGenerations) {
@@ -7846,7 +7846,7 @@ ${combinedPrompt}`,
           }
           let updateGlobalTaskList = updateTaskList,
             textModelName = (
-              a ||
+              extraOptions ||
               textModel.split(`
 `)[0]
             ).trim(),
@@ -7873,8 +7873,8 @@ ${combinedPrompt}`,
               textModelProtocolBindings?.[textModelName],
             ),
             textProtocolDefinition = modelProtocolRegistry?.[textProtocolBindingName],
-            inferTextRequestProtocol = (e, t, n, r, apiUrl) => {
-              let modelIdentifier = [e, t, n, r]
+            inferTextRequestProtocol = (modelCandidateA, modelCandidateB, modelCandidateC, modelCandidateD, apiUrl) => {
+              let modelIdentifier = [modelCandidateA, modelCandidateB, modelCandidateC, modelCandidateD]
                 .filter(Boolean)
                 .map((modelName) => String(modelName).trim())
                 .join(` `),
@@ -8189,7 +8189,7 @@ ${combinedPrompt}`,
 	            ) {
               let parts = [],
                 systemParts = [];
-              i
+              isRegenerate
                 ?
                 systemParts.push({
                   text: `你是一个智能内容拆分助手。用户会输入一段文本或要求，你必须将内容拆分成多个独立的部分。你必须返回一个严格的JSON对象，包含一个 'items' 数组。数组中的每个对象必须包含 'title' (最多8个字符) 和 'content' (详细内容) 字段。示例：{"items": [{"title": "场景一", "content": "这是第一部分的详细内容..."}]}。请直接返回纯JSON字符串，不要包含任何额外的解释文字或Markdown代码块。`,
@@ -8249,7 +8249,7 @@ ${combinedPrompt}`,
                 },
                 messages2 = [],
                 contentParts = [];
-              i
+              isRegenerate
                 ?
                 messages2.push({
                   role: `system`,
@@ -8389,7 +8389,7 @@ ${combinedPrompt}`,
 			                      putTextProtocolField(textProtocolFieldMapping.input, requestBody, inputText || textContent || ` `),
 	                      putTextProtocolField(textProtocolFieldMapping.temperature, requestBody, 0.7),
 		                      textRequestProtocol !== `claude-messages` &&
-		                      i &&
+		                      isRegenerate &&
 	                      !(
 	                        textModelName.toLowerCase().includes(`deepseek`) ||
 	                        textModelName.toLowerCase().includes(`claude`)
@@ -8408,7 +8408,7 @@ ${combinedPrompt}`,
 	                    model: textModelName,
 	                    messages: messages2,
 	                    temperature: 0.7,
-	                    response_format: i &&
+	                    response_format: isRegenerate &&
 	                      !(
 	                        textModelName.toLowerCase().includes(`deepseek`) ||
 	                        textModelName.toLowerCase().includes(`claude`)
@@ -8422,7 +8422,7 @@ ${combinedPrompt}`,
                   "Content-Type": String(textProtocolDefinition?.contentType || `application/json`)
                     .trim() || `application/json`,
                 };
-              i && isGeminiProtocol && (geminiRequest.generationConfig = {
+              isRegenerate && isGeminiProtocol && (geminiRequest.generationConfig = {
                 responseMimeType: `application/json`
               });
 	              textProtocolProfile.headers &&
@@ -8520,7 +8520,7 @@ ${combinedPrompt}`,
 	              updateTaskList = protocolMappedText || geminiText || messageText || String(responseData?.output_text || responseData?.text || ``).trim();
             } else {
               if (
-                (i ?
+                (isRegenerate ?
                   messages.push({
                     role: `system`,
                     content: `你是一个智能内容拆分助手。用户会输入一段文本或要求，你必须将内容拆分成多个独立的部分。你必须返回一个严格的JSON对象，包含一个 'items' 数组。数组中的每个对象必须包含 'title' (最多8个字符) 和 'content' (详细内容) 字段。示例：{"items": [{"title": "场景一", "content": "这是第一部分的详细内容..."}]}。请直接返回纯JSON字符串，不要包含任何额外的解释文字或Markdown代码块。`,
@@ -8598,7 +8598,7 @@ ${combinedPrompt}`,
                   model: textModelName,
                   messages: messages,
                   temperature: 0.7,
-                  response_format: i &&
+                  response_format: isRegenerate &&
                     !(
                       textModelName.toLowerCase().includes(`deepseek`) ||
                       textModelName.toLowerCase().includes(`claude`)
@@ -8645,7 +8645,7 @@ ${combinedPrompt}`,
               ),
               localStorage.setItem(dailyLimitKey, (dailyUsageCount + 1).toString()),
               setDailyGenerationCount(dailyUsageCount + 1));
-            if (i)
+            if (isRegenerate)
               try {
                 let jsonText = updateTaskList.replace(/```json/g, ``)
                   .replace(/```/g, ``)
@@ -8820,7 +8820,7 @@ ${combinedPrompt}`,
                   ),
                 ),
                 addGeneratedAsset && addGeneratedAsset(updateTaskList, `text`, `generated`));
-            i &&
+            isRegenerate &&
               setNodes((nodes3) =>
                 nodes3.map((node2) =>
                   node2.id === nodeId ? {
@@ -9177,7 +9177,7 @@ ${combinedPrompt}`,
             if (!response.ok) throw Error(`API 请求失败: ${response.status}`);
             let contentType = response.headers.get(`content-type`) || ``,
               isBinaryResponse = !1,
-              w;
+              binaryPayload;
             if (
               contentType.includes(`audio/`) ||
               contentType.includes(`image/`) ||
@@ -9186,7 +9186,7 @@ ${combinedPrompt}`,
             ) {
               isBinaryResponse = !0;
               let blob = await response.blob();
-              w = await new Promise((resolve, reject) => {
+              binaryPayload = await new Promise((resolve, reject) => {
                 let fileReader = new FileReader();
                 ((fileReader.onloadend = () => resolve(fileReader.result)),
                   (fileReader.onerror = reject),
@@ -9210,7 +9210,7 @@ ${combinedPrompt}`,
               let result;
               if (
                 (isBinaryResponse ?
-                  (result = w) :
+                  (result = binaryPayload) :
                   ((result = extractByPath(responseData, config.resultPath)),
                     typeof result == `object` &&
                     result &&
@@ -10043,7 +10043,7 @@ ${combinedPrompt}`,
         },
         [getNodes, getEdges, generateImage, generateText, generateVideo, handleGenerateCustom, showToast, layeredRunMaxConcurrency],
     ),
-    $ = (nodeType, position, nodeData = {}, connection) => {
+    createNodeAt = (nodeType, position, nodeData = {}, connection) => {
       let {
           __nodeId,
           ...cleanNodeData
@@ -10293,7 +10293,7 @@ ${combinedPrompt}`,
         stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
         createNodeWithUrl = (mediaUrl) => {
           if (!mediaUrl) return;
-          $(
+          createNodeAt(
             `imageNode`,
             position, {
               __nodeId: nodeId,
@@ -10360,7 +10360,7 @@ ${combinedPrompt}`,
               let reader = new FileReader();
               ((reader.onload = (event2) => {
                   let result = event2.target?.result;
-                  ($(`textNode`, position, {
+                  (createNodeAt(`textNode`, position, {
                       text: result,
                       label: file.name,
                       sourceOrigin: `external-upload`,
@@ -10447,7 +10447,7 @@ ${combinedPrompt}`,
 	                      selected: !0,
 	                      type: `custom`,
 	                    })).filter((edge) => edge.source && edge.target),
-	                    m =
+	                    remappedReferenceEdges =
 	                    sourceProjectId &&
 	                    projectIdRef.current &&
 	                    sourceProjectId === projectIdRef.current ?
@@ -10464,10 +10464,10 @@ ${combinedPrompt}`,
 	                        ...item,
 	                        selected: !1
 	                      })).concat(newNodes)),
-	                      setEdges((item) => item.map((e) => ({
-	                        ...e,
+	                      setEdges((item) => item.map((edge) => ({
+	                        ...edge,
 	                        selected: !1
-	                      })).concat(newEdges, m)),
+	                      })).concat(newEdges, remappedReferenceEdges)),
                       connection && newNodes.length > 0)
                   ) {
                     let leftmostNode = newNodes.reduce((acc, node) =>
@@ -10550,8 +10550,8 @@ ${combinedPrompt}`,
                             },
                           };
                         });
-                        (setNodes((e) =>
-                            e.map((node) => ({
+                        (setNodes((currentNodes) =>
+                            currentNodes.map((node) => ({
                               ...node,
                               selected: !1
                             })).concat(imageNodes),
@@ -10577,7 +10577,7 @@ ${combinedPrompt}`,
                     reader = new FileReader();
                   ((reader.onload = (event) => {
                       let dataUrl = event.target?.result;
-                      $(`imageNode`, position, {
+                      createNodeAt(`imageNode`, position, {
                         imageUrl: dataUrl
                       }, connection);
                     }),
@@ -10592,7 +10592,7 @@ ${combinedPrompt}`,
                       let clipboardData = JSON.parse(clipboardText);
                       if (clipboardData && clipboardData.type === `canvas-clipboard-nodes`) return;
                     } catch {}
-                    ($(`textNode`, position, {
+                    (createNodeAt(`textNode`, position, {
                         text: clipboardText.trim(),
                         expanded: !1
                       }, connection),
@@ -10611,14 +10611,14 @@ ${combinedPrompt}`,
         },
         [menuPosition, screenToFlowPosition, generateImage, generateText, handleCrop, openImagePreview, setNodes, setEdges, showToast],
     ),
-    jt = () => {
+    handleDeleteSelected = () => {
       let item =
         nodesRef.current.filter((node) => node.selected).length > 0 ?
         nodesRef.current.filter((node) => node.selected).map((node) => node.id) :
         menuPosition?.nodeId ?
         [menuPosition.nodeId] :
         [];
-      (item.forEach((e) => stopGeneration(e, {
+      (item.forEach((selectedNodeId) => stopGeneration(selectedNodeId, {
           silent: !0
         })),
         item.length > 0 &&
@@ -10628,7 +10628,7 @@ ${combinedPrompt}`,
           )),
         setMenuPosition(null));
     },
-    Mt = async () => {
+    handleCopySelected = async () => {
         let nodes2 = nodesRef.current,
           edges2 = edgesRef.current;
         if (nodes2.length > 0) {
@@ -10864,7 +10864,7 @@ ${combinedPrompt}`,
                       ((fileReader.onload = (event2) => {
                           let fileResult = event2.target?.result;
                         file.type.startsWith(`text/`) ?
-                          $(`textNode`, position, {
+                          createNodeAt(`textNode`, position, {
                             text: fileResult,
                             label: file.name,
                             sourceOrigin: `external-upload`,
@@ -10886,14 +10886,14 @@ ${combinedPrompt}`,
                 (droppedText.startsWith(`http`) ||
                   droppedText.startsWith(`data:image`) ||
                   droppedText.startsWith(`blob:`) ?
-                  $(`imageNode`, dropPosition, {
+                  createNodeAt(`imageNode`, dropPosition, {
                     imageUrl: droppedText
                   }) :
-                  $(`textNode`, dropPosition, {
+                  createNodeAt(`textNode`, dropPosition, {
                     text: droppedText
                   }));
             },
-            [screenToFlowPosition, $],
+            [screenToFlowPosition, createNodeAt],
           ),
           AbortDeletedNodes = useCallback(
             (nodes2) => {
@@ -11159,11 +11159,11 @@ ${combinedPrompt}`,
 	          (nodeData.onGenerateCustom !== handleGenerateCustom && ((nodeData.onGenerateCustom = handleGenerateCustom), (hasChanged = !0)),
 	            nodeData.onAIAssist !== handleAIAssist && ((nodeData.onAIAssist = handleAIAssist), (hasChanged = !0)),
             typeof nodeData.onSaveTemplate != `function` &&
-            ((nodeData.onSaveTemplate = (e, t) => {
+            ((nodeData.onSaveTemplate = (templateName, templateData) => {
                 addCustomNode && addCustomNode({
                   id: Date.now().toString(),
-                  name: e,
-                  config: t
+                  name: templateName,
+                  config: templateData
                 });
               }),
 	              (hasChanged = !0)),
@@ -11215,7 +11215,7 @@ ${combinedPrompt}`,
           (nodeData.onSplit !== handleSplit && ((nodeData.onSplit = handleSplit), (hasChanged = !0)),
             nodeData.onSplitOne !== handleSplitOne && ((nodeData.onSplitOne = handleSplitOne), (hasChanged = !0))),
           node.type === `cropNode` &&
-          (nodeData.onCropComplete !== _t && ((nodeData.onCropComplete = _t), (hasChanged = !0)),
+          (nodeData.onCropComplete !== handleNoop && ((nodeData.onCropComplete = handleNoop), (hasChanged = !0)),
             nodeData.onCancel !== handleCancel2 && ((nodeData.onCancel = handleCancel2), (hasChanged = !0))),
           nodeData.onZoom !== openImagePreview && ((nodeData.onZoom = openImagePreview), (hasChanged = !0)),
           (node.type === `promptNode` || node.type === `imageNode`) &&
@@ -11242,7 +11242,7 @@ ${combinedPrompt}`,
     handleCrop,
     handleSplit,
     handleSplitOne,
-    _t,
+    handleNoop,
     handleCancel2,
     setNodes,
     presetPrompts,
@@ -11535,7 +11535,7 @@ ${combinedPrompt}`,
 		        (menuPosition.type === `canvas` || menuPosition.type === `connection`) ?
 		        menuPosition :
 		        null;
-		      $(nodeType, getShortcutNodePosition(), nodeData, activeMenu?.connection);
+		      createNodeAt(nodeType, getShortcutNodePosition(), nodeData, activeMenu?.connection);
 		    },
 			    clipboardHasPastePayload = async () => {
 			      let text = await navigator.clipboard?.readText?.().catch(() => ``);
@@ -11607,7 +11607,7 @@ ${combinedPrompt}`,
 			            workspaceTemplateId: template.id || ``,
 			            workspaceTemplateSource: template.memberName || template.sourceMemberName || ``,
 			          };
-			        $(
+			        createNodeAt(
 			          template.sourceProvider === `tongyi-wanxiang` ? `tongyiWanxiangNode` : `seedanceNode`,
 			          position,
 			          nodeData
@@ -11640,7 +11640,7 @@ ${combinedPrompt}`,
 			        window.removeEventListener(`wanjuan:workspace-save-node-template`, handleSaveWorkspaceTemplateFromNode);
 			      }
 			    );
-			  }, [getNodes, screenToFlowPosition, $, showToast, projectId]);
+			  }, [getNodes, screenToFlowPosition, createNodeAt, showToast, projectId]);
 			  return (
 	    useEffect(() => {
       let guard = (event) => {
@@ -11771,11 +11771,11 @@ ${combinedPrompt}`,
 	          onEdgeDoubleClick: onDeleteEdge,
           nodeTypes: WANJUAN_NODE_TYPES,
           edgeTypes: WANJUAN_EDGE_TYPES,
-          onNodeClick: ht,
+          onNodeClick: handleMultiConnectToTarget,
           onPaneContextMenu: handleContextMenu,
-          onNodeContextMenu: ft,
-	          onSelectionContextMenu: pt,
-	          onSelectionEnd: mt,
+          onNodeContextMenu: handleNodeContextMenu,
+	          onSelectionContextMenu: handleSelectionContextMenu,
+	          onSelectionEnd: handleDelayedSelectionMenu,
 	          onMove: (event, viewport) => {
 	            if (!viewport) return;
 	            let now = performance.now();
@@ -12004,7 +12004,7 @@ ${combinedPrompt}`,
                       jsxs(`button`, {
                         onClick: () => {
                           let rect = wrapperRef.current?.getBoundingClientRect();
-                          $(
+                          createNodeAt(
                             `textNode`,
                             rect ? screenToFlowPosition({
                               x: rect.left + rect.width / 2 - 150,
@@ -12057,7 +12057,7 @@ ${combinedPrompt}`,
                       jsxs(`button`, {
                         onClick: () => {
                           let rect = wrapperRef.current?.getBoundingClientRect();
-                          $(
+                          createNodeAt(
                             `promptNode`,
                             rect ? screenToFlowPosition({
                               x: rect.left + rect.width / 2,
@@ -12129,7 +12129,7 @@ ${combinedPrompt}`,
                       jsxs(`button`, {
                         onClick: () => {
                           let rect = wrapperRef.current?.getBoundingClientRect();
-                          $(
+                          createNodeAt(
                             `videoNode`,
                             rect ? screenToFlowPosition({
                               x: rect.left + rect.width / 2 + 150,
@@ -12196,7 +12196,7 @@ ${combinedPrompt}`,
                       jsxs(`button`, {
                         onClick: () => {
                           let rect = wrapperRef.current?.getBoundingClientRect();
-                          $(
+                          createNodeAt(
                             `musicNode`,
                             rect ? screenToFlowPosition({
                               x: rect.left + rect.width / 2 + 300,
@@ -12271,7 +12271,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `textNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12302,7 +12302,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `promptNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12333,7 +12333,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `videoNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12364,7 +12364,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `seedanceNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12402,7 +12402,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `tongyiWanxiangNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12433,7 +12433,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `audioNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12458,7 +12458,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `musicNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12492,7 +12492,7 @@ ${combinedPrompt}`,
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
                       onClick: () =>
-                        $(
+                        createNodeAt(
                           `customNode`,
                           screenToFlowPosition({
                             x: menuPosition.x +
@@ -12547,7 +12547,7 @@ ${combinedPrompt}`,
                                     onClick: (event) => {
                                       event.stopPropagation();
                                       let variables = item.config?.variables || {};
-                                      ($(
+                                      (createNodeAt(
                                           `customNode`,
                                           screenToFlowPosition({
                                             x: menuPosition.x +
@@ -12641,7 +12641,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `textConcatNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12666,7 +12666,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `urlToImageNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12691,7 +12691,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `fileToLinkNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12822,7 +12822,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `gridMergeNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12847,7 +12847,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `gridSplitNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12872,7 +12872,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () =>
-	                                $(
+	                                createNodeAt(
 	                                  `videoExtractNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -12983,7 +12983,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
-	                                $(
+	                                createNodeAt(
 	                                  `videoFaceBlurNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -13038,7 +13038,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
-	                                $(
+	                                createNodeAt(
 	                                  `qwenTtsCloneNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -13090,7 +13090,7 @@ ${combinedPrompt}`,
 	                            jsxs(`button`, {
 	                              className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
-	                                $(
+	                                createNodeAt(
 	                                  `realEsrganVideoNode`,
 	                                  screenToFlowPosition({
 	                                    x: menuPosition.x +
@@ -13209,7 +13209,7 @@ ${combinedPrompt}`,
                                     .top || 0),
                               });
 	                              (wanjuanResourceKind(resource) === `text` ?
-	                                $(
+	                                createNodeAt(
 	                                  `textNode`,
                                   position, {
                                     text: resource.url,
@@ -13218,7 +13218,7 @@ ${combinedPrompt}`,
                                   void 0,
                                 ) :
 		                                wanjuanResourceKind(resource) === `video` ?
-		                                $(
+		                                createNodeAt(
 	                                  `imageNode`,
 	                                  position, {
 	                                    imageUrl: resource.url,
@@ -13230,7 +13230,7 @@ ${combinedPrompt}`,
 	                                  void 0,
 	                                ) :
 	                                wanjuanResourceKind(resource) === `audio` ?
-	                                $(
+	                                createNodeAt(
                                   `audioNode`,
                                   position, {
                                     audioUrl: resource.url,
@@ -13238,7 +13238,7 @@ ${combinedPrompt}`,
                                   },
                                   void 0,
                                 ) :
-                                $(
+                                createNodeAt(
                                   `imageNode`,
                                   position, {
                                     imageUrl: resource.url,
@@ -13259,7 +13259,7 @@ ${combinedPrompt}`,
                     }),
                     jsxs(`button`, {
                       className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
-                      onClick: Mt,
+                      onClick: handleCopySelected,
                       children: [
                         jsx(Copy, {
                           size: 16,
@@ -13279,7 +13279,7 @@ ${combinedPrompt}`,
 		                      images: [],
 		                      videos: []
 		                    },
-	                    n = !!node &&
+	                    canShowImageActions = !!node &&
 		                    media.videos.length === 0 &&
 		                    node.data?.mediaKind !== `video` &&
 	                    (node.type === `imageNode` ||
@@ -13292,7 +13292,7 @@ ${combinedPrompt}`,
 	                      node.type === `videoFaceBlurNode` ||
 	                      node.data?.mediaKind === `video` ||
 		                      media.videos.length > 0),
-	                    i = n || isVideoNode;
+	                    canShowMediaActions = canShowImageActions || isVideoNode;
                   return selectedNodes.length > 1 &&
                     (node?.selected || menuPosition?.type === `selection`) ?
                     jsxs(Fragment, {
@@ -13367,7 +13367,7 @@ ${combinedPrompt}`,
                         jsxs(`button`, {
                           className: `text-left px-3 py-2 text-sm text-red-400 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item-danger`,
                           onClick: (event) => {
-                            (event.stopPropagation(), jt(), setMenuPosition(null));
+                            (event.stopPropagation(), handleDeleteSelected(), setMenuPosition(null));
                           },
                           children: [
                             jsx(Trash2, {
@@ -13439,7 +13439,7 @@ ${combinedPrompt}`,
                             }),
                           ],
                         }),
-			                        i &&
+			                        canShowMediaActions &&
 			                        jsxs(`button`, {
 	                          className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                          onClick: () => {
@@ -13491,7 +13491,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
 	                                if (!node) return;
-	                                ($(
+	                                (createNodeAt(
 	                                  `videoExtractNode`,
 	                                  {
 	                                    x: node.position.x + (node.measured?.width || node.style?.width || 320) + 60,
@@ -13517,7 +13517,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
                                 if (!node) return;
-                                ($(
+                                (createNodeAt(
                                   `videoFaceBlurNode`,
                                   {
                                     x: node.position.x + (node.measured?.width || node.style?.width || 320) + 60,
@@ -13557,7 +13557,7 @@ ${combinedPrompt}`,
 	                            }),
 	                          ],
 		                        }),
-		                        n &&
+		                        canShowImageActions &&
 	                        jsxs(Fragment, {
                           children: [
 	                            jsxs(`button`, {
@@ -13577,7 +13577,7 @@ ${combinedPrompt}`,
 	                              className: `text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item`,
 	                              onClick: () => {
 	                                if (!node) return;
-	                                ($(
+	                                (createNodeAt(
 	                                  `fileToLinkNode`,
 	                                  {
 	                                    x: node.position.x + (node.measured?.width || node.style?.width || 240) + 60,
@@ -13632,7 +13632,7 @@ ${combinedPrompt}`,
                         }),
                         jsxs(`button`, {
                           className: `text-left px-3 py-2 text-sm text-red-400 hover:bg-[#333] rounded flex items-center gap-2 wanjuan-context-menu-item-danger`,
-                          onClick: jt,
+                          onClick: handleDeleteSelected,
                           children: [
                             jsx(Trash2, {
                               size: 16,
