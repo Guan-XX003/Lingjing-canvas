@@ -342,6 +342,13 @@ import { useVideoGeneration } from "../hooks/useVideoGeneration";
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { useCustomNodeGeneration } from "../hooks/useCustomNodeGeneration";
 import { useUngroupNode } from "../hooks/useUngroupNode";
+import { useBuildBatchPrompt } from "../hooks/useBuildBatchPrompt";
+import { useResolveGeminiInlineVideoPart } from "../hooks/useResolveGeminiInlineVideoPart";
+import { useIsNonVideoUrl } from "../hooks/useIsNonVideoUrl";
+import { useIsPublicUrl } from "../hooks/useIsPublicUrl";
+import { useRequestGemini } from "../hooks/useRequestGemini";
+import { useFindImageTaskUrl } from "../hooks/useFindImageTaskUrl";
+import { useResolveFileUri } from "../hooks/useResolveFileUri";
 import { useLateEffect5880 } from "../hooks/useLateEffect5880";
 import { useLateEffect4760 } from "../hooks/useLateEffect4760";
 import { useLateEffect1120 } from "../hooks/useLateEffect1120";
@@ -3737,43 +3744,7 @@ time=${normalizedTtl}`,
             if (!content) throw Error(`配置管家未返回可用内容`);
             return content;
           }
-          let requestGemini = async (modelName2) => {
-            let response = await fetch(
-              `${baseUrl}/v1beta/models/${encodeURIComponent(modelName2)}:generateContent?key=${encodeURIComponent(butlerApiKey)}`, {
-                method: `POST`,
-                headers: {
-                  "Content-Type": `application/json`
-                },
-                body: JSON.stringify({
-                  contents: [{
-                    role: `user`,
-                    parts: [{
-                      text: prompt
-                    }]
-                  }],
-                }),
-              },
-            );
-            if (!response.ok) {
-              let errorMessage = response.statusText;
-              try {
-                let errorData = await response.json();
-                errorMessage =
-                  errorData?.error?.message ||
-                  errorData?.message ||
-                  JSON.stringify(errorData).slice(0, 400);
-              } catch {}
-              throw Error(`配置管家请求失败: ${errorMessage}`);
-            }
-            let responseData = await response.json(),
-              textParts =
-              responseData?.candidates?.[0]?.content?.parts
-              ?.map((part) => part.text || ``)
-              .join(``)
-              .trim() || ``;
-            if (!textParts) throw Error(`配置管家未返回可用内容`);
-            return textParts;
-          };
+          let requestGemini = useRequestGemini({ baseUrl, butlerApiKey }).requestGemini;
           try {
             return await requestGemini(modelName);
           } catch (error) {
@@ -4480,15 +4451,7 @@ ${docText}`;
 	            let batchItems = [],
 	              batchRawResults = [],
 	              batchFailedChunks = [],
-	              buildBatchPrompt = (modelName, batchIndex, batchTotal) =>
-	                basePrompt
-	                .replace(`模型列表：
-${fullModelListText}`, `模型列表（第 ${batchIndex + 1}/${batchTotal} 批，仅分析本批模型）：
-${modelName.map((modelName2) => `- ${modelName2}`).join(`
-`)}`)
-	                .replace(`文档摘要：
-${docText}`, `文档摘要：
-${batchDocText}`);
+	              buildBatchPrompt = useBuildBatchPrompt({ basePrompt, batchDocText, docText, fullModelListText }).buildBatchPrompt;
 	            for (let batchIndex = 0; batchIndex < batchChunks.length; batchIndex++) {
 	              let chunkModels = batchChunks[batchIndex],
 	                batchResult = null;
@@ -6376,141 +6339,14 @@ ${docText}`;
                   content: `正在思考...`,
                   createdAt: Date.now() + 1,
                 },
-                isPublicUrl = (url) => {
-                  try {
-                    let parsedUrl = new URL(url),
-                      hostname = parsedUrl.hostname.toLowerCase();
-                    if (parsedUrl.protocol !== `http:` && parsedUrl.protocol !== `https:`) return false;
-                    if (hostname === `localhost` || hostname.endsWith(`.localhost`)) return false;
-                    if (hostname === `::1` || hostname === `[::1]`) return false;
-                    let ipv4Match = hostname.match(/^\d+\.\d+\.\d+\.\d+$/);
-                    if (ipv4Match) {
-                      let [firstOctet, secondOctet] = hostname.split(`.`).map(Number);
-                      return !(
-                        firstOctet === 10 ||
-                        (firstOctet === 127 && secondOctet >= 0) ||
-                        (firstOctet === 192 && secondOctet === 168) ||
-                        (firstOctet === 169 && secondOctet === 254) ||
-                        (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31)
-                      );
-                    }
-                    return true;
-                  } catch {
-                    return false;
-                  }
-                },
-                isNonVideoUrl = (url) => {
-                  try {
-                    let parsedUrl = new URL(url),
-                      pathname = decodeURIComponent(parsedUrl.pathname || ``).toLowerCase(),
-                      queryString = decodeURIComponent(parsedUrl.search || ``).toLowerCase(),
-                      pathAndQuery = `${pathname}${queryString}`;
-                    return (
-                      /\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|[?#])/i.test(pathAndQuery) ||
-                      /(?:^|[?&])(?:mime|content[-_]?type|response-content-type)=video(?:\/|%2f)/i.test(
-                        queryString,
-                      ) ||
-                      /(?:^|[?&])filename=[^&]+\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|&)/i.test(
-                        queryString,
-                      )
-                    );
-                  } catch {
-                    return false;
-                  }
-                },
-                resolveFileUri = async (attachment) => {
-	                  let mediaUrl = String(attachment?.url || ``).trim();
-	                  if (!mediaUrl) return ``;
-	                  if (/^blob:/i.test(mediaUrl)) {
-		                    if (Number(attachment?.size || 0) > 0 && Number(attachment?.size || 0) < 1024)
-		                      throw Error(`参考视频文件过小或无效，请重新选择真实视频文件`);
-			                    let dataUrl = await (attachment?.file ? readAgentAttachmentFileAsDataUrl(attachment) : mediaUrlToDataUrl(mediaUrl));
-			                    if (/^data:/i.test(dataUrl)) {
-		                      let mimeType = /^video\//i.test(String(attachment?.mime || ``).trim()) ?
-		                        String(attachment?.mime || ``).trim() :
-		                        `video/mp4`,
-		                        dataUrlMatch = dataUrl.match(/^data:([^;,]*)(;base64)?,(.*)$/s);
-		                      mediaUrl = dataUrlMatch && !/^video\//i.test(dataUrlMatch[1] || ``) ?
-		                        `data:${mimeType}${dataUrlMatch[2] || `;base64`},${dataUrlMatch[3] || ``}` :
-		                        dataUrl;
-		                    } else mediaUrl = String(attachment?.url || ``).trim();
-		                  }
-	                  if (/^https?:\/\//i.test(mediaUrl) && isPublicUrl(mediaUrl) && isNonVideoUrl(mediaUrl)) return mediaUrl;
-	                  let uploadMode = seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE;
-	                  try {
-                    let uploadResult =
-                      uploadMode === `tos` &&
-                      window.wanjuanDesktop &&
-                      typeof window.wanjuanDesktop.uploadTosMedia == `function` ?
-                      await window.wanjuanDesktop.uploadTosMedia({
-                        url: mediaUrl,
-                        kind: `video`,
-                        mime: attachment?.mime || `video/mp4`,
-                        filename: attachment?.name || `agent-video-${Date.now()}.mp4`,
-                        tos: tosConfig || {},
-                      }) :
-                      uploadMode === `custom` &&
-                      window.wanjuanDesktop &&
-                      typeof window.wanjuanDesktop.uploadCustomPublicMedia ==
-                      `function` ?
-                      await window.wanjuanDesktop.uploadCustomPublicMedia({
-                        url: mediaUrl,
-                        kind: `video`,
-                        mime: attachment?.mime || `video/mp4`,
-                        filename: attachment?.name || `agent-video-${Date.now()}.mp4`,
-                        customUpload: customPublicUploadConfig || {},
-                      }) :
-                      uploadMode === `qiniu` &&
-                      window.wanjuanDesktop &&
-                      typeof window.wanjuanDesktop.uploadQiniuMedia ==
-                      `function` ?
-                      await window.wanjuanDesktop.uploadQiniuMedia({
-                        url: mediaUrl,
-                        kind: `video`,
-                        mime: attachment?.mime || `video/mp4`,
-                        filename: attachment?.name || `agent-video-${Date.now()}.mp4`,
-                        qiniu: qiniuConfig || {},
-                      }) :
-                      window.wanjuanDesktop &&
-                      typeof window.wanjuanDesktop.uploadPublicMedia == `function` ?
-                      await window.wanjuanDesktop.uploadPublicMedia({
-                        url: mediaUrl,
-                        kind: `video`,
-                        mime: attachment?.mime || `video/mp4`,
-                        filename: attachment?.name || `agent-video-${Date.now()}.mp4`,
-                      }) :
-                      null;
-	                    if (uploadResult?.ok === false) throw Error(uploadResult?.error || `上传服务没有返回可用地址`);
-	                    return /^https?:\/\//i.test(uploadResult?.url || ``) && isPublicUrl(uploadResult.url) ?
-	                      uploadResult.url :
-                      /^https?:\/\//i.test(mediaUrl) && isPublicUrl(mediaUrl) ?
-                      mediaUrl :
-                      ``;
-                  } catch (error) {
-	                    throw Error(`参考视频上传失败，未发送到模型：${error?.message || error}`);
-	                  }
-	                },
+                isPublicUrl = useIsPublicUrl({}).isPublicUrl,
+                isNonVideoUrl = useIsNonVideoUrl({}).isNonVideoUrl,
+                resolveFileUri = useResolveFileUri({ customPublicUploadConfig, isNonVideoUrl, isPublicUrl, qiniuConfig, seedanceUploadMode, tosConfig }).resolveFileUri,
 	                resolveDataUrl = async (attachment) =>
 	                  /^blob:/i.test(String(attachment?.url || ``)) && attachment?.file ?
 	                  await readAgentAttachmentFileAsDataUrl(attachment) :
 	                  await mediaUrlToDataUrl(attachment.url),
-	                resolveGeminiInlineVideoPart = async (video) => {
-	                  let dataUrl = await resolveDataUrl(video),
-	                    dataUrlMatch = String(dataUrl || ``).match(/^data:([^;,]*)(;base64)?,(.*)$/s);
-	                  if (!dataUrlMatch || !dataUrlMatch[2] || !dataUrlMatch[3])
-	                    throw Error(`参考视频未能转为模型可读取的视频内容，请重新选择本地视频文件或检查资源文件是否存在`);
-	                  let mimeType = /^video\//i.test(String(dataUrlMatch[1] || ``).trim()) ?
-	                    String(dataUrlMatch[1] || ``).trim() :
-	                    /^video\//i.test(String(video?.mime || ``).trim()) ?
-	                    String(video?.mime || ``).trim() :
-	                    `video/mp4`;
-	                  return {
-	                    inlineData: {
-	                      mimeType: mimeType,
-	                      data: String(dataUrlMatch[3] || ``).replace(/\s+/g, ``),
-	                    },
-	                  };
-	                };
+	                resolveGeminiInlineVideoPart = useResolveGeminiInlineVideoPart({ resolveDataUrl }).resolveGeminiInlineVideoPart;
               (setAgentConversations((prevConversations) => ({
                   ...prevConversations,
                   [selectedAgent.id]: [...(prevConversations[selectedAgent.id] || []), userMessage, assistantMessage],
@@ -7540,63 +7376,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       return;
                     }
                     if (task.type === `image` || task.customOutputType === `image`) {
-                      let findImageTaskUrl = (value) => {
-                          if (!value) return ``;
-                          if (typeof value == `string`) {
-                            let cleaned = value.replace(/[`\s]/g, ``);
-                            if (/^data:image\//i.test(cleaned)) return cleaned;
-                            if (/^https?:\/\//i.test(cleaned) && (/\.(png|jpe?g|webp|gif)(?:$|[?#])/i.test(cleaned) || /oss|cos|cdn|image|img|file|tmpfiles/i.test(cleaned))) return cleaned;
-                            try {
-                              let parsed = JSON.parse(value),
-                                imageUrl = findImageTaskUrl(parsed);
-                              if (imageUrl) return imageUrl;
-                            } catch {}
-                            let urlMatches = value.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
-                            for (let url of urlMatches) {
-                              let cleaned2 = url.replace(/[`\s]/g, ``);
-                              if (/\.(png|jpe?g|webp|gif)(?:$|[?#])/i.test(cleaned2) || /oss|cos|cdn|image|img|file|tmpfiles/i.test(cleaned2)) return cleaned2;
-                            }
-                            return ``;
-                          }
-                          if (Array.isArray(value)) {
-                            for (let value2 of value) {
-                              let imageUrl = findImageTaskUrl(value2);
-                              if (imageUrl) return imageUrl;
-                            }
-                            return ``;
-                          }
-                          if (typeof value == `object`) {
-                            let urlKeys = [
-                              `download_url`,
-                              `downloadUrl`,
-                              `original_url`,
-                              `originalUrl`,
-                              `origin_url`,
-                              `originUrl`,
-                              `large_image_url`,
-                              `largeImageUrl`,
-                              `result_url`,
-                              `resultUrl`,
-                              `output_url`,
-                              `outputUrl`,
-                              `image_url`,
-                              `imageUrl`,
-                              `b64_json`,
-                              `url`,
-                            ];
-                            for (let key of urlKeys) {
-                              let imageUrl = findImageTaskUrl(key === `b64_json` && value[key] ? `data:image/png;base64,${value[key]}` : value[key]);
-                              if (imageUrl) return imageUrl;
-                            }
-	                            for (let [key, value2] of Object.entries(value)) {
-	                              if ([`urls`, `url_list`, `reference`, `references`, `input`, `inputs`, `request`, `params`, `payload`, `prompt`, `thumbnail`, `thumbnail_url`, `thumbnailUrl`, `preview`, `preview_url`, `previewUrl`, `cover`, `cover_url`, `coverUrl`].includes(String(key).toLowerCase()))
-	                                continue;
-	                              let imageUrl = findImageTaskUrl(value2);
-	                              if (imageUrl) return imageUrl;
-	                            }
-	                          }
-	                          return ``;
-	                        },
+                      let findImageTaskUrl = useFindImageTaskUrl({}).findImageTaskUrl,
 	                        manualImageValue = String(manualRefreshOptions?.manualImageValue || ``).trim(),
 	                        manualDirectImageUrl = manualImageValue.replace(/[`\s]/g, ``),
 	                        manualImageUrl = manualImageValue ?
