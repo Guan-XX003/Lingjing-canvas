@@ -17,6 +17,7 @@ import { WanJuanGridSplitNode } from "./grid-split-node";
 import { WanJuanGridMergeNode } from "./grid-merge-node";
 import { WanJuanVideoNode } from "./video-node";
 import { WanJuanTtsMusicNode, WanJuanUnifiedAudioNode } from "./audio-nodes";
+import { WanJuanSunoMusicNode } from "./suno-music-node";
 import { WanJuanCustomApiNode } from "./custom-api-node";
 import { WanJuanVideoExtractNode } from "./video-extract-node";
 import { WanJuanTextConcatNode } from "./text-concat-node";
@@ -38,7 +39,7 @@ export const WANJUAN_NODE_TYPES = {
     seedanceNode: WanJuanWithRenderMode(WanJuanVideoNode, `seedanceNode`),
     tongyiWanxiangNode: WanJuanWithRenderMode(WanJuanVideoNode, `tongyiWanxiangNode`),
     audioNode: WanJuanWithRenderMode(WanJuanUnifiedAudioNode, `audioNode`),
-    musicNode: WanJuanWithRenderMode(WanJuanTtsMusicNode, `musicNode`),
+    musicNode: WanJuanWithRenderMode(WanJuanSunoMusicNode, `musicNode`),
     ttsMusicNode: WanJuanWithRenderMode(WanJuanTtsMusicNode, `ttsMusicNode`),
     customNode: WanJuanCustomApiNode,
 	    videoExtractNode: WanJuanWithRenderMode(WanJuanVideoExtractNode, `videoExtractNode`),
