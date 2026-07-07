@@ -22,6 +22,8 @@ export const SUNO_DEFAULT_MODEL: SunoModel = "V4_5PLUS";
 export const SUNO_ENDPOINTS = {
   generate: "/api/v1/generate",
   extend: "/api/v1/generate/extend",
+  /** 参考音频翻唱：uploadUrl 必须是公网可访问 URL，音频 ≤8 分钟（V4_5ALL ≤1 分钟） */
+  uploadCover: "/api/v1/generate/upload-cover",
   recordInfo: "/api/v1/generate/record-info",
 } as const;
 
@@ -147,6 +149,43 @@ export function buildSunoExtendBody(params: SunoExtendParams, callBackUrl: strin
     personaId: params.personaId,
     personaModel: params.personaModel,
   });
+}
+
+/** 参考音频翻唱参数 = 生成参数 + 参考音频公网 URL */
+export interface SunoUploadCoverParams extends SunoGenerateParams {
+  /** 参考音频的公网可访问 URL（本地文件需先上传到公网） */
+  uploadUrl: string;
+}
+
+/** 构造 /api/v1/generate/upload-cover 请求体（参考音频翻唱） */
+export function buildSunoUploadCoverBody(params: SunoUploadCoverParams, callBackUrl: string = SUNO_PLACEHOLDER_CALLBACK): Record<string, any> {
+  const base: Record<string, any> = {
+    uploadUrl: params.uploadUrl,
+    customMode: !!params.customMode,
+    instrumental: !!params.instrumental,
+    model: params.model || SUNO_DEFAULT_MODEL,
+    callBackUrl: callBackUrl || SUNO_PLACEHOLDER_CALLBACK,
+  };
+  if (params.prompt) base.prompt = params.prompt;
+  return withOptional(base, {
+    style: params.customMode ? params.style : undefined,
+    title: params.customMode ? params.title : undefined,
+    negativeTags: params.negativeTags,
+    vocalGender: params.vocalGender,
+    styleWeight: clampWeight(params.styleWeight),
+    weirdnessConstraint: clampWeight(params.weirdnessConstraint),
+    audioWeight: clampWeight(params.audioWeight),
+    personaId: params.personaId,
+    personaModel: params.personaModel,
+  });
+}
+
+/** 参考音频翻唱校验：需 uploadUrl（公网 URL）+ 生成参数校验 */
+export function validateSunoUploadCoverParams(params: SunoUploadCoverParams): string | null {
+  const url = String(params.uploadUrl || "").trim();
+  if (!url) return "翻唱需提供参考音频的公网 URL（uploadUrl）";
+  if (!/^https?:\/\//i.test(url)) return "参考音频必须是公网可访问的 http(s) URL（本地文件需先上传到公网）";
+  return validateSunoGenerateParams(params);
 }
 
 /** 前端校验：自定义模式必填 style/title；非纯伴奏必填 prompt。返回错误信息或 null */

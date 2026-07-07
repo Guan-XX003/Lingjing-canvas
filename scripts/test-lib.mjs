@@ -191,6 +191,13 @@ async function run() {
   check("suno.url", suno.sunoUrl("https://api.sunoapi.org/", "/api/v1/generate"), "https://api.sunoapi.org/api/v1/generate");
   check("suno.charLimits.v4", suno.sunoCharLimits("V4"), { prompt: 3000, style: 200, title: 80 });
   check("suno.charLimits.v5", suno.sunoCharLimits("V5_5"), { prompt: 5000, style: 1000, title: 100 });
+  // 参考音频翻唱 upload-cover
+  check("suno.cover.body", suno.buildSunoUploadCoverBody(
+    { uploadUrl: "https://cdn.example.com/ref.mp3", customMode: false, instrumental: false, model: "V4_5PLUS", prompt: "改成爵士风" }
+  ), { uploadUrl: "https://cdn.example.com/ref.mp3", customMode: false, instrumental: false, model: "V4_5PLUS", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "改成爵士风" });
+  check("suno.cover.validate.needUrl", suno.validateSunoUploadCoverParams({ uploadUrl: "", customMode: false, instrumental: false, model: "V4", prompt: "x" }), "翻唱需提供参考音频的公网 URL（uploadUrl）");
+  check("suno.cover.validate.needPublic", suno.validateSunoUploadCoverParams({ uploadUrl: "file:///a.mp3", customMode: false, instrumental: false, model: "V4", prompt: "x" }), "参考音频必须是公网可访问的 http(s) URL（本地文件需先上传到公网）");
+  check("suno.cover.validate.ok", suno.validateSunoUploadCoverParams({ uploadUrl: "https://a/x.mp3", customMode: false, instrumental: false, model: "V4", prompt: "x" }), null);
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`);
   rmSync(outDir, { recursive: true, force: true });

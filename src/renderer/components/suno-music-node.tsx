@@ -22,7 +22,9 @@ import {
   SUNO_ENDPOINTS,
   buildSunoGenerateBody,
   buildSunoExtendBody,
+  buildSunoUploadCoverBody,
   validateSunoGenerateParams,
+  validateSunoUploadCoverParams,
   submitSunoTask,
   pollSunoTask,
   type SunoTrack,
@@ -42,6 +44,7 @@ const SUNO_MODEL_LABELS: Record<string, string> = {
 const ACTIONS = [
   { key: "generate", label: "生成" },
   { key: "extend", label: "续写" },
+  { key: "cover", label: "翻唱" },
 ] as const;
 type ActionKey = (typeof ACTIONS)[number]["key"];
 
@@ -87,6 +90,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
   const [audioId, setAudioId] = useState<string>(data.extendAudioId || "");
   const [continueAt, setContinueAt] = useState<string>(data.continueAt ?? "");
   const [defaultParamFlag, setDefaultParamFlag] = useState<boolean>(data.extendCustom ?? false);
+  const [uploadUrl, setUploadUrl] = useState<string>(data.coverUploadUrl || "");
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   const runningRef = useRef(false);
@@ -95,11 +99,16 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
   const connections = useNodeConnections({ handleType: "target" });
   const upstream: any[] = useNodesData(connections?.map((c: any) => c.source) || []) || [];
   const upstreamText = upstream
-    .map((n: any) => n?.data?.text || n?.data?.resultData || n?.data?.prompt || "")
+    .map((n: any) => (typeof (n?.data?.text || n?.data?.resultData || n?.data?.prompt) === "string" ? n?.data?.text || n?.data?.resultData || n?.data?.prompt : ""))
     .filter(Boolean)
     .join("\n")
     .trim();
   const effectivePrompt = (prompt || upstreamText || "").trim();
+  // 上游音频节点的 audioUrl 作为翻唱参考音频
+  const upstreamAudioUrl = String(
+    upstream.map((n: any) => n?.data?.audioUrl).filter((u: any) => typeof u === "string" && u)[0] || "",
+  );
+  const effectiveUploadUrl = (uploadUrl || upstreamAudioUrl || "").trim();
 
   // 把可编辑参数回写节点 data（持久化）
   useEffect(() => {
@@ -119,11 +128,12 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       extendAudioId: audioId,
       continueAt,
       extendCustom: defaultParamFlag,
+      coverUploadUrl: uploadUrl,
       nodeKind: "music",
     });
   }, [
     nodeId, updateNodeData, action, customMode, instrumental, model, prompt, style, title,
-    negativeTags, vocalGender, styleWeight, weirdness, audioWeight, audioId, continueAt, defaultParamFlag,
+    negativeTags, vocalGender, styleWeight, weirdness, audioWeight, audioId, continueAt, defaultParamFlag, uploadUrl,
   ]);
 
   const tracks: SunoTrack[] = Array.isArray(data.sunoTracks) ? data.sunoTracks : [];
@@ -155,6 +165,23 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       }
       body = buildSunoGenerateBody(params);
       path = SUNO_ENDPOINTS.generate;
+    } else if (action === "cover") {
+      const params = {
+        uploadUrl: effectiveUploadUrl,
+        customMode, instrumental, model, prompt: effectivePrompt, style, title, negativeTags,
+        vocalGender: (vocalGender as "m" | "f" | ""),
+        styleWeight: styleWeight === "" ? null : Number(styleWeight),
+        weirdnessConstraint: weirdness === "" ? null : Number(weirdness),
+        audioWeight: audioWeight === "" ? null : Number(audioWeight),
+      };
+      const err = validateSunoUploadCoverParams(params);
+      if (err) {
+        updateNodeData(nodeId, { errorMessage: err });
+        data.onShowToast?.(err);
+        return;
+      }
+      body = buildSunoUploadCoverBody(params);
+      path = SUNO_ENDPOINTS.uploadCover;
     } else {
       if (!audioId.trim()) {
         updateNodeData(nodeId, { errorMessage: "续写需要源音轨 audioId（从已生成结果里取，或填入）" });
@@ -270,6 +297,24 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
             </div>
           )}
 
+          {action === "cover" && (
+            <div className="flex flex-col gap-1.5 border border-[#333] rounded p-2">
+              <span className={labelCls}>参考音频（公网 URL，≤8 分钟；可连上游音频节点自动带入）</span>
+              <input
+                className={inputCls}
+                value={uploadUrl}
+                onChange={(e) => setUploadUrl(e.target.value)}
+                placeholder={upstreamAudioUrl ? "已从上游音频节点带入；也可在此覆盖" : "https://.../reference.mp3"}
+              />
+              {!uploadUrl && upstreamAudioUrl && (
+                <span className="text-[10px] text-gray-500 truncate">将使用上游音频：{upstreamAudioUrl}</span>
+              )}
+              {effectiveUploadUrl && /^file:|^blob:|localhost|127\.0\.0\.1|wanjuan-media:/i.test(effectiveUploadUrl) && (
+                <span className="text-[10px] text-amber-400">⚠ 这看起来是本地/私有地址，Suno 取不到——参考音频必须是公网可访问的 http(s) URL</span>
+              )}
+            </div>
+          )}
+
           {/* 模式 + 模型 */}
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -348,7 +393,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
             disabled={!!data.loading}
             className={`px-3 py-2 rounded text-sm font-medium ${data.loading ? "bg-[#333] text-gray-500" : "bg-yellow-600 hover:bg-yellow-500 text-white"}`}
           >
-            {data.loading ? (data.statusText ? `生成中… ${data.statusText}` : "生成中…") : action === "extend" ? "续写" : "生成音乐"}
+            {data.loading ? (data.statusText ? `生成中… ${data.statusText}` : "生成中…") : action === "extend" ? "续写" : action === "cover" ? "翻唱生成" : "生成音乐"}
           </button>
 
           {/* 错误 */}
