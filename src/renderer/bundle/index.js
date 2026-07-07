@@ -11605,6 +11605,7 @@ ${combinedPrompt}`,
 	    );
 	  let wanjuanSelectedReferenceSourcesByTarget = useMemo(() => {
 	      let edgesByTarget = new Map();
+	      let nodeById = new Map(nodes.map((node) => [node.id, node]));
 	      return (
 	        edges.forEach((edge) => {
 	          if (
@@ -11612,7 +11613,7 @@ ${combinedPrompt}`,
 	            edge.animated ||
 	            !edge.target ||
 	            !edge.source ||
-	            nodes.find((node) => node.id === edge.target)?.data?.loading
+	            nodeById.get(edge.target)?.data?.loading
 	          )
 	            return;
 	          let sources = edgesByTarget.get(edge.target) || [];
