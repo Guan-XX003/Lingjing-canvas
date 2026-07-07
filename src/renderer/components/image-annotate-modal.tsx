@@ -67,8 +67,9 @@ export function WanJuanImageAnnotateModal({
     },
     zoomEditor = (delta) => {
       setZoomLevel((prev) => {
-        let next = Number((prev + delta).toFixed(2));
-        return Math.min(8, Math.max(0.1, next));
+        // 乘法步进，各缩放级别观感一致、避免低缩放时跳变过猛（delta 只取符号表示方向）
+        let next = delta > 0 ? prev * 1.15 : prev / 1.15;
+        return Math.min(8, Math.max(0.1, Number(next.toFixed(3))));
       });
     },
     undo = () => {
@@ -242,9 +243,10 @@ export function WanJuanImageAnnotateModal({
   return createPortal(
     jsxs(`div`, {
       className: `fixed inset-0 z-[9999] flex flex-col bg-[#121212] select-none`,
+      style: { WebkitAppRegion: `no-drag` }, // 顶栏不落入窗口拖拽区，否则部分按钮(减号/确认裁剪)点击被吃掉
       children: [
         jsxs(`div`, {
-          className: `flex items-center justify-between p-3 bg-[#1c1c1c] border-b border-[#333]`,
+          className: `flex items-center justify-between px-3 pb-3 pt-8 bg-[#1c1c1c] border-b border-[#333]`,
           children: [
             jsxs(`div`, {
               className: `flex items-center gap-2`,
