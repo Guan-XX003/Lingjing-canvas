@@ -11273,7 +11273,7 @@ ${combinedPrompt}`,
             nodeData.audioModelProtocolBindings !== audioModelProtocolBindings &&
             ((nodeData.audioModelProtocolBindings = audioModelProtocolBindings),
               (hasChanged = true)),
-            nodeData.projectId !== node && ((nodeData.projectId = node), (hasChanged = true)),
+            nodeData.projectId !== projectIdRef.current && ((nodeData.projectId = projectIdRef.current), (hasChanged = true)),
             nodeData.updateGlobalTasks !== updateTaskList && ((nodeData.updateGlobalTasks = updateTaskList), (hasChanged = true)),
             nodeData.addTransitResource !== addGeneratedAsset && ((nodeData.addTransitResource = addGeneratedAsset), (hasChanged = true)),
             nodeData.onShowToast !== showToast && ((nodeData.onShowToast = showToast), (hasChanged = true))),
