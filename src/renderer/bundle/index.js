@@ -16393,8 +16393,8 @@ time=${normalizedTtl}`,
       extractButlerOpenApiSummary = (docText) => {
         let spec = parseButlerLooseJson(docText),
           endpoints = [],
-          r = [],
-          i = [];
+          collectedRequests = [],
+          collectedResponses = [];
         if (spec?.paths && typeof spec.paths == `object`) {
           Object.entries(spec.paths).forEach(([path, pathItem]) => {
             pathItem &&
@@ -16421,7 +16421,7 @@ time=${normalizedTtl}`,
               });
           });
           spec.components?.securitySchemes &&
-            (r = Object.keys(spec.components.securitySchemes).slice(0, 12));
+            (collectedRequests = Object.keys(spec.components.securitySchemes).slice(0, 12));
         }
         if (!endpoints.length) {
           let text = String(docText || ``),
@@ -16439,12 +16439,12 @@ time=${normalizedTtl}`,
             if (endpoints.length >= 30) break;
           }
         }
-        i = [...new Set(endpoints.map((endpoint) => `${endpoint.method} ${endpoint.path}`))].slice(0, 30);
+        collectedResponses = [...new Set(endpoints.map((endpoint) => `${endpoint.method} ${endpoint.path}`))].slice(0, 30);
         return {
           format: spec?.openapi ? `openapi-${spec.openapi}` : spec?.swagger ? `swagger-${spec.swagger}` : endpoints.length ? `text-endpoints` : `plain-text`,
           endpoints: endpoints.slice(0, 30),
-          endpointLines: i,
-          securitySchemes: r,
+          endpointLines: collectedResponses,
+          securitySchemes: collectedRequests,
         };
       },
       inferButlerProtocolFromTools = (summary, modelInfo = {}) => {
@@ -16690,7 +16690,7 @@ ${curlText}`,
             let value2 = String(value || ``);
             return caseMode === `lower` ? value2.toLowerCase() : caseMode === `upper` ? value2.toUpperCase() : value2;
           },
-		          u = (aspectRatio, sizeValue = `1K`, resolution = ``) => {
+		          resolveImageDimensions = (aspectRatio, sizeValue = `1K`, resolution = ``) => {
 		            let sizeMode = String(config.sizeValueMode || parameterAdapter.sizeValueMode || ``).trim().toLowerCase(),
 		              aspectRatioMode = String(config.aspectRatioValueMode || parameterAdapter.aspectRatioValueMode || ``).trim().toLowerCase(),
 	              dimensionMap = {
@@ -16721,7 +16721,7 @@ ${curlText}`,
 	                applyCase(mappedAspectRatio, config.aspectRatioValueCase || parameterAdapter.aspectRatioValueCase),
             };
           },
-          d = (resolution, aspectRatio) => {
+          resolveVideoDimensions = (resolution, aspectRatio) => {
             let resolutionMode = String(config.resolutionValueMode || parameterAdapter.resolutionValueMode || ``).trim().toLowerCase(),
               aspectRatioMode = String(config.aspectRatioValueMode || parameterAdapter.aspectRatioValueMode || ``).trim().toLowerCase(),
               mappedResolution = mapValue(`720P`, config.resolutionValueMap || parameterAdapter.resolutionValueMap),
@@ -16767,7 +16767,7 @@ ${curlText}`,
               }, ]),
             }) :
 	          category === `image` ?
-	          ((parameterAdapter = u(`9:16`, `1K`, modelInfo.imageResolution || `2560x1440`)),
+	          ((parameterAdapter = resolveImageDimensions(`9:16`, `1K`, modelInfo.imageResolution || `2560x1440`)),
             (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test image`),
@@ -16776,7 +16776,7 @@ ${curlText}`,
               ...buildField(fieldMapping.aspectRatio || ``, parameterAdapter.aspectRatio),
             })) :
           category === `video` &&
-          ((parameterAdapter = d(`720x1280`, `9:16`)),
+          ((parameterAdapter = resolveVideoDimensions(`720x1280`, `9:16`)),
             (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test video`),
@@ -20066,7 +20066,7 @@ ${docText}`;
         }
         try {
           showToast2(`正在发送...`);
-          let t = ``,
+          let mediaDataUrl = ``,
             mimeType = `image/png`,
             extension = `png`,
             resource2 = typeof resource == `string` ? {
@@ -20080,7 +20080,7 @@ ${docText}`;
               let blob = await _r.blob();
               ((mimeType = blob.type || `image/png`),
                 (extension = mimeType.split(`/`)[1] || `png`),
-                (t = await new Promise((resolve, reject) => {
+                (mediaDataUrl = await new Promise((resolve, reject) => {
                   let fileReader = new FileReader();
                   ((fileReader.onloadend = () => resolve(fileReader.result)),
                     (fileReader.onerror = reject),
@@ -20097,7 +20097,7 @@ ${docText}`;
               ((canvas.width = image.width),
                 (canvas.height = image.height),
                 canvas.getContext(`2d`)?.drawImage(image, 0, 0),
-                (t = canvas.toDataURL(`image/png`)),
+                (mediaDataUrl = canvas.toDataURL(`image/png`)),
                 (mimeType = `image/png`),
                 (extension = `png`));
             }
@@ -20107,7 +20107,7 @@ ${docText}`;
             let blob = await _r.blob();
             ((mimeType = blob.type || `video/mp4`),
               (extension = mimeType.split(`/`)[1] || `mp4`),
-              (t = await new Promise((resolve, reject) => {
+              (mediaDataUrl = await new Promise((resolve, reject) => {
                 let fileReader = new FileReader();
                 ((fileReader.onloadend = () => resolve(fileReader.result)),
                   (fileReader.onerror = reject),
@@ -20166,7 +20166,7 @@ ${docText}`;
                   !0
                 );
               },
-              args: [t, mimeType, extension],
+              args: [mediaDataUrl, mimeType, extension],
             }),
             showToast2(`已发送到左侧网站！`));
         } catch (error) {
@@ -20214,7 +20214,7 @@ ${docText}`;
             console.error(`Copy failed:`, error);
           }
         },
-        Ht = (resourceId) => {
+        handleRemoveTransitResource = (resourceId) => {
           setTransitResources((resources) => {
             let updatedResources = resources.filter((resource) => resource.id !== resourceId);
             return (
@@ -20226,7 +20226,7 @@ ${docText}`;
             );
           });
         },
-        Ut = () => {
+        handleCreateProject = () => {
           if (!newProjectName.trim()) return;
           let normalizedGroupsForNewProject = normalizeProjectGroups(projectGroups),
             validNewProjectGroupIds = new Set(normalizedGroupsForNewProject.map((group) => group.id)),
@@ -22709,34 +22709,34 @@ ${docText}`;
 		            compactGlobalTasks = (tasks) => {
 		              if (!Array.isArray(tasks)) return [];
 		              let itemB = [],
-		                n = new Set(),
-		                r = new Map(),
-		                i = (e) => e?.type === `image` || e?.customOutputType === `image`,
-		                a = (e) =>
-		                !!(e?.remoteTaskId || e?.asyncImageDetailUrl || e?.customResultData || e?.resultUrl),
-		                o = (e) => {
-		                  if (!e || !e.id || n.has(e.id)) return !1;
-		                  return (n.add(e.id), itemB.push(e), !0);
+		                seenTaskKeys = new Set(),
+		                taskCountByKey = new Map(),
+		                isImageTask = (task) => task?.type === `image` || task?.customOutputType === `image`,
+		                hasImageOutput = (task) =>
+		                !!(task?.remoteTaskId || task?.asyncImageDetailUrl || task?.customResultData || task?.resultUrl),
+		                registerTask = (task) => {
+		                  if (!task || !task.id || seenTaskKeys.has(task.id)) return !1;
+		                  return (seenTaskKeys.add(task.id), itemB.push(task), !0);
 		                };
 		              [...tasks]
 		                .sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))
 		                .forEach((item) => {
 		                  if (!item || !item.id) return;
 		                  if (!item.nodeId) {
-		                    let t = r.get(`__unbound__`) || 0;
-		                    t < 100 && o(item);
-		                    r.set(`__unbound__`, t + 1);
+		                    let existingBoundCount = taskCountByKey.get(`__unbound__`) || 0;
+		                    existingBoundCount < 100 && registerTask(item);
+		                    taskCountByKey.set(`__unbound__`, existingBoundCount + 1);
 		                    return;
 		                  }
-		                  let n = `${item.projectId || `default`}::${item.nodeId}`,
-		                    s = r.get(n) || 0,
-		                    c = item.status === `running` || item.status === `pending`,
-		                    l = i(item) && a(item);
-		                  if (s < 20 || c || l) {
-		                    if (o(item)) r.set(n, s + 1);
+		                  let groupKey = `${item.projectId || `default`}::${item.nodeId}`,
+		                    groupCount = taskCountByKey.get(groupKey) || 0,
+		                    isTaskActive = item.status === `running` || item.status === `pending`,
+		                    shouldKeepTask = isImageTask(item) && hasImageOutput(item);
+		                  if (groupCount < 20 || isTaskActive || shouldKeepTask) {
+		                    if (registerTask(item)) taskCountByKey.set(groupKey, groupCount + 1);
 		                  }
 		                });
-		              return itemB.slice(0, 1200).sort((itemA, t) => (t?.createdAt || 0) - (itemA?.createdAt || 0));
+		              return itemB.slice(0, 1200).sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0));
 		            },
 		            canManuallyRefreshGlobalTask = (task) => {
 		              return !!task && [`running`, `pending`, `failed`, `completed`].includes(task.status);
@@ -22753,139 +22753,139 @@ ${docText}`;
 		                refreshGlobalTask(task, {});
 		                return;
 		              }
-		              let t = await window.wanjuanDesktop?.showInputDialog?.({
+		              let dialogResult = await window.wanjuanDesktop?.showInputDialog?.({
 		                title: `手动恢复图片任务`,
 		                message: `这个任务没有记录中转站任务 ID（可能提交时已失败）。可粘贴图片结果 URL，或填写中转站任务 ID：`,
 		                defaultValue: ``,
 		              });
-		              if (t === null) return;
-		              let n = String(t || ``).trim();
-		              if (!n) {
+		              if (dialogResult === null) return;
+		              let trimmedInput = String(dialogResult || ``).trim();
+		              if (!trimmedInput) {
 		                showToast2(`没有填写结果 URL 或任务 ID`);
 		                return;
 		              }
 		              refreshGlobalTask(task, {
-		                manualImageValue: n
+		                manualImageValue: trimmedInput
 		              });
 		            },
-		            stableConfigButlerTaskStringify = (e) => {
-		              let t = (e) =>
-		                e && typeof e == `object` && !Array.isArray(e) ?
-		                Object.keys(e).sort().reduce((n, r) => ((n[r] = t(e[r])), n), {}) :
-		                Array.isArray(e) ?
-		                e.map(t) :
-		                e;
+		            stableConfigButlerTaskStringify = (value) => {
+		              let sortObjectDeep = (innerValue) =>
+		                innerValue && typeof innerValue == `object` && !Array.isArray(innerValue) ?
+		                Object.keys(innerValue).sort().reduce((accumulator, objectKey) => ((accumulator[objectKey] = sortObjectDeep(innerValue[objectKey])), accumulator), {}) :
+		                Array.isArray(innerValue) ?
+		                innerValue.map(sortObjectDeep) :
+		                innerValue;
 		              try {
-		                return JSON.stringify(t(e || {}));
+		                return JSON.stringify(sortObjectDeep(value || {}));
 		              } catch {
-		                return String(e || ``);
+		                return String(value || ``);
 		              }
 		            },
-		            getConfigButlerTaskFailureSignature = (e) => {
-		              if (!e || !e.nodeId) return ``;
-		              let t = normalizeModelCategory(e.type || e.customOutputType) || inferButlerCategoryFromModelName(e.modelName || ``);
+		            getConfigButlerTaskFailureSignature = (task) => {
+		              if (!task || !task.nodeId) return ``;
+		              let category = normalizeModelCategory(task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``);
 		              return stableConfigButlerTaskStringify({
-		                projectId: e.projectId || `default`,
-		                nodeId: e.nodeId,
-		                category: t,
-		                modelName: e.modelName || ``,
-		                apiBaseUrl: normalizeButlerBaseUrl(e.apiBaseUrl || ``).toLowerCase(),
-		                apiConfigId: e.apiConfigId || ``,
-		                prompt: String(e.prompt || ``).trim().slice(0, 4000),
+		                projectId: task.projectId || `default`,
+		                nodeId: task.nodeId,
+		                category: category,
+		                modelName: task.modelName || ``,
+		                apiBaseUrl: normalizeButlerBaseUrl(task.apiBaseUrl || ``).toLowerCase(),
+		                apiConfigId: task.apiConfigId || ``,
+		                prompt: String(task.prompt || ``).trim().slice(0, 4000),
 		              });
 		            },
-		            buildLocalConfigButlerErrorDiagnosis = (e, t = ``) => {
-		              let n = String(e?.errorMsg || ``),
-		                r = /\b(400|401|403|404|422)\b|format|schema|invalid|parameter|param|field|body|json|multipart|字段|参数|格式|请求体/i.test(n),
-		                i = /\b(500|502|503|504|429)\b|timeout|temporar|overload|busy|rate limit|服务器|上游|繁忙|超时|限流/i.test(n);
+		            buildLocalConfigButlerErrorDiagnosis = (task, errorText = ``) => {
+		              let errorMsgText = String(task?.errorMsg || ``),
+		                isClientErrorRegex = /\b(400|401|403|404|422)\b|format|schema|invalid|parameter|param|field|body|json|multipart|字段|参数|格式|请求体/i.test(errorMsgText),
+		                isServerErrorRegex = /\b(500|502|503|504|429)\b|timeout|temporar|overload|busy|rate limit|服务器|上游|繁忙|超时|限流/i.test(errorMsgText);
 		              return {
-		                classification: r ? `request_config` : i ? `upstream` : `unknown`,
-		                confidence: r || i ? 0.68 : 0.35,
-			                summary: r ?
+		                classification: isClientErrorRegex ? `request_config` : isServerErrorRegex ? `upstream` : `unknown`,
+		                confidence: isClientErrorRegex || isServerErrorRegex ? 0.68 : 0.35,
+			                summary: isClientErrorRegex ?
 			                  `最新失败任务的错误信息更像请求体或协议配置不匹配。` :
-			                  i ?
+			                  isServerErrorRegex ?
 			                  `最新失败任务的错误信息更像上游中转站或模型服务暂时异常。` :
 			                  `最新失败任务信息不足以可靠区分上游和本地配置。`,
-		                evidence: [n, t ? `已读取文档摘要，但智能诊断未完成：${t}` : ``].filter(Boolean),
-		                suggestedFix: r ?
+		                evidence: [errorMsgText, errorText ? `已读取文档摘要，但智能诊断未完成：${errorText}` : ``].filter(Boolean),
+		                suggestedFix: isClientErrorRegex ?
 		                  `请检查该模型绑定的协议、submitPath/pollPath、字段映射和字段类型。配置管家可根据 API 文档重新生成协议后再应用。` :
-		                  i ?
+		                  isServerErrorRegex ?
 		                  `建议稍后重试、换同中转站其他模型，或在中转站后台确认该模型通道是否可用。` :
 		                  `建议打开配置管家填入该中转站 API 文档后重新诊断。`,
 			                shouldApplyPatch: !1,
 			              };
 			            },
-				            normalizeConfigButlerDiagnosis = (e, t = {}, n = null, protocolConfig = null) => {
-				              let r = e && typeof e == `object` ? {
-			                  ...e
+				            normalizeConfigButlerDiagnosis = (diagnosis, task = {}, protocolBinding = null, protocolConfig = null) => {
+				              let normalizedDiagnosis = diagnosis && typeof diagnosis == `object` ? {
+			                  ...diagnosis
 			                } : {},
-			                i = t?.requestProfile && typeof t.requestProfile == `object` ? t.requestProfile : {},
-			                a = String(t?.errorMsg || ``),
-				                o = String(i.submitPath || protocolConfig?.submitPath || ``),
-			                s = String(i.submitUrl || ``),
-			                c = String(i.pollUrl || ``),
-			                d = String(t?.apiBaseUrl || ``),
-			                f = /^https?:\/\//i.test(s) ?
-			                s :
-			                d && o ?
-			                buildApiUrl(d, o) :
+			                requestProfile = task?.requestProfile && typeof task.requestProfile == `object` ? task.requestProfile : {},
+			                errorMsg = String(task?.errorMsg || ``),
+				                submitPath = String(requestProfile.submitPath || protocolConfig?.submitPath || ``),
+			                submitUrl = String(requestProfile.submitUrl || ``),
+			                c = String(requestProfile.pollUrl || ``),
+			                d = String(task?.apiBaseUrl || ``),
+			                f = /^https?:\/\//i.test(submitUrl) ?
+			                submitUrl :
+			                d && submitPath ?
+			                buildApiUrl(d, submitPath) :
 			                ``,
-			                l = /invalid url\s*\(\s*post\s+\/[^)]+\)/i.test(a),
+			                l = /invalid url\s*\(\s*post\s+\/[^)]+\)/i.test(errorMsg),
 			                u = /^https?:\/\//i.test(f);
 			              if (l && u) {
-			                let e = `任务记录可还原实际提交 URL 为 ${f}，不是单独请求 ${o || `相对路径`}。`;
-			                r.classification === `model_code` && (r.classification = `request_config`);
-			                r.confidence = Math.max(Number(r.confidence) || 0, 0.86);
-			                r.summary = `上游拒绝了当前视频提交路径，问题更像 endpoint/平台路由不匹配，不是前端没有拼接 baseUrl。`;
-			                r.evidence = butlerUniquePaths(r.evidence, [
+			                let e = `任务记录可还原实际提交 URL 为 ${f}，不是单独请求 ${submitPath || `相对路径`}。`;
+			                normalizedDiagnosis.classification === `model_code` && (normalizedDiagnosis.classification = `request_config`);
+			                normalizedDiagnosis.confidence = Math.max(Number(normalizedDiagnosis.confidence) || 0, 0.86);
+			                normalizedDiagnosis.summary = `上游拒绝了当前视频提交路径，问题更像 endpoint/平台路由不匹配，不是前端没有拼接 baseUrl。`;
+			                normalizedDiagnosis.evidence = butlerUniquePaths(normalizedDiagnosis.evidence, [
 			                  e,
 			                  c ? `轮询 URL 记录为 ${c}` : ``,
-			                  a,
+			                  errorMsg,
 			                ]).slice(0, 5);
-			                r.suggestedFix =
-			                  r.suggestedProtocol?.config ?
-			                  r.suggestedFix || `可应用配置管家给出的协议修复后重试。` :
-			                  `当前没有足够证据安全改成另一个 endpoint。请用单模型配置管家结合该中转站文档重新生成 ${t?.modelName || `该模型`} 的视频协议，或向中转站确认 ${s || o} 是否支持这个模型。`;
-			                r.shouldApplyPatch = !!(
-			                  r.suggestedProtocol?.config &&
-			                  r.suggestedProtocol.config.requestType &&
-			                  r.suggestedProtocol.config.requestType !== `custom`
+			                normalizedDiagnosis.suggestedFix =
+			                  normalizedDiagnosis.suggestedProtocol?.config ?
+			                  normalizedDiagnosis.suggestedFix || `可应用配置管家给出的协议修复后重试。` :
+			                  `当前没有足够证据安全改成另一个 endpoint。请用单模型配置管家结合该中转站文档重新生成 ${task?.modelName || `该模型`} 的视频协议，或向中转站确认 ${submitUrl || submitPath} 是否支持这个模型。`;
+			                normalizedDiagnosis.shouldApplyPatch = !!(
+			                  normalizedDiagnosis.suggestedProtocol?.config &&
+			                  normalizedDiagnosis.suggestedProtocol.config.requestType &&
+			                  normalizedDiagnosis.suggestedProtocol.config.requestType !== `custom`
 			                );
 			              }
-			              if (r.suggestedProtocol?.config) {
+			              if (normalizedDiagnosis.suggestedProtocol?.config) {
 			                try {
-			                  let e = normalizeModelCategory(r.suggestedProtocol.config.category || t.type || t.customOutputType) || inferButlerCategoryFromModelName(t.modelName || ``),
+			                  let e = normalizeModelCategory(normalizedDiagnosis.suggestedProtocol.config.category || task.type || task.customOutputType) || inferButlerCategoryFromModelName(task.modelName || ``),
 			                    i = validateAndRepairConfigButlerResult({
-			                      modelName: t.modelName,
+			                      modelName: task.modelName,
 			                      category: e,
-			                      protocol: r.suggestedProtocol,
+			                      protocol: normalizedDiagnosis.suggestedProtocol,
 			                    }, {
-			                      modelName: t.modelName,
+			                      modelName: task.modelName,
 			                      category: e,
-			                      apiUrl: t.apiBaseUrl || ``,
-			                      toolContext: n,
+			                      apiUrl: task.apiBaseUrl || ``,
+			                      toolContext: protocolBinding,
 			                    });
-			                  r.suggestedProtocol = i.protocol;
+			                  normalizedDiagnosis.suggestedProtocol = i.protocol;
 			                } catch {}
 			              }
 			              if (
-			                /^grok-video/i.test(String(t?.modelName || ``)) &&
-			                /xpclaw\.ai/i.test(String(t?.apiBaseUrl || ``)) &&
+			                /^grok-video/i.test(String(task?.modelName || ``)) &&
+			                /xpclaw\.ai/i.test(String(task?.apiBaseUrl || ``)) &&
 			                /\/v1\/grok\/videos\b/i.test(
-			                  `${r.suggestedProtocol?.config?.submitPath || ``} ${r.suggestedProtocol?.config?.pollPath || ``} ${r.suggestedProtocol?.config?.contentPath || ``}`,
+			                  `${normalizedDiagnosis.suggestedProtocol?.config?.submitPath || ``} ${normalizedDiagnosis.suggestedProtocol?.config?.pollPath || ``} ${normalizedDiagnosis.suggestedProtocol?.config?.contentPath || ``}`,
 			                )
 			              ) {
-			                r.classification = `request_config`;
-			                r.confidence = Math.max(Number(r.confidence) || 0, 0.9);
-			                r.summary = `配置管家给出的 /v1/grok/videos 不是 xpclaw 已验证可用的视频端点，不能直接作为自动修复应用。`;
-			                r.evidence = butlerUniquePaths(r.evidence, [
+			                normalizedDiagnosis.classification = `request_config`;
+			                normalizedDiagnosis.confidence = Math.max(Number(normalizedDiagnosis.confidence) || 0, 0.9);
+			                normalizedDiagnosis.summary = `配置管家给出的 /v1/grok/videos 不是 xpclaw 已验证可用的视频端点，不能直接作为自动修复应用。`;
+			                normalizedDiagnosis.evidence = butlerUniquePaths(normalizedDiagnosis.evidence, [
 			                  `本地协议包没有定义 /v1/grok/videos；该路径来自诊断结果或已保存的协议修复。`,
 			                  `当前中转站返回 Invalid URL (POST /v1/grok/videos)，说明这个路由在 xpclaw 上不可用。`,
 			                ]).slice(0, 5);
-			                r.suggestedFix = `不要应用 /v1/grok/videos 这条修复。请以 xpclaw 文档里的真实 Grok 视频创建和查询端点重新生成单模型协议；在未验证 submitPath/pollPath 前，配置管家不会再允许把该路径写入模型绑定。`;
-			                r.shouldApplyPatch = !1;
+			                normalizedDiagnosis.suggestedFix = `不要应用 /v1/grok/videos 这条修复。请以 xpclaw 文档里的真实 Grok 视频创建和查询端点重新生成单模型协议；在未验证 submitPath/pollPath 前，配置管家不会再允许把该路径写入模型绑定。`;
+			                normalizedDiagnosis.shouldApplyPatch = !1;
 			              }
-			              return r;
+			              return normalizedDiagnosis;
 			            },
 			            runConfigButlerErrorDiagnosis = async (e, t) => {
 		              let n = e?.task || {},
@@ -27309,7 +27309,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                                           }),
                                         }),
                                         jsx(`button`, {
-                                          onClick: () => Ht(resource.id),
+                                          onClick: () => handleRemoveTransitResource(resource.id),
                                           className: `wanjuan-danger-icon-action p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded`,
                                           title: `删除`,
                                           children: jsx(Trash, {
@@ -28674,7 +28674,7 @@ ${String(l || ``).slice(0, 5e4)}`;
                             children: `取消`,
                           }),
                           jsx(`button`, {
-                            onClick: Ut,
+                            onClick: handleCreateProject,
                             className: `bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-500`,
                             children: `创建`,
                           }),
