@@ -269,9 +269,9 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
         </div>
 
         {/* 主体 */}
-        <div className="p-3 bg-[#1a1a1a] flex flex-col gap-2.5 nodrag rounded-b-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="p-3 bg-[#1a1a1a] flex flex-col gap-2.5 nodrag nowheel rounded-b-xl" onClick={(e) => e.stopPropagation()}>
           {/* 动作 */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {ACTIONS.map((a) => (
               <button
                 key={a.key}
