@@ -395,6 +395,7 @@ import { WanJuanFileToLinkNode } from "../components/file-to-link-node";
 import { WanJuanFlowEdge } from "../components/flow-edge";
 import { WanJuanImageAnnotateModal } from "../components/image-annotate-modal";
 import { agentThemePalettes } from "../lib/agent-theme-palettes";
+import { WanJuanSystemNotificationDialog } from "../components/system-notification-dialog";
 import { WanJuanSystemNotificationPanel } from "../components/system-notification-panel";
 import { WanJuanProjectMenu } from "../components/project-menu";
 import { WanJuanGlobalConfigPresetsPanel } from "../components/global-config-presets-panel";
@@ -26478,68 +26479,12 @@ ${String(promptText || ``).slice(0, 5e4)}`;
   systemNotificationError,
 }),
         systemNotificationDialog &&
-        jsx(`div`, {
-          className: `wanjuan-system-notification-overlay`,
-          onClick: (event) => {
-            event.target === event.currentTarget && dismissSystemNotificationDialog(systemNotificationDialog);
-          },
-          children: jsxs(`div`, {
-            className: `wanjuan-system-notification-dialog wanjuan-system-notification-${systemNotificationDialog.level}`,
-            children: [
-              jsxs(`div`, {
-                className: `wanjuan-system-notification-panel-header`,
-                children: [
-                  jsxs(`div`, {
-                    className: `min-w-0`,
-                    children: [
-                      jsx(`span`, {
-                        className: `wanjuan-system-notification-pill`,
-                        children: notificationLevelLabel(systemNotificationDialog.level),
-                      }),
-                      jsx(`div`, {
-                        className: `wanjuan-system-notification-panel-title mt-2`,
-                        children: systemNotificationDialog.title,
-                      }),
-                    ],
-                  }),
-                  jsx(`button`, {
-                    type: `button`,
-                    className: `wanjuan-system-notification-close-button`,
-                    onClick: () => dismissSystemNotificationDialog(systemNotificationDialog),
-                    title: `关闭`,
-                    children: `×`,
-                  }),
-                ],
-              }),
-              systemNotificationDialog.content &&
-              jsx(`div`, {
-                className: `wanjuan-system-notification-dialog-content`,
-                children: systemNotificationDialog.content,
-              }),
-              jsxs(`div`, {
-                className: `wanjuan-system-notification-dialog-actions`,
-                children: [
-                  jsx(`button`, {
-                    type: `button`,
-                    className: `wanjuan-system-notification-soft-button`,
-                    onClick: () => dismissSystemNotificationDialog(systemNotificationDialog),
-                    children: `知道了`,
-                  }),
-                  systemNotificationDialog.link_url &&
-                  jsx(`button`, {
-                    type: `button`,
-                    className: `wanjuan-system-notification-primary-button`,
-                    onClick: () => {
-                      (openSystemNotificationLink(systemNotificationDialog),
-                        dismissSystemNotificationDialog(systemNotificationDialog));
-                    },
-                    children: `查看详情`,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        }),
+        jsx(WanJuanSystemNotificationDialog, {
+  dismissSystemNotificationDialog,
+  notificationLevelLabel,
+  openSystemNotificationLink,
+  systemNotificationDialog,
+}),
         showToast &&
         jsx(`div`, {
           className: `absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-full text-sm z-50 animate-fade-in pointer-events-none wanjuan-toast`,
