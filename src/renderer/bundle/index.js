@@ -342,6 +342,25 @@ import { useVideoGeneration } from "../hooks/useVideoGeneration";
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { useCustomNodeGeneration } from "../hooks/useCustomNodeGeneration";
 import { useUngroupNode } from "../hooks/useUngroupNode";
+import { useSafeEffect47 } from "../hooks/useSafeEffect47";
+import { useSafeEffect46 } from "../hooks/useSafeEffect46";
+import { useSafeEffect42 } from "../hooks/useSafeEffect42";
+import { useSafeEffect40 } from "../hooks/useSafeEffect40";
+import { useSafeEffect38 } from "../hooks/useSafeEffect38";
+import { useSafeEffect37 } from "../hooks/useSafeEffect37";
+import { useSafeEffect30 } from "../hooks/useSafeEffect30";
+import { useSafeEffect27 } from "../hooks/useSafeEffect27";
+import { useSafeEffect23 } from "../hooks/useSafeEffect23";
+import { useSafeEffect22 } from "../hooks/useSafeEffect22";
+import { useSafeEffect21 } from "../hooks/useSafeEffect21";
+import { useSafeEffect20 } from "../hooks/useSafeEffect20";
+import { useSafeEffect19 } from "../hooks/useSafeEffect19";
+import { useSafeEffect18 } from "../hooks/useSafeEffect18";
+import { useSafeEffect12 } from "../hooks/useSafeEffect12";
+import { useSafeEffect11 } from "../hooks/useSafeEffect11";
+import { useSafeEffect10 } from "../hooks/useSafeEffect10";
+import { useSafeEffect7 } from "../hooks/useSafeEffect7";
+import { useSafeEffect1 } from "../hooks/useSafeEffect1";
 import { useAutoRefreshGlobalTasksEffect } from "../hooks/useAutoRefreshGlobalTasksEffect";
 import { useTransitAudioEffect } from "../hooks/useTransitAudioEffect";
 import { useGlobalTasksSyncEffect } from "../hooks/useGlobalTasksSyncEffect";
@@ -1020,91 +1039,7 @@ function WanJuanAppCanvas({
 	      height: 900
 	    }),
 	    wanjuanViewportUpdateRef = useRef(0);
-  (useEffect(() => {
-      let groupNodes = [],
-        isDragging = false;
-      for (let node of nodes)
-        (node.type === `group` && groupNodes.push(node), node.dragging && (isDragging = true));
-      if (groupNodes.length === 0 || isDragging) return;
-      let hasChanges = false,
-        updatedNodes = [...nodes];
-      for (let groupNode of groupNodes) {
-        let childNodes = updatedNodes.filter((node) => node.parentId === groupNode.id);
-        if (childNodes.length === 0) continue;
-        let minX = 1 / 0,
-          minY = 1 / 0,
-          maxX = -1 / 0,
-          maxY = -1 / 0;
-        (childNodes.forEach((childNode) => {
-            let nodeX = childNode.position.x,
-              nodeY = childNode.position.y,
-              nodeWidth = childNode.measured?.width || childNode.style?.width || 300,
-              nodeHeight = childNode.measured?.height || childNode.style?.height || 200;
-            (nodeX < minX && (minX = nodeX),
-              nodeY < minY && (minY = nodeY),
-              nodeX + nodeWidth > maxX && (maxX = nodeX + nodeWidth),
-              nodeY + nodeHeight > maxY && (maxY = nodeY + nodeHeight));
-          }),
-          (minX -= 40),
-          (minY -= 40),
-          (maxX += 40),
-          (maxY += 40));
-        let contentWidth = maxX - minX,
-          contentHeight = maxY - minY;
-        if (childNodes.some((node) => node.dragging)) {
-          let newWidth = Math.max(contentWidth, groupNode.style?.width || 0, maxX),
-            newHeight = Math.max(contentHeight, groupNode.style?.height || 0, maxY);
-          if (newWidth !== groupNode.style?.width || newHeight !== groupNode.style?.height) {
-            hasChanges = true;
-            let nodeIndex = updatedNodes.findIndex((node) => node.id === groupNode.id);
-            updatedNodes[nodeIndex] = {
-              ...groupNode,
-              style: {
-                ...groupNode.style,
-                width: newWidth,
-                height: newHeight
-              }
-            };
-          }
-        } else if (
-          Math.abs(minX) > 1 ||
-          Math.abs(minY) > 1 ||
-          Math.abs(groupNode.style?.width - contentWidth) > 1 ||
-          Math.abs(groupNode.style?.height - contentHeight) > 1
-        ) {
-          hasChanges = true;
-          let nodeIndex = updatedNodes.findIndex((node) => node.id === groupNode.id);
-          if (
-            ((updatedNodes[nodeIndex] = {
-                ...groupNode,
-                position: {
-                  x: groupNode.position.x + minX,
-                  y: groupNode.position.y + minY
-                },
-                style: {
-                  ...groupNode.style,
-                  width: contentWidth,
-                  height: contentHeight
-                },
-              }),
-              Math.abs(minX) > 1 || Math.abs(minY) > 1)
-          )
-            for (let index = 0; index < updatedNodes.length; index++)
-              updatedNodes[index].parentId === groupNode.id &&
-              (updatedNodes[index] = {
-                ...updatedNodes[index],
-                position: {
-                  x: updatedNodes[index].position.x - minX,
-                  y: updatedNodes[index].position.y - minY
-                },
-              });
-        }
-      }
-      if (hasChanges) {
-        let timeoutId = setTimeout(() => requestAnimationFrame(() => setNodes(updatedNodes)), 120);
-        return () => clearTimeout(timeoutId);
-      }
-    }, [nodes, setNodes]),
+  (useSafeEffect1({ nodes, setNodes }),
     useEffect(() => {
       let handleBeforeUnload = () => {
         // 关窗/刷新时同步 flush 当前画布到 localStorage，避免 2.8s 自动保存防抖窗口内的未保存编辑丢失。
@@ -1181,56 +1116,7 @@ function WanJuanAppCanvas({
 	    useEffect(() => {
 	      edgesRef.current = edges;
 	    }, [edges]),
-	    useEffect(() => {
-	      if (wanjuanResourceLocalUrlMap.size === 0) return;
-	      setNodes((nodes2) => {
-	        let changed = false,
-	          nextNodes = nodes2.map((node) => {
-	            if (!node?.data) return node;
-	            let nextData = null;
-	            [`imageUrl`, `videoUrl`, `audioUrl`].forEach((field) => {
-	              let currentValue = node.data[field],
-	                binding = node.data.projectAssetBindings?.[field],
-	                replacement =
-	                  (typeof currentValue == `string` ? wanjuanResourceLocalUrlMap.get(currentValue) : null) ||
-	                  (binding?.assetId ? wanjuanResourceLocalUrlMap.get(`asset:${binding.assetId}`) : null) ||
-	                  (binding?.sha256 ? wanjuanResourceLocalUrlMap.get(`sha256:${binding.sha256}`) : null);
-		              if (!replacement) return;
-		              let resourceBinding = replacement.resource?.projectAssetBinding,
-		                shouldUpdateValue = replacement.url !== currentValue,
-		                shouldRefreshBinding =
-		                  !!resourceBinding?.localPath &&
-		                  (binding?.missing || binding?.localPath !== resourceBinding.localPath);
-		              if (!shouldUpdateValue && !shouldRefreshBinding) return;
-		              nextData ||
-		                (nextData = {
-		                  ...node.data,
-	                  projectAssetBindings: {
-	                    ...(node.data.projectAssetBindings || {}),
-		                  },
-		                });
-		              shouldUpdateValue && (nextData[field] = replacement.url);
-		              if (resourceBinding?.localPath)
-		                nextData.projectAssetBindings[field] = {
-		                  ...(nextData.projectAssetBindings[field] || {}),
-		                  ...resourceBinding,
-		                  field,
-		                  kind: field === `videoUrl` ? `video` : field === `audioUrl` ? `audio` : `image`,
-		                  valueFormat: `file-url`,
-		                  sourceSignature: currentValue,
-		                  missing: false,
-		                  lastCheckedAt: new Date().toISOString(),
-		                };
-	              changed = true;
-	            });
-	            return nextData ? {
-	              ...node,
-	              data: nextData,
-	            } : node;
-	        });
-	        return changed ? nextNodes : nodes2;
-	      });
-	    }, [wanjuanResourceLocalUrlMap, setNodes]),
+	    useSafeEffect7({ setNodes, wanjuanResourceLocalUrlMap }),
 	    useEffect(() => {
 	      projectIdRef.current = projectId;
 	      try { globalThis.__wanjuanCurrentProjectId = projectId; } catch {}
@@ -1238,30 +1124,7 @@ function WanJuanAppCanvas({
     useEffect(() => {
       shouldFitViewRef.current = shouldFitView;
     }, [shouldFitView]),
-    useEffect(() => {
-      let updateViewportSize = () => {
-        let rect = wrapperRef.current?.getBoundingClientRect();
-        rect &&
-          setWanjuanViewportSize((prev) =>
-            Math.abs(prev.width - rect.width) > 1 || Math.abs(prev.height - rect.height) > 1 ?
-            {
-              width: rect.width,
-              height: rect.height
-            } :
-            prev,
-          );
-      };
-      updateViewportSize();
-      if (typeof ResizeObserver == `function` && wrapperRef.current) {
-        let observer = new ResizeObserver(updateViewportSize);
-        observer.observe(wrapperRef.current);
-        return () => observer.disconnect();
-      }
-      return (
-        window.addEventListener(`resize`, updateViewportSize),
-        () => window.removeEventListener(`resize`, updateViewportSize)
-      );
-    }, []));
+    useSafeEffect10({ setWanjuanViewportSize, wrapperRef }));
   let {
     previewImageUrl,
     setPreviewImageUrl,
@@ -1316,54 +1179,8 @@ function WanJuanAppCanvas({
     relinkMissingProjectAssetsFromFolder = useRelinkFromFolder({ localforageModule, nodesRef, projectIdRef, saveCanvasState, setNodes, showProjectAssetCandidateDialog }).relinkMissingProjectAssetsFromFolder;
   (useCanvasLoadEffect({ GlobalTasks, LoadOnceRef, abortControllersRef, canvasStateKeyPrefix, desktopCanvasMirrorPrefix, hydrateProjectAssetContainer, initialEmptyProject, localforageModule, onInitialEmptyProjectReady, projectId, projectIdRef, resolveWanjuanPlayableTaskUrl, setEdges, setNodes, setShouldFitView, shouldFitViewRef }),
     useGlobalTasksSyncEffect({ GlobalTasks, projectIdRef, resolveWanjuanPlayableTaskUrl, setNodes, shouldFitView }),
-	    useEffect(() => {
-	      if (!shouldFitView) return;
-	      let loadingMap = new Map(nodes.map((node) => [node.id, !!node.data?.loading]));
-	      setEdges((edges2) => {
-	        let changed = false,
-	          updatedEdges = edges2.map((edge) => {
-	            let shouldAnimate = !!loadingMap.get(edge.target);
-	            return edge.animated === shouldAnimate ? edge : ((changed = true), {
-	              ...edge,
-	              animated: shouldAnimate
-	            });
-	          });
-	        return changed ? updatedEdges : edges2;
-	      });
-	    }, [shouldFitView, nodes, setEdges]),
-	    useEffect(() => {
-	      let prevEdges = wanjuanPrevEdgesRef.current || [],
-	        currentEdgeKeys = new Set(
-	          edges.map(
-	            (edge) =>
-	            `${edge.id || ``}|${edge.source || ``}|${edge.sourceHandle || ``}|${edge.target || ``}|${edge.targetHandle || ``}`,
-	          ),
-	        ),
-	        removedTargetIds = new Set();
-	      prevEdges.forEach((edge) => {
-	        let edgeKey = `${edge.id || ``}|${edge.source || ``}|${edge.sourceHandle || ``}|${edge.target || ``}|${edge.targetHandle || ``}`;
-	        edge?.target && !currentEdgeKeys.has(edgeKey) && removedTargetIds.add(edge.target);
-	      });
-	      wanjuanPrevEdgesRef.current = edges;
-	      if (!shouldFitView || removedTargetIds.size === 0) return;
-	      setNodes((nodes2) => {
-	        let changed = false,
-	          updatedNodes = nodes2.map((node) =>
-	            removedTargetIds.has(node.id) &&
-	            Array.isArray(node.data?.selectedContextResources) &&
-	            node.data.selectedContextResources.length > 0 ?
-	            ((changed = true), {
-	              ...node,
-	              data: {
-	                ...node.data,
-	                selectedContextResources: []
-	              },
-	            }) :
-	            node,
-	          );
-	        return changed ? updatedNodes : nodes2;
-	      });
-	    }, [edges, shouldFitView, setNodes]),
+	    useSafeEffect11({ nodes, setEdges, shouldFitView }),
+	    useSafeEffect12({ edges, setNodes, shouldFitView, wanjuanPrevEdgesRef }),
 		    useEffect(() => {
 		      if (!shouldFitView) return;
 		      let timeoutId = setTimeout(saveCanvasState, 2800);
@@ -2117,109 +1934,7 @@ function WanJuanAppCanvas({
 			    };
 			  useWorkspaceTemplateEffect({ createNodeAt, getNodes, projectId, projectIdRef, screenToFlowPosition, showToast, wrapperRef });
 			  return (
-	    useEffect(() => {
-      let guard = (event) => {
-          let targetElement = event.target;
-          return !!(
-            document.activeElement?.isContentEditable ||
-            targetElement?.closest?.(`input, textarea, select, [contenteditable="true"]`) ||
-            nodesRef.current.some((node) => node.dragging)
-          );
-        },
-	        handleKeyDown = async (event) => {
-	          let fullscreenElement =
-	            document.fullscreenElement ||
-	            document.webkitFullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement;
-          if (
-            event.key === `Escape` &&
-            (fullscreenElement ||
-              window.screenTop === 0 ||
-              window.screenY === 0)
-          )
-            return;
-	          let shortcutKey = String(event.key || ``).toLowerCase(),
-	            isPlainCommand = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey;
-	          if ((event.ctrlKey || event.metaKey) && event.key === `z`) {
-	            if (guard(event)) return;
-	            (event.preventDefault(), event.shiftKey ? redo() : $e());
-	          } else if ((event.ctrlKey || event.metaKey) && event.key === `y`) {
-	            if (guard(event)) return;
-	            (event.preventDefault(), redo());
-	          }
-	          else if (isPlainCommand && [`t`, `i`, `v`, `j`, `w`].includes(shortcutKey)) {
-	            if (guard(event) || event.repeat) return;
-	            event.preventDefault();
-	            if (shortcutKey === `v` && await clipboardHasPastePayload()) {
-	              handlePaste();
-	              return;
-	            }
-	            shortcutKey === `t` ?
-	              addKeyboardNode(`textNode`, {
-	                text: ``
-	              }) :
-	              shortcutKey === `i` ?
-	              addKeyboardNode(`promptNode`, {
-	                prompt: ``
-	              }) :
-	              shortcutKey === `v` ?
-	              addKeyboardNode(`videoNode`, {
-	                prompt: ``
-	              }) :
-	              shortcutKey === `j` ?
-	              addKeyboardNode(`seedanceNode`, {
-	                prompt: ``
-	              }) :
-	              addKeyboardNode(`tongyiWanxiangNode`, {
-	                prompt: ``
-	              });
-	          }
-	          else if ((event.ctrlKey || event.metaKey) && event.key === `c`) {
-	            if (guard(event)) return;
-	            copySelectedNodes();
-          } else if ((event.ctrlKey || event.metaKey) && event.key === `g`) {
-            if (guard(event)) return;
-            (event.preventDefault(), groupSelectedNodes());
-          } else if ((event.ctrlKey || event.metaKey) && event.key === `l`) {
-            if (guard(event)) return;
-            (event.preventDefault(), autoLayout());
-          } else if (event.key === `Backspace` || event.key === `Delete`) {
-            if (guard(event)) return;
-            let selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
-            selectedNodeIds.length > 0 &&
-              (event.preventDefault(),
-                selectedNodeIds.forEach((nodeId) => stopGeneration(nodeId, {
-                  silent: true
-                })),
-                setNodes((nodes2) => nodes2.filter((node) => !selectedNodeIds.includes(node.id))),
-                setEdges((edges2) =>
-                  edges2.filter((edge) => !selectedNodeIds.includes(edge.source) && !selectedNodeIds.includes(edge.target)),
-                ));
-          }
-        },
-        handlePaste2 = (event) => {
-          if (guard(event)) return;
-          let clipboardText = event.clipboardData?.getData(`text/plain`);
-          if (clipboardText && clipboardText.trim())
-            try {
-              let parsedData = JSON.parse(clipboardText.trim());
-              if (parsedData && parsedData.type === `canvas-clipboard-nodes`) {
-                (event.preventDefault(), handlePaste(undefined, undefined, clipboardText.trim()));
-                return;
-              }
-            } catch {}
-            (event.preventDefault(), handlePaste());
-        };
-      return (
-        window.addEventListener(`keydown`, handleKeyDown),
-        window.addEventListener(`paste`, handlePaste2),
-        () => {
-          (window.removeEventListener(`keydown`, handleKeyDown),
-            window.removeEventListener(`paste`, handlePaste2));
-        }
-      );
-	    }, [$e, redo, handlePaste, copySelectedNodes, groupSelectedNodes, autoLayout, stopGeneration, setNodes, setEdges, menuPosition]),
+	    useSafeEffect18({ $e, addKeyboardNode, autoLayout, clipboardHasPastePayload, copySelectedNodes, groupSelectedNodes, handlePaste, menuPosition, nodesRef, redo, setEdges, setNodes, stopGeneration }),
     jsxs(`div`, {
       style: {
         width: `100%`,
@@ -2860,75 +2575,12 @@ Suno 音乐生成`,
   [audioModelApiBindings, setAudioModelApiBindings] = useState(() => wanjuanBuildJixinAudioModelBindings()),
   [videoModelApiBindings, setVideoModelApiBindings] = useState(() => wanjuanBuildJixinVideoModelBindings()),
   [isReady, setIsReady] = useState(false);
-  useEffect(() => {
-    let textConfig = apiConfigs.find((config) => config.id === textApiConfigId) || apiConfigs[0];
-    textConfig && (setTextApiUrl(textConfig.url), setTextApiKey(textConfig.key));
-    let imageConfig = apiConfigs.find((config) => config.id === imageApiConfigId) || apiConfigs[0];
-    imageConfig && (setImageApiUrl(imageConfig.url), setImageApiKey(imageConfig.key));
-    let videoConfig = apiConfigs.find((config) => config.id === videoApiConfigId) || apiConfigs[0];
-    videoConfig && (setVideoApiUrl(videoConfig.url), setVideoApiKey(videoConfig.key));
-    let audioConfig = apiConfigs.find((config) => config.id === audioApiConfigId) || apiConfigs[0];
-    audioConfig && (setAudioApiUrl(audioConfig.url), setAudioApiKey(audioConfig.key));
-  }, [apiConfigs, textApiConfigId, imageApiConfigId, videoApiConfigId, audioApiConfigId]);
+  useSafeEffect19({ apiConfigs, audioApiConfigId, imageApiConfigId, setAudioApiKey, setAudioApiUrl, setImageApiKey, setImageApiUrl, setTextApiKey, setTextApiUrl, setVideoApiKey, setVideoApiUrl, textApiConfigId, videoApiConfigId });
   const applyPerformanceProfile = useApplyPerformanceProfile({ layeredRunConcurrencyOptions, layeredRunMaxConcurrency, setLayeredRunConcurrencyOptions, setLayeredRunMaxConcurrency, setPerformanceProfile }).applyPerformanceProfile;
-  useEffect(() => {
-	    let parseModelList = (text) => String(text || ``).split(/[\n,，、]+/).map((model) => model.trim()).filter(Boolean),
-	      dedupe = (list) => list.filter((item, index, array) => array.indexOf(item) === index),
-	      audioModelList = parseModelList(audioModels),
-	      musicModelList = parseModelList(ttsMusicModel),
-	      musicModels = audioModelList.filter((model) => WanJuanIsMusicModel(model)),
-	      nonMusicModels = musicModelList.filter((model) => !WanJuanIsMusicModel(model));
-	    if (!musicModels.length && !nonMusicModels.length) return;
-	    let nextAudioModels = dedupe([...audioModelList.filter((model) => !WanJuanIsMusicModel(model)), ...nonMusicModels]).join(`
-	`),
-	      ttsMusicModelText = dedupe([...musicModelList.filter((model) => WanJuanIsMusicModel(model)), ...musicModels]).join(`
-	`);
-	    nextAudioModels !== audioModels && setAudioModels(nextAudioModels);
-	    ttsMusicModelText !== ttsMusicModel && setTtsMusicModel(ttsMusicModelText);
-	    typeof chrome < `u` &&
-	      chrome.storage?.local?.set({
-	        audioModel: nextAudioModels,
-	        ttsMusicModel: ttsMusicModelText
-	      });
-	  }, [audioModels, ttsMusicModel]);
-  useEffect(() => {
-    let targetApiConfig =
-      apiConfigs.find((config) => config.id === configButlerTargetApiConfigId) ||
-      apiConfigs.find((config) => config.id === `vectorengine`) ||
-      apiConfigs[0];
-    targetApiConfig &&
-      (setConfigButlerTargetApiConfigId(targetApiConfig.id),
-        setConfigButlerTargetApiUrl(targetApiConfig.url || ``),
-        setConfigButlerTargetApiKey(targetApiConfig.key || ``));
-  }, [apiConfigs, configButlerTargetApiConfigId]);
-  useEffect(() => {
-    let protocolNames = Object.keys(modelProtocolRegistry || {});
-    setProtocolNamesText(protocolNames.join(`
-`));
-    protocolNames.length === 0 ?
-      (setActiveProtocolName(``), setActiveProtocolConfigText(`{}`)) :
-      (!activeProtocolName || !modelProtocolRegistry[activeProtocolName]) &&
-      (setActiveProtocolName(protocolNames[0]),
-        setActiveProtocolConfigText(
-          JSON.stringify(modelProtocolRegistry[protocolNames[0]], null, 2),
-        ));
-  }, [modelProtocolRegistry]);
-	  useEffect(() => {
-	    let apiConfigId = imageModelApiBindings?.[`GPT-Image-2`],
-	      apiConfig = apiConfigs.find((config) => config.id === apiConfigId),
-      apiUrl = String(apiConfig?.url || ``)
-      .replace(/\s+/g, ``)
-      .replace(/\/$/, ``),
-      protocolId = imageModelProtocolBindings?.[`GPT-Image-2`];
-    if (
-      /api\.wuyinkeji\.com\/api\/async\/image_gpt/i.test(apiUrl) &&
-      protocolId !== `OpenAI 图片异步兼容`
-    )
-	      setImageModelProtocolBindings({
-	        ...imageModelProtocolBindings,
-	        [`GPT-Image-2`]: `OpenAI 图片异步兼容`,
-	      });
-	  }, [apiConfigs, imageModelApiBindings, imageModelProtocolBindings]);
+  useSafeEffect20({ audioModels, setAudioModels, setTtsMusicModel, ttsMusicModel });
+  useSafeEffect21({ apiConfigs, configButlerTargetApiConfigId, setConfigButlerTargetApiConfigId, setConfigButlerTargetApiKey, setConfigButlerTargetApiUrl });
+  useSafeEffect22({ activeProtocolName, modelProtocolRegistry, setActiveProtocolConfigText, setActiveProtocolName, setProtocolNamesText });
+	  useSafeEffect23({ apiConfigs, imageModelApiBindings, imageModelProtocolBindings, setImageModelProtocolBindings });
 	  const refreshExtensionToolStatus = async (toolName = `deface`) => {
 	    try {
 	      if (typeof window > `u` || typeof window.wanjuanDesktop?.getExtensionToolStatus != `function`) {
@@ -3126,56 +2778,7 @@ Suno 音乐生成`,
 	    audioModelProtocolBindings,
 	    audioModelApiBindings,
 	  ]);
-  useEffect(() => {
-    let mediaQuery = window.matchMedia ?
-      window.matchMedia(`(prefers-color-scheme: light)`) :
-      null,
-      rootElement = document.documentElement,
-      resolveTheme = () =>
-      themeMode === `system` ?
-      mediaQuery && mediaQuery.matches ?
-      `light` :
-      `dark` :
-      normalizeThemeMode(themeMode),
-      applyTheme = () => {
-        let resolvedTheme = resolveTheme();
-        let updateThemeClasses = () => {
-          (rootElement.classList.remove(
-            `theme-dark`,
-            `theme-light`,
-            `theme-warm-light`,
-            `theme-mist-blue`,
-            `theme-chrome-blue`,
-            `theme-chrome-rose`,
-            `theme-chrome-sand`,
-            `theme-chrome-teal`,
-            `theme-sage-green`,
-            `theme-graphite`,
-          ),
-            rootElement.classList.add(`theme-${resolvedTheme}`));
-        };
-        window.__wanjuanThemeTransitionReady === true &&
-        !rootElement.classList.contains(`theme-${resolvedTheme}`) &&
-        wanjuanRunThemeTransition(resolvedTheme, updateThemeClasses) ?
-          (window.__wanjuanThemeTransitionReady = true) :
-          (updateThemeClasses(), (window.__wanjuanThemeTransitionReady = true));
-      };
-    return (
-      applyTheme(),
-      mediaQuery &&
-      themeMode === `system` &&
-      (mediaQuery.addEventListener ?
-        mediaQuery.addEventListener(`change`, applyTheme) :
-        mediaQuery.addListener && mediaQuery.addListener(applyTheme)),
-      () => {
-        mediaQuery &&
-          themeMode === `system` &&
-          (mediaQuery.removeEventListener ?
-            mediaQuery.removeEventListener(`change`, applyTheme) :
-            mediaQuery.removeListener && mediaQuery.removeListener(applyTheme));
-      }
-    );
-  }, [themeMode]);
+  useSafeEffect27({ themeMode });
   let [$e, setMembership] = useState({
     type: `FREE`,
     expiry: 0
@@ -5110,22 +4713,7 @@ ${docText}`;
     if (!isReady || !settingsHydratedRef.current) return;
     syncTianjiConfigFromJixinApi(apiConfigs).catch((error) => console.warn(`Sync Tianji config from Jixin API failed`, error));
   }, [isReady, apiConfigs]);
-  useEffect(() => {
-    if (!isReady) return;
-    let handleTianjiConfigUpdated = (event) => {
-      try {
-        let config = wanjuanNormalizeTianjiSeedanceConfig(event?.detail?.config || {});
-        if (!config.token) return;
-        wanjuanTianjiStorageSet({
-          tianjiSeedanceConfig: config
-        }).catch((error) => console.warn(`Mirror Tianji config update failed`, error));
-      } catch (error) {
-        console.warn(`Handle Tianji config update failed`, error);
-      }
-    };
-    window.addEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
-    return () => window.removeEventListener(`wanjuan:tianji-config-updated`, handleTianjiConfigUpdated);
-  }, [isReady]);
+  useSafeEffect30({ isReady });
   useEffect(() => {
     if (!isReady || !settingsHydratedRef.current) return;
     if (!configButlerDocUrl) setConfigButlerDocUrl(WANJUAN_JIXIN_DOC_URL);
@@ -5162,65 +4750,19 @@ ${docText}`;
             lastOpenedProjectId: activeProjectId
           }));
     }, [activeProjectId, isReady]),
-    useEffect(() => {
-      if (!isReady || !settingsHydratedRef.current || !projectHydratedRef.current) return;
-      let markAppReady = () => {
-        try {
-          let rootElement = document.documentElement;
-          ((rootElement.dataset.wanjuanAppReady = `true`),
-            (rootElement.dataset.wanjuanProjectId = activeProjectId || `default`),
-            (rootElement.dataset.wanjuanThemeMode = themeMode || ``));
-        } catch {}
-      };
-      typeof requestAnimationFrame == `function` ?
-        requestAnimationFrame(() => requestAnimationFrame(markAppReady)) :
-        setTimeout(markAppReady, 32);
-    }, [isReady, activeProjectId, themeMode]),
+    useSafeEffect37({ activeProjectId, isReady, projectHydratedRef, settingsHydratedRef, themeMode }),
     usePluginEnvEffect({ _e, localforageModule, normalizeStoredGlobalConfigs, projectHydratedRef, repairXSeeVeoReferenceVideoBindings, setActiveProjectId, setActiveStoredGlobalConfigId, setActiveView, setAdvancedSettingsUnlocked, setAgentConversations, setAgentItems, setApiConfigs, setAppLanguage, setAudioApiConfigId, setAudioApiKey, setAudioApiUrl, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setAutoDownloadGeneratedResults, setBackupExportSelection, setConfigButlerApiKey, setConfigButlerApiUrl, setConfigButlerDocUrl, setConfigButlerMode, setConfigButlerModel, setConfigButlerProtocol, setConfigButlerRepairHistory, setConfigButlerTargetApiConfigId, setConfigButlerTargetCategory, setCurrentPlatform, setCustomPublicUploadConfig, setDailyUsageCount, setDeviceId, setDownloadDirectory, setEdges, setGlobalTasks, setHasCurrentTab, setImageApiConfigId, setImageApiKey, setImageApiUrl, setImageCompatResolutions, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setIsLoading, setIsPluginEnv, setIsReady, setLayeredRunConcurrencyOptions, setLayeredRunMaxConcurrency, setMaxPollingDuration, setMembership, setModelProtocolRegistry, setPerformanceProfile, setPollingInterval, setPresetPrompts, setProjectGroups, setProjects, setQiniuConfig, setSeedanceDurations, setSeedanceEnableWebSearch, setSeedanceGenerateAudio, setSeedanceModel, setSeedanceRatios, setSeedanceResolutions, setSeedanceUploadMode, setSeedanceVirtualPortraits, setSeedanceWatermark, setSelectedAgentId, setStorageOptimizationEnabled, setStorageOptimizationPaused, setStoredGlobalConfigs, setTextApiConfigId, setTextApiKey, setTextApiUrl, setTextModelApiBindings, setTextModelProtocolBindings, setThemeMode, setTianjiSeedanceModel, setTianjiSeedanceSettingsMode, setTongyiWanxiangDurations, setTongyiWanxiangEditModels, setTongyiWanxiangImageModels, setTongyiWanxiangRatios, setTongyiWanxiangReferenceImageModels, setTongyiWanxiangResolutions, setTongyiWanxiangTextModels, setTosConfig, setTransitGridCols, setTransitResources, setTtsMusicModel, setUpdateInfo, setUsers, setVideoApiConfigId, setVideoApiKey, setVideoApiUrl, setVideoAspectRatios, setVideoDurations, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModelRequestProfilesText, setVideoModels, setVideoResolutions, settingsHydratedRef, showToast2 }),
-    useEffect(() => {
-      saveNonModelSettings();
-    }, [
-      pollingInterval,
-      maxPollingDuration,
-      themeMode,
-      appLanguage,
-      downloadDirectory,
-      autoDownloadGeneratedResults,
-      storageOptimizationEnabled,
-      storageOptimizationPaused,
-      presetPrompts,
-      layeredRunConcurrencyOptions,
-      layeredRunMaxConcurrency,
-      performanceProfile,
-      backupExportSelection,
-      agentItems,
-      selectedAgentId,
-      agentConversations,
-    ]),
+    useSafeEffect38({ agentConversations, agentItems, appLanguage, autoDownloadGeneratedResults, backupExportSelection, downloadDirectory, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, performanceProfile, pollingInterval, presetPrompts, saveNonModelSettings, selectedAgentId, storageOptimizationEnabled, storageOptimizationPaused, themeMode }),
     useEffect(() => {
       globalThis.__wanjuanLastCanvasActivityAt = Date.now();
     }, [activeProjectId]),
-    useEffect(() => {
-      if (!storageOptimizationEnabled || storageOptimizationPaused) return;
-      let timer = setInterval(() => {
-        let hasActiveTask = globalTasks.some((task) => task?.status === `running` || task?.status === `pending`);
-        if (hasActiveTask || Date.now() - Number(globalThis.__wanjuanLastCanvasActivityAt || 0) < 3e4) return;
-        globalThis.__wanjuanRunNextStorageMigration?.(true);
-      }, 15e3);
-      return () => clearInterval(timer);
-    }, [storageOptimizationEnabled, storageOptimizationPaused, globalTasks, activeProjectId]),
+    useSafeEffect40({ activeProjectId, globalTasks, storageOptimizationEnabled, storageOptimizationPaused }),
     useEffect(() => {
       activeSettingsTab === `data` && window.wanjuanDesktop?.getStorageOptimizationStatus?.({
         directory: downloadDirectory
       }).then((result) => result?.ok && setStorageOptimizationStatus(result)).catch(console.error);
     }, [activeSettingsTab, downloadDirectory]),
-    useEffect(() => {
-      if (!storageOptimizationEnabled) return;
-      let previous = globalThis.__wanjuanStorageOptimizationDirectory;
-      if (previous !== undefined && previous !== downloadDirectory)
-        setStorageOptimizationLastResult(`下载目录已更改。新结果写入新媒体库，旧媒体库保持只读可用；如需集中存放，请手动搬迁。`);
-      globalThis.__wanjuanStorageOptimizationDirectory = downloadDirectory;
-    }, [storageOptimizationEnabled, downloadDirectory]),
+    useSafeEffect42({ downloadDirectory, setStorageOptimizationLastResult, storageOptimizationEnabled }),
 	    useEffect(() => () => {
 	      nonModelSettingsSaveTimerRef.current &&
 	        clearTimeout(nonModelSettingsSaveTimerRef.current);
@@ -5603,164 +5145,8 @@ ${docText}`;
         );
 	      });
 	    };
-	  useEffect(() => {
-	    if (activeView !== `transit`) return;
-	    let nodes = Array.isArray(setMaxPollingDuration.current) ? setMaxPollingDuration.current : [],
-	      externalUploads = [];
-	    for (let node of nodes) {
-	      let nodeData = node?.data || {},
-	        sourceOrigin = String(nodeData.sourceOrigin || nodeData.mediaSourceOrigin || ``).trim();
-	      let mediaUrl = node.type === `textNode` ? nodeData.text : nodeData.imageUrl || nodeData.videoUrl || nodeData.audioUrl || nodeData.url || nodeData.resultData;
-	      let legacyName = String(nodeData.originalName || nodeData.label || nodeData.name || ``).trim(),
-	        legacyNameLower = legacyName.toLowerCase(),
-	        externalOriginHit = [`external-upload`, `uploaded`, `user-upload`, `user-media`, `local-file`, `relinked`].includes(sourceOrigin),
-	        legacyUploadedFile =
-	          !sourceOrigin &&
-	          legacyName &&
-	          !/^wanjuan-generated|^generated(?:\s|$)|^ai生成内容$/i.test(legacyName) &&
-	          /\.(png|jpe?g|webp|gif|svg|bmp|mp4|webm|mov|m4v|mpeg|mpg|avi|mkv|mp3|wav|ogg|m4a|aac|flac|txt|md|json|csv|srt)$/i.test(legacyNameLower) &&
-	          (/^(data:|blob:|file:\/\/|https?:\/\/)/i.test(String(mediaUrl || ``)) || node.type === `textNode`);
-	      if (!externalOriginHit && !legacyUploadedFile) continue;
-	      if (typeof mediaUrl != `string` || !mediaUrl || transitResources.some((resource) => resource.url === mediaUrl) || externalUploads.some((resource) => resource.url === mediaUrl)) continue;
-	      let resourceKind = wanjuanResourceKind({
-	          type: nodeData.mediaKind || nodeData.type,
-	          url: mediaUrl
-	        }),
-	        mimeType = resourceKind === `video` ? `video/mp4` : resourceKind === `audio` ? `audio/mpeg` : resourceKind === `text` ? `text` : `image/png`,
-	        resourceName = nodeData.originalName || nodeData.label || nodeData.name || (resourceKind === `video` ? `视频素材` : resourceKind === `audio` ? `音频素材` : resourceKind === `text` ? `文本素材` : `图片素材`),
-	        hash = 0;
-	      for (let charIndex = 0; charIndex < mediaUrl.length; charIndex++) hash = (hash * 31 + mediaUrl.charCodeAt(charIndex)) >>> 0;
-	      externalUploads.push({
-	        id: `external-upload-${node.id || hash}-${hash.toString(16)}`,
-	        url: mediaUrl,
-	        type: mimeType,
-	        timestamp: Date.now(),
-	        pageUrl: `canvas:${setEdges.current || `default`}`,
-	        pageTitle: resourceName,
-	        source: `external-upload`,
-	        sourceOrigin: `external-upload`,
-	        originalName: resourceName,
-	      });
-	    }
-	    typeof document < `u` &&
-	      document.querySelectorAll(`.react-flow__node video[src], .react-flow__node audio[src], .react-flow__node img[src]`).forEach((mediaElement, index) => {
-	        let srcUrl = (mediaElement.currentSrc || mediaElement.src || mediaElement.getAttribute(`src`) || ``).trim();
-	        if (!srcUrl || transitResources.some((resource) => resource.url === srcUrl) || externalUploads.some((resource) => resource.url === srcUrl)) return;
-	        let nodeElement = mediaElement.closest(`.react-flow__node`),
-	          nodeText = nodeElement?.textContent?.trim() || ``,
-	          matchedFileName = nodeText.match(/[\w\u4e00-\u9fa5 ()（）._-]+\.(?:png|jpe?g|webp|gif|svg|bmp|mp4|webm|mov|m4v|mpeg|mpg|avi|mkv|mp3|wav|ogg|m4a|aac|flac)/i)?.[0]?.trim() || ``;
-	        if (!matchedFileName || /^wanjuan-generated|^generated(?:\s|$)|^ai生成内容$/i.test(matchedFileName)) return;
-	        let resourceKind = wanjuanResourceKind({
-	            type: mediaElement.tagName === `VIDEO` ? `video` : mediaElement.tagName === `AUDIO` ? `audio` : `image`,
-	            url: srcUrl
-	          }),
-	          mimeType = resourceKind === `video` ? `video/mp4` : resourceKind === `audio` ? `audio/mpeg` : `image/png`,
-	          hash = 0;
-	        for (let charIndex = 0; charIndex < srcUrl.length; charIndex++) hash = (hash * 31 + srcUrl.charCodeAt(charIndex)) >>> 0;
-	        externalUploads.push({
-	          id: `external-dom-${resourceKind}-${hash.toString(16)}-${index}`,
-	          url: srcUrl,
-	          type: mimeType,
-	          timestamp: Date.now(),
-	          pageUrl: `canvas:${setEdges.current || `default`}`,
-	          pageTitle: matchedFileName,
-	          source: `external-upload`,
-	          sourceOrigin: `external-upload`,
-	          originalName: matchedFileName,
-	        });
-	      });
-	    externalUploads.length > 0 &&
-	      setTransitResources((newResources) => {
-	        let mergedResources = [...externalUploads, ...newResources];
-	        return (
-	          localforageModule.default.setItem(`transitResources`, mergedResources),
-	          isPluginEnv && chrome.storage.local.set({
-	            transitResources: mergedResources
-	          }),
-	          mergedResources
-	        );
-	      });
-	  }, [activeView, transitResources]);
-	  useEffect(() => {
-	    if (activeView !== `transit`) return;
-    let nodes = Array.isArray(setMaxPollingDuration.current) ? setMaxPollingDuration.current : [],
-      audioResources = [],
-      isAudioUrl = (value) => {
-        if (!value || typeof value != `string`) return false;
-        let trimmed = value.trim();
-        return /^(https?:\/\/|file:\/\/|blob:|data:audio\/)/i.test(trimmed) || /\.(mp3|wav|ogg|m4a|aac|flac)(?:$|[?#])/i.test(trimmed);
-      },
-      extractAudioUrl = (value) => {
-        if (!value || typeof value != `string`) return null;
-        let trimmed = value.trim();
-        if (isAudioUrl(trimmed)) return trimmed;
-        try {
-          let parsed = JSON.parse(trimmed);
-          if (typeof parsed == `string` && isAudioUrl(parsed)) return parsed.trim();
-          if (parsed && typeof parsed == `object`) {
-            let audioUrl = parsed.audioUrl || parsed.url || parsed.outputUrl || parsed.resultUrl || parsed.audio_url || parsed.audio || parsed.data?.audioUrl || parsed.data?.url;
-            if (typeof audioUrl == `string` && isAudioUrl(audioUrl)) return audioUrl.trim();
-          }
-        } catch {}
-        return null;
-      },
-      getAudioMime = (url) => {
-        let mimeType = `audio/mpeg`;
-        return /^data:audio\/wav/i.test(url) || /\.wav(?:$|[?#])/i.test(url) ? mimeType = `audio/wav` : /^data:audio\/ogg/i.test(url) || /\.ogg(?:$|[?#])/i.test(url) ? mimeType = `audio/ogg` : /^data:audio\/mp4/i.test(url) || /\.(m4a|aac)(?:$|[?#])/i.test(url) ? mimeType = `audio/mp4` : /^data:audio\/flac/i.test(url) || /\.flac(?:$|[?#])/i.test(url) ? mimeType = `audio/flac` : /^data:audio\/mpeg/i.test(url) || /\.mp3(?:$|[?#])/i.test(url) ? mimeType = `audio/mpeg` : mimeType;
-      };
-    for (let node of nodes) {
-      let nodeData = node?.data || {},
-        isAudioNode = [`qwenTtsCloneNode`, `ttsMusicNode`, `musicNode`, `audioNode`].includes(node?.type),
-        audioUrlCandidate = nodeData.audioUrl || nodeData.resultAudioUrl || nodeData.outputAudioUrl || nodeData.audio_url || nodeData.url || (isAudioNode || nodeData.mediaKind === `audio` ? nodeData.imageUrl || nodeData.resultData || nodeData.text : ``),
-        audioUrlString = typeof audioUrlCandidate == `string` ? audioUrlCandidate : ``,
-        extractedAudioUrl = extractAudioUrl(audioUrlString);
-      if (!extractedAudioUrl) continue;
-      let audioUrl = extractedAudioUrl;
-      if (transitResources.some((resource) => resource.url === audioUrl) || audioResources.some((resource) => resource.url === audioUrl)) continue;
-      let audioMimeType = getAudioMime(audioUrl),
-        hash = 0;
-      for (let charIndex = 0; charIndex < audioUrl.length; charIndex++) hash = (hash * 31 + audioUrl.charCodeAt(charIndex)) >>> 0;
-      audioResources.push({
-        id: `audio-${node.id}-${hash.toString(16)}`,
-        url: audioUrl,
-        type: audioMimeType,
-        timestamp: Date.now(),
-        pageUrl: `canvas:${setEdges.current || `default`}`,
-        pageTitle: nodeData.audioName || nodeData.label || (node.type === `qwenTtsCloneNode` ? `Qwen-TTS 音频` : node.type === `musicNode` ? `音乐资源` : node.type === `ttsMusicNode` ? `音频资源` : `音频资源`),
-        source: `generated`,
-      });
-    }
-    typeof document < `u` &&
-      document.querySelectorAll(`.react-flow__node audio[src], audio[src]`).forEach((audioElement, index) => {
-        let srcUrl = (audioElement.currentSrc || audioElement.src || audioElement.getAttribute(`src`) || ``).trim();
-        if (!srcUrl || !isAudioUrl(srcUrl) || transitResources.some((resource) => resource.url === srcUrl) || audioResources.some((resource) => resource.url === srcUrl)) return;
-        let nodeElement = audioElement.closest(`.react-flow__node`),
-          nodeText = nodeElement?.textContent?.trim() || ``,
-          audioLabel = nodeText.includes(`Qwen-TTS`) ? `Qwen-TTS 音频` : nodeText.includes(`TTS`) ? `TTS 音频` : nodeText.match(/[\w\u4e00-\u9fa5 ._-]+\.(?:mp3|wav|ogg|m4a|aac|flac)/i)?.[0]?.trim() || nodeText.split(/\s+/).slice(0, 4).join(` `) || `音频资源`,
-          hash = 0;
-        for (let charIndex = 0; charIndex < srcUrl.length; charIndex++) hash = (hash * 31 + srcUrl.charCodeAt(charIndex)) >>> 0;
-        audioResources.push({
-          id: `audio-dom-${hash.toString(16)}-${index}`,
-          url: srcUrl,
-          type: getAudioMime(srcUrl),
-          timestamp: Date.now(),
-          pageUrl: `canvas:${setEdges.current || `default`}`,
-          pageTitle: audioLabel || `音频资源`,
-          source: `generated`,
-        });
-      });
-    audioResources.length > 0 &&
-      setTransitResources((newResources) => {
-        let mergedResources = [...audioResources, ...newResources];
-        return (
-          localforageModule.default.setItem(`transitResources`, mergedResources),
-          isPluginEnv && chrome.storage.local.set({
-            transitResources: mergedResources
-          }),
-          mergedResources
-        );
-      });
-  }, [activeView, transitResources]);
+	  useSafeEffect46({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
+	  useSafeEffect47({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
   let persistTransitResource = async (resource) => {
     if (
       !resource ||

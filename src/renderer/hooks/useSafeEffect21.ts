@@ -1,0 +1,25 @@
+// @ts-nocheck
+/**
+ * useSafeEffect21（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
+ */
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+
+export function useSafeEffect21(deps: any) {
+  const {
+    apiConfigs,
+    configButlerTargetApiConfigId,
+    setConfigButlerTargetApiConfigId,
+    setConfigButlerTargetApiKey,
+    setConfigButlerTargetApiUrl,
+  } = deps;
+  useEffect(() => {
+    let targetApiConfig =
+      apiConfigs.find((config) => config.id === configButlerTargetApiConfigId) ||
+      apiConfigs.find((config) => config.id === `vectorengine`) ||
+      apiConfigs[0];
+    targetApiConfig &&
+      (setConfigButlerTargetApiConfigId(targetApiConfig.id),
+        setConfigButlerTargetApiUrl(targetApiConfig.url || ``),
+        setConfigButlerTargetApiKey(targetApiConfig.key || ``));
+  }, [apiConfigs, configButlerTargetApiConfigId]);
+}
