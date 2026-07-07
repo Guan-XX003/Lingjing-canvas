@@ -396,6 +396,29 @@ import { WanJuanFlowEdge } from "../components/flow-edge";
 import { WanJuanImageAnnotateModal } from "../components/image-annotate-modal";
 import { agentThemePalettes } from "../lib/agent-theme-palettes";
 import {
+  cloneBackupValue,
+  normalizeBackupSettingsSections,
+  sanitizeProjectAssetStorageSegment,
+  shouldPersistProjectAssetValue,
+  buildProjectAssetStorageKey,
+  convertProjectAssetValueToPortableString,
+  extractProjectPortableDataRefs,
+  buildBackupRestoreReport,
+  formatBackupRestoreReport,
+  getExistingProjectMediaPortableValue,
+  isProjectMediaExternalReference,
+  getProjectMediaBindingKind,
+  getProjectMediaBindingOrigin,
+  hasExternalUploadLikeFileName,
+  isProjectMediaFileBackedBinding,
+  buildProjectMediaSourceSignature,
+  collectProjectMediaBindingPaths,
+  getProjectAssetDialogFilters,
+  buildBackupExternalAssetStorageValue,
+  backupExternalAssetMatchesBinding,
+  normalizeProjectLocalforagePayload,
+} from "../lib/backup";
+import {
   normalizeButlerBaseUrl,
   normalizeButlerModelName,
   getButlerModelFamilyKey,
@@ -22093,7 +22116,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       agents: `智能体配置`,
       resources: `资源信息`,
     },
-    BACKUP_SETTINGS_SECTION_LABELS = {
+  BACKUP_SETTINGS_SECTION_LABELS = {
       basic: `个性设置`,
       api: `API 配置`,
       models: `模型配置`,
@@ -22102,7 +22125,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       data: `数据管理`,
       other: `其他设置`,
     },
-    BACKUP_SETTINGS_SECTION_ORDER = [
+  BACKUP_SETTINGS_SECTION_ORDER = [
       `basic`,
       `api`,
       `models`,
@@ -22111,7 +22134,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       `data`,
       `other`,
     ],
-    BACKUP_SETTINGS_SECTION_KEYS = {
+  BACKUP_SETTINGS_SECTION_KEYS = {
 	      basic: [
 	        `themeMode`,
 	        `uiTheme`,
@@ -22211,30 +22234,21 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       data: [`backupExportSelection`, `backupImportSelection`],
       other: [],
     },
-    PROJECT_STORAGE_KEYS = new Set([`projects`, `projectGroups`, `lastOpenedProjectId`]),
-    AGENT_STORAGE_KEYS = new Set([`agents`, `selectedAgentId`, `agentConversations`]),
-    PROJECT_CANVAS_STORAGE_PREFIX = `canvas-state-v1-`,
-    DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX = `desktop-canvas-state-v1-`,
-    TRANSIT_RESOURCES_STORAGE_KEY = `transitResources`,
-    PROJECT_ASSET_STORAGE_PREFIX = `project-asset-v2-`,
-    EXTERNAL_PROJECT_ASSET_ORIGINS = new Set([`external-upload`, `uploaded`, `user-upload`, `user-media`, `local-file`, `relinked`]),
-    GENERATED_PROJECT_ASSET_ORIGIN_PATTERN = /(generated|video-editor|ai|seedream|seedance|task|tts|music)/i,
-    cloneBackupValue = (value) => {
-      if (Array.isArray(value)) return value.map((item) => cloneBackupValue(item));
-      if (value && typeof value == `object`) {
-        let clone = {};
-        for (let [key, value2] of Object.entries(value)) clone[key] = cloneBackupValue(value2);
-        return clone;
-      }
-      return value;
-    },
-    normalizeModuleSelection = (list, allowedValues) => {
+  PROJECT_STORAGE_KEYS = new Set([`projects`, `projectGroups`, `lastOpenedProjectId`]),
+  AGENT_STORAGE_KEYS = new Set([`agents`, `selectedAgentId`, `agentConversations`]),
+  PROJECT_CANVAS_STORAGE_PREFIX = `canvas-state-v1-`,
+  DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX = `desktop-canvas-state-v1-`,
+  TRANSIT_RESOURCES_STORAGE_KEY = `transitResources`,
+  PROJECT_ASSET_STORAGE_PREFIX = `project-asset-v2-`,
+  EXTERNAL_PROJECT_ASSET_ORIGINS = new Set([`external-upload`, `uploaded`, `user-upload`, `user-media`, `local-file`, `relinked`]),
+  GENERATED_PROJECT_ASSET_ORIGIN_PATTERN = /(generated|video-editor|ai|seedream|seedance|task|tts|music)/i,
+  normalizeModuleSelection = (list, allowedValues) => {
       let filtered = Array.isArray(list) ?
         list.filter((item) => allowedValues.includes(item)) :
         [];
       return filtered.length ? [...new Set(filtered)] : [...allowedValues];
     },
-    splitChromeStorageModules = (storageData) => {
+  splitChromeStorageModules = (storageData) => {
       let settings = {},
         projects2 = {},
         agents = {};
@@ -22255,11 +22269,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
         agents: agents
       };
     },
-    getBackupSettingSectionForKey = (key) =>
+  getBackupSettingSectionForKey = (key) =>
     BACKUP_SETTINGS_SECTION_ORDER.find(
       (section) => section !== `other` && BACKUP_SETTINGS_SECTION_KEYS[section].includes(key),
     ) || `other`,
-    getBackupSettingsSectionMap = (settings) => {
+  getBackupSettingsSectionMap = (settings) => {
       let sections = BACKUP_SETTINGS_SECTION_ORDER.reduce(
         (acc, section) => ({
           ...acc,
@@ -22275,13 +22289,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
         ),
       };
     },
-    normalizeBackupSettingsSections = (list, allowedValues) => {
-      let filtered = Array.isArray(list) ?
-        list.filter((item) => allowedValues.includes(item)) :
-        [];
-      return filtered.length ? [...new Set(filtered)] : [...allowedValues];
-    },
-    getAgentOptionList = (agents) =>
+  getAgentOptionList = (agents) =>
     Array.isArray(agents) ?
     agents
     .filter((item) => item && typeof item == `object` && item.id)
@@ -22293,11 +22301,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       updatedAt: agent.updatedAt || agent.modifiedAt || agent.createdAt || 0,
     })) :
     [],
-    normalizeAgentIdSelection = (candidates, allowedValues) => {
+  normalizeAgentIdSelection = (candidates, allowedValues) => {
       let matches = Array.isArray(candidates) ? candidates.filter((value) => allowedValues.includes(value)) : [];
       return matches.length ? [...new Set(matches)] : [...allowedValues];
     },
-    getProjectOptionList = (items) =>
+  getProjectOptionList = (items) =>
     Array.isArray(items) ?
     items
     .filter((item) => item && typeof item == `object` && item.id)
@@ -22313,56 +22321,15 @@ ${String(promptText || ``).slice(0, 5e4)}`;
       updatedAt: project.updatedAt || project.modifiedAt || project.createdAt || 0,
     })) :
     [],
-    normalizeProjectIdSelection = (candidates, allowedValues) => {
+  normalizeProjectIdSelection = (candidates, allowedValues) => {
       let matches = Array.isArray(candidates) ? candidates.filter((value) => allowedValues.includes(value)) : [];
       return matches.length ? [...new Set(matches)] : [...allowedValues];
     },
-    getProjectCanvasStorageKey = (projectId) => `${PROJECT_CANVAS_STORAGE_PREFIX}${projectId}`,
-    getDesktopProjectMirrorStorageKey = (projectId) =>
+  getProjectCanvasStorageKey = (projectId) => `${PROJECT_CANVAS_STORAGE_PREFIX}${projectId}`,
+  getDesktopProjectMirrorStorageKey = (projectId) =>
     `${DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX}${projectId}`,
-    PROJECT_ASSET_REF_SUFFIX = `Ref`,
-    sanitizeProjectAssetStorageSegment = (segment) =>
-    String(segment || `asset`)
-    .replace(/[^a-zA-Z0-9_-]+/g, `_`)
-    .replace(/^_+|_+$/g, ``)
-    .slice(0, 80) || `asset`,
-    shouldPersistProjectAssetValue = (key, value) =>
-    typeof value == `string` &&
-    !!value &&
-    (value.startsWith(`data:`) || value.startsWith(`blob:`)) &&
-    (key === `url` ||
-      key === `src` ||
-      key === `resultData` ||
-      /Url$/.test(key) ||
-      key === `coverImage` ||
-      key === `thumbnail` ||
-      key === `previewImage` ||
-      key === `preview` ||
-      key === `icon`),
-    buildProjectAssetStorageKey = (projectId, nodeId, path) =>
-    `project-asset-v2-${sanitizeProjectAssetStorageSegment(projectId)}-${sanitizeProjectAssetStorageSegment(nodeId)}-${sanitizeProjectAssetStorageSegment(path)}`,
-    convertProjectAssetValueToPortableString = async (value) => {
-        if (typeof value != `string` || !value || value.startsWith(`data:`)) return value;
-        if (!value.startsWith(`blob:`)) return value;
-        try {
-          let response = await fetch(value);
-          if (!response.ok) throw Error(`blob fetch failed`);
-          let blob = await response.blob();
-          return await new Promise((resolve, reject) => {
-            let fileReader = new FileReader();
-            ((fileReader.onload = () => {
-                resolve(typeof fileReader.result == `string` ? fileReader.result : ``);
-              }),
-              (fileReader.onerror = () => {
-                reject(fileReader.error || Error(`blob read failed`));
-              }),
-              fileReader.readAsDataURL(blob));
-          });
-        } catch (error) {
-          return (console.warn(`Project asset blob fallback`, error), value);
-        }
-      },
-      externalizeProjectAssetContainer = async (container, options = {}) => {
+  PROJECT_ASSET_REF_SUFFIX = `Ref`,
+  externalizeProjectAssetContainer = async (container, options = {}) => {
           let projectId = options.projectId || `default`,
             nodeId = options.nodeId || `node`,
             path = options.path || `root`,
@@ -22415,7 +22382,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
           }
           return result;
         },
-        externalizeProjectCanvasState = async (backup, projectId, options = {}) => {
+  externalizeProjectCanvasState = async (backup, projectId, options = {}) => {
             let clonedBackup = cloneBackupValue(backup || {});
             return (
               Array.isArray(clonedBackup.nodes) &&
@@ -22438,7 +22405,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               clonedBackup
             );
           },
-          hydrateProjectAssetContainer = async (container) => {
+  hydrateProjectAssetContainer = async (container) => {
 	              if (Array.isArray(container))
                 return await Promise.all(container.map((item) => hydrateProjectAssetContainer(item)));
 	              if (!container || typeof container != `object`) return container;
@@ -22465,7 +22432,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               }
 	              return result;
 	            },
-	            extractProjectAssetRefs = (container, refs = new Set()) => {
+  extractProjectAssetRefs = (container, refs = new Set()) => {
               if (Array.isArray(container)) {
                 container.forEach((item) => extractProjectAssetRefs(item, refs));
                 return [...refs];
@@ -22479,24 +22446,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   extractProjectAssetRefs(value, refs));
               return [...refs];
             },
-            extractProjectPortableDataRefs = (container, refs = new Set()) => {
-              if (Array.isArray(container)) {
-                container.forEach((item) => extractProjectPortableDataRefs(item, refs));
-                return [...refs];
-              }
-              if (!container || typeof container != `object`) return [...refs];
-              let assetBindings = container?.data?.projectAssetBindings;
-              assetBindings &&
-                typeof assetBindings == `object` &&
-                Object.values(assetBindings).forEach((binding) => {
-                  typeof binding?.portableDataRef == `string` &&
-                    binding.portableDataRef &&
-                    refs.add(binding.portableDataRef);
-                });
-              for (let value of Object.values(container)) extractProjectPortableDataRefs(value, refs);
-              return [...refs];
-            },
-            mergeTransitResourceEntries = (primaryList, secondaryList = []) => {
+  mergeTransitResourceEntries = (primaryList, secondaryList = []) => {
               let clonedPrimary = Array.isArray(primaryList) ? cloneBackupValue(primaryList) : [],
                 clonedSecondary = Array.isArray(secondaryList) ? cloneBackupValue(secondaryList) : [],
                 seenIds = new Set(),
@@ -22513,7 +22463,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               }
               return merged;
             },
-            collectProjectResourceCandidates = (backup, refs = new Set()) => {
+  collectProjectResourceCandidates = (backup, refs = new Set()) => {
               if (!backup || typeof backup != `object`) return [...refs];
               let nodes = backup?.nodes;
               if (!Array.isArray(nodes)) return [...refs];
@@ -22538,7 +22488,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               }
               return [...refs];
             },
-            buildProjectResourceMap = (groups = {}, entries = [], candidates = []) => {
+  buildProjectResourceMap = (groups = {}, entries = [], candidates = []) => {
               let validEntries = Array.isArray(candidates) ? candidates.filter(Boolean) : [],
                 result = {};
               if (!validEntries.length) return result;
@@ -22565,7 +22515,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                 result[key] || (result[key] = []);
               return result;
             },
-            normalizeProjectResourceMap = (input) => {
+  normalizeProjectResourceMap = (input) => {
               let source = input && typeof input == `object` ? input : {},
                 result = {};
               for (let [key, value] of Object.entries(source))
@@ -22575,62 +22525,16 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                 (result[key] = mergeTransitResourceEntries(value));
               return result;
             },
-            buildBackupRestoreReport = ({
-              modules: modules = [],
-              settingsSections: settingsSections = [],
-              projectIds: projectIds = [],
-              agentIds: agentIds = [],
-              canvasStates: canvasStates = {},
-              assets: assets = {},
-              transitResources: transitResources,
-              projectResources: projectResources = {},
-            }) => {
-              let projectIdList = Array.isArray(projectIds) ? projectIds : [],
-                canvasStateKeys = Object.keys(canvasStates || {}),
-                missingProjectIds = projectIdList.filter((item) => !Object.prototype.hasOwnProperty.call(canvasStates || {}, item)),
-                assetKeys = Object.keys(assets || {}),
-                transitCount = Array.isArray(transitResources) ? transitResources.length : 0,
-                projectResourceCount = Object.values(projectResources || {}).reduce(
-                  (accumulator, resourceList) => accumulator + (Array.isArray(resourceList) ? resourceList.length : 0),
-                  0,
-                );
-              return {
-                modules: [...modules],
-                settingsSectionCount: Array.isArray(settingsSections) ? settingsSections.length : 0,
-                projectCount: projectIdList.length,
-                agentCount: Array.isArray(agentIds) ? agentIds.length : 0,
-                canvasStateCount: canvasStateKeys.length,
-                assetCount: assetKeys.length,
-                resourceCount: transitCount,
-                projectResourceCount: projectResourceCount,
-                missingCanvasProjectIds: missingProjectIds,
-              };
-            },
-            formatBackupRestoreReport = (backupReport) => {
-              let reportLines = [];
-              return (
-                backupReport.settingsSectionCount > 0 && reportLines.push(`设置 ${backupReport.settingsSectionCount} 项`),
-                backupReport.projectCount > 0 &&
-                reportLines.push(`项目 ${backupReport.projectCount} 个 / 画布 ${backupReport.canvasStateCount} 份`),
-                backupReport.agentCount > 0 && reportLines.push(`智能体 ${backupReport.agentCount} 个`),
-                backupReport.assetCount > 0 && reportLines.push(`项目资产 ${backupReport.assetCount} 项`),
-                backupReport.resourceCount > 0 && reportLines.push(`资源 ${backupReport.resourceCount} 项`),
-                backupReport.projectResourceCount > 0 && reportLines.push(`项目资源映射 ${backupReport.projectResourceCount} 项`),
-                backupReport.missingCanvasProjectIds?.length > 0 &&
-                reportLines.push(`缺少画布 ${backupReport.missingCanvasProjectIds.length} 个项目`),
-                reportLines.join(`，`)
-              );
-            },
-            projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
-            blobToDataUrl = (blob) =>
+  projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
+  blobToDataUrl = (blob) =>
             new Promise((resolvePromise, rejectPromise) => {
               let fileReader = new FileReader();
               ((fileReader.onload = () => resolvePromise(typeof fileReader.result == `string` ? fileReader.result : ``)),
                 (fileReader.onerror = () => rejectPromise(fileReader.error || Error(`blob read failed`))),
                 fileReader.readAsDataURL(blob));
             }),
-            projectMediaFetchWarningCache = new Set(),
-            warnProjectMediaFetchOnce = (mediaUrl, error) => {
+  projectMediaFetchWarningCache = new Set(),
+  warnProjectMediaFetchOnce = (mediaUrl, error) => {
               let warnKey =
                 typeof mediaUrl == `string` ?
                 `${mediaUrl.slice(0, 180)}:${error?.message || error}` :
@@ -22638,7 +22542,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
               if (projectMediaFetchWarningCache.has(warnKey)) return;
               projectMediaFetchWarningCache.add(warnKey);
             },
-            projectMediaStringToPortableValue = async (mediaString) => {
+  projectMediaStringToPortableValue = async (mediaString) => {
                 if (typeof mediaString != `string` || !mediaString) return mediaString;
                 if (mediaString.startsWith(`data:`)) return mediaString;
                 if (
@@ -22655,46 +22559,13 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   }
                 return mediaString;
               },
-              getExistingProjectMediaPortableValue = async (binding) => {
-                  if (!binding || typeof binding != `object`) return undefined;
-                  if (binding.portableData !== undefined && binding.portableData !== null && binding.portableData !== ``)
-                    return binding.portableData;
-                  if (typeof binding.portableDataRef == `string` && binding.portableDataRef && localforageModule.default)
-                    try {
-                      let storedValue = await localforageModule.default.getItem(binding.portableDataRef);
-                      if (storedValue !== undefined && storedValue !== null && storedValue !== ``) return storedValue;
-                    } catch {}
-                  return undefined;
-                },
-                shouldReuseProjectMediaBinding = (binding, signature) => {
+  shouldReuseProjectMediaBinding = (binding, signature) => {
                   if (!binding || typeof binding != `object` || typeof signature != `string` || !signature) return false;
                   if (binding.sourceSignature === signature) return true;
                   if (binding.localPath && buildProjectMediaFileUrl(binding.localPath) === signature) return true;
                   return false;
                 },
-                isProjectMediaExternalReference = (value) =>
-                typeof value == `string` &&
-                (value.startsWith(`blob:`) || /^https?:\/\//i.test(value) || value.startsWith(`file://`)),
-                getProjectMediaBindingKind = (bindingKey, node) =>
-                bindingKey === `imageUrl` ?
-                node?.data?.mediaKind === `video` ?
-                `video` :
-                node?.data?.mediaKind === `audio` ?
-                `audio` :
-                `image` :
-                bindingKey === `videoUrl` ?
-                `video` :
-                bindingKey === `audioUrl` ?
-                `audio` :
-                node?.type === `customNode` && bindingKey === `resultData` ?
-                `text` :
-                `text`,
-                getProjectMediaBindingOrigin = (binding, data = {}) =>
-                String(binding?.sourceOrigin || data?.sourceOrigin || data?.mediaSourceOrigin || ``).trim(),
-                hasExternalUploadLikeFileName = (binding, data = {}) =>
-                [binding?.originalName, binding?.filename, data?.originalName, data?.label, data?.name]
-                .some((value) => /\.(png|jpe?g|webp|gif|bmp|svg|avif|heic|heif|tiff?|ico|mp4|webm|mov|m4v|avi|mkv|flv|mpeg|mpg|3gp|3g2|ts|mts|m2ts|wmv|mp3|wav|ogg|oga|m4a|aac|flac|opus|weba|amr|aiff?|caf)$/i.test(String(value || ``).trim())),
-                isExternalUploadedProjectAssetBinding = (binding, bindingKey, data = {}) => {
+  isExternalUploadedProjectAssetBinding = (binding, bindingKey, data = {}) => {
                   if (!binding || typeof binding != `object`) return false;
                   let kind = String(binding.kind || getProjectMediaBindingKind(bindingKey, {
                     data: data
@@ -22709,28 +22580,13 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   if (origin === `media` && hasExternalUploadLikeFileName(binding, data)) return true;
                   return false;
                 },
-                isProjectMediaFileBackedBinding = (binding, bindingKind, fallbackKind) => {
-                  let mime = String(binding?.mime || ``).toLowerCase(),
-                    kind = String(binding?.kind || fallbackKind || ``).toLowerCase();
-                  return (
-                    kind === `image` ||
-                    kind === `video` ||
-                    kind === `audio` ||
-                    /^image\//i.test(mime) ||
-                    /^video\//i.test(mime) ||
-                    /^audio\//i.test(mime) ||
-                    bindingKind === `imageUrl` ||
-                    bindingKind === `videoUrl` ||
-	                    bindingKind === `audioUrl`
-	                  );
-	                },
-	                shouldPromptProjectMediaRelink = (binding, bindingKey, data = {}) =>
+  shouldPromptProjectMediaRelink = (binding, bindingKey, data = {}) =>
 	                  !!(
 	                    binding?.missing &&
 	                    isProjectMediaFileBackedBinding(binding, bindingKey, binding?.kind) &&
 	                    isExternalUploadedProjectAssetBinding(binding, bindingKey, data)
 	                  ),
-	                stripLargeProjectMediaPortablePayload = (binding, bindingKey, data) => {
+  stripLargeProjectMediaPortablePayload = (binding, bindingKey, data) => {
                   if (!binding || typeof binding != `object`) return binding;
                   if (!binding.localPath || !isProjectMediaFileBackedBinding(binding, bindingKey, data)) return binding;
                   let {
@@ -22745,7 +22601,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     sourceSignature: buildProjectMediaFileUrl(binding.localPath) || binding.sourceSignature,
                   };
                 },
-                getProjectMediaPayload = async (node, bindingKey, value) => {
+  getProjectMediaPayload = async (node, bindingKey, value) => {
                     if (
                       bindingKey === `resultData` && [`image`, `video`, `audio`].includes(node?.data?.config?.outputType)
                     )
@@ -22786,13 +22642,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       valueFormat: `data-url`,
                     };
                   },
-                  buildProjectMediaSourceSignature = (value) =>
-                  typeof value == `string` ?
-                  value :
-                  value && typeof value == `object` ?
-                  JSON.stringify(value) :
-                  String(value ?? ``),
-                  buildProjectMediaFileUrl = (value) =>
+  buildProjectMediaFileUrl = (value) =>
                   typeof value != `string` || !value ?
                   `` :
                   /^file:\/\//i.test(value) ?
@@ -22808,7 +22658,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       ).replace(/#/g, `%23`);
                     return normalized.startsWith(`//`) ? `file:${encoded}` : `file://${encoded}`;
                   })(),
-                  reviveProjectMediaBindingValue = (binding) => {
+  reviveProjectMediaBindingValue = (binding) => {
                     if (!binding) return undefined;
                     let portableData = binding.portableData;
                     if (typeof portableData != `string`) return portableData;
@@ -22820,15 +22670,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       }
                     return portableData;
                   },
-                  collectProjectMediaBindingPaths =
-                  (globalThis.collectProjectMediaBindingPaths = (node) => {
-                    let bindings = node?.data?.projectAssetBindings || {},
-                      localPaths = [];
-                    for (let binding of Object.values(bindings))
-                      binding?.localPath && typeof binding.localPath == `string` && localPaths.push(binding.localPath);
-                    return localPaths;
-                  }),
-                  applyProjectMediaBindingsToNode =
+  applyProjectMediaBindingsToNode =
                   (globalThis.applyProjectMediaBindingsToNode = (node, presenceMap = new Map()) => {
                     let bindings = node?.data?.projectAssetBindings;
                     if (!bindings || typeof bindings != `object`) return node;
@@ -22882,7 +22724,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       },
                     };
                   }),
-                  getMissingProjectMediaEntries =
+  getMissingProjectMediaEntries =
                   (globalThis.getMissingProjectMediaEntries = (nodes = []) => {
                     let missingEntries = [];
                     return (
@@ -22907,32 +22749,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       missingEntries
                     );
                   }),
-                  getProjectAssetDialogFilters = (mediaType) =>
-                  mediaType === `image` ?
-                  [{
-                    name: `图片`,
-                    extensions: [`png`, `jpg`, `jpeg`, `webp`, `gif`, `bmp`, `svg`, `avif`, `heic`, `heif`, `tif`, `tiff`, `ico`]
-                  }] :
-                  mediaType === `video` ?
-                  [{
-                    name: `视频`,
-                    extensions: [`mp4`, `webm`, `mov`, `m4v`, `avi`, `mkv`, `flv`, `mpeg`, `mpg`, `3gp`, `3g2`, `ts`, `mts`, `m2ts`, `wmv`]
-                  }] :
-                  mediaType === `audio` ?
-                  [{
-                    name: `音频`,
-                    extensions: [`mp3`, `wav`, `ogg`, `oga`, `m4a`, `aac`, `flac`, `opus`, `weba`, `amr`, `aif`, `aiff`, `caf`]
-                  }] :
-                  [{
-                      name: `文本`,
-                      extensions: [`txt`, `md`, `json`]
-                    },
-                    {
-                      name: `所有文件`,
-                      extensions: [`*`]
-                    },
-                  ],
-                  forceRehomeProjectDataFileReferences = async (value, context, pathParts = []) => {
+  forceRehomeProjectDataFileReferences = async (value, context, pathParts = []) => {
                     if (typeof value == `string` && value.startsWith(`file://`)) {
                       try {
                         let archivedAsset = await window.wanjuanDesktop.persistProjectAsset({
@@ -22965,7 +22782,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     }
                     return result;
                   },
-                  prepareProjectMediaStateForPersistence =
+  prepareProjectMediaStateForPersistence =
                   (globalThis.prepareProjectMediaStateForPersistence = async (canvasState, projectId, persistOptions, options = {}) => {
                     if (!window.wanjuanDesktop?.persistProjectAsset || !localforageModule.default) return canvasState;
                     let clonedState = cloneBackupValue(canvasState || {});
@@ -23182,7 +22999,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     );
                     return clonedState;
                   }),
-                  collectProjectFileReferences = (value, references = new Set()) => {
+  collectProjectFileReferences = (value, references = new Set()) => {
                     if (typeof value == `string` && value.startsWith(`file://`)) {
                       try {
                         references.add(localPathFromProjectFileUrl(value) || decodeURIComponent(new URL(value).pathname));
@@ -23197,11 +23014,11 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       Object.values(value).forEach((item) => collectProjectFileReferences(item, references));
                     return references;
                   },
-                  exposeProjectFileReferenceCollector =
+  exposeProjectFileReferenceCollector =
                   (globalThis.collectProjectFileReferences = collectProjectFileReferences),
-                  projectMigrationLocks = (globalThis.__wanjuanProjectMigrationLocks ||= new Set()),
-                  activeProjectMigrations = (globalThis.__wanjuanActiveProjectMigrations ||= new Map()),
-                  getForcedArchiveMigrationStatus =
+  projectMigrationLocks = (globalThis.__wanjuanProjectMigrationLocks ||= new Set()),
+  activeProjectMigrations = (globalThis.__wanjuanActiveProjectMigrations ||= new Map()),
+  getForcedArchiveMigrationStatus =
                   (globalThis.getForcedArchiveMigrationStatus = async (projectId) => {
                     let migrationId = activeProjectMigrations.get(projectId);
                     return migrationId ?
@@ -23213,7 +23030,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         error: `MIGRATION_NOT_FOUND`
                       };
                   }),
-                  cancelForcedArchiveMigration =
+  cancelForcedArchiveMigration =
                   (globalThis.cancelForcedArchiveMigration = async (projectId) => {
                     let migrationId = activeProjectMigrations.get(projectId);
                     return migrationId ?
@@ -23225,7 +23042,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         error: `MIGRATION_NOT_FOUND`
                       };
                   }),
-                  runForcedArchiveMigration =
+  runForcedArchiveMigration =
                   (globalThis.runForcedArchiveMigration = async (projectId, directory, options = {}) => {
                     if (!localforageModule.default || !window.wanjuanDesktop?.beginProjectMigration)
                       throw Error(`Migration API unavailable`);
@@ -23295,7 +23112,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       activeProjectMigrations.delete(projectId);
                     }
                   }),
-                  recoverInterruptedProjectMigrations =
+  recoverInterruptedProjectMigrations =
                   (globalThis.recoverInterruptedProjectMigrations = async (directory = ``) => {
                     if (!localforageModule.default || !window.wanjuanDesktop?.listIncompleteMigrations) return [];
                     let result = await window.wanjuanDesktop.listIncompleteMigrations({
@@ -23322,10 +23139,10 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     }
                     return recovered;
                   }),
-                  scheduleInterruptedMigrationRecovery = setTimeout(() => {
+  scheduleInterruptedMigrationRecovery = setTimeout(() => {
                     globalThis.recoverInterruptedProjectMigrations?.(``).catch(console.error);
                   }, 1500),
-                  buildProjectLocalforagePayload = (projectState, projectIds = []) => {
+  buildProjectLocalforagePayload = (projectState, projectIds = []) => {
                     let canvasStates = {},
                       assetRefs = new Set(),
                       source = projectState || {};
@@ -23345,7 +23162,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       assets: assets
                     };
                   },
-                  EXPORT_RUNTIME_NODE_DATA_KEYS = new Set([
+  EXPORT_RUNTIME_NODE_DATA_KEYS = new Set([
                     `apiConfigs`,
                     `modelProtocolRegistry`,
                     `textModelApiBindings`,
@@ -23378,34 +23195,15 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     `onExtractFrames`,
                     `updateGlobalTasks`,
                   ]),
-                  EXPORT_INLINE_MEDIA_FIELDS = new Set([
+  EXPORT_INLINE_MEDIA_FIELDS = new Set([
                     `imageUrl`,
                     `videoUrl`,
                     `audioUrl`,
                     `text`,
                     `resultData`,
                   ]),
-                  PROJECT_ASSET_MANIFEST_STORAGE_PREFIX = `external-asset-file:`,
-                  buildBackupExternalAssetStorageValue = (file = {}) => ({
-                    __wanjuanExternalAssetFile: true,
-                    filePath: file.filePath || ``,
-                    filename: file.filename || ``,
-                    originalName: file.originalName || ``,
-                    mime: file.mime || ``,
-                    size: file.size || 0,
-                    sha256: file.sha256 || ``,
-                  }),
-                  backupExternalAssetMatchesBinding = (asset = {}, binding = {}) => {
-                    if (!asset?.filePath) return false;
-                    let bindingSize = Number(binding?.size || 0),
-                      assetSize = Number(asset?.size || 0);
-                    if (bindingSize && assetSize && bindingSize !== assetSize) return false;
-                    let bindingHash = String(binding?.sha256 || ``).trim().toLowerCase(),
-                      assetHash = String(asset?.sha256 || ``).trim().toLowerCase();
-                    if (bindingHash && assetHash && bindingHash !== assetHash) return false;
-                    return true;
-                  },
-                  applyExternalAssetBundleToBackupPayload = (backup, importResult) => {
+  PROJECT_ASSET_MANIFEST_STORAGE_PREFIX = `external-asset-file:`,
+  applyExternalAssetBundleToBackupPayload = (backup, importResult) => {
                     if (!importResult?.files?.length || !backup?.modules?.projects?.localforage) return backup;
                     let clonedBackup = cloneBackupValue(backup),
                       fileMap = new Map();
@@ -23443,7 +23241,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     }
                     return ((localforageData.assets = assets), clonedBackup);
                   },
-                  compactBackupPortableAssets = (backup = {}, bindings = []) => {
+  compactBackupPortableAssets = (backup = {}, bindings = []) => {
                     if (!backup?.modules?.projects?.localforage) return backup;
                     let clonedBackup = cloneBackupValue(backup),
                       usedRefs = new Set(
@@ -23474,7 +23272,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                     }
                     return ((localforageData.assets = assets), clonedBackup);
                   },
-                  sanitizeProjectNodeDataForExport = (data) => {
+  sanitizeProjectNodeDataForExport = (data) => {
                     if (Array.isArray(data))
                       return data.map((item) => sanitizeProjectNodeDataForExport(item));
                     if (!data || typeof data != `object`) return data;
@@ -23491,7 +23289,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         delete sanitized[key];
                     return sanitized;
                   },
-                  sanitizeProjectCanvasStateForExport = (exportCanvasState) => {
+  sanitizeProjectCanvasStateForExport = (exportCanvasState) => {
                     let canvasState = cloneBackupValue(exportCanvasState || {});
                     return (
                       Array.isArray(canvasState.nodes) &&
@@ -23508,7 +23306,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       canvasState
                     );
                   },
-                  buildProjectLocalforageExportPayload = async (projectState, projectIds = [], exportOptions = {}) => {
+  buildProjectLocalforageExportPayload = async (projectState, projectIds = [], exportOptions = {}) => {
                       let canvasStates = {},
                         assetRefs = new Set(),
                         assetMap = {},
@@ -23538,7 +23336,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         assets: assetMap
                       };
                     },
-                    collectExternalUploadProjectAssetFiles = (backupData = {}) => {
+  collectExternalUploadProjectAssetFiles = (backupData = {}) => {
                       let results = [],
                         canvasStates = backupData?.modules?.projects?.localforage?.canvasStates || {},
                         assets = backupData?.modules?.projects?.localforage?.assets || {};
@@ -23580,18 +23378,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       }
                       return results;
                     },
-                    normalizeProjectLocalforagePayload = (payload) => {
-                      let normalizedPayload = payload && typeof payload == `object` ? cloneBackupValue(payload) : {};
-                      return {
-                        canvasStates: normalizedPayload.canvasStates && typeof normalizedPayload.canvasStates == `object` ?
-                          cloneBackupValue(normalizedPayload.canvasStates) :
-                          {},
-                        assets: normalizedPayload.assets && typeof normalizedPayload.assets == `object` ?
-                          cloneBackupValue(normalizedPayload.assets) :
-                          {},
-                      };
-                    },
-                    normalizeResourceLocalforagePayload = (payload) => {
+  normalizeResourceLocalforagePayload = (payload) => {
                       let normalizedPayload = payload && typeof payload == `object` ? cloneBackupValue(payload) : {};
                       return Object.prototype.hasOwnProperty.call(normalizedPayload, TRANSIT_RESOURCES_STORAGE_KEY) ?
                         {
@@ -23601,7 +23388,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         } :
                         {};
                     },
-                    readChromeStorageSnapshot = (keys = null) =>
+  readChromeStorageSnapshot = (keys = null) =>
                       new Promise((resolve, reject) => {
                         if (!(typeof chrome < `u` && chrome.storage && chrome.storage.local)) {
                           reject(Error(`Chrome Storage API 不可用`));
@@ -23613,7 +23400,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             resolve(items || {});
                         });
                       }),
-                    getBackupChromeStorageKeys = (moduleSelection, options = {}) => {
+  getBackupChromeStorageKeys = (moduleSelection, options = {}) => {
                       let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
                         storageKeys = new Set();
                       if (selectedModules.includes(`settings`))
@@ -23627,7 +23414,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                       selectedModules.includes(`agents`) && AGENT_STORAGE_KEYS.forEach((storageKey) => storageKeys.add(storageKey));
                       return [...storageKeys];
                     },
-                    collectSelectedLocalforageBackup = async (moduleSelection, options = {}, backupOptions = {}) => {
+  collectSelectedLocalforageBackup = async (moduleSelection, options = {}, backupOptions = {}) => {
                       let canvasStates = {};
                       if (!localforageModule.default) return canvasStates;
                       if (!normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]).includes(`projects`))
@@ -23661,7 +23448,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                         } catch {}
                       return canvasStates;
                     },
-                    buildBackupModules = async (chromeStorage, userData, moduleSelection, selection = {}) => {
+  buildBackupModules = async (chromeStorage, userData, moduleSelection, selection = {}) => {
                           let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
                             storageModules = splitChromeStorageModules(chromeStorage || {}),
                             modules = {};
@@ -23780,7 +23567,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           }
                           return modules;
                         },
-                        normalizeBackupModules = (backup) => {
+  normalizeBackupModules = (backup) => {
                           if (backup?.modules && typeof backup.modules == `object`) {
                             let settingsModule = backup.modules.settings || {},
                               settingsStorage =
@@ -23959,7 +23746,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                             },
                           };
                         },
-                        moduleHasBackupData = (moduleName, moduleData) =>
+  moduleHasBackupData = (moduleName, moduleData) =>
                         moduleName === `resources` ?
                         Array.isArray(moduleData?.localforage?.[TRANSIT_RESOURCES_STORAGE_KEY]) ?
                         moduleData.localforage[TRANSIT_RESOURCES_STORAGE_KEY].length > 0 :
@@ -23977,18 +23764,18 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                           moduleData.chromeStorage.agents.length > 0
                         ) :
                         !!(moduleData?.chromeStorage && Object.keys(moduleData.chromeStorage).length > 0),
-                        getAvailableBackupModules = (backup) =>
+  getAvailableBackupModules = (backup) =>
                         Object.entries(normalizeBackupModules(backup)).reduce(
                           (acc, [moduleName, moduleData]) => (moduleHasBackupData(moduleName, moduleData) ? [...acc, moduleName] : acc),
                           [],
                         ),
-                        buildBackupPayload = async (chromeStorage, userData, moduleSelection, backupOptions = {}) => ({
+  buildBackupPayload = async (chromeStorage, userData, moduleSelection, backupOptions = {}) => ({
 				                            version: `1.3.6`,
                             backupFormat: `4`,
                             exportedAt: new Date().toISOString(),
                             modules: await buildBackupModules(chromeStorage, userData, moduleSelection, backupOptions),
                           }),
-                          restoreSelectedBackup = async (backup, moduleSelection, options = {}) => {
+  restoreSelectedBackup = async (backup, moduleSelection, options = {}) => {
                               let modules = normalizeBackupModules(backup),
                                 availableModules = getAvailableBackupModules(backup),
                                 selectedModules = normalizeModuleSelection(moduleSelection, availableModules),
@@ -24260,7 +24047,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                 report: restoreReport,
                               };
                             },
-                            openBackupExportDialog = async (moduleSelection) => {
+  openBackupExportDialog = async (moduleSelection) => {
                                 try {
                                   let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
                                     storageSnapshot = await readChromeStorageSnapshot(getBackupChromeStorageKeys(selectedModules)),
@@ -24291,7 +24078,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                   (console.error(error), showToast2(`导出失败`));
                                 }
                               },
-                              handleBackupImportFile = async (event) => {
+  handleBackupImportFile = async (event) => {
                                   if (window.wanjuanDesktop?.chooseBackupFile) {
                                     try {
                                       let backupFileResult = await window.wanjuanDesktop.chooseBackupFile({
@@ -24381,7 +24168,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                                     reader.readAsText(selectedFile),
                                     (event.target.value = ``));
                                 },
-                                confirmBackupDialog = async () => {
+  confirmBackupDialog = async () => {
                                   if (!backupDialogState) return;
                                   try {
                                     if (backupDialogState.mode === `export`) {
