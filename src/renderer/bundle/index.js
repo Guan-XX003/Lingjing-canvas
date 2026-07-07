@@ -2748,12 +2748,6 @@ function WanJuanAppCanvas({
             dailyGenerationCount = parseInt(
               localStorage.getItem(dailyLimitKey) || `0`,
             );
-          if (false && dailyGenerationCount >= planLimits.dailyGenerations) {
-            showToast(
-              `今日生图次数已达当前版本上限 (${planLimits.dailyGenerations}次)，请明天再试或升级会员`,
-            );
-            return;
-          }
           let updateGlobalTaskList = updateTaskList,
             imageModels = drawingModel ?
             WanJuanParseModelList(drawingModel) :
@@ -4674,10 +4668,6 @@ ${combinedPrompt}`,
       async (nodeId, prompt, resolution = `1280x720`, modelName2, duration, apiBindingId, aspectRatioOverride) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
-          if (false && dailyCount >= planLimits.dailyGenerations) {
-            showToast(`今日额度已达上限 (${planLimits.dailyGenerations}次)，请明天再试`);
-            return;
-          }
           let normalizeApiBase = (rawBaseUrl) =>
             String(rawBaseUrl || ``)
             .replace(/\s+/g, ``)
@@ -7981,10 +7971,6 @@ ${combinedPrompt}`,
       async (nodeId, prompt, isRegenerate = false, extraOptions) => {
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyUsageCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
-          if (false && dailyUsageCount >= planLimits.dailyGenerations) {
-            showToast(`今日额度已达上限 (${planLimits.dailyGenerations}次)，请明天再试`);
-            return;
-          }
           let updateGlobalTaskList = updateTaskList,
             textModelName = (
               extraOptions ||
