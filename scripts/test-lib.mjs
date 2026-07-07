@@ -26,6 +26,7 @@ function compile() {
       join(root, "src/renderer/lib/video-aspect-ratio.ts"),
       join(root, "src/renderer/lib/video-task.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
+      join(root, "src/renderer/lib/suno-music-api.ts"),
     ],
     { cwd: root, stdio: "inherit" }
   );
@@ -152,6 +153,44 @@ async function run() {
       watermark: false
     }
   );
+
+  // ---- suno-music-api ----
+  const suno = await import(pathToFileURL(join(outDir, "suno-music-api.js")).href);
+  // 灵感模式：只带 prompt，不带 style/title
+  check("suno.generate.inspiration", suno.buildSunoGenerateBody(
+    { customMode: false, instrumental: false, model: "V4_5PLUS", prompt: "轻快的城市清晨", style: "should-be-ignored", title: "ignored" }
+  ), { customMode: false, instrumental: false, model: "V4_5PLUS", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "轻快的城市清晨" });
+  // 自定义模式：带 style/title/歌词，权重裁剪，负向标签，人声性别
+  check("suno.generate.custom", suno.buildSunoGenerateBody(
+    { customMode: true, instrumental: false, model: "V5", prompt: "[verse]...", style: "citypop", title: "Morning", negativeTags: "heavy metal", vocalGender: "f", styleWeight: 1.5, weirdnessConstraint: -0.2, audioWeight: 0.3 }
+  ), { customMode: true, instrumental: false, model: "V5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "[verse]...", style: "citypop", title: "Morning", negativeTags: "heavy metal", vocalGender: "f", styleWeight: 1, weirdnessConstraint: 0, audioWeight: 0.3 });
+  // 纯伴奏+自定义：可无 prompt
+  check("suno.generate.instrumental", suno.buildSunoGenerateBody(
+    { customMode: true, instrumental: true, model: "V4", style: "lofi", title: "Focus" }
+  ), { customMode: true, instrumental: true, model: "V4", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, style: "lofi", title: "Focus" });
+  // extend：defaultParamFlag=false 时不带自定义参数
+  check("suno.extend.original", suno.buildSunoExtendBody(
+    { audioId: "abc", defaultParamFlag: false, model: "V4_5", prompt: "x", continueAt: 30 }
+  ), { defaultParamFlag: false, audioId: "abc", model: "V4_5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK });
+  check("suno.extend.custom", suno.buildSunoExtendBody(
+    { audioId: "abc", defaultParamFlag: true, model: "V4_5", prompt: "继续", style: "rock", title: "T", continueAt: 30 }
+  ), { defaultParamFlag: true, audioId: "abc", model: "V4_5", callBackUrl: suno.SUNO_PLACEHOLDER_CALLBACK, prompt: "继续", style: "rock", title: "T", continueAt: 30 });
+  // 校验
+  check("suno.validate.customNeedsStyle", suno.validateSunoGenerateParams({ customMode: true, instrumental: false, model: "V4", prompt: "l", title: "t" }), "自定义模式需填写风格(style)");
+  check("suno.validate.inspirationNeedsPrompt", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, model: "V4", prompt: "" }), "灵感模式需填写歌曲描述(prompt)");
+  check("suno.validate.ok", suno.validateSunoGenerateParams({ customMode: false, instrumental: false, model: "V4", prompt: "hi" }), null);
+  // 状态
+  check("suno.status.success", suno.sunoStatusIsSuccess("SUCCESS"), true);
+  check("suno.status.failure", suno.sunoStatusIsFailure("SENSITIVE_WORD_ERROR"), true);
+  check("suno.status.pendingNotTerminal", suno.sunoStatusIsTerminal("PENDING"), false);
+  // 结果提取
+  check("suno.extractTracks", suno.extractSunoTracks(
+    { data: { response: { sunoData: [{ id: "1", audioUrl: "http://a/1.mp3", title: "T", duration: "120", model_name: "chirp" }] } } }
+  ), [{ id: "1", audioUrl: "http://a/1.mp3", streamAudioUrl: undefined, imageUrl: undefined, title: "T", tags: undefined, duration: 120, prompt: undefined, modelName: "chirp", createTime: undefined }]);
+  check("suno.extractStatus", suno.extractSunoStatus({ data: { status: "first_success" } }), "FIRST_SUCCESS");
+  check("suno.url", suno.sunoUrl("https://api.sunoapi.org/", "/api/v1/generate"), "https://api.sunoapi.org/api/v1/generate");
+  check("suno.charLimits.v4", suno.sunoCharLimits("V4"), { prompt: 3000, style: 200, title: 80 });
+  check("suno.charLimits.v5", suno.sunoCharLimits("V5_5"), { prompt: 5000, style: 1000, title: 100 });
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`);
   rmSync(outDir, { recursive: true, force: true });
