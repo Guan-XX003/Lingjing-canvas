@@ -1280,7 +1280,6 @@ function WanJuanAppCanvas({
     handleSelectionContextMenu,
     handleDelayedSelectionMenu,
   } = useCanvasContextMenu({ wrapperRef, lastCanvasMenuPositionRef, nodesRef, setMenuPosition, setResourceSubmenuOpen, setResourceSubmenuOpenAlt });
-  let { generateText } = useTextGeneration({ propTextApiKey, propTextApiUrl, textModel, apiConfigs, textModelApiBindings, textModelProtocolBindings, modelProtocolRegistry, planLimits, getNodes, getEdges, setNodes, setEdges, showToast, addGeneratedAsset, updateTaskList, updateNodeData, projectIdRef, openImageEditor, abortControllersRef, customPublicUploadConfig, presetPrompts, seedanceUploadMode, setDailyGenerationCount, tosConfig });
   let saveEditedVideo = useCallback(
       async (videoResult) => {
           if (!videoEditState || !videoResult?.url) return;
@@ -7928,6 +7927,7 @@ ${combinedPrompt}`,
           membership,
         ],
     ),
+    generateText = useTextGeneration({ propTextApiKey, propTextApiUrl, textModel, apiConfigs, textModelApiBindings, textModelProtocolBindings, modelProtocolRegistry, planLimits, getNodes, getEdges, setNodes, setEdges, showToast, addGeneratedAsset, updateTaskList, projectIdRef, abortControllersRef, customPublicUploadConfig, presetPrompts, seedanceUploadMode, setDailyGenerationCount, tosConfig }).generateText,
     handleAIAssist = useCallback(
       async (userPrompt, existingConfig) => {
           if (!propTextApiKey) throw Error(`请先在设置中配置文本大模型 API Key`);
