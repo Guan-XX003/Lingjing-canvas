@@ -1050,6 +1050,26 @@ function WanJuanAppCanvas({
     }, [nodes, setNodes]),
     useEffect(() => {
       let handleBeforeUnload = () => {
+        // 关窗/刷新时同步 flush 当前画布到 localStorage，避免 2.8s 自动保存防抖窗口内的未保存编辑丢失。
+        // 异步的 saveCanvasState 在卸载时来不及完成写盘；这里用同步 setItem 做 best-effort 兜底。
+        try {
+          if (shouldFitViewRef.current) {
+            let currentProjectId = projectIdRef.current;
+            if (!globalThis.__wanjuanProjectMigrationLocks?.has(currentProjectId) && !globalThis.__wanjuanStorageMaintenanceRunning) {
+              let canvasState = {
+                nodes: (nodesRef.current || [])
+                  .filter((node) => node.id !== `ghost-target`)
+                  .map((node) => {
+                    let nodeData = { ...WanJuanStripRuntimeNodeData(node.data || {}) };
+                    Object.keys(nodeData).forEach((key) => { typeof nodeData[key] == `function` && delete nodeData[key]; });
+                    return { ...node, data: nodeData };
+                  }),
+                edges: (edgesRef.current || []).filter((edge) => edge.id !== `ghost-edge`),
+              };
+              localStorage.setItem(`${canvasStateKeyPrefix}${currentProjectId}`, JSON.stringify(canvasState));
+            }
+          }
+        } catch {}
         (abortControllersRef.current.forEach((controller) => controller.abort()), abortControllersRef.current.clear());
       };
       return (
@@ -1506,12 +1526,17 @@ function WanJuanAppCanvas({
 	            [`${desktopCanvasMirrorPrefix}${currentProjectId}`]: canvasState,
 	          });
       } catch (error) {
-        (console.error(`Save failed`, error),
-          (error.name === `QuotaExceededError` ||
-            (error.message && error.message.includes(`quota`))) &&
-          showToast(
-            `存储空间不足，无法保存画布。请尝试清理一些不需要的节点或图片。`,
-          ));
+        console.error(`Save failed`, error);
+        if (error.name === `QuotaExceededError` || (error.message && error.message.includes(`quota`))) {
+          // localforage(IndexedDB) 配额不足时，兜底写 chrome.storage.local(桌面端为磁盘存储、配额更大)，尽量不丢本次画布
+          try {
+            typeof chrome < `u` && chrome.storage?.local?.set?.({
+              [`${desktopCanvasMirrorPrefix}${currentProjectId}`]: canvasState,
+            });
+          } catch {}
+          globalThis.__wanjuanLastCanvasSaveQuotaError = { projectId: currentProjectId, at: Date.now() };
+          showToast(`存储空间不足，无法保存画布。请尝试清理一些不需要的节点或图片。`);
+        }
       }
 	      isRestoringRef.current ||
 	        (setHistory((history2) => {
@@ -1927,12 +1952,15 @@ function WanJuanAppCanvas({
         window.alert(`没有在该文件夹里匹配到缺失素材，请确认选择的是导出时生成的外部素材文件夹`));
     }, [setNodes, saveCanvasState, showProjectAssetCandidateDialog]);
   (useEffect(() => {
+      let __wjLoadToken = (globalThis.__wanjuanCanvasLoadToken = (globalThis.__wanjuanCanvasLoadToken || 0) + 1),
+        guardedSetNodes = (v) => { (__wjLoadToken === globalThis.__wanjuanCanvasLoadToken) && setNodes(v); },
+        guardedSetEdges = (v) => { (__wjLoadToken === globalThis.__wanjuanCanvasLoadToken) && setEdges(v); };
       ((shouldFitViewRef.current = false),
         setShouldFitView(false),
         (async () => {
           let storageKey = `${canvasStateKeyPrefix}${projectId}`;
           if (initialEmptyProject) {
-            (setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
+            (guardedSetNodes([]), guardedSetEdges(WANJUAN_STARTER_EDGES));
             try {
               await localforageModule.default.removeItem(storageKey);
               localStorage.removeItem(storageKey);
@@ -2021,7 +2049,7 @@ function WanJuanAppCanvas({
                 }
 	                wanjuanIsDefaultStarterCanvas(nodes2, edges2) && ((nodes2 = []), (edges2 = []));
 	                (nodes2 && nodes2.length > 0 ?
-	                  setNodes(
+	                  guardedSetNodes(
 	                    await Promise.all(
                       nodes2.map(async (node) => {
                         let hydratedNode = await hydrateProjectAssetContainer(node),
@@ -2138,11 +2166,11 @@ function WanJuanAppCanvas({
                       }),
                     ),
 	                  ) :
-                  setNodes([]),
-	                  edges2 && setEdges(edges2));
-	            } else(setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
+                  guardedSetNodes([]),
+	                  edges2 && guardedSetEdges(edges2));
+	            } else(guardedSetNodes([]), guardedSetEdges(WANJUAN_STARTER_EDGES));
 	          } catch (error) {
-            (console.error(`Failed to load canvas state`, error), setNodes([]), setEdges(WANJUAN_STARTER_EDGES));
+            (console.error(`Failed to load canvas state`, error), guardedSetNodes([]), guardedSetEdges(WANJUAN_STARTER_EDGES));
 	          } finally {
             setTimeout(() => {
               (setShouldFitView(true), (shouldFitViewRef.current = true), (LoadOnceRef.current = true));
@@ -19725,7 +19753,7 @@ ${String(promptText || ``).slice(0, 5e4)}`;
                   externalizeProjectAssetContainer(node, {
                     projectId: projectId,
                     nodeId: node?.id || `node-${index}`,
-                    path: `node-${index}`,
+                    path: `node-${node?.id || index}`,
                     assetMap: options.assetMap || {},
                     persist: !!options.persist,
                   }),
