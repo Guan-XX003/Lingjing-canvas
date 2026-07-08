@@ -622,6 +622,18 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 };
               if (!tongyiPrompt.trim())
                 throw Error(`请输入通义万相提示词`);
+              // 通义万相用节点按当前模式选择的模型，而不是全局视频模型（否则会回退成 grok 默认，导致中转站收到 grok-* 模型）
+              let tongyiModelListText =
+                  tongyiMode === `reference-image-to-video` ? seedanceSourceNode?.data?.tongyiWanxiangReferenceImageModels :
+                  tongyiMode === `image-to-video` ? seedanceSourceNode?.data?.tongyiWanxiangImageModels :
+                  tongyiMode === `video-edit` ? seedanceSourceNode?.data?.tongyiWanxiangEditModels :
+                  seedanceSourceNode?.data?.tongyiWanxiangTextModels,
+                tongyiModelList = String(tongyiModelListText || ``).split(/[\n,，、]+/).map((item) => item.trim()).filter(Boolean),
+                tongyiSelectedModel = String(seedanceSourceNode?.data?.selectedModel || ``).trim(),
+                tongyiModelName = tongyiSelectedModel && tongyiModelList.includes(tongyiSelectedModel) ? tongyiSelectedModel : tongyiModelList[0] || tongyiSelectedModel;
+              if (!tongyiModelName)
+                throw Error(`请先在「设置 → 通义万相」里为当前模式配置模型（该模式的模型列表为空）`);
+              modelName = tongyiModelName;
               let formData = new FormData();
               formData.append(`model`, modelName);
               formData.append(`prompt`, tongyiPrompt);
@@ -630,20 +642,28 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 tongyiMode === `image-to-video` ||
                 tongyiMode === `video-edit`
               ) {
+                // 视频编辑(wan2.7-videoedit)接口 input_reference 只接受图片(首帧、可选尾帧,最多2张),不支持视频输入
+                if (tongyiMode === `video-edit` && imageReferences.length === 0)
+                  throw Error(
+                    `通义万相「视频编辑」(wan2.7-videoedit) 只接受参考图片（首帧，可选尾帧），不支持输入视频；请连接图片节点而不是视频节点`,
+                  );
                 let reference =
                   tongyiMode === `video-edit` ?
-                  videoReferences[0] || imageReferences[0] :
+                  imageReferences[0] || videoReferences[0] :
                   tongyiMode === `image-to-video` ?
                   imageReferences[0] || videoReferences[0] :
                   tongyiReferenceEntries[0]?.url || imageReferences[0] || videoReferences[0];
                 if (!reference)
                   throw Error(
                     tongyiMode === `video-edit` ?
-                    `视频编辑模式需要连接一个参考视频或图片节点` :
+                    `视频编辑模式需要连接参考图片节点（首帧，可选尾帧）` :
                     `当前通义万相模式需要连接至少一张参考图`,
                   );
-                if (tongyiMode === `reference-image-to-video`) {
-                  let referenceEntries = tongyiReferenceEntries.length > 0 ? tongyiReferenceEntries : [{
+                if (tongyiMode === `reference-image-to-video` || tongyiMode === `video-edit`) {
+                  let referenceEntries =
+                    tongyiMode === `video-edit` ?
+                    imageReferences.slice(0, 2).map((url) => ({ url, kind: `image` })) :
+                    tongyiReferenceEntries.length > 0 ? tongyiReferenceEntries : [{
                       url: reference,
                       kind: videoReferences.includes(reference) ? `video` : `image`,
                     }],
