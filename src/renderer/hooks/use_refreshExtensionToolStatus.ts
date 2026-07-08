@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * refreshExtensionToolStatus。自 bundle 抽出，逐字搬运、行为不变。
  */

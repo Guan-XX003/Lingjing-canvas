@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useSafeEffect20（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** WanJuanSettingsSectionC：自 WanJuanAppRoot render 抽出的 JSX 段，props 传入，行为不变。 */
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 
