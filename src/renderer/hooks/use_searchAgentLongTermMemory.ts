@@ -1,11 +1,15 @@
-// @ts-nocheck
 /**
  * searchAgentLongTermMemory。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { getMem0Headers } from "../lib/app-root-helpers";
 
-export function use_searchAgentLongTermMemory(deps: any) {
+interface UseSearchAgentLongTermMemoryDeps {
+  extractMem0Results: any;
+  normalizeMem0BaseUrl: any;
+}
+
+export function use_searchAgentLongTermMemory(deps: UseSearchAgentLongTermMemoryDeps) {
   const {
     extractMem0Results,
     normalizeMem0BaseUrl,

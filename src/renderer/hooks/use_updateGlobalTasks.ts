@@ -1,12 +1,18 @@
-// @ts-nocheck
 /**
  * updateGlobalTasks。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { compactGlobalTasks } from "../lib/app-root-helpers";
 declare const chrome: any;
 
-export function use_updateGlobalTasks(deps: any) {
+interface UseUpdateGlobalTasksDeps {
+  isPluginEnv: boolean;
+  setGlobalTasks: SetAny;
+  globalTasks: any;
+}
+
+export function use_updateGlobalTasks(deps: UseUpdateGlobalTasksDeps) {
   const {
     isPluginEnv,
     setGlobalTasks,

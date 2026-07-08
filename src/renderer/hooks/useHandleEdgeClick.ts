@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * wanjuanHandleEdgeClick。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useHandleEdgeClick(deps: any) {
+interface UseHandleEdgeClickDeps {
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+}
+
+export function useHandleEdgeClick(deps: UseHandleEdgeClickDeps) {
   const {
     setEdges,
     setMenuPosition,

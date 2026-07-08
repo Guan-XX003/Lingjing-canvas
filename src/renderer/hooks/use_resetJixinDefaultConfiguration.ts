@@ -1,12 +1,19 @@
-// @ts-nocheck
 /**
  * resetJixinDefaultConfiguration。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref, Toast } from "../lib/app-types";
 import { WANJUAN_TIANJI_CONFIG_MIRROR_KEY } from "../lib/tianji-api";
 declare const chrome: any;
 
-export function use_resetJixinDefaultConfiguration(deps: any) {
+interface UseResetJixinDefaultConfigurationDeps {
+  apiModelCloudSettingsSaveTimerRef: Ref;
+  applyJixinDefaultResetPatch: any;
+  buildJixinDefaultResetPatch: any;
+  showToast2: Toast;
+}
+
+export function use_resetJixinDefaultConfiguration(deps: UseResetJixinDefaultConfigurationDeps) {
   const {
     apiModelCloudSettingsSaveTimerRef,
     applyJixinDefaultResetPatch,

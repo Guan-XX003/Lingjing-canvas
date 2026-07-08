@@ -1,13 +1,125 @@
-// @ts-nocheck
 /**
  * applyStoredGlobalConfig。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { wanjuanNormalizeSeedanceVirtualPortraits } from "../lib/seedance";
 declare const chrome: any;
 
-export function use_applyStoredGlobalConfig(deps: any) {
+interface UseApplyStoredGlobalConfigDeps {
+  _e: any;
+  configButlerApiKey: any;
+  configButlerApiUrl: any;
+  configButlerModel: any;
+  configButlerProtocol: any;
+  mergeStoredGlobalApiConfigs: any;
+  normalizeStoredGlobalConfigBackup: any;
+  setActiveStoredGlobalConfigId: SetAny;
+  setApiConfigs: SetAny;
+  setAudioApiConfigId: SetAny;
+  setAudioApiKey: SetAny;
+  setAudioApiUrl: SetAny;
+  setAudioModelApiBindings: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setAudioModels: SetAny;
+  setConfigButlerDocUrl: SetAny;
+  setConfigButlerMode: SetAny;
+  setConfigButlerTargetApiConfigId: SetAny;
+  setConfigButlerTargetCategory: SetAny;
+  setImageApiConfigId: SetAny;
+  setImageApiKey: SetAny;
+  setImageApiUrl: SetAny;
+  setImageCompatResolutions: SetAny;
+  setImageModelApiBindings: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setImageModels: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setSeedanceDurations: SetAny;
+  setSeedanceEnableWebSearch: SetAny;
+  setSeedanceGenerateAudio: SetAny;
+  setSeedanceModel: SetAny;
+  setSeedanceRatios: SetAny;
+  setSeedanceResolutions: SetAny;
+  setSeedanceVirtualPortraits: SetAny;
+  setSeedanceWatermark: SetAny;
+  setTextApiConfigId: SetAny;
+  setTextApiKey: SetAny;
+  setTextApiUrl: SetAny;
+  setTextModelApiBindings: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setTianjiSeedanceModel: SetAny;
+  setTongyiWanxiangDurations: SetAny;
+  setTongyiWanxiangEditModels: SetAny;
+  setTongyiWanxiangImageModels: SetAny;
+  setTongyiWanxiangRatios: SetAny;
+  setTongyiWanxiangReferenceImageModels: SetAny;
+  setTongyiWanxiangResolutions: SetAny;
+  setTongyiWanxiangTextModels: SetAny;
+  setTtsMusicModel: SetAny;
+  setVideoApiConfigId: SetAny;
+  setVideoApiKey: SetAny;
+  setVideoApiUrl: SetAny;
+  setVideoAspectRatios: SetAny;
+  setVideoDurations: SetAny;
+  setVideoModelApiBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  setVideoModelRequestProfilesText: SetAny;
+  setVideoModels: SetAny;
+  setVideoResolutions: SetAny;
+  showToast2: Toast;
+  storedGlobalConfigs: any;
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  audioApiConfigId: any;
+  audioApiKey: any;
+  audioApiUrl: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  configButlerDocUrl: any;
+  configButlerMode: any;
+  configButlerTargetApiConfigId: any;
+  configButlerTargetCategory: any;
+  imageApiConfigId: any;
+  imageApiKey: any;
+  imageApiUrl: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  seedanceDurations: any;
+  seedanceEnableWebSearch: any;
+  seedanceGenerateAudio: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  seedanceVirtualPortraits: any;
+  seedanceWatermark: any;
+  textApiConfigId: any;
+  textApiKey: any;
+  textApiUrl: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  tianjiSeedanceModel: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  ttsMusicModel: any;
+  videoApiConfigId: any;
+  videoApiKey: any;
+  videoApiUrl: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoResolutions: any;
+}
+
+export function use_applyStoredGlobalConfig(deps: UseApplyStoredGlobalConfigDeps) {
   const {
     _e,
     configButlerApiKey,

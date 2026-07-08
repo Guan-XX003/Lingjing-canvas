@@ -1,12 +1,67 @@
-// @ts-nocheck
 /**
  * captureCurrentGlobalConfig。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 
-export function use_captureCurrentGlobalConfig(deps: any) {
+interface UseCaptureCurrentGlobalConfigDeps {
+  apiConfigs: ApiConfig[];
+  audioApiConfigId: any;
+  audioApiKey: any;
+  audioApiUrl: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  audioModels: any;
+  configButlerDocUrl: any;
+  configButlerMode: any;
+  configButlerTargetApiConfigId: any;
+  configButlerTargetCategory: any;
+  imageApiConfigId: any;
+  imageApiKey: any;
+  imageApiUrl: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  imageModels: any;
+  modelProtocolRegistry: Bindings;
+  seedanceDurations: any;
+  seedanceEnableWebSearch: any;
+  seedanceGenerateAudio: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  seedanceVirtualPortraits: any;
+  seedanceWatermark: any;
+  textApiConfigId: any;
+  textApiKey: any;
+  textApiUrl: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  textModels: any;
+  tianjiSeedanceModel: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  ttsMusicModel: any;
+  videoApiConfigId: any;
+  videoApiKey: any;
+  videoApiUrl: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoModelRequestProfilesText: any;
+  videoModels: any;
+  videoResolutions: any;
+}
+
+export function use_captureCurrentGlobalConfig(deps: UseCaptureCurrentGlobalConfigDeps) {
   const {
     apiConfigs,
     audioApiConfigId,

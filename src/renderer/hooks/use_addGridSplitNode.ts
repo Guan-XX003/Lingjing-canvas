@@ -1,11 +1,22 @@
-// @ts-nocheck
 /**
  * addGridSplitNode。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { wanjuanCollectNodeReferenceMedia } from "../lib/reference-media";
 
-export function use_addGridSplitNode(deps: any) {
+interface UseAddGridSplitNodeDeps {
+  handleSplit: any;
+  handleSplitOne: any;
+  menuPosition: any;
+  nodes: any[];
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+  showToast: Toast;
+}
+
+export function use_addGridSplitNode(deps: UseAddGridSplitNodeDeps) {
   const {
     handleSplit,
     handleSplitOne,

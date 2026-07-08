@@ -1,10 +1,11 @@
-// @ts-nocheck
 /**
  * normalizeMem0MemoryText。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_normalizeMem0MemoryText(deps: any) {
+interface UseNormalizeMem0MemoryTextDeps {}
+
+export function use_normalizeMem0MemoryText(deps: UseNormalizeMem0MemoryTextDeps) {
   const {} = deps;
   const normalizeMem0MemoryText = (value) => {
           if (!value) return ``;

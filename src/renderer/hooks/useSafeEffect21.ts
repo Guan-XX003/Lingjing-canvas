@@ -1,10 +1,18 @@
-// @ts-nocheck
 /**
  * useSafeEffect21（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { ApiConfig, SetAny } from "../lib/app-types";
 
-export function useSafeEffect21(deps: any) {
+interface UseSafeEffect21Deps {
+  apiConfigs: ApiConfig[];
+  configButlerTargetApiConfigId: any;
+  setConfigButlerTargetApiConfigId: SetAny;
+  setConfigButlerTargetApiKey: SetAny;
+  setConfigButlerTargetApiUrl: SetAny;
+}
+
+export function useSafeEffect21(deps: UseSafeEffect21Deps) {
   const {
     apiConfigs,
     configButlerTargetApiConfigId,

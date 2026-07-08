@@ -1,11 +1,14 @@
-// @ts-nocheck
 /**
  * normalizeResourceLocalforagePayload。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_normalizeResourceLocalforagePayload(deps: any) {
+interface UseNormalizeResourceLocalforagePayloadDeps {
+  TRANSIT_RESOURCES_STORAGE_KEY: any;
+}
+
+export function use_normalizeResourceLocalforagePayload(deps: UseNormalizeResourceLocalforagePayloadDeps) {
   const {
     TRANSIT_RESOURCES_STORAGE_KEY,
   } = deps;

@@ -1,11 +1,28 @@
-// @ts-nocheck
 /**
  * saveCanvasState。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 declare const chrome: any;
 
-export function useSaveCanvasState(deps: any) {
+interface UseSaveCanvasStateDeps {
+  WanJuanStripRuntimeNodeData: any;
+  canvasStateKeyPrefix: any;
+  desktopCanvasMirrorPrefix: any;
+  edgesRef: Ref;
+  externalizeProjectCanvasState: any;
+  historyIndexRef: Ref;
+  isRestoringRef: Ref;
+  localforageModule: any;
+  nodesRef: Ref;
+  projectIdRef: Ref;
+  setHistory: SetAny;
+  setHistoryIndex: SetAny;
+  shouldFitViewRef: Ref;
+  showToast: Toast;
+}
+
+export function useSaveCanvasState(deps: UseSaveCanvasStateDeps) {
   const {
     WanJuanStripRuntimeNodeData,
     canvasStateKeyPrefix,

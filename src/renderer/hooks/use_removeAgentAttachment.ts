@@ -1,11 +1,15 @@
-// @ts-nocheck
 /**
  * removeAgentAttachment。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { releaseAgentAttachment } from "../lib/agent";
 
-export function use_removeAgentAttachment(deps: any) {
+interface UseRemoveAgentAttachmentDeps {
+  setAgentAttachments: SetAny;
+}
+
+export function use_removeAgentAttachment(deps: UseRemoveAgentAttachmentDeps) {
   const {
     setAgentAttachments,
   } = deps;

@@ -1,11 +1,32 @@
-// @ts-nocheck
 /**
  * saveNonModelSettings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_saveNonModelSettings(deps: any) {
+interface UseSaveNonModelSettingsDeps {
+  agentConversations: any;
+  agentItems: any;
+  appLanguage: any;
+  autoDownloadGeneratedResults: any;
+  backupExportSelection: any;
+  downloadDirectory: any;
+  layeredRunConcurrencyOptions: any;
+  layeredRunMaxConcurrency: any;
+  maxPollingDuration: any;
+  nonModelSettingsSaveTimerRef: Ref;
+  performanceProfile: any;
+  pollingInterval: any;
+  presetPrompts: any;
+  selectedAgentId: any;
+  settingsHydratedRef: Ref;
+  storageOptimizationEnabled: any;
+  storageOptimizationPaused: any;
+  themeMode: any;
+}
+
+export function use_saveNonModelSettings(deps: UseSaveNonModelSettingsDeps) {
   const {
     agentConversations,
     agentItems,

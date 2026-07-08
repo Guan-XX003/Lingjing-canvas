@@ -1,12 +1,21 @@
-// @ts-nocheck
 /**
  * handleServerVerify。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { wanjuanInstallCrossWindowNavigation, wanjuanVerifyActivationCode } from "../lib/collaboration";
 declare const chrome: any;
 
-export function use_handleServerVerify(deps: any) {
+interface UseHandleServerVerifyDeps {
+  deviceId: any;
+  isPluginEnv: boolean;
+  membershipCode: any;
+  setMembership: SetAny;
+  setMembershipCode: SetAny;
+  showToast2: Toast;
+}
+
+export function use_handleServerVerify(deps: UseHandleServerVerifyDeps) {
   const {
     deviceId,
     isPluginEnv,

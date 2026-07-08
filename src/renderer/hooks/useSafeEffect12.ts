@@ -1,10 +1,17 @@
-// @ts-nocheck
 /**
  * useSafeEffect12（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 
-export function useSafeEffect12(deps: any) {
+interface UseSafeEffect12Deps {
+  edges: any[];
+  setNodes: SetAny;
+  shouldFitView: any;
+  wanjuanPrevEdgesRef: Ref;
+}
+
+export function useSafeEffect12(deps: UseSafeEffect12Deps) {
   const {
     edges,
     setNodes,

@@ -1,11 +1,19 @@
-// @ts-nocheck
 /**
  * createProjectGroup。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { normalizeProjectGroups } from "../lib/project-normalize";
 
-export function use_createProjectGroup(deps: any) {
+interface UseCreateProjectGroupDeps {
+  persistProjectGroups: any;
+  projectGroupDraft: any;
+  projectGroups: any;
+  setProjectGroupDraft: SetAny;
+  showToast2: Toast;
+}
+
+export function use_createProjectGroup(deps: UseCreateProjectGroupDeps) {
   const {
     persistProjectGroups,
     projectGroupDraft,

@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * useLateEffect1120（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref } from "../lib/app-types";
 
-export function useLateEffect1120(deps: any) {
+interface UseLateEffect1120Deps {
+  projectId: any;
+  projectIdRef: Ref;
+}
+
+export function useLateEffect1120(deps: UseLateEffect1120Deps) {
   const {
     projectId,
     projectIdRef,

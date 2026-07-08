@@ -1,13 +1,24 @@
-// @ts-nocheck
 /**
  * runConfigButler。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { buildConfigButlerToolContext, formatConfigButlerToolContext, validateAndRepairConfigButlerResult } from "../lib/config-butler";
 import { extractJsonBlock } from "../lib/app-utils";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 
-export function useRunConfigButler(deps: any) {
+interface UseRunConfigButlerDeps {
+  callConfigButlerModel: any;
+  configButlerDocUrl: any;
+  configButlerTargetCategory: any;
+  configButlerTargetModel: any;
+  getSelectedButlerTargetApiConfig: any;
+  setConfigButlerLoading: SetAny;
+  setConfigButlerResultText: SetAny;
+  showToast2: Toast;
+}
+
+export function useRunConfigButler(deps: UseRunConfigButlerDeps) {
   const {
     callConfigButlerModel,
     configButlerDocUrl,

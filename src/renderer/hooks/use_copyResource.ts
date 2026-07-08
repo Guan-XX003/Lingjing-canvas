@@ -1,10 +1,14 @@
-// @ts-nocheck
 /**
  * copyResource。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Toast } from "../lib/app-types";
 
-export function use_copyResource(deps: any) {
+interface UseCopyResourceDeps {
+  showToast2: Toast;
+}
+
+export function use_copyResource(deps: UseCopyResourceDeps) {
   const {
     showToast2,
   } = deps;

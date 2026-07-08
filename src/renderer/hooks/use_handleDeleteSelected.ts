@@ -1,10 +1,19 @@
-// @ts-nocheck
 /**
  * handleDeleteSelected。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 
-export function use_handleDeleteSelected(deps: any) {
+interface UseHandleDeleteSelectedDeps {
+  menuPosition: any;
+  nodesRef: Ref;
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+  stopGeneration: any;
+}
+
+export function use_handleDeleteSelected(deps: UseHandleDeleteSelectedDeps) {
   const {
     menuPosition,
     nodesRef,

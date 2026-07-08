@@ -1,11 +1,17 @@
-// @ts-nocheck
 /**
  * importAgentKnowledgeFile。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Toast } from "../lib/app-types";
 import { buildKnowledgeChunks } from "../lib/agent";
 
-export function use_importAgentKnowledgeFile(deps: any) {
+interface UseImportAgentKnowledgeFileDeps {
+  selectedAgent: any;
+  showToast2: Toast;
+  updateSelectedAgent: any;
+}
+
+export function use_importAgentKnowledgeFile(deps: UseImportAgentKnowledgeFileDeps) {
   const {
     selectedAgent,
     showToast2,

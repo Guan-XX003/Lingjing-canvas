@@ -1,10 +1,14 @@
-// @ts-nocheck
 /**
  * ensureUniqueProtocolName。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings } from "../lib/app-types";
 
-export function use_ensureUniqueProtocolName(deps: any) {
+interface UseEnsureUniqueProtocolNameDeps {
+  modelProtocolRegistry: Bindings;
+}
+
+export function use_ensureUniqueProtocolName(deps: UseEnsureUniqueProtocolNameDeps) {
   const {
     modelProtocolRegistry,
   } = deps;

@@ -1,10 +1,19 @@
-// @ts-nocheck
 /**
  * handleDeleteClick。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function use_handleDeleteClick(deps: any) {
+interface UseHandleDeleteClickDeps {
+  pendingDeleteId: any;
+  saveUsers: any;
+  selectedUser: any;
+  setPendingDeleteId: SetAny;
+  setSelectedUser: SetAny;
+  users: any;
+}
+
+export function use_handleDeleteClick(deps: UseHandleDeleteClickDeps) {
   const {
     pendingDeleteId,
     saveUsers,

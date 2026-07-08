@@ -1,15 +1,86 @@
-// @ts-nocheck
 /**
  * useNodeSyncEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
 import { WanJuanGetPreferredModel, WanJuanShouldAutoPreferredModel } from "../lib/model-favorites";
 import { WanJuanRenderRuntime, WanJuanStripRuntimeNodeData } from "../components/render-mode";
 import { WanJuanSameModelId } from "../lib/model-id";
 import { parseSeedanceList } from "../lib/model-binding";
 
-export function useNodeSyncEffect(deps: any) {
+interface UseNodeSyncEffectDeps {
+  addCustomNode: any;
+  addGeneratedAsset: any;
+  apiConfigs: ApiConfig[];
+  audioApiKey: any;
+  audioApiUrl: any;
+  audioModel: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  createImageNode: any;
+  customPublicUploadConfig: any;
+  drawingModel: any;
+  generateImage: any;
+  generateText: any;
+  generateVideo: any;
+  handleAIAssist: any;
+  handleCancel2: any;
+  handleCrop: any;
+  handleExtractFrames: any;
+  handleGenerateCustom: any;
+  handleNoop: any;
+  handleSplit: any;
+  handleSplitOne: any;
+  handleTianjiPortraitReview: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  openImageEditor: any;
+  openImagePreview: any;
+  openVideoEditor: any;
+  presetPrompts: any;
+  projectIdRef: Ref;
+  qiniuConfig: any;
+  seedanceDurations: any;
+  seedanceEnableWebSearch: any;
+  seedanceGenerateAudio: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  seedanceUploadMode: any;
+  seedanceVirtualPortraits: any;
+  seedanceWatermark: any;
+  sendToActiveTab: any;
+  setNodes: SetAny;
+  shouldFitView: any;
+  showToast: Toast;
+  stopGeneration: any;
+  textModel: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  tianjiSeedanceModel: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  tosConfig: any;
+  ttsMusicModel: any;
+  updateTaskList: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModel: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoModelRequestProfiles: any;
+  videoResolutions: any;
+}
+
+export function useNodeSyncEffect(deps: UseNodeSyncEffectDeps) {
   const {
     addCustomNode,
     addGeneratedAsset,

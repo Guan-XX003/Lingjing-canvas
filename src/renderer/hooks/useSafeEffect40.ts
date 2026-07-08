@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * useSafeEffect40（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 
-export function useSafeEffect40(deps: any) {
+interface UseSafeEffect40Deps {
+  activeProjectId: any;
+  globalTasks: any;
+  storageOptimizationEnabled: any;
+  storageOptimizationPaused: any;
+}
+
+export function useSafeEffect40(deps: UseSafeEffect40Deps) {
   const {
     activeProjectId,
     globalTasks,

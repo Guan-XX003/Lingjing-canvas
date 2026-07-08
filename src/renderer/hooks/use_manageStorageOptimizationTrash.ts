@@ -1,11 +1,14 @@
-// @ts-nocheck
 /**
  * manageStorageOptimizationTrash。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { formatStorageBytes } from "../lib/app-utils";
 
-export function use_manageStorageOptimizationTrash(deps: any) {
+interface UseManageStorageOptimizationTrashDeps {
+  downloadDirectory: any;
+}
+
+export function use_manageStorageOptimizationTrash(deps: UseManageStorageOptimizationTrashDeps) {
   const {
     downloadDirectory,
   } = deps;

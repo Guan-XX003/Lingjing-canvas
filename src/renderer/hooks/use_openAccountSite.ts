@@ -1,11 +1,17 @@
-// @ts-nocheck
 /**
  * openAccountSite。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_openAccountSite(deps: any) {
+interface UseOpenAccountSiteDeps {
+  isPluginEnv: boolean;
+  restoreCookies: any;
+  setSelectedUser: SetAny;
+}
+
+export function use_openAccountSite(deps: UseOpenAccountSiteDeps) {
   const {
     isPluginEnv,
     restoreCookies,

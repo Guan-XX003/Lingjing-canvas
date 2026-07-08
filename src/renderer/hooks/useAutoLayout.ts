@@ -1,10 +1,19 @@
-// @ts-nocheck
 /**
  * autoLayout。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 
-export function useAutoLayout(deps: any) {
+interface UseAutoLayoutDeps {
+  dagreModule: any;
+  edgesRef: Ref;
+  fitView: any;
+  nodesRef: Ref;
+  setNodes: SetAny;
+  showToast: Toast;
+}
+
+export function useAutoLayout(deps: UseAutoLayoutDeps) {
   const {
     dagreModule,
     edgesRef,

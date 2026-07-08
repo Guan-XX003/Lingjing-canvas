@@ -1,11 +1,18 @@
-// @ts-nocheck
 /**
  * copyNodeImage。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { wanjuanCollectNodeReferenceMedia } from "../lib/reference-media";
 
-export function use_copyNodeImage(deps: any) {
+interface UseCopyNodeImageDeps {
+  menuPosition: any;
+  nodes: any[];
+  setMenuPosition: SetAny;
+  showToast: Toast;
+}
+
+export function use_copyNodeImage(deps: UseCopyNodeImageDeps) {
   const {
     menuPosition,
     nodes,

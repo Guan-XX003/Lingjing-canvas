@@ -1,10 +1,21 @@
-// @ts-nocheck
 /**
  * createAgent。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings, SetAny, Toast } from "../lib/app-types";
 
-export function use_createAgent(deps: any) {
+interface UseCreateAgentDeps {
+  agentModelOptions: any;
+  setAgentConversations: SetAny;
+  setAgentItems: SetAny;
+  setSelectedAgentId: SetAny;
+  showToast2: Toast;
+  textApiConfigId: any;
+  textModelApiBindings: Bindings;
+  textModels: any;
+}
+
+export function use_createAgent(deps: UseCreateAgentDeps) {
   const {
     agentModelOptions,
     setAgentConversations,

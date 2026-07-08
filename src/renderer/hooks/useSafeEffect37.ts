@@ -1,10 +1,18 @@
-// @ts-nocheck
 /**
  * useSafeEffect37（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref } from "../lib/app-types";
 
-export function useSafeEffect37(deps: any) {
+interface UseSafeEffect37Deps {
+  activeProjectId: any;
+  isReady: boolean;
+  projectHydratedRef: Ref;
+  settingsHydratedRef: Ref;
+  themeMode: any;
+}
+
+export function useSafeEffect37(deps: UseSafeEffect37Deps) {
   const {
     activeProjectId,
     isReady,

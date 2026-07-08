@@ -1,11 +1,18 @@
-// @ts-nocheck
 /**
  * addResource。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_addResource(deps: any) {
+interface UseAddResourceDeps {
+  localforageModule: any;
+  isPluginEnv: boolean;
+  setTransitResources: SetAny;
+  transitResources: any;
+}
+
+export function use_addResource(deps: UseAddResourceDeps) {
   const {
     localforageModule,
     isPluginEnv,

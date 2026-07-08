@@ -1,11 +1,19 @@
-// @ts-nocheck
 /**
  * saveEditedVideo。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
-export function useSaveEditedVideo(deps: any) {
+interface UseSaveEditedVideoDeps {
+  projectIdRef: Ref;
+  setNodes: SetAny;
+  setVideoEditState: SetAny;
+  showToast: Toast;
+  videoEditState: any;
+}
+
+export function useSaveEditedVideo(deps: UseSaveEditedVideoDeps) {
   const {
     projectIdRef,
     setNodes,

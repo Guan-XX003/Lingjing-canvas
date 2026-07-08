@@ -1,10 +1,18 @@
-// @ts-nocheck
 /**
  * handleMultiConnectToTarget。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 
-export function useMultiConnect(deps: any) {
+interface UseMultiConnectDeps {
+  addEdge: any;
+  multiConnectIds: any;
+  setEdges: SetAny;
+  setMultiConnectIds: SetAny;
+  showToast: Toast;
+}
+
+export function useMultiConnect(deps: UseMultiConnectDeps) {
   const {
     addEdge,
     multiConnectIds,

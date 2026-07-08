@@ -1,10 +1,18 @@
-// @ts-nocheck
 /**
  * useSafeEffect22（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Bindings, SetAny } from "../lib/app-types";
 
-export function useSafeEffect22(deps: any) {
+interface UseSafeEffect22Deps {
+  activeProtocolName: any;
+  modelProtocolRegistry: Bindings;
+  setActiveProtocolConfigText: SetAny;
+  setActiveProtocolName: SetAny;
+  setProtocolNamesText: SetAny;
+}
+
+export function useSafeEffect22(deps: UseSafeEffect22Deps) {
   const {
     activeProtocolName,
     modelProtocolRegistry,

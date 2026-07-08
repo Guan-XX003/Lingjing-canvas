@@ -1,10 +1,21 @@
-// @ts-nocheck
 /**
  * runNodeChain。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Toast } from "../lib/app-types";
 
-export function useRunNodeChain(deps: any) {
+interface UseRunNodeChainDeps {
+  generateImage: any;
+  generateText: any;
+  generateVideo: any;
+  getEdges: () => any[];
+  getNodes: () => any[];
+  handleGenerateCustom: any;
+  resolveVideoRunModel: any;
+  showToast: Toast;
+}
+
+export function useRunNodeChain(deps: UseRunNodeChainDeps) {
   const {
     generateImage,
     generateText,

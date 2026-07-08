@@ -1,11 +1,20 @@
-// @ts-nocheck
 /**
  * getConfigButlerRepairContext。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings } from "../lib/app-types";
 import { inferButlerCategoryFromModelName, normalizeModelCategory } from "../lib/config-butler";
 
-export function use_getConfigButlerRepairContext(deps: any) {
+interface UseGetConfigButlerRepairContextDeps {
+  audioModelProtocolBindings: Bindings;
+  configButlerErrorAssistant: any;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  textModelProtocolBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+}
+
+export function use_getConfigButlerRepairContext(deps: UseGetConfigButlerRepairContextDeps) {
   const {
     audioModelProtocolBindings,
     configButlerErrorAssistant,

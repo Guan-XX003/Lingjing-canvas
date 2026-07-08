@@ -1,12 +1,18 @@
-// @ts-nocheck
 /**
  * normalizeStoredGlobalConfigBackup。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 
-export function use_normalizeStoredGlobalConfigBackup(deps: any) {
+interface UseNormalizeStoredGlobalConfigBackupDeps {
+  repairXSeeVeoReferenceVideoBindings: any;
+  apiConfigs: ApiConfig[];
+  videoApiUrl: any;
+}
+
+export function use_normalizeStoredGlobalConfigBackup(deps: UseNormalizeStoredGlobalConfigBackupDeps) {
   const {
     repairXSeeVeoReferenceVideoBindings,
     apiConfigs,

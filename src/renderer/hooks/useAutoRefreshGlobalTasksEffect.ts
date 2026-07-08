@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * useAutoRefreshGlobalTasksEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref } from "../lib/app-types";
 
-export function useAutoRefreshGlobalTasksEffect(deps: any) {
+interface UseAutoRefreshGlobalTasksEffectDeps {
+  wanjuanAutoRefreshGlobalTaskRefreshRef: Ref;
+  wanjuanAutoRefreshGlobalTasksBusyRef: Ref;
+  wanjuanAutoRefreshGlobalTasksRef: Ref;
+}
+
+export function useAutoRefreshGlobalTasksEffect(deps: UseAutoRefreshGlobalTasksEffectDeps) {
   const {
     wanjuanAutoRefreshGlobalTaskRefreshRef,
     wanjuanAutoRefreshGlobalTasksBusyRef,

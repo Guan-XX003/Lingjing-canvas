@@ -1,11 +1,23 @@
-// @ts-nocheck
 /**
  * $t。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Toast } from "../lib/app-types";
 import { normalizeModuleSelection } from "../lib/project-normalize";
 
-export function use_$t(deps: any) {
+interface Use$tDeps {
+  BACKUP_MODULE_LABELS: any;
+  buildBackupPayload: any;
+  collectExternalUploadProjectAssetFiles: any;
+  collectSelectedLocalforageBackup: any;
+  compactBackupPortableAssets: any;
+  getBackupChromeStorageKeys: any;
+  readChromeStorageSnapshot: any;
+  showToast2: Toast;
+  projects: any;
+}
+
+export function use_$t(deps: Use$tDeps) {
   const {
     BACKUP_MODULE_LABELS,
     buildBackupPayload,

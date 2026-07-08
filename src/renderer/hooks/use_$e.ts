@@ -1,10 +1,22 @@
-// @ts-nocheck
 /**
  * $e。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 
-export function use_$e(deps: any) {
+interface Use$eDeps {
+  historyIndex: any;
+  historyIndexRef: Ref;
+  isRestoringRef: Ref;
+  setEdges: SetAny;
+  setHistoryIndex: SetAny;
+  setNodes: SetAny;
+  edges: any[];
+  history: any;
+  nodes: any[];
+}
+
+export function use_$e(deps: Use$eDeps) {
   const {
     historyIndex,
     historyIndexRef,

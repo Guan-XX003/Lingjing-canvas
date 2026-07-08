@@ -1,15 +1,34 @@
-// @ts-nocheck
 /**
  * useCanvasLoadEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 import { WANJUAN_STARTER_EDGES, wanjuanIsDefaultStarterCanvas } from "../components/canvas-node-registry";
 import { WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanNewestNodeTask, wanjuanTaskUsesSeedanceSlot, wanjuanVideoTaskCanAttachToNode, wanjuanVideoTaskMatchesNodeByPrompt } from "../lib/video-task";
 declare const chrome: any;
 
-export function useCanvasLoadEffect(deps: any) {
+interface UseCanvasLoadEffectDeps {
+  GlobalTasks: any;
+  LoadOnceRef: Ref;
+  abortControllersRef: Ref;
+  canvasStateKeyPrefix: any;
+  desktopCanvasMirrorPrefix: any;
+  hydrateProjectAssetContainer: any;
+  initialEmptyProject: any;
+  localforageModule: any;
+  onInitialEmptyProjectReady: any;
+  projectId: any;
+  projectIdRef: Ref;
+  resolveWanjuanPlayableTaskUrl: any;
+  setEdges: SetAny;
+  setNodes: SetAny;
+  setShouldFitView: SetAny;
+  shouldFitViewRef: Ref;
+}
+
+export function useCanvasLoadEffect(deps: UseCanvasLoadEffectDeps) {
   const {
     GlobalTasks,
     LoadOnceRef,

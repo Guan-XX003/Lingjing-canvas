@@ -1,11 +1,18 @@
-// @ts-nocheck
 /**
  * deleteCustomNodeTemplate。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_deleteCustomNodeTemplate(deps: any) {
+interface UseDeleteCustomNodeTemplateDeps {
+  edges: any[];
+  isPluginEnv: boolean;
+  setEdges: SetAny;
+  showToast2: Toast;
+}
+
+export function use_deleteCustomNodeTemplate(deps: UseDeleteCustomNodeTemplateDeps) {
   const {
     edges,
     isPluginEnv,

@@ -1,10 +1,11 @@
-// @ts-nocheck
 /**
  * probeResourceAlive。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_probeResourceAlive(deps: any) {
+interface UseProbeResourceAliveDeps {}
+
+export function use_probeResourceAlive(deps: UseProbeResourceAliveDeps) {
   const {} = deps;
   const probeResourceAlive = (resource) =>
               new Promise((resolve) => {

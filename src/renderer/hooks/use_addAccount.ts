@@ -1,11 +1,27 @@
-// @ts-nocheck
 /**
  * addAccount。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_addAccount(deps: any) {
+interface UseAddAccountDeps {
+  accountNameInput: any;
+  cookieInput: any;
+  currentLimits: any;
+  currentPlatform: any;
+  editingAccountId: any;
+  isPluginEnv: boolean;
+  saveUsers: any;
+  setAccountNameInput: SetAny;
+  setCookieInput: SetAny;
+  setEditingAccountId: SetAny;
+  setIsAccountBusy: SetAny;
+  setIsAddingAccount: SetAny;
+  users: any;
+}
+
+export function use_addAccount(deps: UseAddAccountDeps) {
   const {
     accountNameInput,
     cookieInput,

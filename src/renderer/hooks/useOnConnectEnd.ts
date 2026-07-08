@@ -1,10 +1,20 @@
-// @ts-nocheck
 /**
  * onConnectEnd。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 
-export function useOnConnectEnd(deps: any) {
+interface UseOnConnectEndDeps {
+  screenToFlowPosition: any;
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+  setResourceSubmenuOpen: SetAny;
+  setResourceSubmenuOpenAlt: SetAny;
+  wrapperRef: Ref;
+}
+
+export function useOnConnectEnd(deps: UseOnConnectEndDeps) {
   const {
     screenToFlowPosition,
     setEdges,

@@ -1,11 +1,12 @@
-// @ts-nocheck
 /**
  * persistTransitResource。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
-export function use_persistTransitResource(deps: any) {
+interface UsePersistTransitResourceDeps {}
+
+export function use_persistTransitResource(deps: UsePersistTransitResourceDeps) {
   const {} = deps;
   const persistTransitResource = async (resource) => {
     if (

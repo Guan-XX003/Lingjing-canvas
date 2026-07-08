@@ -1,11 +1,27 @@
-// @ts-nocheck
 /**
  * handlePaste。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 import { wanjuanCloneNodeDataForClipboard } from "../lib/video-task";
 
-export function useHandlePaste(deps: any) {
+interface UseHandlePasteDeps {
+  createNodeAt: any;
+  generateImage: any;
+  generateText: any;
+  handleCrop: any;
+  menuPosition: any;
+  openImagePreview: any;
+  projectIdRef: Ref;
+  screenToFlowPosition: any;
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+  showToast: Toast;
+  wrapperRef: Ref;
+}
+
+export function useHandlePaste(deps: UseHandlePasteDeps) {
   const {
     createNodeAt,
     generateImage,

@@ -1,10 +1,17 @@
-// @ts-nocheck
 /**
  * getShortcutNodePosition。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref } from "../lib/app-types";
 
-export function use_getShortcutNodePosition(deps: any) {
+interface UseGetShortcutNodePositionDeps {
+  lastCanvasMenuPositionRef: Ref;
+  menuPosition: any;
+  screenToFlowPosition: any;
+  wrapperRef: Ref;
+}
+
+export function use_getShortcutNodePosition(deps: UseGetShortcutNodePositionDeps) {
   const {
     lastCanvasMenuPositionRef,
     menuPosition,

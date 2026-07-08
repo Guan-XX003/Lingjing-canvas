@@ -1,12 +1,22 @@
-// @ts-nocheck
 /**
  * openConfigButlerManualProblemFields。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { buildButlerFallbackProtocol, inferConfigButlerProblemPart, normalizeProtocolConfig } from "../lib/config-butler";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_openConfigButlerManualProblemFields(deps: any) {
+interface UseOpenConfigButlerManualProblemFieldsDeps {
+  configButlerErrorAssistant: any;
+  getConfigButlerRepairContext: any;
+  setConfigButlerManualProblemPart: SetAny;
+  setConfigButlerManualProtocolName: SetAny;
+  setConfigButlerManualProtocolOpen: SetAny;
+  setConfigButlerManualProtocolText: SetAny;
+  showToast2: Toast;
+}
+
+export function use_openConfigButlerManualProblemFields(deps: UseOpenConfigButlerManualProblemFieldsDeps) {
   const {
     configButlerErrorAssistant,
     getConfigButlerRepairContext,

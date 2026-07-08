@@ -1,11 +1,14 @@
-// @ts-nocheck
 /**
  * storeAgentLongTermMemory。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { getMem0Headers } from "../lib/app-root-helpers";
 
-export function use_storeAgentLongTermMemory(deps: any) {
+interface UseStoreAgentLongTermMemoryDeps {
+  normalizeMem0BaseUrl: any;
+}
+
+export function use_storeAgentLongTermMemory(deps: UseStoreAgentLongTermMemoryDeps) {
   const {
     normalizeMem0BaseUrl,
   } = deps;

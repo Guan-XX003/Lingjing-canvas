@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * useSafeEffect10（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 
-export function useSafeEffect10(deps: any) {
+interface UseSafeEffect10Deps {
+  setWanjuanViewportSize: SetAny;
+  wrapperRef: Ref;
+}
+
+export function useSafeEffect10(deps: UseSafeEffect10Deps) {
   const {
     setWanjuanViewportSize,
     wrapperRef,

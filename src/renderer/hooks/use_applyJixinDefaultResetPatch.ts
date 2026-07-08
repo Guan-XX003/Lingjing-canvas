@@ -1,13 +1,119 @@
-// @ts-nocheck
 /**
  * applyJixinDefaultResetPatch。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, SetAny } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, wanjuanMergeModelText } from "../lib/jixin-catalog";
 import { cloneBackupValue } from "../lib/backup";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 
-export function use_applyJixinDefaultResetPatch(deps: any) {
+interface UseApplyJixinDefaultResetPatchDeps {
+  WANJUAN_JIXIN_DOC_URL: any;
+  _e: any;
+  setActiveProtocolConfigText: SetAny;
+  setActiveProtocolName: SetAny;
+  setActiveStoredGlobalConfigId: SetAny;
+  setApiConfigs: SetAny;
+  setAudioApiConfigId: SetAny;
+  setAudioApiKey: SetAny;
+  setAudioApiUrl: SetAny;
+  setAudioModelApiBindings: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setAudioModels: SetAny;
+  setConfigButlerApiKey: SetAny;
+  setConfigButlerApiUrl: SetAny;
+  setConfigButlerBatchItems: SetAny;
+  setConfigButlerDocUrl: SetAny;
+  setConfigButlerMode: SetAny;
+  setConfigButlerModel: SetAny;
+  setConfigButlerProtocol: SetAny;
+  setConfigButlerRepairHistory: SetAny;
+  setConfigButlerResultText: SetAny;
+  setConfigButlerTargetApiConfigId: SetAny;
+  setConfigButlerTargetCategory: SetAny;
+  setImageApiConfigId: SetAny;
+  setImageApiKey: SetAny;
+  setImageApiUrl: SetAny;
+  setImageCompatResolutions: SetAny;
+  setImageModelApiBindings: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setImageModels: SetAny;
+  setJixinModelScanNotice: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setProtocolNamesText: SetAny;
+  setSeedanceDurations: SetAny;
+  setSeedanceEnableWebSearch: SetAny;
+  setSeedanceGenerateAudio: SetAny;
+  setSeedanceModel: SetAny;
+  setSeedanceRatios: SetAny;
+  setSeedanceResolutions: SetAny;
+  setSeedanceWatermark: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextApiConfigId: SetAny;
+  setTextApiKey: SetAny;
+  setTextApiUrl: SetAny;
+  setTextModelApiBindings: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setTianjiSeedanceModel: SetAny;
+  setTianjiSeedanceSettingsMode: SetAny;
+  setTongyiWanxiangDurations: SetAny;
+  setTongyiWanxiangEditModels: SetAny;
+  setTongyiWanxiangImageModels: SetAny;
+  setTongyiWanxiangRatios: SetAny;
+  setTongyiWanxiangReferenceImageModels: SetAny;
+  setTongyiWanxiangResolutions: SetAny;
+  setTongyiWanxiangTextModels: SetAny;
+  setTtsMusicModel: SetAny;
+  setVideoApiConfigId: SetAny;
+  setVideoApiKey: SetAny;
+  setVideoApiUrl: SetAny;
+  setVideoAspectRatios: SetAny;
+  setVideoDurations: SetAny;
+  setVideoModelApiBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  setVideoModelRequestProfilesText: SetAny;
+  setVideoModels: SetAny;
+  setVideoResolutions: SetAny;
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  audioApiConfigId: any;
+  audioApiUrl: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  imageApiConfigId: any;
+  imageApiUrl: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  seedanceDurations: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  storedGlobalConfigs: any;
+  textApiConfigId: any;
+  textApiUrl: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  tianjiSeedanceModel: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  ttsMusicModel: any;
+  videoApiConfigId: any;
+  videoApiUrl: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoResolutions: any;
+}
+
+export function use_applyJixinDefaultResetPatch(deps: UseApplyJixinDefaultResetPatchDeps) {
   const {
     WANJUAN_JIXIN_DOC_URL,
     _e,

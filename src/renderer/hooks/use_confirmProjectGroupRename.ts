@@ -1,11 +1,21 @@
-// @ts-nocheck
 /**
  * confirmProjectGroupRename。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { normalizeProjectGroups } from "../lib/project-normalize";
 
-export function use_confirmProjectGroupRename(deps: any) {
+interface UseConfirmProjectGroupRenameDeps {
+  editingProjectGroupId: any;
+  editingProjectGroupName: any;
+  persistProjectGroups: any;
+  projectGroups: any;
+  setEditingProjectGroupId: SetAny;
+  setEditingProjectGroupName: SetAny;
+  showToast2: Toast;
+}
+
+export function use_confirmProjectGroupRename(deps: UseConfirmProjectGroupRenameDeps) {
   const {
     editingProjectGroupId,
     editingProjectGroupName,

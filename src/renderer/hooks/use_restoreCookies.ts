@@ -1,11 +1,14 @@
-// @ts-nocheck
 /**
  * restoreCookies。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 declare const chrome: any;
 
-export function use_restoreCookies(deps: any) {
+interface UseRestoreCookiesDeps {
+  isPluginEnv: boolean;
+}
+
+export function use_restoreCookies(deps: UseRestoreCookiesDeps) {
   const {
     isPluginEnv,
   } = deps;

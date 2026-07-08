@@ -1,12 +1,20 @@
-// @ts-nocheck
 /**
  * applyPerformanceProfile。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 import { WANJUAN_PERFORMANCE_PROFILE_CUSTOM_KEY, WANJUAN_PERFORMANCE_PROFILE_PRESETS, WANJUAN_PERFORMANCE_PROFILE_STORAGE_KEY, WanJuanNormalizePerformanceProfile } from "../lib/performance-profile";
 declare const chrome: any;
 
-export function useApplyPerformanceProfile(deps: any) {
+interface UseApplyPerformanceProfileDeps {
+  layeredRunConcurrencyOptions: any;
+  layeredRunMaxConcurrency: any;
+  setLayeredRunConcurrencyOptions: SetAny;
+  setLayeredRunMaxConcurrency: SetAny;
+  setPerformanceProfile: SetAny;
+}
+
+export function useApplyPerformanceProfile(deps: UseApplyPerformanceProfileDeps) {
   const {
     layeredRunConcurrencyOptions,
     layeredRunMaxConcurrency,

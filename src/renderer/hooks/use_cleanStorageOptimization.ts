@@ -1,11 +1,20 @@
-// @ts-nocheck
 /**
  * cleanStorageOptimization。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { formatStorageBytes } from "../lib/app-utils";
 
-export function use_cleanStorageOptimization(deps: any) {
+interface UseCleanStorageOptimizationDeps {
+  buildCompleteStorageReferenceIndex: any;
+  downloadDirectory: any;
+  refreshStorageOptimizationStatus: any;
+  setStorageOptimizationBusy: SetAny;
+  setStorageOptimizationLastResult: SetAny;
+  showToast2: Toast;
+}
+
+export function use_cleanStorageOptimization(deps: UseCleanStorageOptimizationDeps) {
   const {
     buildCompleteStorageReferenceIndex,
     downloadDirectory,

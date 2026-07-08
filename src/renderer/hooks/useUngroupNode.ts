@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * ungroupNode。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 
-export function useUngroupNode(deps: any) {
+interface UseUngroupNodeDeps {
+  setNodes: SetAny;
+  showToast: Toast;
+}
+
+export function useUngroupNode(deps: UseUngroupNodeDeps) {
   const {
     setNodes,
     showToast,

@@ -1,11 +1,20 @@
-// @ts-nocheck
 /**
  * applyLitterboxUploadPreset。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_applyLitterboxUploadPreset(deps: any) {
+interface UseApplyLitterboxUploadPresetDeps {
+  setCustomPublicUploadConfig: SetAny;
+  setCustomUploadConfigExpanded: SetAny;
+  setSeedanceUploadMode: SetAny;
+  showToast2: Toast;
+  customPublicUploadConfig: any;
+  seedanceUploadMode: any;
+}
+
+export function use_applyLitterboxUploadPreset(deps: UseApplyLitterboxUploadPresetDeps) {
   const {
     setCustomPublicUploadConfig,
     setCustomUploadConfigExpanded,

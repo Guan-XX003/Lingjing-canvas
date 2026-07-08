@@ -1,12 +1,26 @@
-// @ts-nocheck
 /**
  * handleCreateProject。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { normalizeProjectGroups } from "../lib/project-normalize";
 declare const chrome: any;
 
-export function use_handleCreateProject(deps: any) {
+interface UseHandleCreateProjectDeps {
+  isPluginEnv: boolean;
+  newProjectGroupId: any;
+  newProjectName: any;
+  projectGroups: any;
+  projects: any;
+  setActiveProjectId: SetAny;
+  setNewProjectGroupId: SetAny;
+  setNewProjectIds: SetAny;
+  setNewProjectName: SetAny;
+  setProjectMenuOpen: SetAny;
+  setProjects: SetAny;
+}
+
+export function use_handleCreateProject(deps: UseHandleCreateProjectDeps) {
   const {
     isPluginEnv,
     newProjectGroupId,

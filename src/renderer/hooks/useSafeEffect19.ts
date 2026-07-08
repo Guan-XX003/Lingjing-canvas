@@ -1,10 +1,26 @@
-// @ts-nocheck
 /**
  * useSafeEffect19（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { ApiConfig, SetAny } from "../lib/app-types";
 
-export function useSafeEffect19(deps: any) {
+interface UseSafeEffect19Deps {
+  apiConfigs: ApiConfig[];
+  audioApiConfigId: any;
+  imageApiConfigId: any;
+  setAudioApiKey: SetAny;
+  setAudioApiUrl: SetAny;
+  setImageApiKey: SetAny;
+  setImageApiUrl: SetAny;
+  setTextApiKey: SetAny;
+  setTextApiUrl: SetAny;
+  setVideoApiKey: SetAny;
+  setVideoApiUrl: SetAny;
+  textApiConfigId: any;
+  videoApiConfigId: any;
+}
+
+export function useSafeEffect19(deps: UseSafeEffect19Deps) {
   const {
     apiConfigs,
     audioApiConfigId,

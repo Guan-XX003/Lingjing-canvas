@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * useSafeEffect1（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useSafeEffect1(deps: any) {
+interface UseSafeEffect1Deps {
+  nodes: any[];
+  setNodes: SetAny;
+}
+
+export function useSafeEffect1(deps: UseSafeEffect1Deps) {
   const {
     nodes,
     setNodes,

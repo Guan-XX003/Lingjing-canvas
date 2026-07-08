@@ -1,11 +1,22 @@
-// @ts-nocheck
 /**
  * ConfirmRenameProject。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_ConfirmRenameProject(deps: any) {
+interface UseConfirmRenameProjectDeps {
+  isPluginEnv: boolean;
+  projects: any;
+  renameProjectId: any;
+  renameProjectName: any;
+  setProjects: SetAny;
+  setRenameProjectId: SetAny;
+  setRenameProjectName: SetAny;
+  showToast2: Toast;
+}
+
+export function use_ConfirmRenameProject(deps: UseConfirmRenameProjectDeps) {
   const {
     isPluginEnv,
     projects,

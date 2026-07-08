@@ -1,12 +1,25 @@
-// @ts-nocheck
 /**
  * enableStorageOptimization。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { formatStorageBytes } from "../lib/app-utils";
 declare const chrome: any;
 
-export function use_enableStorageOptimization(deps: any) {
+interface UseEnableStorageOptimizationDeps {
+  activeProjectId: any;
+  projects: any;
+  refreshStorageOptimizationStatus: any;
+  setProjects: SetAny;
+  setStorageOptimizationEnabled: SetAny;
+  setStorageOptimizationLastResult: SetAny;
+  setStorageOptimizationPaused: SetAny;
+  showToast2: Toast;
+  storageOptimizationEnabled: any;
+  storageOptimizationPaused: any;
+}
+
+export function use_enableStorageOptimization(deps: UseEnableStorageOptimizationDeps) {
   const {
     activeProjectId,
     projects,

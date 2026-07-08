@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 媒体编辑器打开状态与操作（图片预览 / 图片标注 / 视频剪辑）。
  * 自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，行为保持一致。

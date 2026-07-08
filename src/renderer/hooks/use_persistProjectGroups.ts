@@ -1,12 +1,19 @@
-// @ts-nocheck
 /**
  * persistProjectGroups。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { normalizeProjectGroups } from "../lib/project-normalize";
 declare const chrome: any;
 
-export function use_persistProjectGroups(deps: any) {
+interface UsePersistProjectGroupsDeps {
+  isPluginEnv: boolean;
+  projects: any;
+  setProjectGroups: SetAny;
+  projectGroups: any;
+}
+
+export function use_persistProjectGroups(deps: UsePersistProjectGroupsDeps) {
   const {
     isPluginEnv,
     projects,

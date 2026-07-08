@@ -1,10 +1,17 @@
-// @ts-nocheck
 /**
  * useSafeEffect23（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { ApiConfig, Bindings, SetAny } from "../lib/app-types";
 
-export function useSafeEffect23(deps: any) {
+interface UseSafeEffect23Deps {
+  apiConfigs: ApiConfig[];
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  setImageModelProtocolBindings: SetAny;
+}
+
+export function useSafeEffect23(deps: UseSafeEffect23Deps) {
   const {
     apiConfigs,
     imageModelApiBindings,

@@ -1,11 +1,14 @@
-// @ts-nocheck
 /**
  * sanitizeProjectCanvasStateForExport。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_sanitizeProjectCanvasStateForExport(deps: any) {
+interface UseSanitizeProjectCanvasStateForExportDeps {
+  sanitizeProjectNodeDataForExport: any;
+}
+
+export function use_sanitizeProjectCanvasStateForExport(deps: UseSanitizeProjectCanvasStateForExportDeps) {
   const {
     sanitizeProjectNodeDataForExport,
   } = deps;

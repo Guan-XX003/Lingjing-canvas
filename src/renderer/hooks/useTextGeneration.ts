@@ -1,16 +1,41 @@
-// @ts-nocheck
 /**
  * 文本生成（generateText）。自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，逻辑逐字搬运、行为不变。
  * 依赖经 deps 传入；hook 为 .ts，body 里引用的任何未提供名字 tsc 会报错，便于补齐。
  */
 import { useCallback } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
 import { resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNodeTextValue, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { serializeErrorPreview } from "../lib/log-utils";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
 import { wanjuanResourceKind, wanjuanResourceMediaUrl } from "../lib/resource";
 
-export function useTextGeneration(deps: any) {
+interface UseTextGenerationDeps {
+  propTextApiKey: any;
+  propTextApiUrl: any;
+  textModel: any;
+  apiConfigs: ApiConfig[];
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  planLimits: any;
+  getNodes: () => any[];
+  getEdges: () => any[];
+  setNodes: SetAny;
+  setEdges: SetAny;
+  showToast: Toast;
+  addGeneratedAsset: any;
+  updateTaskList: any;
+  projectIdRef: Ref;
+  abortControllersRef: Ref;
+  customPublicUploadConfig: any;
+  presetPrompts: any;
+  seedanceUploadMode: any;
+  setDailyGenerationCount: SetAny;
+  tosConfig: any;
+}
+
+export function useTextGeneration(deps: UseTextGenerationDeps) {
   const {
     propTextApiKey,
     propTextApiUrl,

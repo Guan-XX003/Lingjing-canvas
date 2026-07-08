@@ -1,13 +1,19 @@
-// @ts-nocheck
 /**
  * repairXSeeVeoReferenceVideoBindings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings } from "../lib/app-types";
 import { buildXSeeVeoReferenceVideoProtocol } from "../lib/config-butler";
 import { cloneBackupValue } from "../lib/backup";
 import { isXSeeVeoReferenceVideoModel } from "../lib/model-list-utils";
 
-export function use_repairXSeeVeoReferenceVideoBindings(deps: any) {
+interface UseRepairXSeeVeoReferenceVideoBindingsDeps {
+  modelProtocolRegistry: Bindings;
+  videoApiUrl: any;
+  videoModelProtocolBindings: Bindings;
+}
+
+export function use_repairXSeeVeoReferenceVideoBindings(deps: UseRepairXSeeVeoReferenceVideoBindingsDeps) {
   const {
     modelProtocolRegistry,
     videoApiUrl,

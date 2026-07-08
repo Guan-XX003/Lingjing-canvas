@@ -1,10 +1,11 @@
-// @ts-nocheck
 /**
  * blobToDataUrl。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_blobToDataUrl(deps: any) {
+interface UseBlobToDataUrlDeps {}
+
+export function use_blobToDataUrl(deps: UseBlobToDataUrlDeps) {
   const {} = deps;
   const blobToDataUrl = (blob) =>
             new Promise((resolvePromise, rejectPromise) => {

@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * useSafeEffect7（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useSafeEffect7(deps: any) {
+interface UseSafeEffect7Deps {
+  setNodes: SetAny;
+  wanjuanResourceLocalUrlMap: any;
+}
+
+export function useSafeEffect7(deps: UseSafeEffect7Deps) {
   const {
     setNodes,
     wanjuanResourceLocalUrlMap,

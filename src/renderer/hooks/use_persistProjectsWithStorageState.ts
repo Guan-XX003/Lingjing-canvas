@@ -1,11 +1,17 @@
-// @ts-nocheck
 /**
  * persistProjectsWithStorageState。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_persistProjectsWithStorageState(deps: any) {
+interface UsePersistProjectsWithStorageStateDeps {
+  isPluginEnv: boolean;
+  projects: any;
+  setProjects: SetAny;
+}
+
+export function use_persistProjectsWithStorageState(deps: UsePersistProjectsWithStorageStateDeps) {
   const {
     isPluginEnv,
     projects,

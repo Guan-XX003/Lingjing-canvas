@@ -1,10 +1,22 @@
-// @ts-nocheck
 /**
  * layeredRunDownstream。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Toast } from "../lib/app-types";
 
-export function useLayeredRun(deps: any) {
+interface UseLayeredRunDeps {
+  generateImage: any;
+  generateText: any;
+  generateVideo: any;
+  getEdges: () => any[];
+  getNodes: () => any[];
+  handleGenerateCustom: any;
+  layeredRunMaxConcurrency: any;
+  resolveVideoRunModel: any;
+  showToast: Toast;
+}
+
+export function useLayeredRun(deps: UseLayeredRunDeps) {
   const {
     generateImage,
     generateText,

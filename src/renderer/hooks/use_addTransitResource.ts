@@ -1,12 +1,21 @@
-// @ts-nocheck
 /**
  * addTransitResource。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 declare const chrome: any;
 
-export function use_addTransitResource(deps: any) {
+interface UseAddTransitResourceDeps {
+  localforageModule: any;
+  isPluginEnv: boolean;
+  persistTransitResource: any;
+  setEdges: any;
+  setTransitResources: SetAny;
+  transitResources: any;
+}
+
+export function use_addTransitResource(deps: UseAddTransitResourceDeps) {
   const {
     localforageModule,
     isPluginEnv,

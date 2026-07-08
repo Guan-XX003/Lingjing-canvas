@@ -1,11 +1,18 @@
-// @ts-nocheck
 /**
  * handleClearUnfavorited。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_handleClearUnfavorited(deps: any) {
+interface UseHandleClearUnfavoritedDeps {
+  localforageModule: any;
+  isPluginEnv: boolean;
+  setTransitResources: SetAny;
+  transitResources: any;
+}
+
+export function use_handleClearUnfavorited(deps: UseHandleClearUnfavoritedDeps) {
   const {
     localforageModule,
     isPluginEnv,

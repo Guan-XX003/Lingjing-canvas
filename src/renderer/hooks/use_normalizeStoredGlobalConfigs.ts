@@ -1,10 +1,14 @@
-// @ts-nocheck
 /**
  * normalizeStoredGlobalConfigs。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_normalizeStoredGlobalConfigs(deps: any) {
+interface UseNormalizeStoredGlobalConfigsDeps {
+  normalizeStoredGlobalConfigBackup: any;
+  configButlerDocUrl: any;
+}
+
+export function use_normalizeStoredGlobalConfigs(deps: UseNormalizeStoredGlobalConfigsDeps) {
   const {
     normalizeStoredGlobalConfigBackup,
     configButlerDocUrl,

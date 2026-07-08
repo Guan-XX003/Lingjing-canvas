@@ -1,10 +1,18 @@
-// @ts-nocheck
 /**
  * wanjuanCanvasNodes。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
 
-export function useCanvasNodes(deps: any) {
+interface UseCanvasNodesDeps {
+  WanJuanComputeNodeRenderMode: any;
+  nodes: any[];
+  useMemo: any;
+  wanjuanSelectedReferenceSourcesByTarget: any;
+  wanjuanViewport: any;
+  wanjuanViewportSize: any;
+}
+
+export function useCanvasNodes(deps: UseCanvasNodesDeps) {
   const {
     WanJuanComputeNodeRenderMode,
     nodes,

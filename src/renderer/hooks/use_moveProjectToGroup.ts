@@ -1,12 +1,19 @@
-// @ts-nocheck
 /**
  * moveProjectToGroup。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 import { normalizeProjectGroups } from "../lib/project-normalize";
 declare const chrome: any;
 
-export function use_moveProjectToGroup(deps: any) {
+interface UseMoveProjectToGroupDeps {
+  isPluginEnv: boolean;
+  projectGroups: any;
+  projects: any;
+  setProjects: SetAny;
+}
+
+export function use_moveProjectToGroup(deps: UseMoveProjectToGroupDeps) {
   const {
     isPluginEnv,
     projectGroups,

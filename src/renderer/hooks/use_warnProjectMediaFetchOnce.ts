@@ -1,10 +1,13 @@
-// @ts-nocheck
 /**
  * warnProjectMediaFetchOnce。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_warnProjectMediaFetchOnce(deps: any) {
+interface UseWarnProjectMediaFetchOnceDeps {
+  projectMediaFetchWarningCache: any;
+}
+
+export function use_warnProjectMediaFetchOnce(deps: UseWarnProjectMediaFetchOnceDeps) {
   const {
     projectMediaFetchWarningCache,
   } = deps;

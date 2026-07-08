@@ -1,10 +1,15 @@
-// @ts-nocheck
 /**
  * addKeyboardNode。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_addKeyboardNode(deps: any) {
+interface UseAddKeyboardNodeDeps {
+  createNodeAt: any;
+  getShortcutNodePosition: any;
+  menuPosition: any;
+}
+
+export function use_addKeyboardNode(deps: UseAddKeyboardNodeDeps) {
   const {
     createNodeAt,
     getShortcutNodePosition,

@@ -1,10 +1,21 @@
-// @ts-nocheck
 /**
  * handleSplitOne。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 
-export function useHandleSplitOne(deps: any) {
+interface UseHandleSplitOneDeps {
+  getEdges: () => any[];
+  getNodes: () => any[];
+  handleCrop: any;
+  openImageEditor: any;
+  openImagePreview: any;
+  setEdges: SetAny;
+  setNodes: SetAny;
+  showToast: Toast;
+}
+
+export function useHandleSplitOne(deps: UseHandleSplitOneDeps) {
   const {
     getEdges,
     getNodes,

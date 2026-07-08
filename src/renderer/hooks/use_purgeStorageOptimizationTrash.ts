@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * purgeStorageOptimizationTrash。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function use_purgeStorageOptimizationTrash(deps: any) {
+interface UsePurgeStorageOptimizationTrashDeps {
+  downloadDirectory: any;
+  refreshStorageOptimizationStatus: any;
+  setStorageOptimizationLastResult: SetAny;
+}
+
+export function use_purgeStorageOptimizationTrash(deps: UsePurgeStorageOptimizationTrashDeps) {
   const {
     downloadDirectory,
     refreshStorageOptimizationStatus,

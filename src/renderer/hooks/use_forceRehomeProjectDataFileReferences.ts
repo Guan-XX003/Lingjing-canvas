@@ -1,11 +1,12 @@
-// @ts-nocheck
 /**
  * forceRehomeProjectDataFileReferences。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
-export function use_forceRehomeProjectDataFileReferences(deps: any) {
+interface UseForceRehomeProjectDataFileReferencesDeps {}
+
+export function use_forceRehomeProjectDataFileReferences(deps: UseForceRehomeProjectDataFileReferencesDeps) {
   const {} = deps;
   const forceRehomeProjectDataFileReferences = async (value, context, pathParts = []) => {
                     if (typeof value == `string` && value.startsWith(`file://`)) {

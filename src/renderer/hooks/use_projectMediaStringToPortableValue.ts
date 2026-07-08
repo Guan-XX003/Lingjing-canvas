@@ -1,10 +1,14 @@
-// @ts-nocheck
 /**
  * projectMediaStringToPortableValue。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_projectMediaStringToPortableValue(deps: any) {
+interface UseProjectMediaStringToPortableValueDeps {
+  blobToDataUrl: any;
+  warnProjectMediaFetchOnce: any;
+}
+
+export function use_projectMediaStringToPortableValue(deps: UseProjectMediaStringToPortableValueDeps) {
   const {
     blobToDataUrl,
     warnProjectMediaFetchOnce,

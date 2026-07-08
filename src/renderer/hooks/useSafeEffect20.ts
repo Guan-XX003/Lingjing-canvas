@@ -1,12 +1,19 @@
-// @ts-nocheck
 /**
  * useSafeEffect20（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 import { WanJuanIsMusicModel } from "../components/audio-nodes";
 declare const chrome: any;
 
-export function useSafeEffect20(deps: any) {
+interface UseSafeEffect20Deps {
+  audioModels: any;
+  setAudioModels: SetAny;
+  setTtsMusicModel: SetAny;
+  ttsMusicModel: any;
+}
+
+export function useSafeEffect20(deps: UseSafeEffect20Deps) {
   const {
     audioModels,
     setAudioModels,

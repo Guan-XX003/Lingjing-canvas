@@ -1,10 +1,20 @@
-// @ts-nocheck
 /**
  * runManualConfigButlerErrorQuery。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 
-export function use_runManualConfigButlerErrorQuery(deps: any) {
+interface UseRunManualConfigButlerErrorQueryDeps {
+  configButlerErrorAssistant: any;
+  configButlerErrorAssistantMinimized: any;
+  globalTasks: any;
+  maybeTriggerConfigButlerErrorDiagnosis: any;
+  setConfigButlerErrorAssistant: SetAny;
+  setConfigButlerErrorAssistantMinimized: SetAny;
+  showToast2: Toast;
+}
+
+export function use_runManualConfigButlerErrorQuery(deps: UseRunManualConfigButlerErrorQueryDeps) {
   const {
     configButlerErrorAssistant,
     configButlerErrorAssistantMinimized,

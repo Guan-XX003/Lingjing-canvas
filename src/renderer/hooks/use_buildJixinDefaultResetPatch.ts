@@ -1,12 +1,33 @@
-// @ts-nocheck
 /**
  * buildJixinDefaultResetPatch。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, WANJUAN_JIXIN_DEFAULT_API_URL, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { wanjuanTianjiSeedanceDefaults } from "../lib/tianji-api";
 
-export function use_buildJixinDefaultResetPatch(deps: any) {
+interface UseBuildJixinDefaultResetPatchDeps {
+  WANJUAN_JIXIN_DOC_URL: any;
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  audioApiKey: any;
+  configButlerApiKey: any;
+  configButlerApiUrl: any;
+  configButlerDocUrl: any;
+  configButlerMode: any;
+  configButlerModel: any;
+  configButlerProtocol: any;
+  configButlerRepairHistory: any;
+  configButlerTargetApiConfigId: any;
+  configButlerTargetCategory: any;
+  imageApiKey: any;
+  storedGlobalConfigs: any;
+  textApiKey: any;
+  tianjiSeedanceSettingsMode: any;
+  videoApiKey: any;
+}
+
+export function use_buildJixinDefaultResetPatch(deps: UseBuildJixinDefaultResetPatchDeps) {
   const {
     WANJUAN_JIXIN_DOC_URL,
     activeStoredGlobalConfigId,

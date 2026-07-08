@@ -1,12 +1,30 @@
-// @ts-nocheck
 /**
  * rollbackConfigButlerRepair。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings, SetAny, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 declare const chrome: any;
 
-export function use_rollbackConfigButlerRepair(deps: any) {
+interface UseRollbackConfigButlerRepairDeps {
+  configButlerRepairHistory: any;
+  setAudioModelProtocolBindings: SetAny;
+  setConfigButlerRepairHistory: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  showToast2: Toast;
+  storedGlobalConfigs: any;
+  audioModelProtocolBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  textModelProtocolBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+}
+
+export function use_rollbackConfigButlerRepair(deps: UseRollbackConfigButlerRepairDeps) {
   const {
     configButlerRepairHistory,
     setAudioModelProtocolBindings,

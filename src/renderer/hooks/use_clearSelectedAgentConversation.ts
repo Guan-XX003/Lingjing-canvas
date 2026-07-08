@@ -1,10 +1,17 @@
-// @ts-nocheck
 /**
  * clearSelectedAgentConversation。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 
-export function use_clearSelectedAgentConversation(deps: any) {
+interface UseClearSelectedAgentConversationDeps {
+  agentConversations: any;
+  selectedAgent: any;
+  setAgentConversations: SetAny;
+  showToast2: Toast;
+}
+
+export function use_clearSelectedAgentConversation(deps: UseClearSelectedAgentConversationDeps) {
   const {
     agentConversations,
     selectedAgent,

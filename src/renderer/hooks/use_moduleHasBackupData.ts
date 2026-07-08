@@ -1,10 +1,14 @@
-// @ts-nocheck
 /**
  * moduleHasBackupData。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_moduleHasBackupData(deps: any) {
+interface UseModuleHasBackupDataDeps {
+  TRANSIT_RESOURCES_STORAGE_KEY: any;
+  projects: any;
+}
+
+export function use_moduleHasBackupData(deps: UseModuleHasBackupDataDeps) {
   const {
     TRANSIT_RESOURCES_STORAGE_KEY,
     projects,

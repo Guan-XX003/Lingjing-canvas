@@ -1,10 +1,19 @@
-// @ts-nocheck
 /**
  * createImageNode。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useCreateImageNode(deps: any) {
+interface UseCreateImageNodeDeps {
+  getNodes: () => any[];
+  handleCrop: any;
+  openImageEditor: any;
+  openImagePreview: any;
+  setEdges: SetAny;
+  setNodes: SetAny;
+}
+
+export function useCreateImageNode(deps: UseCreateImageNodeDeps) {
   const {
     getNodes,
     handleCrop,

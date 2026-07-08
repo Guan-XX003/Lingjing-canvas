@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * editSeedancePortrait。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function use_editSeedancePortrait(deps: any) {
+interface UseEditSeedancePortraitDeps {
+  setSeedancePortraitEditingId: SetAny;
+  setSeedancePortraitForm: SetAny;
+  setSeedancePortraitLibraryExpanded: SetAny;
+}
+
+export function use_editSeedancePortrait(deps: UseEditSeedancePortraitDeps) {
   const {
     setSeedancePortraitEditingId,
     setSeedancePortraitForm,

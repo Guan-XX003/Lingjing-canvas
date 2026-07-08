@@ -1,11 +1,15 @@
-// @ts-nocheck
 /**
  * hydrateProjectAssetContainer。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import { wanjuanResolveHydratedProjectAssetFileValue, wanjuanShouldSkipHydratedProjectAssetValue } from "../lib/project-asset-binding";
 
-export function use_hydrateProjectAssetContainer(deps: any) {
+interface UseHydrateProjectAssetContainerDeps {
+  localforageModule: any;
+  PROJECT_ASSET_REF_SUFFIX: any;
+}
+
+export function use_hydrateProjectAssetContainer(deps: UseHydrateProjectAssetContainerDeps) {
   const {
     localforageModule,
     PROJECT_ASSET_REF_SUFFIX,

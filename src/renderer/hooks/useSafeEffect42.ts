@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * useSafeEffect42（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useSafeEffect42(deps: any) {
+interface UseSafeEffect42Deps {
+  downloadDirectory: any;
+  setStorageOptimizationLastResult: SetAny;
+  storageOptimizationEnabled: any;
+}
+
+export function useSafeEffect42(deps: UseSafeEffect42Deps) {
   const {
     downloadDirectory,
     setStorageOptimizationLastResult,

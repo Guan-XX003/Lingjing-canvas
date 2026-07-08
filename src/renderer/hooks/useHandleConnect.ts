@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * handleConnect。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { SetAny } from "../lib/app-types";
 
-export function useHandleConnect(deps: any) {
+interface UseHandleConnectDeps {
+  addEdge: any;
+  getNodes: () => any[];
+  setEdges: SetAny;
+}
+
+export function useHandleConnect(deps: UseHandleConnectDeps) {
   const {
     addEdge,
     getNodes,

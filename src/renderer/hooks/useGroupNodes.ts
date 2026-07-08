@@ -1,10 +1,16 @@
-// @ts-nocheck
 /**
  * groupSelectedNodes。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 
-export function useGroupNodes(deps: any) {
+interface UseGroupNodesDeps {
+  nodesRef: Ref;
+  setNodes: SetAny;
+  showToast: Toast;
+}
+
+export function useGroupNodes(deps: UseGroupNodesDeps) {
   const {
     nodesRef,
     setNodes,

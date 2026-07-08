@@ -1,10 +1,19 @@
-// @ts-nocheck
 /**
  * splitChromeStorageModules。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_splitChromeStorageModules(deps: any) {
+interface UseSplitChromeStorageModulesDeps {
+  AGENT_STORAGE_KEYS: any;
+  DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX: any;
+  PROJECT_ASSET_STORAGE_PREFIX: any;
+  PROJECT_CANVAS_STORAGE_PREFIX: any;
+  PROJECT_STORAGE_KEYS: any;
+  TRANSIT_RESOURCES_STORAGE_KEY: any;
+  projects: any;
+}
+
+export function use_splitChromeStorageModules(deps: UseSplitChromeStorageModulesDeps) {
   const {
     AGENT_STORAGE_KEYS,
     DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX,

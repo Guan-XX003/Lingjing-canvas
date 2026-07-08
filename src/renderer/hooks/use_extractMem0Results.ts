@@ -1,10 +1,13 @@
-// @ts-nocheck
 /**
  * extractMem0Results。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 
-export function use_extractMem0Results(deps: any) {
+interface UseExtractMem0ResultsDeps {
+  normalizeMem0MemoryText: any;
+}
+
+export function use_extractMem0Results(deps: UseExtractMem0ResultsDeps) {
   const {
     normalizeMem0MemoryText,
   } = deps;

@@ -1,11 +1,21 @@
-// @ts-nocheck
 /**
  * useWorkspaceTemplateEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref, Toast } from "../lib/app-types";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 
-export function useWorkspaceTemplateEffect(deps: any) {
+interface UseWorkspaceTemplateEffectDeps {
+  createNodeAt: any;
+  getNodes: () => any[];
+  projectId: any;
+  projectIdRef: Ref;
+  screenToFlowPosition: any;
+  showToast: Toast;
+  wrapperRef: Ref;
+}
+
+export function useWorkspaceTemplateEffect(deps: UseWorkspaceTemplateEffectDeps) {
   const {
     createNodeAt,
     getNodes,

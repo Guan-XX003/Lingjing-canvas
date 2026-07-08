@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * normalizeBackupModules。自 bundle 抽出，逐字搬运、行为不变。
  */
@@ -8,7 +7,21 @@ import { cloneBackupValue, normalizeBackupSettingsSections, normalizeProjectLoca
 import { normalizeAgentIdSelection } from "../lib/agent";
 import { normalizeProjectIdSelection, normalizeProjectResourceMap } from "../lib/project-normalize";
 
-export function use_normalizeBackupModules(deps: any) {
+interface UseNormalizeBackupModulesDeps {
+  AGENT_STORAGE_KEYS: any;
+  BACKUP_MODULE_LABELS: any;
+  TRANSIT_RESOURCES_STORAGE_KEY: any;
+  buildProjectLocalforagePayload: any;
+  getBackupSettingsSectionMap: any;
+  normalizeResourceLocalforagePayload: any;
+  splitChromeStorageModules: any;
+  agentConversations: any;
+  projectGroups: any;
+  projects: any;
+  selectedAgentId: any;
+}
+
+export function use_normalizeBackupModules(deps: UseNormalizeBackupModulesDeps) {
   const {
     AGENT_STORAGE_KEYS,
     BACKUP_MODULE_LABELS,
