@@ -643,6 +643,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 tongyiMode === `video-edit`
               ) {
                 // 视频编辑(wan2.7-videoedit)接口 input_reference 只接受图片(首帧、可选尾帧,最多2张),不支持视频输入
+                // 参考项可能是字符串URL,也可能是对象(如已绑定天玑素材),统一取出 url 字符串
+                let refUrlOf = (r) => (typeof r === `string` ? r : r?.url || ``);
                 if (tongyiMode === `video-edit` && imageReferences.length === 0)
                   throw Error(
                     `通义万相「视频编辑」(wan2.7-videoedit) 只接受参考图片（首帧，可选尾帧），不支持输入视频；请连接图片节点而不是视频节点`,
@@ -662,14 +664,14 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 if (tongyiMode === `reference-image-to-video` || tongyiMode === `video-edit`) {
                   let referenceEntries =
                     tongyiMode === `video-edit` ?
-                    imageReferences.slice(0, 2).map((url) => ({ url, kind: `image` })) :
+                    imageReferences.slice(0, 2).map((r) => ({ url: refUrlOf(r), kind: `image` })) :
                     tongyiReferenceEntries.length > 0 ? tongyiReferenceEntries : [{
-                      url: reference,
+                      url: refUrlOf(reference),
                       kind: videoReferences.includes(reference) ? `video` : `image`,
                     }],
                     referenceUrls = [];
                   for (let entry of referenceEntries) {
-                    let normalizedUrl = await tongyiNormalizePublicMediaUrl(entry.url, entry.kind || `image`);
+                    let normalizedUrl = await tongyiNormalizePublicMediaUrl(refUrlOf(entry.url), entry.kind || `image`);
                     normalizedUrl && referenceUrls.push(normalizedUrl);
                   }
                   if (referenceUrls.length === 0)
@@ -679,7 +681,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   formData.append(
                     `input_reference`,
                     await tongyiNormalizePublicMediaUrl(
-                      reference,
+                      refUrlOf(reference),
                       videoReferences.includes(reference) ? `video` : `image`,
                     ),
                   );
@@ -2409,9 +2411,10 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   await Promise.all(
                     imageReferences.map((reference) =>
                       (async () => {
-                        let imageUrl = referenceImagesAsUrls ?
-                          await uploadReferenceMediaForUrlOnlyModel(reference, `image`) :
-                          reference,
+                        let referenceUrl = typeof reference === `string` ? reference : reference?.url || ``,
+                          imageUrl = referenceImagesAsUrls ?
+                          await uploadReferenceMediaForUrlOnlyModel(referenceUrl, `image`) :
+                          referenceUrl,
                           itemShape =
                           effectiveVideoRequestProfile?.referenceImageItemShape ||
                           ``;
@@ -2424,16 +2427,17 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     ),
                   ) :
                   (() => {
-                    let itemShape = effectiveVideoRequestProfile?.referenceImageItemShape || ``;
+                    let itemShape = effectiveVideoRequestProfile?.referenceImageItemShape || ``,
+                      firstReferenceUrl = typeof imageReferences[0] === `string` ? imageReferences[0] : imageReferences[0]?.url || ``;
                     if (referenceImagesAsUrls)
-                      return uploadReferenceMediaForUrlOnlyModel(imageReferences[0], `image`).then((imageUrl) =>
+                      return uploadReferenceMediaForUrlOnlyModel(firstReferenceUrl, `image`).then((imageUrl) =>
                         itemShape === `image_url_object` ? {
                           image_url: imageUrl
                         } : imageUrl,
                       );
                     return itemShape === `image_url_object` ? {
-                      image_url: imageReferences[0]
-                    } : imageReferences[0];
+                      image_url: firstReferenceUrl
+                    } : firstReferenceUrl;
                   })());
               if (/^grok-imagine-video$/i.test(String(modelName || ``))) {
                 let referenceImageField = effectiveFieldMapping.referenceImage || `first_frame_image`,
