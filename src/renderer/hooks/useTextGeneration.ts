@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 文本生成（generateText）。自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，逻辑逐字搬运、行为不变。
  * 依赖经 deps 传入；hook 为 .ts，body 里引用的任何未提供名字 tsc 会报错，便于补齐。

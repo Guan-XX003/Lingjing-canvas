@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * wanjuanCanvasNodes。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */

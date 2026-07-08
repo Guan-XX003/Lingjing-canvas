@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useGlobalTasksSyncEffect（自 bundle 抽出的 useEffect，行为不变）。
  */

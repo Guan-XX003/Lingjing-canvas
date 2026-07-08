@@ -7,6 +7,13 @@ import { WanJuanAgentConfigPanel } from "../components/agent-config-panel";
 
 export function WanJuanSettingsSectionA(props: any) {
   const {
+    agentModelOptions,
+    apiConfigs,
+    importAgentKnowledgeFile,
+    removeAgentKnowledgeFile,
+    textApiConfigId,
+    textModelApiBindings,
+    updateSelectedAgent,
     Trash2,
     activeView,
     addAgentReferenceFile,
