@@ -3,11 +3,23 @@
  * scanJixinGatewayModels。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { compareButlerModelSnapshots, filterButlerLatestTwoGenerations, scanButlerTargetModels } from "../lib/config-butler";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 import { wanjuanHashString } from "../lib/collaboration";
 
-export function use_scanJixinGatewayModels(deps: any) {
+interface UseScanJixinGatewayModelsDeps {
+  WANJUAN_JIXIN_API_URL: any;
+  WANJUAN_JIXIN_DOC_URL: any;
+  getJixinApiConfig: any;
+  readChromeStorage: any;
+  setJixinModelScanBusy: SetAny;
+  setJixinModelScanNotice: SetAny;
+  showToast2: Toast;
+  writeChromeStorage: any;
+}
+
+export function use_scanJixinGatewayModels(deps: UseScanJixinGatewayModelsDeps) {
   const {
     WANJUAN_JIXIN_API_URL,
     WANJUAN_JIXIN_DOC_URL,

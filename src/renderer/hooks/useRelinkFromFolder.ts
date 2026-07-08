@@ -3,10 +3,20 @@
  * relinkMissingProjectAssetsFromFolder。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 import { buildProjectAssetStorageKey, getProjectMediaBindingKind } from "../lib/backup";
 import { buildProjectMediaFileUrl, reviveProjectMediaBindingValue } from "../lib/resource";
 
-export function useRelinkFromFolder(deps: any) {
+interface UseRelinkFromFolderDeps {
+  localforageModule: any;
+  nodesRef: Ref;
+  projectIdRef: Ref;
+  saveCanvasState: any;
+  setNodes: SetAny;
+  showProjectAssetCandidateDialog: any;
+}
+
+export function useRelinkFromFolder(deps: UseRelinkFromFolderDeps) {
   const {
     localforageModule,
     nodesRef,

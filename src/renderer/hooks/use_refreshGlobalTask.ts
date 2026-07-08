@@ -3,13 +3,31 @@
  * refreshGlobalTask。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, Toast } from "../lib/app-types";
 import { WanJuanSunoHeaders, WanJuanSunoTaskFailed, WanJuanSunoTaskSucceeded, WanJuanTtsMusicApiUrl, WanJuanTtsMusicExtractAudio, WanJuanTtsMusicExtractClipId, WanJuanTtsMusicExtractTaskId, WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
 import { wanjuanTaskUsesSeedanceSlot } from "../lib/video-task";
 declare const chrome: any;
 
-export function use_refreshGlobalTask(deps: any) {
+interface UseRefreshGlobalTaskDeps {
+  Send: any;
+  addResource: any;
+  apiConfigs: ApiConfig[];
+  audioApiKey: any;
+  audioApiUrl: any;
+  imageApiKey: any;
+  imageApiUrl: any;
+  imageModelApiBindings: Bindings;
+  showToast2: Toast;
+  updateGlobalTasks: any;
+  videoApiKey: any;
+  videoApiUrl: any;
+  videoModelApiBindings: Bindings;
+  globalTasks: any;
+}
+
+export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
   const {
     Send,
     addResource,

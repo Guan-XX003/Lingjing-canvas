@@ -5,7 +5,9 @@
 import { useCallback } from "react";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
-export function useAssetCandidateDialog(deps: any) {
+interface UseAssetCandidateDialogDeps {}
+
+export function useAssetCandidateDialog(deps: UseAssetCandidateDialogDeps) {
   const {} = deps;
   const showProjectAssetCandidateDialog = useCallback((missingEntry, candidates = []) => new Promise((resolve) => {
       let validCandidates = Array.isArray(candidates) ? candidates.filter((candidate) => candidate?.path) : [];

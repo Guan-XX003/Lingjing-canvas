@@ -3,10 +3,16 @@
  * resolveJixinApiConfigForTianjiSettings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig } from "../lib/app-types";
 import { isJixinDefaultApiConfig } from "../lib/model-list-utils";
 import { wanjuanFindLegacyJixinApiKey } from "../lib/jixin-catalog";
 
-export function use_resolveJixinApiConfigForTianjiSettings(deps: any) {
+interface UseResolveJixinApiConfigForTianjiSettingsDeps {
+  WANJUAN_JIXIN_API_URL: any;
+  apiConfigs: ApiConfig[];
+}
+
+export function use_resolveJixinApiConfigForTianjiSettings(deps: UseResolveJixinApiConfigForTianjiSettingsDeps) {
   const {
     WANJUAN_JIXIN_API_URL,
     apiConfigs,

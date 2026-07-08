@@ -3,11 +3,27 @@
  * runConfigButlerErrorDiagnosis。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny } from "../lib/app-types";
 import { buildConfigButlerToolContext, buildLocalConfigButlerErrorDiagnosis, formatConfigButlerToolContext, inferButlerCategoryFromModelName, normalizeButlerBaseUrl, normalizeConfigButlerDiagnosis, normalizeModelCategory, validateAndRepairConfigButlerResult } from "../lib/config-butler";
 import { extractJsonBlock } from "../lib/app-utils";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 
-export function use_runConfigButlerErrorDiagnosis(deps: any) {
+interface UseRunConfigButlerErrorDiagnosisDeps {
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  audioModelProtocolBindings: Bindings;
+  callConfigButlerModel: any;
+  configButlerDocUrl: any;
+  configButlerErrorAssistantInFlightRef: Ref;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  setConfigButlerErrorAssistant: SetAny;
+  storedGlobalConfigs: any;
+  textModelProtocolBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+}
+
+export function use_runConfigButlerErrorDiagnosis(deps: UseRunConfigButlerErrorDiagnosisDeps) {
   const {
     activeStoredGlobalConfigId,
     apiConfigs,

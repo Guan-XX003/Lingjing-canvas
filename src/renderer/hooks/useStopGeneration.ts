@@ -3,8 +3,18 @@
  * stopGeneration。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 
-export function useStopGeneration(deps: any) {
+interface UseStopGenerationDeps {
+  abortControllersRef: Ref;
+  nodesRef: Ref;
+  setEdges: SetAny;
+  setNodes: SetAny;
+  showToast: Toast;
+  updateTaskList: any;
+}
+
+export function useStopGeneration(deps: UseStopGenerationDeps) {
   const {
     abortControllersRef,
     nodesRef,

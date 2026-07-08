@@ -3,6 +3,7 @@
  * usePluginEnvEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { WanJuanNormalizePerformanceProfile } from "../lib/performance-profile";
 import { compactGlobalTasks } from "../lib/app-root-helpers";
@@ -12,7 +13,115 @@ import { wanjuanCheckForUpdate, wanjuanChildWindowRefs, wanjuanGetOrCreateDevice
 import { wanjuanNormalizeSeedanceVirtualPortraits } from "../lib/seedance";
 declare const chrome: any;
 
-export function usePluginEnvEffect(deps: any) {
+interface UsePluginEnvEffectDeps {
+  _e: any;
+  localforageModule: any;
+  normalizeStoredGlobalConfigs: any;
+  projectHydratedRef: Ref;
+  repairXSeeVeoReferenceVideoBindings: any;
+  setActiveProjectId: SetAny;
+  setActiveStoredGlobalConfigId: SetAny;
+  setActiveView: SetAny;
+  setAdvancedSettingsUnlocked: SetAny;
+  setAgentConversations: SetAny;
+  setAgentItems: SetAny;
+  setApiConfigs: SetAny;
+  setAppLanguage: SetAny;
+  setAudioApiConfigId: SetAny;
+  setAudioApiKey: SetAny;
+  setAudioApiUrl: SetAny;
+  setAudioModelApiBindings: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setAudioModels: SetAny;
+  setAutoDownloadGeneratedResults: SetAny;
+  setBackupExportSelection: SetAny;
+  setConfigButlerApiKey: SetAny;
+  setConfigButlerApiUrl: SetAny;
+  setConfigButlerDocUrl: SetAny;
+  setConfigButlerMode: SetAny;
+  setConfigButlerModel: SetAny;
+  setConfigButlerProtocol: SetAny;
+  setConfigButlerRepairHistory: SetAny;
+  setConfigButlerTargetApiConfigId: SetAny;
+  setConfigButlerTargetCategory: SetAny;
+  setCurrentPlatform: SetAny;
+  setCustomPublicUploadConfig: SetAny;
+  setDailyUsageCount: SetAny;
+  setDeviceId: SetAny;
+  setDownloadDirectory: SetAny;
+  setEdges: SetAny;
+  setGlobalTasks: SetAny;
+  setHasCurrentTab: SetAny;
+  setImageApiConfigId: SetAny;
+  setImageApiKey: SetAny;
+  setImageApiUrl: SetAny;
+  setImageCompatResolutions: SetAny;
+  setImageModelApiBindings: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setImageModels: SetAny;
+  setIsLoading: SetAny;
+  setIsPluginEnv: SetAny;
+  setIsReady: SetAny;
+  setLayeredRunConcurrencyOptions: SetAny;
+  setLayeredRunMaxConcurrency: SetAny;
+  setMaxPollingDuration: SetAny;
+  setMembership: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setPerformanceProfile: SetAny;
+  setPollingInterval: SetAny;
+  setPresetPrompts: SetAny;
+  setProjectGroups: SetAny;
+  setProjects: SetAny;
+  setQiniuConfig: SetAny;
+  setSeedanceDurations: SetAny;
+  setSeedanceEnableWebSearch: SetAny;
+  setSeedanceGenerateAudio: SetAny;
+  setSeedanceModel: SetAny;
+  setSeedanceRatios: SetAny;
+  setSeedanceResolutions: SetAny;
+  setSeedanceUploadMode: SetAny;
+  setSeedanceVirtualPortraits: SetAny;
+  setSeedanceWatermark: SetAny;
+  setSelectedAgentId: SetAny;
+  setStorageOptimizationEnabled: SetAny;
+  setStorageOptimizationPaused: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextApiConfigId: SetAny;
+  setTextApiKey: SetAny;
+  setTextApiUrl: SetAny;
+  setTextModelApiBindings: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setThemeMode: SetAny;
+  setTianjiSeedanceModel: SetAny;
+  setTianjiSeedanceSettingsMode: SetAny;
+  setTongyiWanxiangDurations: SetAny;
+  setTongyiWanxiangEditModels: SetAny;
+  setTongyiWanxiangImageModels: SetAny;
+  setTongyiWanxiangRatios: SetAny;
+  setTongyiWanxiangReferenceImageModels: SetAny;
+  setTongyiWanxiangResolutions: SetAny;
+  setTongyiWanxiangTextModels: SetAny;
+  setTosConfig: SetAny;
+  setTransitGridCols: SetAny;
+  setTransitResources: SetAny;
+  setTtsMusicModel: SetAny;
+  setUpdateInfo: SetAny;
+  setUsers: SetAny;
+  setVideoApiConfigId: SetAny;
+  setVideoApiKey: SetAny;
+  setVideoApiUrl: SetAny;
+  setVideoAspectRatios: SetAny;
+  setVideoDurations: SetAny;
+  setVideoModelApiBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  setVideoModelRequestProfilesText: SetAny;
+  setVideoModels: SetAny;
+  setVideoResolutions: SetAny;
+  settingsHydratedRef: Ref;
+  showToast2: Toast;
+}
+
+export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
   const {
     _e,
     localforageModule,

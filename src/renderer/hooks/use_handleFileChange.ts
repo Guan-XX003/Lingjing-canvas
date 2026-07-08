@@ -3,8 +3,18 @@
  * handleFileChange。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref } from "../lib/app-types";
 
-export function use_handleFileChange(deps: any) {
+interface UseHandleFileChangeDeps {
+  createImportedMediaNode: any;
+  createNodeAt: any;
+  menuPosition: any;
+  screenToFlowPosition: any;
+  wrapperRef: Ref;
+  addGeneratedAsset: any;
+}
+
+export function use_handleFileChange(deps: UseHandleFileChangeDeps) {
   const {
     createImportedMediaNode,
     createNodeAt,

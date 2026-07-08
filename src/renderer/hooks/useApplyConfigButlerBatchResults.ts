@@ -3,13 +3,59 @@
  * applyConfigButlerBatchResults。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
 import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
 import { guessApiConfigName } from "../lib/unified-api-config";
 declare const chrome: any;
 
-export function useApplyConfigButlerBatchResults(deps: any) {
+interface UseApplyConfigButlerBatchResultsDeps {
+  _e: any;
+  captureCurrentGlobalConfig: any;
+  configButlerBatchItems: any;
+  configButlerDocUrl: any;
+  configButlerTargetApiKey: any;
+  configButlerTargetApiUrl: any;
+  getSelectedButlerTargetApiConfig: any;
+  mergeStoredGlobalApiConfigs: any;
+  normalizeStoredGlobalConfigBackup: any;
+  setActiveStoredGlobalConfigId: SetAny;
+  setApiConfigs: SetAny;
+  setAudioApiConfigId: SetAny;
+  setAudioApiKey: SetAny;
+  setAudioApiUrl: SetAny;
+  setAudioModelApiBindings: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setAudioModels: SetAny;
+  setConfigButlerBatchModalOpen: SetAny;
+  setConfigButlerExpanded: SetAny;
+  setImageApiConfigId: SetAny;
+  setImageApiKey: SetAny;
+  setImageApiUrl: SetAny;
+  setImageModelApiBindings: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setImageModels: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setProtocolNamesText: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextApiConfigId: SetAny;
+  setTextApiKey: SetAny;
+  setTextApiUrl: SetAny;
+  setTextModelApiBindings: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setTtsMusicModel: SetAny;
+  setVideoApiConfigId: SetAny;
+  setVideoApiKey: SetAny;
+  setVideoApiUrl: SetAny;
+  setVideoModelApiBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  setVideoModels: SetAny;
+  showToast2: Toast;
+  storedGlobalConfigs: any;
+}
+
+export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatchResultsDeps) {
   const {
     _e,
     captureCurrentGlobalConfig,

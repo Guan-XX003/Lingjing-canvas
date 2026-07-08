@@ -3,9 +3,15 @@
  * applyTianjiSeedanceSettingsMode。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_applyTianjiSeedanceSettingsMode(deps: any) {
+interface UseApplyTianjiSeedanceSettingsModeDeps {
+  setTianjiSeedanceSettingsMode: SetAny;
+  tianjiSeedanceSettingsMode: any;
+}
+
+export function use_applyTianjiSeedanceSettingsMode(deps: UseApplyTianjiSeedanceSettingsModeDeps) {
   const {
     setTianjiSeedanceSettingsMode,
     tianjiSeedanceSettingsMode,

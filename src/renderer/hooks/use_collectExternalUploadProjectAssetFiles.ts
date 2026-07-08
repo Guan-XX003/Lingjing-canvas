@@ -4,7 +4,11 @@
  */
 import { useCallback, useMemo } from "react";
 
-export function use_collectExternalUploadProjectAssetFiles(deps: any) {
+interface UseCollectExternalUploadProjectAssetFilesDeps {
+  projects: any;
+}
+
+export function use_collectExternalUploadProjectAssetFiles(deps: UseCollectExternalUploadProjectAssetFilesDeps) {
   const {
     projects,
   } = deps;

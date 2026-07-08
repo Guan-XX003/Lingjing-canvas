@@ -4,7 +4,13 @@
  */
 import { useCallback } from "react";
 
-export function useSelectedRefSources(deps: any) {
+interface UseSelectedRefSourcesDeps {
+  edges: any[];
+  nodes: any[];
+  useMemo: any;
+}
+
+export function useSelectedRefSources(deps: UseSelectedRefSourcesDeps) {
   const {
     edges,
     nodes,

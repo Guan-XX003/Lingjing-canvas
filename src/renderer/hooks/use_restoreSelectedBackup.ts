@@ -10,7 +10,25 @@ import { normalizeAgentIdSelection } from "../lib/agent";
 import { normalizeModuleSelection, normalizeProjectIdSelection, normalizeProjectResourceMap } from "../lib/project-normalize";
 declare const chrome: any;
 
-export function use_restoreSelectedBackup(deps: any) {
+interface UseRestoreSelectedBackupDeps {
+  localforageModule: any;
+  PROJECT_ASSET_MANIFEST_STORAGE_PREFIX: any;
+  TRANSIT_RESOURCES_STORAGE_KEY: any;
+  extractProjectAssetRefs: any;
+  getAvailableBackupModules: any;
+  getBackupSettingsSectionMap: any;
+  getDesktopProjectMirrorStorageKey: any;
+  getProjectCanvasStorageKey: any;
+  normalizeBackupModules: any;
+  normalizeResourceLocalforagePayload: any;
+  agentConversations: any;
+  projectGroups: any;
+  projects: any;
+  selectedAgentId: any;
+  transitResources: any;
+}
+
+export function use_restoreSelectedBackup(deps: UseRestoreSelectedBackupDeps) {
   const {
     localforageModule,
     PROJECT_ASSET_MANIFEST_STORAGE_PREFIX,

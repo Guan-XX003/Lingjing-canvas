@@ -4,7 +4,13 @@
  */
 import { useCallback, useMemo } from "react";
 
-export function use_resolveVideoRunModel(deps: any) {
+interface UseResolveVideoRunModelDeps {
+  seedanceModel: any;
+  tianjiSeedanceModel: any;
+  videoModel: any;
+}
+
+export function use_resolveVideoRunModel(deps: UseResolveVideoRunModelDeps) {
   const {
     seedanceModel,
     tianjiSeedanceModel,

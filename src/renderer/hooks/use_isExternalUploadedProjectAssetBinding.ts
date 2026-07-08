@@ -5,7 +5,12 @@
 import { useCallback, useMemo } from "react";
 import { getProjectMediaBindingKind, getProjectMediaBindingOrigin, hasExternalUploadLikeFileName } from "../lib/backup";
 
-export function use_isExternalUploadedProjectAssetBinding(deps: any) {
+interface UseIsExternalUploadedProjectAssetBindingDeps {
+  EXTERNAL_PROJECT_ASSET_ORIGINS: any;
+  GENERATED_PROJECT_ASSET_ORIGIN_PATTERN: any;
+}
+
+export function use_isExternalUploadedProjectAssetBinding(deps: UseIsExternalUploadedProjectAssetBindingDeps) {
   const {
     EXTERNAL_PROJECT_ASSET_ORIGINS,
     GENERATED_PROJECT_ASSET_ORIGIN_PATTERN,

@@ -3,13 +3,64 @@
  * applyConfigButlerResult。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
 import { finalizeButlerProtocolConfig, normalizeButlerBaseUrl, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
 import { guessApiConfigName, normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 declare const chrome: any;
 
-export function useApplyConfigButlerResult(deps: any) {
+interface UseApplyConfigButlerResultDeps {
+  _e: any;
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  audioModels: any;
+  configButlerTargetApiConfigId: any;
+  configButlerTargetApiKey: any;
+  configButlerTargetApiUrl: any;
+  configButlerTargetCategory: any;
+  configButlerTargetModel: any;
+  getSelectedButlerTargetApiConfig: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  imageModels: any;
+  modelProtocolRegistry: Bindings;
+  setActiveProtocolConfigText: SetAny;
+  setActiveProtocolName: SetAny;
+  setActiveStoredGlobalConfigId: SetAny;
+  setApiConfigs: SetAny;
+  setAudioApiConfigId: SetAny;
+  setAudioModelApiBindings: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setAudioModels: SetAny;
+  setConfigButlerExpanded: SetAny;
+  setImageModelApiBindings: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setImageModels: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setProtocolFormatsExpanded: SetAny;
+  setProtocolNamesText: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextModelApiBindings: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setTtsMusicModel: SetAny;
+  setVideoModelApiBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  setVideoModels: SetAny;
+  showToast2: Toast;
+  storedGlobalConfigs: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  textModels: any;
+  ttsMusicModel: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoModels: any;
+}
+
+export function useApplyConfigButlerResult(deps: UseApplyConfigButlerResultDeps) {
   const {
     _e,
     activeStoredGlobalConfigId,

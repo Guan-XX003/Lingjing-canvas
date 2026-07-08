@@ -3,11 +3,34 @@
  * applyConfigButlerProtocolRepair。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Bindings, SetAny, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
 declare const chrome: any;
 
-export function use_applyConfigButlerProtocolRepair(deps: any) {
+interface UseApplyConfigButlerProtocolRepairDeps {
+  activeStoredGlobalConfigId: any;
+  audioModelProtocolBindings: Bindings;
+  configButlerErrorAssistant: any;
+  configButlerRepairHistory: any;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  setActiveStoredGlobalConfigId: SetAny;
+  setAudioModelProtocolBindings: SetAny;
+  setConfigButlerErrorAssistant: SetAny;
+  setConfigButlerRepairHistory: SetAny;
+  setImageModelProtocolBindings: SetAny;
+  setModelProtocolRegistry: SetAny;
+  setStoredGlobalConfigs: SetAny;
+  setTextModelProtocolBindings: SetAny;
+  setVideoModelProtocolBindings: SetAny;
+  showToast2: Toast;
+  storedGlobalConfigs: any;
+  textModelProtocolBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+}
+
+export function use_applyConfigButlerProtocolRepair(deps: UseApplyConfigButlerProtocolRepairDeps) {
   const {
     activeStoredGlobalConfigId,
     audioModelProtocolBindings,

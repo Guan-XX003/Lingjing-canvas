@@ -6,7 +6,15 @@ import { useCallback, useMemo } from "react";
 import { extractProjectPortableDataRefs } from "../lib/backup";
 import { normalizeModuleSelection } from "../lib/project-normalize";
 
-export function use_collectSelectedLocalforageBackup(deps: any) {
+interface UseCollectSelectedLocalforageBackupDeps {
+  localforageModule: any;
+  extractProjectAssetRefs: any;
+  getDesktopProjectMirrorStorageKey: any;
+  getProjectCanvasStorageKey: any;
+  projects: any;
+}
+
+export function use_collectSelectedLocalforageBackup(deps: UseCollectSelectedLocalforageBackupDeps) {
   const {
     localforageModule,
     extractProjectAssetRefs,

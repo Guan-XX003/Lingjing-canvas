@@ -3,13 +3,33 @@
  * buildBackupModules。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, SetAny } from "../lib/app-types";
 import { buildProjectResourceMap } from "../lib/app-root-helpers";
 import { cloneBackupValue, normalizeBackupSettingsSections } from "../lib/backup";
 import { normalizeAgentIdSelection } from "../lib/agent";
 import { normalizeModuleSelection, normalizeProjectIdSelection } from "../lib/project-normalize";
 import { wanjuanMakeSeedanceVirtualPortraitsPortable } from "../lib/seedance";
 
-export function use_buildBackupModules(deps: any) {
+interface UseBuildBackupModulesDeps {
+  BACKUP_MODULE_LABELS: any;
+  apiConfigs: ApiConfig[];
+  buildProjectLocalforageExportPayload: any;
+  edges: any[];
+  getBackupSettingsSectionMap: any;
+  getDesktopProjectMirrorStorageKey: any;
+  getProjectCanvasStorageKey: any;
+  setEdges: SetAny;
+  setMaxPollingDuration: SetAny;
+  splitChromeStorageModules: any;
+  agentConversations: any;
+  projectGroups: any;
+  projects: any;
+  seedanceVirtualPortraits: any;
+  selectedAgentId: any;
+  storedGlobalConfigs: any;
+}
+
+export function use_buildBackupModules(deps: UseBuildBackupModulesDeps) {
   const {
     BACKUP_MODULE_LABELS,
     apiConfigs,

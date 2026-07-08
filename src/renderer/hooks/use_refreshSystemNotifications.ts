@@ -3,9 +3,18 @@
  * refreshSystemNotifications。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref, SetAny, Toast } from "../lib/app-types";
 import { WanJuanFetchAppNotifications, WanJuanFilterAppNotifications, WanJuanLoadCachedAppNotifications, WanJuanSaveCachedAppNotifications } from "../lib/app-notifications";
 
-export function use_refreshSystemNotifications(deps: any) {
+interface UseRefreshSystemNotificationsDeps {
+  setSettingsNotificationChecking: SetAny;
+  setSystemNotificationError: SetAny;
+  setSystemNotifications: SetAny;
+  showToast2: Toast;
+  systemNotificationFetchRef: Ref;
+}
+
+export function use_refreshSystemNotifications(deps: UseRefreshSystemNotificationsDeps) {
   const {
     setSettingsNotificationChecking,
     setSystemNotificationError,

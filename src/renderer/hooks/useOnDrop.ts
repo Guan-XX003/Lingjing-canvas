@@ -4,7 +4,14 @@
  */
 import { useCallback } from "react";
 
-export function useOnDrop(deps: any) {
+interface UseOnDropDeps {
+  addGeneratedAsset: any;
+  createImportedMediaNode: any;
+  createNodeAt: any;
+  screenToFlowPosition: any;
+}
+
+export function useOnDrop(deps: UseOnDropDeps) {
   const {
     addGeneratedAsset,
     createImportedMediaNode,

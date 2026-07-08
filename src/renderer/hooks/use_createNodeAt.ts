@@ -3,8 +3,80 @@
  * createNodeAt。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
 
-export function use_createNodeAt(deps: any) {
+interface UseCreateNodeAtDeps {
+  createImageNode: any;
+  generateImage: any;
+  generateText: any;
+  generateVideo: any;
+  handleAIAssist: any;
+  handleCrop: any;
+  handleGenerateCustom: any;
+  handleSplit: any;
+  handleSplitOne: any;
+  handleTianjiPortraitReview: any;
+  nodesRef: Ref;
+  openImageEditor: any;
+  openImagePreview: any;
+  openVideoEditor: any;
+  projectIdRef: Ref;
+  setEdges: SetAny;
+  setMenuPosition: SetAny;
+  setNodes: SetAny;
+  stopGeneration: any;
+  addCustomNode: any;
+  addGeneratedAsset: any;
+  apiConfigs: ApiConfig[];
+  audioApiKey: any;
+  audioApiUrl: any;
+  audioModel: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  customPublicUploadConfig: any;
+  drawingModel: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  modelProtocolRegistry: Bindings;
+  presetPrompts: any;
+  projectId: any;
+  qiniuConfig: any;
+  seedanceDurations: any;
+  seedanceEnableWebSearch: any;
+  seedanceGenerateAudio: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  seedanceUploadMode: any;
+  seedanceVirtualPortraits: any;
+  seedanceWatermark: any;
+  sendToActiveTab: any;
+  showToast: Toast;
+  textModel: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  tianjiSeedanceModel: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  tosConfig: any;
+  ttsMusicModel: any;
+  updateTaskList: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModel: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoModelRequestProfiles: any;
+  videoResolutions: any;
+}
+
+export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
   const {
     createImageNode,
     generateImage,

@@ -4,9 +4,31 @@
  * 自 bundle(WanJuanAppCanvas) 抽出，逻辑逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
 import { WanJuanIsTransientNetworkError } from "../lib/log-utils";
 
-export function useCustomNodeGeneration(deps: any) {
+interface UseCustomNodeGenerationDeps {
+  abortControllersRef: Ref;
+  addGeneratedAsset: any;
+  apiConfigs: ApiConfig[];
+  getEdges: () => any[];
+  getNodes: () => any[];
+  modelProtocolRegistry: Bindings;
+  pollIntervalMs: any;
+  projectIdRef: Ref;
+  propTextApiKey: any;
+  propTextApiUrl: any;
+  setEdges: SetAny;
+  setNodes: SetAny;
+  showToast: Toast;
+  textModel: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  timeoutSeconds: any;
+  updateTaskList: any;
+}
+
+export function useCustomNodeGeneration(deps: UseCustomNodeGenerationDeps) {
   const {
     abortControllersRef,
     addGeneratedAsset,

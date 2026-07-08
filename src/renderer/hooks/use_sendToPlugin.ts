@@ -3,9 +3,15 @@
  * sendToPlugin。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Toast } from "../lib/app-types";
 declare const chrome: any;
 
-export function use_sendToPlugin(deps: any) {
+interface UseSendToPluginDeps {
+  isPluginEnv: boolean;
+  showToast2: Toast;
+}
+
+export function use_sendToPlugin(deps: UseSendToPluginDeps) {
   const {
     isPluginEnv,
     showToast2,

@@ -5,7 +5,12 @@
 import { useCallback, useMemo } from "react";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_compactBackupPortableAssets(deps: any) {
+interface UseCompactBackupPortableAssetsDeps {
+  PROJECT_ASSET_MANIFEST_STORAGE_PREFIX: any;
+  projects: any;
+}
+
+export function use_compactBackupPortableAssets(deps: UseCompactBackupPortableAssetsDeps) {
   const {
     PROJECT_ASSET_MANIFEST_STORAGE_PREFIX,
     projects,

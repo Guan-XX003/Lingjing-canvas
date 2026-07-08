@@ -6,7 +6,11 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { normalizeThemeMode } from "../lib/app-utils";
 import { wanjuanRunThemeTransition } from "../lib/theme-transition";
 
-export function useSafeEffect27(deps: any) {
+interface UseSafeEffect27Deps {
+  themeMode: any;
+}
+
+export function useSafeEffect27(deps: UseSafeEffect27Deps) {
   const {
     themeMode,
   } = deps;

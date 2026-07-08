@@ -5,7 +5,11 @@
 import { useCallback, useMemo } from "react";
 import { EXPORT_RUNTIME_NODE_DATA_KEYS } from "../lib/app-root-helpers";
 
-export function use_sanitizeProjectNodeDataForExport(deps: any) {
+interface UseSanitizeProjectNodeDataForExportDeps {
+  EXPORT_INLINE_MEDIA_FIELDS: any;
+}
+
+export function use_sanitizeProjectNodeDataForExport(deps: UseSanitizeProjectNodeDataForExportDeps) {
   const {
     EXPORT_INLINE_MEDIA_FIELDS,
   } = deps;

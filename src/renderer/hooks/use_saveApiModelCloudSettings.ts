@@ -3,10 +3,80 @@
  * saveApiModelCloudSettings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, Ref } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, wanjuanMergeModelText } from "../lib/jixin-catalog";
 declare const chrome: any;
 
-export function use_saveApiModelCloudSettings(deps: any) {
+interface UseSaveApiModelCloudSettingsDeps {
+  activeStoredGlobalConfigId: any;
+  apiConfigs: ApiConfig[];
+  apiModelCloudSettingsSaveTimerRef: Ref;
+  audioApiConfigId: any;
+  audioApiKey: any;
+  audioApiUrl: any;
+  audioModelApiBindings: Bindings;
+  audioModelProtocolBindings: Bindings;
+  audioModels: any;
+  configButlerApiKey: any;
+  configButlerApiUrl: any;
+  configButlerDocUrl: any;
+  configButlerMode: any;
+  configButlerModel: any;
+  configButlerProtocol: any;
+  configButlerTargetApiConfigId: any;
+  configButlerTargetCategory: any;
+  customPublicUploadConfig: any;
+  imageApiConfigId: any;
+  imageApiKey: any;
+  imageApiUrl: any;
+  imageCompatResolutions: any;
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  imageModels: any;
+  modelProtocolRegistry: Bindings;
+  qiniuConfig: any;
+  seedanceDurations: any;
+  seedanceEnableWebSearch: any;
+  seedanceGenerateAudio: any;
+  seedanceModel: any;
+  seedanceRatios: any;
+  seedanceResolutions: any;
+  seedanceUploadMode: any;
+  seedanceVirtualPortraits: any;
+  seedanceWatermark: any;
+  settingsHydratedRef: Ref;
+  storedGlobalConfigs: any;
+  syncTianjiConfigFromJixinApi: any;
+  textApiConfigId: any;
+  textApiKey: any;
+  textApiUrl: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  textModels: any;
+  tianjiSeedanceModel: any;
+  tianjiSeedanceSettingsMode: any;
+  tongyiWanxiangDurations: any;
+  tongyiWanxiangEditModels: any;
+  tongyiWanxiangImageModels: any;
+  tongyiWanxiangRatios: any;
+  tongyiWanxiangReferenceImageModels: any;
+  tongyiWanxiangResolutions: any;
+  tongyiWanxiangTextModels: any;
+  tosConfig: any;
+  ttsMusicModel: any;
+  videoApiConfigId: any;
+  videoApiKey: any;
+  videoApiUrl: any;
+  videoAspectRatios: any;
+  videoDurations: any;
+  videoModelApiBindings: Bindings;
+  videoModelProtocolBindings: Bindings;
+  videoModelRequestProfilesText: any;
+  videoModels: any;
+  videoResolutions: any;
+}
+
+export function use_saveApiModelCloudSettings(deps: UseSaveApiModelCloudSettingsDeps) {
   const {
     activeStoredGlobalConfigId,
     apiConfigs,

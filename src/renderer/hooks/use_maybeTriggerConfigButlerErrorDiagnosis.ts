@@ -3,9 +3,16 @@
  * maybeTriggerConfigButlerErrorDiagnosis。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref } from "../lib/app-types";
 import { getConfigButlerTaskFailureSignature } from "../lib/config-butler";
 
-export function use_maybeTriggerConfigButlerErrorDiagnosis(deps: any) {
+interface UseMaybeTriggerConfigButlerErrorDiagnosisDeps {
+  configButlerErrorAssistant: any;
+  configButlerErrorAssistantInFlightRef: Ref;
+  runConfigButlerErrorDiagnosis: any;
+}
+
+export function use_maybeTriggerConfigButlerErrorDiagnosis(deps: UseMaybeTriggerConfigButlerErrorDiagnosisDeps) {
   const {
     configButlerErrorAssistant,
     configButlerErrorAssistantInFlightRef,

@@ -5,7 +5,12 @@
 import { useCallback, useMemo } from "react";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_buildProjectLocalforagePayload(deps: any) {
+interface UseBuildProjectLocalforagePayloadDeps {
+  extractProjectAssetRefs: any;
+  getProjectCanvasStorageKey: any;
+}
+
+export function use_buildProjectLocalforagePayload(deps: UseBuildProjectLocalforagePayloadDeps) {
   const {
     extractProjectAssetRefs,
     getProjectCanvasStorageKey,

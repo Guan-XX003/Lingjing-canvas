@@ -3,6 +3,7 @@
  * 图片生成（generateImage）。自 bundle(WanJuanAppCanvas) 抽出，逻辑逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
 import { buildProjectMediaFileUrl, wanjuanResourceKind, wanjuanResourceMediaUrl } from "../lib/resource";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNodeTextValue, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { parseSeedanceList, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
@@ -10,7 +11,35 @@ import { safeStringifyRequestForLog, serializeErrorPreview, WanJuanIsTransientNe
 import { WanJuanGetPreferredModel } from "../lib/model-favorites";
 import { WanJuanParseModelList } from "../lib/model-id";
 
-export function useImageGeneration(deps: any) {
+interface UseImageGenerationDeps {
+  propImageApiKey: any;
+  propImageApiUrl: any;
+  drawingModel: any;
+  apiConfigs: ApiConfig[];
+  imageModelApiBindings: Bindings;
+  imageModelProtocolBindings: Bindings;
+  planLimits: any;
+  showToast: Toast;
+  getNodes: () => any[];
+  getEdges: () => any[];
+  setNodes: SetAny;
+  addGeneratedAsset: any;
+  membership: any;
+  updateTaskList: any;
+  modelProtocolRegistry: Bindings;
+  propTextApiUrl: any;
+  propTextApiKey: any;
+  textModel: any;
+  abortControllersRef: Ref;
+  audioApiKey: any;
+  localforageModule: any;
+  projectIdRef: Ref;
+  setDailyGenerationCount: SetAny;
+  setEdges: SetAny;
+  timeoutSeconds: any;
+}
+
+export function useImageGeneration(deps: UseImageGenerationDeps) {
   const {
     propImageApiKey,
     propImageApiUrl,

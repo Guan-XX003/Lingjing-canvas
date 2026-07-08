@@ -6,7 +6,11 @@ import { useCallback, useMemo } from "react";
 import { backupExternalAssetMatchesBinding, buildBackupExternalAssetStorageValue, buildProjectAssetStorageKey, cloneBackupValue } from "../lib/backup";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
-export function use_applyExternalAssetBundleToBackupPayload(deps: any) {
+interface UseApplyExternalAssetBundleToBackupPayloadDeps {
+  projects: any;
+}
+
+export function use_applyExternalAssetBundleToBackupPayload(deps: UseApplyExternalAssetBundleToBackupPayloadDeps) {
   const {
     projects,
   } = deps;

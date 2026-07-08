@@ -3,10 +3,16 @@
  * persistImportedMediaFile。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { Ref } from "../lib/app-types";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 import { wanjuanBuildProjectAssetBinding, wanjuanGetDroppedFilePath, wanjuanMimeFromMediaKind } from "../lib/project-asset-binding";
 
-export function use_persistImportedMediaFile(deps: any) {
+interface UsePersistImportedMediaFileDeps {
+  projectIdRef: Ref;
+  projectId: any;
+}
+
+export function use_persistImportedMediaFile(deps: UsePersistImportedMediaFileDeps) {
   const {
     projectIdRef,
     projectId,

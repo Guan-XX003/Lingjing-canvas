@@ -3,13 +3,39 @@
  * sendAgentMessage。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
 import { mediaUrlToDataUrl } from "../lib/reference-media";
 import { readAgentAttachmentFileAsDataUrl, releaseAgentAttachment, sanitizeAgentConversationText, selectKnowledgeChunksForQuery } from "../lib/agent";
 import { resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { serializeErrorPreview } from "../lib/log-utils";
 
-export function use_sendAgentMessage(deps: any) {
+interface UseSendAgentMessageDeps {
+  agentAttachments: any;
+  agentComposer: any;
+  agentConversations: any;
+  agentModelOptions: any;
+  apiConfigs: ApiConfig[];
+  modelProtocolRegistry: Bindings;
+  searchAgentLongTermMemory: any;
+  selectedAgent: any;
+  setAgentAttachments: SetAny;
+  setAgentComposer: SetAny;
+  setAgentConversations: SetAny;
+  showToast2: Toast;
+  storeAgentLongTermMemory: any;
+  textApiConfigId: any;
+  textApiKey: any;
+  textApiUrl: any;
+  textModelApiBindings: Bindings;
+  textModelProtocolBindings: Bindings;
+  customPublicUploadConfig: any;
+  qiniuConfig: any;
+  seedanceUploadMode: any;
+  tosConfig: any;
+}
+
+export function use_sendAgentMessage(deps: UseSendAgentMessageDeps) {
   const {
     agentAttachments,
     agentComposer,

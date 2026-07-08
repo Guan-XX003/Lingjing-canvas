@@ -3,11 +3,25 @@
  * runConfigButlerBatch。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { SetAny, Toast } from "../lib/app-types";
 import { buildConfigButlerToolContext, configButlerCategoryOptions, formatConfigButlerToolContext, normalizeButlerBatchItems, normalizeModelCategory, probeButlerProtocol, scanButlerTargetModels } from "../lib/config-butler";
 import { extractJsonBlock } from "../lib/app-utils";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 
-export function useRunConfigButlerBatch(deps: any) {
+interface UseRunConfigButlerBatchDeps {
+  applyConfigButlerBatchResults: any;
+  callConfigButlerModel: any;
+  configButlerDocUrl: any;
+  getSelectedButlerTargetApiConfig: any;
+  setConfigButlerBatchActiveCategory: SetAny;
+  setConfigButlerBatchItems: SetAny;
+  setConfigButlerBatchLoading: SetAny;
+  setConfigButlerBatchModalOpen: SetAny;
+  setConfigButlerResultText: SetAny;
+  showToast2: Toast;
+}
+
+export function useRunConfigButlerBatch(deps: UseRunConfigButlerBatchDeps) {
   const {
     applyConfigButlerBatchResults,
     callConfigButlerModel,

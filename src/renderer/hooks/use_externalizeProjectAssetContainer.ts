@@ -6,7 +6,12 @@ import { useCallback, useMemo } from "react";
 import { buildProjectAssetStorageKey, convertProjectAssetValueToPortableString, shouldPersistProjectAssetValue } from "../lib/backup";
 import { wanjuanResolveHydratedProjectAssetFileValue, wanjuanShouldSkipHydratedProjectAssetValue } from "../lib/project-asset-binding";
 
-export function use_externalizeProjectAssetContainer(deps: any) {
+interface UseExternalizeProjectAssetContainerDeps {
+  localforageModule: any;
+  PROJECT_ASSET_REF_SUFFIX: any;
+}
+
+export function use_externalizeProjectAssetContainer(deps: UseExternalizeProjectAssetContainerDeps) {
   const {
     localforageModule,
     PROJECT_ASSET_REF_SUFFIX,

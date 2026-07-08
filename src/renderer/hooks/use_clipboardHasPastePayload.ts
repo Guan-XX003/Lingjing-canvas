@@ -4,7 +4,9 @@
  */
 import { useCallback, useMemo } from "react";
 
-export function use_clipboardHasPastePayload(deps: any) {
+interface UseClipboardHasPastePayloadDeps {}
+
+export function use_clipboardHasPastePayload(deps: UseClipboardHasPastePayloadDeps) {
   const {} = deps;
   const clipboardHasPastePayload = async () => {
 			      let text = await navigator.clipboard?.readText?.().catch(() => ``);

@@ -3,10 +3,19 @@
  * relinkMissingProjectAssets。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { Ref, SetAny } from "../lib/app-types";
 import { buildProjectAssetStorageKey, getProjectAssetDialogFilters, getProjectMediaBindingKind } from "../lib/backup";
 import { buildProjectMediaFileUrl, reviveProjectMediaBindingValue } from "../lib/resource";
 
-export function useRelinkMissingAssets(deps: any) {
+interface UseRelinkMissingAssetsDeps {
+  localforageModule: any;
+  nodesRef: Ref;
+  projectIdRef: Ref;
+  saveCanvasState: any;
+  setNodes: SetAny;
+}
+
+export function useRelinkMissingAssets(deps: UseRelinkMissingAssetsDeps) {
   const {
     localforageModule,
     nodesRef,

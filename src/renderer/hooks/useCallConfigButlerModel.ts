@@ -5,7 +5,14 @@
 import { useCallback, useMemo } from "react";
 import { normalizeButlerBaseUrl } from "../lib/config-butler";
 
-export function useCallConfigButlerModel(deps: any) {
+interface UseCallConfigButlerModelDeps {
+  configButlerApiKey: any;
+  configButlerApiUrl: any;
+  configButlerProtocol: any;
+  getDefaultButlerModel: any;
+}
+
+export function useCallConfigButlerModel(deps: UseCallConfigButlerModelDeps) {
   const {
     configButlerApiKey,
     configButlerApiUrl,

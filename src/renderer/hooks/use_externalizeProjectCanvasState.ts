@@ -6,7 +6,11 @@ import { useCallback, useMemo } from "react";
 import { WanJuanStripRuntimeNodeData } from "../components/render-mode";
 import { cloneBackupValue } from "../lib/backup";
 
-export function use_externalizeProjectCanvasState(deps: any) {
+interface UseExternalizeProjectCanvasStateDeps {
+  externalizeProjectAssetContainer: any;
+}
+
+export function use_externalizeProjectCanvasState(deps: UseExternalizeProjectCanvasStateDeps) {
   const {
     externalizeProjectAssetContainer,
   } = deps;

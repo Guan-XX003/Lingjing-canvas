@@ -6,7 +6,14 @@ import { useCallback, useMemo } from "react";
 import { BACKUP_SETTINGS_SECTION_KEYS } from "../lib/app-root-helpers";
 import { normalizeModuleSelection } from "../lib/project-normalize";
 
-export function use_getBackupChromeStorageKeys(deps: any) {
+interface UseGetBackupChromeStorageKeysDeps {
+  AGENT_STORAGE_KEYS: any;
+  PROJECT_STORAGE_KEYS: any;
+  getDesktopProjectMirrorStorageKey: any;
+  projects: any;
+}
+
+export function use_getBackupChromeStorageKeys(deps: UseGetBackupChromeStorageKeysDeps) {
   const {
     AGENT_STORAGE_KEYS,
     PROJECT_STORAGE_KEYS,

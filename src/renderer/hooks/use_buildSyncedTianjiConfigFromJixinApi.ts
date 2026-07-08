@@ -4,7 +4,14 @@
  */
 import { useCallback, useMemo } from "react";
 
-export function use_buildSyncedTianjiConfigFromJixinApi(deps: any) {
+interface UseBuildSyncedTianjiConfigFromJixinApiDeps {
+  WANJUAN_JIXIN_API_URL: any;
+  WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN: any;
+  WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_MANUAL: any;
+  normalizeTianjiSettingsSyncSource: any;
+}
+
+export function use_buildSyncedTianjiConfigFromJixinApi(deps: UseBuildSyncedTianjiConfigFromJixinApiDeps) {
   const {
     WANJUAN_JIXIN_API_URL,
     WANJUAN_TIANJI_SETTINGS_SYNC_SOURCE_JIXIN,
