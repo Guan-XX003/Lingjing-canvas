@@ -83,7 +83,7 @@ const uiInput: CSSProperties = {
   width: "100%", boxSizing: "border-box", background: COL.input, border: `1px solid ${COL.border}`,
   borderRadius: 6, padding: "7px 9px", fontSize: 12, lineHeight: 1.4, color: COL.textMain, outline: "none", userSelect: "text",
 };
-const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, whiteSpace: "nowrap" };
+const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, lineHeight: 1.4, whiteSpace: "normal", wordBreak: "break-word" };
 const uiBtn = (active: boolean): CSSProperties => ({
   padding: "6px 8px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: "none",
   background: active ? COL.accent : COL.btnOff, color: active ? COL.onAccent : COL.textMain,
@@ -125,11 +125,23 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
     .map((n: any) => (typeof (n?.data?.text || n?.data?.resultData || n?.data?.prompt) === "string" ? n?.data?.text || n?.data?.resultData || n?.data?.prompt : ""))
     .filter(Boolean).join("\n").trim();
   const effectivePrompt = (prompt || upstreamText || "").trim();
-  // 上游音频节点的 audioUrl（翻唱时自动上传为参考）
-  const upstreamAudioUrl = String(
-    upstream.map((n: any) => n?.data?.audioUrl).filter((u: any) => typeof u === "string" && u)[0] || "",
-  );
+  // 上游音频/视频节点的媒体（翻唱时自动上传为参考；音频或视频都行）
+  const upstreamRef = (upstream
+    .map((n: any) =>
+      typeof n?.data?.audioUrl === "string" && n.data.audioUrl
+        ? { url: n.data.audioUrl as string, kind: "audio" as const }
+        : typeof n?.data?.videoUrl === "string" && n.data.videoUrl
+          ? { url: n.data.videoUrl as string, kind: "video" as const }
+          : { url: "", kind: "audio" as const })
+    .filter((r) => r.url)[0]) || { url: "", kind: "audio" as const };
+  const upstreamAudioUrl = String(upstreamRef.url || "");
   const effectiveCoverAudio = (coverAudioUrl || upstreamAudioUrl || "").trim();
+  // 参考媒体类型（音频/视频），决定自动上传时用哪种 kind
+  const effectiveCoverKind: "audio" | "video" =
+    (!coverAudioUrl && upstreamRef.kind === "video") ||
+    /\.(mp4|mov|webm|mkv|m4v|avi)(\?|#|$)/i.test(effectiveCoverAudio)
+      ? "video"
+      : "audio";
 
   useEffect(() => {
     updateNodeData(nodeId, {
@@ -161,23 +173,23 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
       const refClipId = referenceClipId.trim();
       let refUrl = effectiveCoverAudio;
       if (!refClipId && !refUrl) {
-        updateNodeData(nodeId, { errorMessage: "翻唱需要参考：填音频 URL、连一个音频节点、或填已有 clip_id" });
+        updateNodeData(nodeId, { errorMessage: "翻唱需要参考：填音频/视频 URL、连一个音频/视频节点、或填已有 clip_id" });
         return;
       }
       // 本地/私有音频 → 复用 app 的「参考媒体转公网直链」上传，换成公网 URL
       if (!refClipId && refUrl && !/^https?:\/\//i.test(refUrl)) {
         runningRef.current = true;
         try {
-          updateNodeData(nodeId, { loading: true, errorMessage: undefined, statusText: "参考音频转公网直链…" });
-          refUrl = await wanjuanUploadMediaToPublicUrl(refUrl, "audio", {
+          updateNodeData(nodeId, { loading: true, errorMessage: undefined, statusText: "参考媒体转公网直链…" });
+          refUrl = await wanjuanUploadMediaToPublicUrl(refUrl, effectiveCoverKind, {
             uploadMode: data.seedanceUploadMode,
             tosConfig: data.tosConfig,
             qiniuConfig: data.qiniuConfig,
             customPublicUploadConfig: data.customPublicUploadConfig,
           }, undefined, (msg) => updateNodeData(nodeId, { statusText: msg }));
         } catch (error: any) {
-          updateNodeData(nodeId, { loading: false, statusText: undefined, errorMessage: `参考音频转公网失败：${error?.message || error}（可在设置里配置自定义公网直链/TOS/七牛，或直接填公网音频 URL）` });
-          data.onShowToast?.("参考音频转公网失败");
+          updateNodeData(nodeId, { loading: false, statusText: undefined, errorMessage: `参考媒体转公网失败：${error?.message || error}（可在设置里配置自定义公网直链/TOS/七牛，或直接填公网 URL）` });
+          data.onShowToast?.("参考媒体转公网失败");
           runningRef.current = false;
           return;
         }
@@ -286,13 +298,13 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
           {action === "cover" && (
             <div style={uiPanel}>
-              <span style={uiLabel}>参考音频：公网 URL 或本地音频都行（本地会自动转公网直链），也可连音频节点</span>
-              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游音频；也可填音频 URL 覆盖" : "音频 URL（公网/本地皆可）"} />
+              <span style={uiLabel}>参考音频 / 视频：公网 URL 或本地文件都行（本地会自动转公网直链），也可连音频 / 视频节点</span>
+              <input className="nodrag" style={uiInput} value={coverAudioUrl} onChange={(e) => setCoverAudioUrl(e.target.value)} placeholder={upstreamAudioUrl ? "已连上游参考；也可填 URL 覆盖" : "音频 / 视频 URL（公网/本地皆可）"} />
               {!coverAudioUrl && upstreamAudioUrl && (
-                <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将参考上游音频：{upstreamAudioUrl}</span>
+                <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将参考上游{effectiveCoverKind === "video" ? "视频" : "音频"}：{upstreamAudioUrl}</span>
               )}
               {!referenceClipId && effectiveCoverAudio && !/^https?:\/\//i.test(effectiveCoverAudio) && (
-                <span style={{ fontSize: 10, color: COL.textFaint }}>本地/私有音频将用「设置→上传」的公网直链配置自动上传后再翻唱</span>
+                <span style={{ fontSize: 10, color: COL.textFaint }}>本地/私有{effectiveCoverKind === "video" ? "视频" : "音频"}将用「设置→上传」的公网直链配置，点生成时自动上传后再翻唱</span>
               )}
               <span style={{ fontSize: 10, color: COL.textFaint }}>或直接填 Suno 内已有的 clip_id（填了优先用它）：</span>
               <input className="nodrag" style={uiInput} value={referenceClipId} onChange={(e) => setReferenceClipId(e.target.value)} placeholder="reference_clip_id（可选）" />
