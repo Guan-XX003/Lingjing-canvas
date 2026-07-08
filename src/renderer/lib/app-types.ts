@@ -97,6 +97,7 @@ export interface WjNode {
   type?: WjNodeType | string;
   position?: { x: number; y: number };
   data?: WjNodeData;
+  selected?: boolean;
   [k: string]: any;
 }
 
@@ -105,6 +106,7 @@ export interface WjEdge {
   id: string;
   source: string;
   target: string;
+  type?: string;
   animated?: boolean;
   [k: string]: any;
 }
@@ -116,19 +118,24 @@ export type TaskStatus = "pending" | "running" | "completed" | "failed";
 /** 任务类型。 */
 export type TaskType = "image" | "video" | "audio" | "text" | "custom";
 
-/** GlobalTasks 数组元素（生成任务）。 */
+/**
+ * GlobalTasks 数组元素（生成任务）。
+ * status/type 归一化后为上述联合，但为兼容历史宽松写法用 `| string`。
+ */
 export interface GlobalTask {
   id: string;
-  type: TaskType;
-  status: TaskStatus;
-  nodeId: string;
-  modelName: string;
+  type?: TaskType | string;
+  status?: TaskStatus | string;
+  nodeId?: string;
+  modelName?: string;
   apiBaseUrl?: string;
   apiConfigId?: string;
+  apiConfig?: ApiConfig;
   progress?: number;
   createdAt?: number;
+  updatedAt?: number;
   prompt?: string;
-  customOutputType?: "image" | "video" | "audio" | "text";
+  customOutputType?: "image" | "video" | "audio" | "text" | string;
   provider?: string;
   projectId?: string;
   requestProfile?: Record<string, any>;
@@ -139,6 +146,7 @@ export interface GlobalTask {
   errorMsg?: string;
   stoppedByUser?: boolean;
   // 远端/异步追踪
+  taskId?: string;
   remoteTaskId?: string;
   seedanceTaskId?: string;
   clipId?: string;
@@ -151,15 +159,22 @@ export interface GlobalTask {
 
 /**
  * 一条统一 API 配置（apiConfigs 数组元素）。
- * 注意：令牌字段是 `key`、端点是 `url`（不是 apiKey/apiUrl —— 那些是全局配置顶层字段）。
+ * 主字段：端点 `url` + 令牌 `key`（不是 apiKey/apiUrl —— 那些是全局配置顶层字段，
+ * 这里作为历史兼容字段保留）。url/key 设为可选以兼容历史读取写法。
  */
 export interface ApiConfig {
   id: string;
-  name: string;
-  url: string;
-  key: string;
+  name?: string;
+  url?: string;
+  key?: string;
   protocolFormat?: "auto" | string;
   models?: any[];
+  /** 历史兼容字段（部分旧代码用这些名字，实际应读 url/key）。 */
+  apiUrl?: string;
+  apiKey?: string;
+  apiConfigName?: string;
+  apiDocUrl?: string;
+  configButlerDocUrl?: string;
   [k: string]: any;
 }
 
@@ -191,6 +206,7 @@ export interface ProtocolConfig {
   pollingMethod?: "GET" | string;
   contentType?: string;
   validationNotes?: string[];
+  protocolFormat?: string;
   [k: string]: any;
 }
 
