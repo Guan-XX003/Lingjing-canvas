@@ -642,29 +642,26 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 tongyiMode === `image-to-video` ||
                 tongyiMode === `video-edit`
               ) {
-                // 视频编辑(wan2.7-videoedit)接口 input_reference 只接受图片(首帧、可选尾帧,最多2张),不支持视频输入
+                // input_reference 图片和视频都可以：统一转公网直链后,用英文逗号分隔的数组传
                 // 参考项可能是字符串URL,也可能是对象(如已绑定天玑素材),统一取出 url 字符串
                 let refUrlOf = (r) => (typeof r === `string` ? r : r?.url || ``);
-                if (tongyiMode === `video-edit` && imageReferences.length === 0)
-                  throw Error(
-                    `通义万相「视频编辑」(wan2.7-videoedit) 只接受参考图片（首帧，可选尾帧），不支持输入视频；请连接图片节点而不是视频节点`,
-                  );
+                if (tongyiMode === `video-edit` && !videoReferences.length && !imageReferences.length)
+                  throw Error(`视频编辑需要连接参考图片或视频节点`);
                 let reference =
                   tongyiMode === `video-edit` ?
-                  imageReferences[0] || videoReferences[0] :
+                  videoReferences[0] || imageReferences[0] :
                   tongyiMode === `image-to-video` ?
                   imageReferences[0] || videoReferences[0] :
                   tongyiReferenceEntries[0]?.url || imageReferences[0] || videoReferences[0];
-                if (!reference)
-                  throw Error(
-                    tongyiMode === `video-edit` ?
-                    `视频编辑模式需要连接参考图片节点（首帧，可选尾帧）` :
-                    `当前通义万相模式需要连接至少一张参考图`,
-                  );
+                if (!reference && tongyiMode !== `video-edit`)
+                  throw Error(`当前通义万相模式需要连接至少一张参考图`);
                 if (tongyiMode === `reference-image-to-video` || tongyiMode === `video-edit`) {
                   let referenceEntries =
                     tongyiMode === `video-edit` ?
-                    imageReferences.slice(0, 2).map((r) => ({ url: refUrlOf(r), kind: `image` })) :
+                    [
+                      ...videoReferences.map((r) => ({ url: refUrlOf(r), kind: `video` })),
+                      ...imageReferences.map((r) => ({ url: refUrlOf(r), kind: `image` })),
+                    ] :
                     tongyiReferenceEntries.length > 0 ? tongyiReferenceEntries : [{
                       url: refUrlOf(reference),
                       kind: videoReferences.includes(reference) ? `video` : `image`,
@@ -675,7 +672,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     normalizedUrl && referenceUrls.push(normalizedUrl);
                   }
                   if (referenceUrls.length === 0)
-                    throw Error(`当前通义万相模式需要连接至少一张参考图`);
+                    throw Error(`当前通义万相模式需要连接至少一张参考图或视频`);
                   formData.append(`input_reference`, referenceUrls.join(`,`));
                 } else
                   formData.append(
