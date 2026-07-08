@@ -2012,7 +2012,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                      seconds: `number`,
 	                    })),
 	                  modelConfig.category === `video` &&
-	                  /^grok-(?:video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
+	                  /^grok-(?:image-video|video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
                   (/^https?:\/\/jixing\.guancn\.uk/i.test(apiUrl) ||
 	                    /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl)) &&
 	                  ((requestProfile.requestType = `multipart-video`),
@@ -2836,7 +2836,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	            )
               if (referenceImagesAsUrls) {
                 for (let index = 0; index < imageReferences.length; index++) {
-                  let referenceImageUrl = await uploadReferenceMediaForUrlOnlyModel(imageReferences[index], `image`);
+                  let referenceImageUrl = await uploadReferenceMediaForUrlOnlyModel(typeof imageReferences[index] === `string` ? imageReferences[index] : imageReferences[index]?.url || ``, `image`);
                   referenceImageUrl &&
                     formData.append(
                       effectiveFieldMapping.referenceImage ||
@@ -2846,7 +2846,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 }
 	              } else
 	                for (let index = 0; index < imageReferences.length; index++) {
-	                  let dataUrl = await mediaUrlToDataUrl(imageReferences[index]);
+	                  let dataUrl = await mediaUrlToDataUrl(typeof imageReferences[index] === `string` ? imageReferences[index] : imageReferences[index]?.url || ``);
 	                  try {
                     let base64Data = dataUrl.split(`,`)[1],
                       mimeType = dataUrl.split(`,`)[0].split(`:`)[1].split(`;`)[0],
