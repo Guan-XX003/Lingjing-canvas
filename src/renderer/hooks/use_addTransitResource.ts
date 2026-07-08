@@ -8,6 +8,7 @@ declare const chrome: any;
 
 export function use_addTransitResource(deps: any) {
   const {
+    localforageModule,
     isPluginEnv,
     persistTransitResource,
     setEdges,

@@ -7,6 +7,7 @@ declare const chrome: any;
 
 export function use_handleCleanInvalidResources(deps: any) {
   const {
+    localforageModule,
     isPluginEnv,
     probeResourceAlive,
     resourceCleanupBusy,

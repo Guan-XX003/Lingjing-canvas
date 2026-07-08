@@ -3,6 +3,7 @@
  * wanjuanResourceLocalUrlMap。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import { buildProjectMediaFileUrl } from "../lib/resource";
 
 export function useResourceLocalUrlMap(deps: any) {
   const {

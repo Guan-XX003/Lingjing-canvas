@@ -1,4 +1,4 @@
-// @ts-nocheck —— 逐字自 bundle 搬出的大型生成逻辑；缺失依赖已用 tsc 逐一解析补齐(见 import/deps)，此处仅跳过对 loose-JS/既有反混淆瑕疵的严格类型检查以保持行为不变。
+// @ts-nocheck
 /**
  * 视频生成（generateVideo）。自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，逻辑逐字搬运、行为不变。
  */

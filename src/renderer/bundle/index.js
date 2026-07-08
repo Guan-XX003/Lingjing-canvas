@@ -488,13 +488,6 @@ import { useRunConfigButlerBatch } from "../hooks/useRunConfigButlerBatch";
 import { useApplyConfigButlerBatchResults } from "../hooks/useApplyConfigButlerBatchResults";
 import { useApplyConfigButlerResult } from "../hooks/useApplyConfigButlerResult";
 import { useCallConfigButlerModel } from "../hooks/useCallConfigButlerModel";
-import { useBuildBatchPrompt } from "../hooks/useBuildBatchPrompt";
-import { useResolveGeminiInlineVideoPart } from "../hooks/useResolveGeminiInlineVideoPart";
-import { useIsNonVideoUrl } from "../hooks/useIsNonVideoUrl";
-import { useIsPublicUrl } from "../hooks/useIsPublicUrl";
-import { useRequestGemini } from "../hooks/useRequestGemini";
-import { useFindImageTaskUrl } from "../hooks/useFindImageTaskUrl";
-import { useResolveFileUri } from "../hooks/useResolveFileUri";
 import { useLateEffect5880 } from "../hooks/useLateEffect5880";
 import { useLateEffect4760 } from "../hooks/useLateEffect4760";
 import { useLateEffect1120 } from "../hooks/useLateEffect1120";
@@ -2551,7 +2544,7 @@ Suno 音乐生成`,
       );
     },
   ensureUniqueProtocolName = use_ensureUniqueProtocolName({ modelProtocolRegistry }).ensureUniqueProtocolName,
-  callConfigButlerModel = useCallConfigButlerModel({ configButlerApiKey, configButlerApiUrl, configButlerProtocol, getDefaultButlerModel, useRequestGemini }).callConfigButlerModel,
+  callConfigButlerModel = useCallConfigButlerModel({ configButlerApiKey, configButlerApiUrl, configButlerProtocol, getDefaultButlerModel }).callConfigButlerModel,
   readChromeStorage = use_readChromeStorage({}).readChromeStorage,
   writeChromeStorage = (items) => {
 	          try {
@@ -2646,7 +2639,7 @@ Suno 音乐生成`,
 	        },
   applyConfigButlerResult = useApplyConfigButlerResult({ _e, activeStoredGlobalConfigId, apiConfigs, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerTargetApiConfigId, configButlerTargetApiKey, configButlerTargetApiUrl, configButlerTargetCategory, configButlerTargetModel, getSelectedButlerTargetApiConfig, imageModelApiBindings, imageModelProtocolBindings, imageModels, modelProtocolRegistry, setActiveProtocolConfigText, setActiveProtocolName, setActiveStoredGlobalConfigId, setApiConfigs, setAudioApiConfigId, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setConfigButlerExpanded, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setModelProtocolRegistry, setProtocolFormatsExpanded, setProtocolNamesText, setStoredGlobalConfigs, setTextModelApiBindings, setTextModelProtocolBindings, setTtsMusicModel, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModels, showToast2, storedGlobalConfigs, textModelApiBindings, textModelProtocolBindings, textModels, ttsMusicModel, videoModelApiBindings, videoModelProtocolBindings, videoModels }).applyConfigButlerResult,
   applyConfigButlerBatchResults = useApplyConfigButlerBatchResults({ _e, captureCurrentGlobalConfig, configButlerBatchItems, configButlerDocUrl, configButlerTargetApiKey, configButlerTargetApiUrl, getSelectedButlerTargetApiConfig, mergeStoredGlobalApiConfigs, normalizeStoredGlobalConfigBackup, setActiveStoredGlobalConfigId, setApiConfigs, setAudioApiConfigId, setAudioApiKey, setAudioApiUrl, setAudioModelApiBindings, setAudioModelProtocolBindings, setAudioModels, setConfigButlerBatchModalOpen, setConfigButlerExpanded, setImageApiConfigId, setImageApiKey, setImageApiUrl, setImageModelApiBindings, setImageModelProtocolBindings, setImageModels, setModelProtocolRegistry, setProtocolNamesText, setStoredGlobalConfigs, setTextApiConfigId, setTextApiKey, setTextApiUrl, setTextModelApiBindings, setTextModelProtocolBindings, setTtsMusicModel, setVideoApiConfigId, setVideoApiKey, setVideoApiUrl, setVideoModelApiBindings, setVideoModelProtocolBindings, setVideoModels, showToast2, storedGlobalConfigs }).applyConfigButlerBatchResults,
-  runConfigButlerBatch = useRunConfigButlerBatch({ applyConfigButlerBatchResults, callConfigButlerModel, configButlerDocUrl, getSelectedButlerTargetApiConfig, setConfigButlerBatchActiveCategory, setConfigButlerBatchItems, setConfigButlerBatchLoading, setConfigButlerBatchModalOpen, setConfigButlerResultText, showToast2, useBuildBatchPrompt }).runConfigButlerBatch,
+  runConfigButlerBatch = useRunConfigButlerBatch({ applyConfigButlerBatchResults, callConfigButlerModel, configButlerDocUrl, getSelectedButlerTargetApiConfig, setConfigButlerBatchActiveCategory, setConfigButlerBatchItems, setConfigButlerBatchLoading, setConfigButlerBatchModalOpen, setConfigButlerResultText, showToast2 }).runConfigButlerBatch,
   runConfigButler = useRunConfigButler({ callConfigButlerModel, configButlerDocUrl, configButlerTargetCategory, configButlerTargetModel, getSelectedButlerTargetApiConfig, setConfigButlerLoading, setConfigButlerResultText, showToast2 }).runConfigButler;
 	  useLateEffect4703({});
   useLateEffect4712({ apiConfigs, isReady, settingsHydratedRef, syncTianjiConfigFromJixinApi });
@@ -2680,10 +2673,10 @@ Suno 音乐生成`,
         addAccount = use_addAccount({ accountNameInput, cookieInput, currentLimits, currentPlatform, editingAccountId, isPluginEnv, saveUsers, setAccountNameInput, setCookieInput, setEditingAccountId, setIsAccountBusy, setIsAddingAccount, users }).addAccount,
           [pendingDeleteId, setPendingDeleteId] = useState(null),
           handleDeleteClick = use_handleDeleteClick({ pendingDeleteId, saveUsers, selectedUser, setPendingDeleteId, setSelectedUser, users }).handleDeleteClick,
-          toggleFavorite = use_toggleFavorite({ isPluginEnv, setTransitResources, transitResources }).toggleFavorite,
-            handleClearUnfavorited = use_handleClearUnfavorited({ isPluginEnv, setTransitResources, transitResources }).handleClearUnfavorited,
+          toggleFavorite = use_toggleFavorite({ isPluginEnv, setTransitResources, transitResources, localforageModule }).toggleFavorite,
+            handleClearUnfavorited = use_handleClearUnfavorited({ isPluginEnv, setTransitResources, transitResources, localforageModule }).handleClearUnfavorited,
             probeResourceAlive = use_probeResourceAlive({}).probeResourceAlive,
-            handleCleanInvalidResources = use_handleCleanInvalidResources({ isPluginEnv, probeResourceAlive, resourceCleanupBusy, setCurrentPage, setResourceCleanupBusy, setTransitResources, showToast2, transitResources }).handleCleanInvalidResources;
+            handleCleanInvalidResources = use_handleCleanInvalidResources({ isPluginEnv, probeResourceAlive, resourceCleanupBusy, setCurrentPage, setResourceCleanupBusy, setTransitResources, showToast2, transitResources, localforageModule }).handleCleanInvalidResources;
   let filteredTransitResources = transitResources.filter((resource) => wanjuanResourceMatchesFilter(resource, resourceTypeFilter, resourceSourceFilter, resourceFavoriteOnly)),
     transitResourcePageSize = wanjuanGetTransitResourcePageSize(transitGridCols),
     transitResourceTotalPages = Math.max(1, Math.ceil(filteredTransitResources.length / transitResourcePageSize));
@@ -2723,14 +2716,14 @@ Suno 音乐生成`,
       }
     );
   }, [activeView, transitResources]);
-	  let addResource = use_addResource({ isPluginEnv, setTransitResources, transitResources }).addResource;
+	  let addResource = use_addResource({ isPluginEnv, setTransitResources, transitResources, localforageModule }).addResource;
 	  useSafeEffect46({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
 	  useSafeEffect47({ activeView, isPluginEnv, localforageModule, setEdges, setMaxPollingDuration, setTransitResources, transitResources });
   let persistTransitResource = use_persistTransitResource({}).persistTransitResource;
-  let addTransitResource = use_addTransitResource({ isPluginEnv, persistTransitResource, setEdges, setTransitResources, transitResources }).addTransitResource;
+  let addTransitResource = use_addTransitResource({ isPluginEnv, persistTransitResource, setEdges, setTransitResources, transitResources, localforageModule }).addTransitResource;
   let sendToPlugin = use_sendToPlugin({ isPluginEnv, showToast2 }).sendToPlugin,
   copyResource = use_copyResource({ showToast2 }).copyResource,
-  handleRemoveTransitResource = use_handleRemoveTransitResource({ isPluginEnv, setTransitResources, transitResources }).handleRemoveTransitResource,
+  handleRemoveTransitResource = use_handleRemoveTransitResource({ isPluginEnv, setTransitResources, transitResources, localforageModule }).handleRemoveTransitResource,
   handleCreateProject = use_handleCreateProject({ isPluginEnv, newProjectGroupId, newProjectName, projectGroups, projects, setActiveProjectId, setNewProjectGroupId, setNewProjectIds, setNewProjectName, setProjectMenuOpen, setProjects }).handleCreateProject,
   persistProjectGroups = use_persistProjectGroups({ isPluginEnv, projects, setProjectGroups, projectGroups }).persistProjectGroups,
   createProjectGroup = use_createProjectGroup({ persistProjectGroups, projectGroupDraft, projectGroups, setProjectGroupDraft, showToast2 }).createProjectGroup,
@@ -3240,7 +3233,7 @@ Suno 音乐生成`,
               return true;
             })(),
   configButlerStoredTaskScanEffect = true,
-  refreshGlobalTask = use_refreshGlobalTask({ addResource, apiConfigs, audioApiKey, audioApiUrl, imageApiKey, imageApiUrl, imageModelApiBindings, showToast2, updateGlobalTasks, videoApiKey, videoApiUrl, videoModelApiBindings, globalTasks }).refreshGlobalTask,
+  refreshGlobalTask = use_refreshGlobalTask({ addResource, apiConfigs, audioApiKey, audioApiUrl, imageApiKey, imageApiUrl, imageModelApiBindings, showToast2, updateGlobalTasks, videoApiKey, videoApiUrl, videoModelApiBindings, globalTasks, Send }).refreshGlobalTask,
   wanjuanAutoRefreshGlobalTasksRef = useRef(globalTasks),
   wanjuanAutoRefreshGlobalTasksBusyRef = useRef(false),
   wanjuanAutoRefreshGlobalTaskRefreshRef = useRef(null),
@@ -3301,9 +3294,9 @@ Suno 音乐生成`,
   getDesktopProjectMirrorStorageKey = (projectId) =>
     `${DESKTOP_PROJECT_MIRROR_STORAGE_PREFIX}${projectId}`,
   PROJECT_ASSET_REF_SUFFIX = `Ref`,
-  externalizeProjectAssetContainer = use_externalizeProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX }).externalizeProjectAssetContainer,
+  externalizeProjectAssetContainer = use_externalizeProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX, localforageModule }).externalizeProjectAssetContainer,
   externalizeProjectCanvasState = use_externalizeProjectCanvasState({ externalizeProjectAssetContainer }).externalizeProjectCanvasState,
-  hydrateProjectAssetContainer = use_hydrateProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX }).hydrateProjectAssetContainer,
+  hydrateProjectAssetContainer = use_hydrateProjectAssetContainer({ PROJECT_ASSET_REF_SUFFIX, localforageModule }).hydrateProjectAssetContainer,
   extractProjectAssetRefs = use_extractProjectAssetRefs({ PROJECT_ASSET_REF_SUFFIX }).extractProjectAssetRefs,
   projectMediaFieldList = [`imageUrl`, `videoUrl`, `audioUrl`, `text`, `resultData`],
   blobToDataUrl = use_blobToDataUrl({}).blobToDataUrl,
@@ -3763,7 +3756,7 @@ Suno 音乐生成`,
   normalizeResourceLocalforagePayload = use_normalizeResourceLocalforagePayload({ TRANSIT_RESOURCES_STORAGE_KEY }).normalizeResourceLocalforagePayload,
   readChromeStorageSnapshot = use_readChromeStorageSnapshot({}).readChromeStorageSnapshot,
   getBackupChromeStorageKeys = use_getBackupChromeStorageKeys({ AGENT_STORAGE_KEYS, PROJECT_STORAGE_KEYS, getDesktopProjectMirrorStorageKey, projects }).getBackupChromeStorageKeys,
-  collectSelectedLocalforageBackup = use_collectSelectedLocalforageBackup({ extractProjectAssetRefs, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, projects }).collectSelectedLocalforageBackup,
+  collectSelectedLocalforageBackup = use_collectSelectedLocalforageBackup({ extractProjectAssetRefs, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, projects, localforageModule }).collectSelectedLocalforageBackup,
   buildBackupModules = use_buildBackupModules({ BACKUP_MODULE_LABELS, apiConfigs, buildProjectLocalforageExportPayload, edges, getBackupSettingsSectionMap, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, setEdges, setMaxPollingDuration, splitChromeStorageModules, agentConversations, projectGroups, projects, seedanceVirtualPortraits, selectedAgentId, storedGlobalConfigs }).buildBackupModules,
   normalizeBackupModules = use_normalizeBackupModules({ AGENT_STORAGE_KEYS, BACKUP_MODULE_LABELS, TRANSIT_RESOURCES_STORAGE_KEY, buildProjectLocalforagePayload, getBackupSettingsSectionMap, normalizeResourceLocalforagePayload, splitChromeStorageModules, agentConversations, projectGroups, projects, selectedAgentId }).normalizeBackupModules,
   moduleHasBackupData = use_moduleHasBackupData({ TRANSIT_RESOURCES_STORAGE_KEY, projects }).moduleHasBackupData,
@@ -3773,7 +3766,7 @@ Suno 音乐生成`,
                           [],
                         ),
   buildBackupPayload = use_buildBackupPayload({ buildBackupModules }).buildBackupPayload,
-  restoreSelectedBackup = use_restoreSelectedBackup({ PROJECT_ASSET_MANIFEST_STORAGE_PREFIX, TRANSIT_RESOURCES_STORAGE_KEY, extractProjectAssetRefs, getAvailableBackupModules, getBackupSettingsSectionMap, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, normalizeBackupModules, normalizeResourceLocalforagePayload, agentConversations, projectGroups, projects, selectedAgentId, transitResources }).restoreSelectedBackup,
+  restoreSelectedBackup = use_restoreSelectedBackup({ PROJECT_ASSET_MANIFEST_STORAGE_PREFIX, TRANSIT_RESOURCES_STORAGE_KEY, extractProjectAssetRefs, getAvailableBackupModules, getBackupSettingsSectionMap, getDesktopProjectMirrorStorageKey, getProjectCanvasStorageKey, normalizeBackupModules, normalizeResourceLocalforagePayload, agentConversations, projectGroups, projects, selectedAgentId, transitResources, localforageModule }).restoreSelectedBackup,
   openBackupExportDialog = async (moduleSelection) => {
                                 try {
                                   let selectedModules = normalizeModuleSelection(moduleSelection, [`settings`, `projects`, `agents`]),
@@ -3936,7 +3929,7 @@ Suno 音乐生成`,
           style: { overflow: `clip` },
           children: [
             jsx(WanJuanSettingsSectionC, { Copy, Download, FolderOpen, Maximize2, Star, Trash, activeView, chrome, copyResource, currentPage, filteredTransitResources, handleCleanInvalidResources, handleClearUnfavorited, handleRemoveTransitResource, isPluginEnv, resourceCleanupBusy, resourceFavoriteOnly, resourceSourceFilter, resourceTypeFilter, setCurrentPage, setResourceFavoriteOnly, setResourceSourceFilter, setResourceTypeFilter, setTransitGridCols, setWjResourceFullscreen, showToast2, toggleFavorite, transitGridCols, transitResourcePageSize, transitResourceTotalPages, transitResources, wanjuanUseBrokenResourceImage }),
-            jsx(WanJuanSettingsSectionD, { $e, Trash2, VtRenameProject, WanJuanCanvasShell, activeProjectId, activeView, addCustomNodeTemplate, addTransitResource, apiConfigs, audioApiKey, audioApiUrl, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerErrorAssistant, configButlerErrorAssistantMinimized, customPublicUploadConfig, deleteCustomNodeTemplate, edges, getUnreadSystemNotifications, globalTasks, handleDeleteProject, imageApiKey, imageApiUrl, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, imageModels, isOpen, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, modelProtocolRegistry, newProjectIds, openSystemNotificationPanel, pollingInterval, presetPrompts, projectGroupIds, projectGroupPanelOpen, projectGroupedSectionsAll, projectMenuOpen, projectStorageLabel, projectUngroupedAll, projects, qiniuConfig, renameProjectId, runManualConfigButlerErrorQuery, runStorageMigrationForProject, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, sendToPlugin, setActiveProjectId, setIsOpen, setNewProjectGroupId, setNewProjectIds, setProjectGroupPanelOpen, setProjectMenuOpen, settingsNotificationChecking, showToast2, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings, textModels, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, tosConfig, transitResources, ttsMusicModel, updateGlobalTasks, videoApiKey, videoApiUrl, videoAspectRatios, videoDurations, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfilesText, videoModels, videoResolutions }),
+            jsx(WanJuanSettingsSectionD, { $e, Trash2, VtRenameProject, WanJuanCanvasShell, activeProjectId, activeView, addCustomNodeTemplate, addTransitResource, apiConfigs, audioApiKey, audioApiUrl, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerErrorAssistant, configButlerErrorAssistantMinimized, customPublicUploadConfig, deleteCustomNodeTemplate, edges, getUnreadSystemNotifications, globalTasks, handleDeleteProject, imageApiKey, imageApiUrl, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, imageModels, isOpen, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, modelProtocolRegistry, newProjectIds, openSystemNotificationPanel, pollingInterval, presetPrompts, projectGroupIds, projectGroupPanelOpen, projectGroupedSectionsAll, projectMenuOpen, projectStorageLabel, projectUngroupedAll, projects, qiniuConfig, renameProjectId, runManualConfigButlerErrorQuery, runStorageMigrationForProject, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, sendToPlugin, setActiveProjectId, setIsOpen, setNewProjectGroupId, setNewProjectIds, setProjectGroupPanelOpen, setProjectMenuOpen, settingsNotificationChecking, showToast2, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings, textModels, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, tosConfig, transitResources, ttsMusicModel, updateGlobalTasks, videoApiKey, videoApiUrl, videoAspectRatios, videoDurations, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfilesText, videoModels, videoResolutions, applyConfigButlerErrorAssistantFix }),
             jsx(WanJuanSettingsSectionA, { Trash2, activeView, addAgentReferenceFile, agentAttachmentInputRef, agentAttachments, agentComposer, agentConfigOpen, agentConversations, agentMessagesScrollRef, agentSearch, agentTheme, clearSelectedAgentConversation, createAgent, deleteSelectedAgent, duplicateSelectedAgent, filteredAgentItems, handleAgentReferenceSelection, isLightAgentTheme, renderAgentAttachmentPill, selectedAgent, selectedAgentId, selectedAgentMessages, sendAgentMessage, setAgentAttachments, setAgentComposer, setAgentConfigOpen, setAgentSearch, setSelectedAgentId, showToast2 }),
             jsx(WanJuanSettingsSectionB, { activeSettingsTab, activeStoredGlobalConfigId, activeView, allAdvancedModelSettingsExpanded, audioModelSettingsExpanded, configButlerBatchModalOpen, configButlerExpanded, globalConfigPresetsExpanded, imageModelSettingsExpanded, seedanceSettingsExpanded, setActiveSettingsTab, setAllAdvancedModelSettings, setAudioModelSettingsExpanded, setConfigButlerExpanded, setGlobalConfigPresetsExpanded, setImageModelSettingsExpanded, setSeedanceSettingsExpanded, setTextModelSettingsExpanded, setTtsMusicSettingsExpanded, setVideoModelSettingsExpanded, storedGlobalConfigs, textModelSettingsExpanded, tianjiSeedanceSettingsMode, ttsMusicSettingsExpanded, updateInfo, videoModelSettingsExpanded }),
           ],

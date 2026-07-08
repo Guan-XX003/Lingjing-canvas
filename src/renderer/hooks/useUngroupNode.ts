@@ -1,4 +1,4 @@
-// @ts-nocheck —— 逐字搬出;缺失依赖已tsc解析补齐,仅跳过loose-JS严格类型检查以保持行为不变。
+// @ts-nocheck
 /**
  * ungroupNode。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */

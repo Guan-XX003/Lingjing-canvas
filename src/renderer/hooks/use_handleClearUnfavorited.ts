@@ -7,6 +7,7 @@ declare const chrome: any;
 
 export function use_handleClearUnfavorited(deps: any) {
   const {
+    localforageModule,
     isPluginEnv,
     setTransitResources,
     transitResources,

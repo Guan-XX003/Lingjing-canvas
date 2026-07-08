@@ -12,6 +12,7 @@ declare const chrome: any;
 
 export function use_restoreSelectedBackup(deps: any) {
   const {
+    localforageModule,
     PROJECT_ASSET_MANIFEST_STORAGE_PREFIX,
     TRANSIT_RESOURCES_STORAGE_KEY,
     extractProjectAssetRefs,

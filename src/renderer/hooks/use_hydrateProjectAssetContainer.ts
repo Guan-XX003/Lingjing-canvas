@@ -7,6 +7,7 @@ import { wanjuanResolveHydratedProjectAssetFileValue, wanjuanShouldSkipHydratedP
 
 export function use_hydrateProjectAssetContainer(deps: any) {
   const {
+    localforageModule,
     PROJECT_ASSET_REF_SUFFIX,
   } = deps;
   const hydrateProjectAssetContainer = async (container) => {

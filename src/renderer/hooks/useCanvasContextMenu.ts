@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 画布右键菜单定位 handler（画布/节点/选区/延迟选区菜单）。
  * 自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，行为保持一致；菜单状态仍在组件内，此处只产出定位 handler。

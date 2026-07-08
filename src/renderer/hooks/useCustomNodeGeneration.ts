@@ -1,4 +1,4 @@
-// @ts-nocheck —— 逐字搬出;缺失依赖已tsc解析补齐,仅跳过loose-JS严格类型检查以保持行为不变。
+// @ts-nocheck
 /**
  * 自定义 API 节点：AI 辅助配置(handleAIAssist) + 生成(handleGenerateCustom)。
  * 自 bundle(WanJuanAppCanvas) 抽出，逻辑逐字搬运、行为不变。

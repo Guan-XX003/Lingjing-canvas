@@ -19,7 +19,6 @@ export function useRunConfigButlerBatch(deps: any) {
     setConfigButlerBatchModalOpen,
     setConfigButlerResultText,
     showToast2,
-    useBuildBatchPrompt,
   } = deps;
   const runConfigButlerBatch = async (options = {}) => {
 	          try {
@@ -95,7 +94,15 @@ ${docText}`;
 	            let batchItems = [],
 	              batchRawResults = [],
 	              batchFailedChunks = [],
-	              buildBatchPrompt = useBuildBatchPrompt({ basePrompt, batchDocText, docText, fullModelListText }).buildBatchPrompt;
+	              buildBatchPrompt = ((modelName, batchIndex, batchTotal) =>
+	                basePrompt
+	                .replace(`模型列表：
+${fullModelListText}`, `模型列表（第 ${batchIndex + 1}/${batchTotal} 批，仅分析本批模型）：
+${modelName.map((modelName2) => `- ${modelName2}`).join(`
+`)}`)
+	                .replace(`文档摘要：
+${docText}`, `文档摘要：
+${batchDocText}`));
 	            for (let batchIndex = 0; batchIndex < batchChunks.length; batchIndex++) {
 	              let chunkModels = batchChunks[batchIndex],
 	                batchResult = null;

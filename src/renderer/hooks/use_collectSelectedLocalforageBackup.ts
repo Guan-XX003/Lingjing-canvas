@@ -8,6 +8,7 @@ import { normalizeModuleSelection } from "../lib/project-normalize";
 
 export function use_collectSelectedLocalforageBackup(deps: any) {
   const {
+    localforageModule,
     extractProjectAssetRefs,
     getDesktopProjectMirrorStorageKey,
     getProjectCanvasStorageKey,

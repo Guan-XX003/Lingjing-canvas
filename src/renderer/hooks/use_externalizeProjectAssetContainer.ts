@@ -8,6 +8,7 @@ import { wanjuanResolveHydratedProjectAssetFileValue, wanjuanShouldSkipHydratedP
 
 export function use_externalizeProjectAssetContainer(deps: any) {
   const {
+    localforageModule,
     PROJECT_ASSET_REF_SUFFIX,
   } = deps;
   const externalizeProjectAssetContainer = async (container, options = {}) => {

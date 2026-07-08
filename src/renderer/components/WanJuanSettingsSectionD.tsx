@@ -9,6 +9,7 @@ import { WanJuanRenameProjectDialog } from "../components/rename-project-dialog"
 
 export function WanJuanSettingsSectionD(props: any) {
   const {
+    applyConfigButlerErrorAssistantFix,
     $e,
     Trash2,
     VtRenameProject,
