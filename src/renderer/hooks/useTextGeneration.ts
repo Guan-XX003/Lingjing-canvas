@@ -3,7 +3,7 @@
  * 依赖经 deps 传入；hook 为 .ts，body 里引用的任何未提供名字 tsc 会报错，便于补齐。
  */
 import { useCallback } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNodeTextValue, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { serializeErrorPreview } from "../lib/log-utils";
@@ -15,14 +15,14 @@ interface UseTextGenerationDeps {
   propTextApiUrl: any;
   textModel: any;
   apiConfigs: ApiConfig[];
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   planLimits: any;
-  getNodes: () => any[];
-  getEdges: () => any[];
-  setNodes: SetAny;
-  setEdges: SetAny;
+  getNodes: () => WjNode[];
+  getEdges: () => WjEdge[];
+  setNodes: SetState<WjNode[]>;
+  setEdges: SetState<WjEdge[]>;
   showToast: Toast;
   addGeneratedAsset: any;
   updateTaskList: any;
@@ -334,7 +334,7 @@ export function useTextGeneration(deps: UseTextGenerationDeps) {
 	                textProtocolDefinition && typeof textProtocolDefinition == `object` ?
 	                textProtocolDefinition :
 	                {},
-	                textProtocolFieldMapping = {
+	                textProtocolFieldMapping: Record<string, string> = {
 	                  model: `model`,
 	                  messages: `messages`,
 	                  prompt: `prompt`,

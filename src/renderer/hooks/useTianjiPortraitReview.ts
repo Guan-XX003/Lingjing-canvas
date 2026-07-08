@@ -3,12 +3,12 @@
  * handleTianjiPortraitReview。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetState, Toast, WjNode } from "../lib/app-types";
 import { WANJUAN_TIANJI_ASSET_PAGE_SIZE, wanjuanTianjiFinalPortraitAsset, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData, wanjuanUploadTianjiVirtualPortrait } from "../lib/tianji-assets";
 import { wanjuanGetSyncedTianjiSeedanceConfig } from "../lib/tianji-api";
 
 interface UseTianjiPortraitReviewDeps {
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
 }
 

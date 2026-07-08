@@ -3,7 +3,7 @@
  * saveApiModelCloudSettings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, Ref } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, wanjuanMergeModelText } from "../lib/jixin-catalog";
 declare const chrome: any;
 
@@ -14,8 +14,8 @@ interface UseSaveApiModelCloudSettingsDeps {
   audioApiConfigId: any;
   audioApiKey: any;
   audioApiUrl: any;
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   audioModels: any;
   configButlerApiKey: any;
   configButlerApiUrl: any;
@@ -30,10 +30,10 @@ interface UseSaveApiModelCloudSettingsDeps {
   imageApiKey: any;
   imageApiUrl: any;
   imageCompatResolutions: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
   imageModels: any;
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
   qiniuConfig: any;
   seedanceDurations: any;
   seedanceEnableWebSearch: any;
@@ -45,13 +45,13 @@ interface UseSaveApiModelCloudSettingsDeps {
   seedanceVirtualPortraits: any;
   seedanceWatermark: any;
   settingsHydratedRef: Ref;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
   syncTianjiConfigFromJixinApi: any;
   textApiConfigId: any;
   textApiKey: any;
   textApiUrl: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   textModels: any;
   tianjiSeedanceModel: any;
   tianjiSeedanceSettingsMode: any;
@@ -69,8 +69,8 @@ interface UseSaveApiModelCloudSettingsDeps {
   videoApiUrl: any;
   videoAspectRatios: any;
   videoDurations: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoModelRequestProfilesText: any;
   videoModels: any;
   videoResolutions: any;

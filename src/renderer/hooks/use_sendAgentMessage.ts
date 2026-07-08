@@ -3,7 +3,7 @@
  * sendAgentMessage。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, Toast } from "../lib/app-types";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
 import { mediaUrlToDataUrl } from "../lib/reference-media";
 import { readAgentAttachmentFileAsDataUrl, releaseAgentAttachment, sanitizeAgentConversationText, selectKnowledgeChunksForQuery } from "../lib/agent";
@@ -16,7 +16,7 @@ interface UseSendAgentMessageDeps {
   agentConversations: any;
   agentModelOptions: any;
   apiConfigs: ApiConfig[];
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
   searchAgentLongTermMemory: any;
   selectedAgent: any;
   setAgentAttachments: SetAny;
@@ -27,8 +27,8 @@ interface UseSendAgentMessageDeps {
   textApiConfigId: any;
   textApiKey: any;
   textApiUrl: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   customPublicUploadConfig: any;
   qiniuConfig: any;
   seedanceUploadMode: any;

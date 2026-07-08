@@ -3,7 +3,7 @@
  * applyConfigButlerBatchResults。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ProtocolBindings, SetAny, SetState, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
 import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
@@ -38,7 +38,7 @@ interface UseApplyConfigButlerBatchResultsDeps {
   setImageModels: SetAny;
   setModelProtocolRegistry: SetAny;
   setProtocolNamesText: SetAny;
-  setStoredGlobalConfigs: SetAny;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
   setTextApiConfigId: SetAny;
   setTextApiKey: SetAny;
   setTextApiUrl: SetAny;
@@ -52,7 +52,7 @@ interface UseApplyConfigButlerBatchResultsDeps {
   setVideoModelProtocolBindings: SetAny;
   setVideoModels: SetAny;
   showToast2: Toast;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
 }
 
 export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatchResultsDeps) {

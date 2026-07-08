@@ -2,7 +2,7 @@
  * useNodeSyncEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetState, Toast, WjNode } from "../lib/app-types";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
 import { WanJuanGetPreferredModel, WanJuanShouldAutoPreferredModel } from "../lib/model-favorites";
 import { WanJuanRenderRuntime, WanJuanStripRuntimeNodeData } from "../components/render-mode";
@@ -16,8 +16,8 @@ interface UseNodeSyncEffectDeps {
   audioApiKey: any;
   audioApiUrl: any;
   audioModel: any;
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   createImageNode: any;
   customPublicUploadConfig: any;
   drawingModel: any;
@@ -34,9 +34,9 @@ interface UseNodeSyncEffectDeps {
   handleSplitOne: any;
   handleTianjiPortraitReview: any;
   imageCompatResolutions: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   openImageEditor: any;
   openImagePreview: any;
   openVideoEditor: any;
@@ -53,13 +53,13 @@ interface UseNodeSyncEffectDeps {
   seedanceVirtualPortraits: any;
   seedanceWatermark: any;
   sendToActiveTab: any;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   shouldFitView: any;
   showToast: Toast;
   stopGeneration: any;
   textModel: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   tianjiSeedanceModel: any;
   tongyiWanxiangDurations: any;
   tongyiWanxiangEditModels: any;
@@ -74,8 +74,8 @@ interface UseNodeSyncEffectDeps {
   videoAspectRatios: any;
   videoDurations: any;
   videoModel: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoModelRequestProfiles: any;
   videoResolutions: any;
 }

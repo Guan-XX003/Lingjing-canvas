@@ -2,17 +2,17 @@
  * addGridSplitNode。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { wanjuanCollectNodeReferenceMedia } from "../lib/reference-media";
 
 interface UseAddGridSplitNodeDeps {
   handleSplit: any;
   handleSplitOne: any;
   menuPosition: any;
-  nodes: any[];
-  setEdges: SetAny;
+  nodes: WjNode[];
+  setEdges: SetState<WjEdge[]>;
   setMenuPosition: SetAny;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
 }
 

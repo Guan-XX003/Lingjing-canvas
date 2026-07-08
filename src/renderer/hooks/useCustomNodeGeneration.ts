@@ -4,26 +4,26 @@
  * 自 bundle(WanJuanAppCanvas) 抽出，逻辑逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { WanJuanIsTransientNetworkError } from "../lib/log-utils";
 
 interface UseCustomNodeGenerationDeps {
   abortControllersRef: Ref;
   addGeneratedAsset: any;
   apiConfigs: ApiConfig[];
-  getEdges: () => any[];
-  getNodes: () => any[];
-  modelProtocolRegistry: Bindings;
+  getEdges: () => WjEdge[];
+  getNodes: () => WjNode[];
+  modelProtocolRegistry: ProtocolRegistry;
   pollIntervalMs: any;
   projectIdRef: Ref;
   propTextApiKey: any;
   propTextApiUrl: any;
-  setEdges: SetAny;
-  setNodes: SetAny;
+  setEdges: SetState<WjEdge[]>;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
   textModel: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   timeoutSeconds: any;
   updateTaskList: any;
 }

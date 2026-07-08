@@ -2,14 +2,14 @@
  * runNodeChain。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Toast } from "../lib/app-types";
+import type { Toast, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseRunNodeChainDeps {
   generateImage: any;
   generateText: any;
   generateVideo: any;
-  getEdges: () => any[];
-  getNodes: () => any[];
+  getEdges: () => WjEdge[];
+  getNodes: () => WjNode[];
   handleGenerateCustom: any;
   resolveVideoRunModel: any;
   showToast: Toast;

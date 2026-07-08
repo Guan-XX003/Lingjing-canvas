@@ -2,7 +2,7 @@
  * handleCleanInvalidResources。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetAny, SetState, Toast, TransitResource } from "../lib/app-types";
 declare const chrome: any;
 
 interface UseHandleCleanInvalidResourcesDeps {
@@ -12,9 +12,9 @@ interface UseHandleCleanInvalidResourcesDeps {
   resourceCleanupBusy: any;
   setCurrentPage: SetAny;
   setResourceCleanupBusy: SetAny;
-  setTransitResources: SetAny;
+  setTransitResources: SetState<TransitResource[]>;
   showToast2: Toast;
-  transitResources: any;
+  transitResources: TransitResource[];
 }
 
 export function use_handleCleanInvalidResources(deps: UseHandleCleanInvalidResourcesDeps) {

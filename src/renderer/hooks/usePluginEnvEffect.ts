@@ -3,7 +3,7 @@
  * usePluginEnvEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ProtocolBindings, Ref, SetAny, SetState, StoredGlobalConfig, Toast, TransitResource, WjEdge } from "../lib/app-types";
 import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { WanJuanNormalizePerformanceProfile } from "../lib/performance-profile";
 import { compactGlobalTasks } from "../lib/app-root-helpers";
@@ -49,7 +49,7 @@ interface UsePluginEnvEffectDeps {
   setDailyUsageCount: SetAny;
   setDeviceId: SetAny;
   setDownloadDirectory: SetAny;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setGlobalTasks: SetAny;
   setHasCurrentTab: SetAny;
   setImageApiConfigId: SetAny;
@@ -85,7 +85,7 @@ interface UsePluginEnvEffectDeps {
   setSelectedAgentId: SetAny;
   setStorageOptimizationEnabled: SetAny;
   setStorageOptimizationPaused: SetAny;
-  setStoredGlobalConfigs: SetAny;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
   setTextApiConfigId: SetAny;
   setTextApiKey: SetAny;
   setTextApiUrl: SetAny;
@@ -103,7 +103,7 @@ interface UsePluginEnvEffectDeps {
   setTongyiWanxiangTextModels: SetAny;
   setTosConfig: SetAny;
   setTransitGridCols: SetAny;
-  setTransitResources: SetAny;
+  setTransitResources: SetState<TransitResource[]>;
   setTtsMusicModel: SetAny;
   setUpdateInfo: SetAny;
   setUsers: SetAny;

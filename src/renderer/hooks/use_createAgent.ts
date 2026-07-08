@@ -2,7 +2,7 @@
  * createAgent。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Bindings, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, SetAny, Toast } from "../lib/app-types";
 
 interface UseCreateAgentDeps {
   agentModelOptions: any;
@@ -11,7 +11,7 @@ interface UseCreateAgentDeps {
   setSelectedAgentId: SetAny;
   showToast2: Toast;
   textApiConfigId: any;
-  textModelApiBindings: Bindings;
+  textModelApiBindings: ApiBindings;
   textModels: any;
 }
 

@@ -2,12 +2,12 @@
  * handleMultiConnectToTarget。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetAny, SetState, Toast, WjEdge } from "../lib/app-types";
 
 interface UseMultiConnectDeps {
   addEdge: any;
   multiConnectIds: any;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setMultiConnectIds: SetAny;
   showToast: Toast;
 }

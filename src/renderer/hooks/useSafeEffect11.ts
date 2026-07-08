@@ -2,11 +2,11 @@
  * useSafeEffect11（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetState, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseSafeEffect11Deps {
-  nodes: any[];
-  setEdges: SetAny;
+  nodes: WjNode[];
+  setEdges: SetState<WjEdge[]>;
   shouldFitView: any;
 }
 

@@ -3,10 +3,11 @@
  * wanjuanSelectedReferenceSourcesByTarget。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { WjEdge, WjNode } from "../lib/app-types";
 
 interface UseSelectedRefSourcesDeps {
-  edges: any[];
-  nodes: any[];
+  edges: WjEdge[];
+  nodes: WjNode[];
   useMemo: any;
 }
 

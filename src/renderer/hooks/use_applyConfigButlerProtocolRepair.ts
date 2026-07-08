@@ -3,31 +3,31 @@
  * applyConfigButlerProtocolRepair。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Bindings, SetAny, Toast } from "../lib/app-types";
+import type { ProtocolBindings, ProtocolRegistry, SetAny, SetState, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
 declare const chrome: any;
 
 interface UseApplyConfigButlerProtocolRepairDeps {
   activeStoredGlobalConfigId: any;
-  audioModelProtocolBindings: Bindings;
+  audioModelProtocolBindings: ProtocolBindings;
   configButlerErrorAssistant: any;
   configButlerRepairHistory: any;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   setActiveStoredGlobalConfigId: SetAny;
   setAudioModelProtocolBindings: SetAny;
   setConfigButlerErrorAssistant: SetAny;
   setConfigButlerRepairHistory: SetAny;
   setImageModelProtocolBindings: SetAny;
   setModelProtocolRegistry: SetAny;
-  setStoredGlobalConfigs: SetAny;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
   setTextModelProtocolBindings: SetAny;
   setVideoModelProtocolBindings: SetAny;
   showToast2: Toast;
-  storedGlobalConfigs: any;
-  textModelProtocolBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  storedGlobalConfigs: StoredGlobalConfig[];
+  textModelProtocolBindings: ProtocolBindings;
+  videoModelProtocolBindings: ProtocolBindings;
 }
 
 export function use_applyConfigButlerProtocolRepair(deps: UseApplyConfigButlerProtocolRepairDeps) {

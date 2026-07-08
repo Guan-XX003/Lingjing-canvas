@@ -2,7 +2,7 @@
  * useCanvasLoadEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { Ref, SetAny } from "../lib/app-types";
+import type { GlobalTask, Ref, SetAny, SetState, WjEdge, WjNode } from "../lib/app-types";
 import { WANJUAN_STARTER_EDGES, wanjuanIsDefaultStarterCanvas } from "../components/canvas-node-registry";
 import { WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
@@ -10,7 +10,7 @@ import { wanjuanNewestNodeTask, wanjuanTaskUsesSeedanceSlot, wanjuanVideoTaskCan
 declare const chrome: any;
 
 interface UseCanvasLoadEffectDeps {
-  GlobalTasks: any;
+  GlobalTasks: GlobalTask[];
   LoadOnceRef: Ref;
   abortControllersRef: Ref;
   canvasStateKeyPrefix: any;
@@ -22,8 +22,8 @@ interface UseCanvasLoadEffectDeps {
   projectId: any;
   projectIdRef: Ref;
   resolveWanjuanPlayableTaskUrl: any;
-  setEdges: SetAny;
-  setNodes: SetAny;
+  setEdges: SetState<WjEdge[]>;
+  setNodes: SetState<WjNode[]>;
   setShouldFitView: SetAny;
   shouldFitViewRef: Ref;
 }

@@ -2,15 +2,15 @@
  * repairXSeeVeoReferenceVideoBindings。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Bindings } from "../lib/app-types";
+import type { ProtocolBindings, ProtocolRegistry } from "../lib/app-types";
 import { buildXSeeVeoReferenceVideoProtocol } from "../lib/config-butler";
 import { cloneBackupValue } from "../lib/backup";
 import { isXSeeVeoReferenceVideoModel } from "../lib/model-list-utils";
 
 interface UseRepairXSeeVeoReferenceVideoBindingsDeps {
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
   videoApiUrl: any;
-  videoModelProtocolBindings: Bindings;
+  videoModelProtocolBindings: ProtocolBindings;
 }
 
 export function use_repairXSeeVeoReferenceVideoBindings(deps: UseRepairXSeeVeoReferenceVideoBindingsDeps) {

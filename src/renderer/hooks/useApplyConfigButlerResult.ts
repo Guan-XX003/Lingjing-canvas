@@ -3,7 +3,7 @@
  * applyConfigButlerResult。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, SetState, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
 import { finalizeButlerProtocolConfig, normalizeButlerBaseUrl, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
@@ -14,8 +14,8 @@ interface UseApplyConfigButlerResultDeps {
   _e: any;
   activeStoredGlobalConfigId: any;
   apiConfigs: ApiConfig[];
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   audioModels: any;
   configButlerTargetApiConfigId: any;
   configButlerTargetApiKey: any;
@@ -23,10 +23,10 @@ interface UseApplyConfigButlerResultDeps {
   configButlerTargetCategory: any;
   configButlerTargetModel: any;
   getSelectedButlerTargetApiConfig: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
   imageModels: any;
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
   setActiveProtocolConfigText: SetAny;
   setActiveProtocolName: SetAny;
   setActiveStoredGlobalConfigId: SetAny;
@@ -42,7 +42,7 @@ interface UseApplyConfigButlerResultDeps {
   setModelProtocolRegistry: SetAny;
   setProtocolFormatsExpanded: SetAny;
   setProtocolNamesText: SetAny;
-  setStoredGlobalConfigs: SetAny;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
   setTextModelApiBindings: SetAny;
   setTextModelProtocolBindings: SetAny;
   setTtsMusicModel: SetAny;
@@ -50,13 +50,13 @@ interface UseApplyConfigButlerResultDeps {
   setVideoModelProtocolBindings: SetAny;
   setVideoModels: SetAny;
   showToast2: Toast;
-  storedGlobalConfigs: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  storedGlobalConfigs: StoredGlobalConfig[];
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   textModels: any;
   ttsMusicModel: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoModels: any;
 }
 

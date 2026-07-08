@@ -2,12 +2,12 @@
  * handleConnect。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetState, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseHandleConnectDeps {
   addEdge: any;
-  getNodes: () => any[];
-  setEdges: SetAny;
+  getNodes: () => WjNode[];
+  setEdges: SetState<WjEdge[]>;
 }
 
 export function useHandleConnect(deps: UseHandleConnectDeps) {

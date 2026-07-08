@@ -2,14 +2,14 @@
  * createImportedMediaNode。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetState, WjNode } from "../lib/app-types";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 import { wanjuanGetDroppedFilePath, wanjuanMediaKindFromFile } from "../lib/project-asset-binding";
 
 interface UseCreateImportedMediaNodeDeps {
   createNodeAt: any;
   persistImportedMediaFile: any;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   addGeneratedAsset: any;
 }
 

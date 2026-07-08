@@ -2,7 +2,7 @@
  * applyJixinDefaultResetPatch。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, SetAny } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, SetState, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, wanjuanMergeModelText } from "../lib/jixin-catalog";
 import { cloneBackupValue } from "../lib/backup";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
@@ -48,7 +48,7 @@ interface UseApplyJixinDefaultResetPatchDeps {
   setSeedanceRatios: SetAny;
   setSeedanceResolutions: SetAny;
   setSeedanceWatermark: SetAny;
-  setStoredGlobalConfigs: SetAny;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
   setTextApiConfigId: SetAny;
   setTextApiKey: SetAny;
   setTextApiUrl: SetAny;
@@ -78,23 +78,23 @@ interface UseApplyJixinDefaultResetPatchDeps {
   apiConfigs: ApiConfig[];
   audioApiConfigId: any;
   audioApiUrl: any;
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   imageApiConfigId: any;
   imageApiUrl: any;
   imageCompatResolutions: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   seedanceDurations: any;
   seedanceModel: any;
   seedanceRatios: any;
   seedanceResolutions: any;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
   textApiConfigId: any;
   textApiUrl: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   tianjiSeedanceModel: any;
   tongyiWanxiangDurations: any;
   tongyiWanxiangEditModels: any;
@@ -108,8 +108,8 @@ interface UseApplyJixinDefaultResetPatchDeps {
   videoApiUrl: any;
   videoAspectRatios: any;
   videoDurations: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoResolutions: any;
 }
 

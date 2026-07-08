@@ -2,12 +2,12 @@
  * useWorkspaceTemplateEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { Ref, Toast } from "../lib/app-types";
+import type { Ref, Toast, WjNode } from "../lib/app-types";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 
 interface UseWorkspaceTemplateEffectDeps {
   createNodeAt: any;
-  getNodes: () => any[];
+  getNodes: () => WjNode[];
   projectId: any;
   projectIdRef: Ref;
   screenToFlowPosition: any;

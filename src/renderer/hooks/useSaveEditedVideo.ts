@@ -2,12 +2,12 @@
  * saveEditedVideo。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { Ref, SetAny, SetState, Toast, WjNode } from "../lib/app-types";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 
 interface UseSaveEditedVideoDeps {
   projectIdRef: Ref;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   setVideoEditState: SetAny;
   showToast: Toast;
   videoEditState: any;

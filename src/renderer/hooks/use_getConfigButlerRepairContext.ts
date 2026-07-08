@@ -2,16 +2,16 @@
  * getConfigButlerRepairContext。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Bindings } from "../lib/app-types";
+import type { ProtocolBindings, ProtocolRegistry } from "../lib/app-types";
 import { inferButlerCategoryFromModelName, normalizeModelCategory } from "../lib/config-butler";
 
 interface UseGetConfigButlerRepairContextDeps {
-  audioModelProtocolBindings: Bindings;
+  audioModelProtocolBindings: ProtocolBindings;
   configButlerErrorAssistant: any;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
-  textModelProtocolBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
+  textModelProtocolBindings: ProtocolBindings;
+  videoModelProtocolBindings: ProtocolBindings;
 }
 
 export function use_getConfigButlerRepairContext(deps: UseGetConfigButlerRepairContextDeps) {

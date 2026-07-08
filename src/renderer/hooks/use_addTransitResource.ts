@@ -2,7 +2,7 @@
  * addTransitResource。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetState, TransitResource, WjEdge } from "../lib/app-types";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 declare const chrome: any;
 
@@ -11,8 +11,8 @@ interface UseAddTransitResourceDeps {
   isPluginEnv: boolean;
   persistTransitResource: any;
   setEdges: any;
-  setTransitResources: SetAny;
-  transitResources: any;
+  setTransitResources: SetState<TransitResource[]>;
+  transitResources: TransitResource[];
 }
 
 export function use_addTransitResource(deps: UseAddTransitResourceDeps) {

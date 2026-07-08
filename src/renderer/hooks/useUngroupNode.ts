@@ -2,10 +2,10 @@
  * ungroupNode。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetState, Toast, WjNode } from "../lib/app-types";
 
 interface UseUngroupNodeDeps {
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
 }
 

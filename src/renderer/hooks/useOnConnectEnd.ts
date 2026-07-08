@@ -2,13 +2,13 @@
  * onConnectEnd。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Ref, SetAny } from "../lib/app-types";
+import type { Ref, SetAny, SetState, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseOnConnectEndDeps {
   screenToFlowPosition: any;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setMenuPosition: SetAny;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   setResourceSubmenuOpen: SetAny;
   setResourceSubmenuOpenAlt: SetAny;
   wrapperRef: Ref;

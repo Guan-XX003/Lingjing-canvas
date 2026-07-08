@@ -3,17 +3,17 @@
  * useSafeEffect47（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetAny, SetState, TransitResource, WjEdge } from "../lib/app-types";
 declare const chrome: any;
 
 interface UseSafeEffect47Deps {
   activeView: any;
   isPluginEnv: boolean;
   localforageModule: any;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setMaxPollingDuration: SetAny;
-  setTransitResources: SetAny;
-  transitResources: any;
+  setTransitResources: SetState<TransitResource[]>;
+  transitResources: TransitResource[];
 }
 
 export function useSafeEffect47(deps: UseSafeEffect47Deps) {

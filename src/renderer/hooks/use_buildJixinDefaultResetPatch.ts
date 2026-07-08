@@ -2,7 +2,7 @@
  * buildJixinDefaultResetPatch。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig } from "../lib/app-types";
+import type { ApiConfig, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, WANJUAN_JIXIN_DEFAULT_API_URL, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { wanjuanTianjiSeedanceDefaults } from "../lib/tianji-api";
 
@@ -21,7 +21,7 @@ interface UseBuildJixinDefaultResetPatchDeps {
   configButlerTargetApiConfigId: any;
   configButlerTargetCategory: any;
   imageApiKey: any;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
   textApiKey: any;
   tianjiSeedanceSettingsMode: any;
   videoApiKey: any;

@@ -2,11 +2,11 @@
  * groupSelectedNodes。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { Ref, SetState, Toast, WjNode } from "../lib/app-types";
 
 interface UseGroupNodesDeps {
-  nodesRef: Ref;
-  setNodes: SetAny;
+  nodesRef: Ref<WjNode[]>;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
 }
 

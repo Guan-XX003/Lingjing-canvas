@@ -2,12 +2,12 @@
  * copyNodeImage。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetAny, Toast, WjNode } from "../lib/app-types";
 import { wanjuanCollectNodeReferenceMedia } from "../lib/reference-media";
 
 interface UseCopyNodeImageDeps {
   menuPosition: any;
-  nodes: any[];
+  nodes: WjNode[];
   setMenuPosition: SetAny;
   showToast: Toast;
 }

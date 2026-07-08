@@ -2,7 +2,7 @@
  * useTransitAudioEffect（自 bundle 抽出的 useEffect，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetState, TransitResource } from "../lib/app-types";
 import { wanjuanBuildGeneratedVideoResourcesFromNodes, wanjuanCollectResourceSignatures } from "../lib/resource";
 declare const chrome: any;
 
@@ -11,8 +11,8 @@ interface UseTransitAudioEffectDeps {
   activeView: any;
   isPluginEnv: boolean;
   localforageModule: any;
-  setTransitResources: SetAny;
-  transitResources: any;
+  setTransitResources: SetState<TransitResource[]>;
+  transitResources: TransitResource[];
 }
 
 export function useTransitAudioEffect(deps: UseTransitAudioEffectDeps) {

@@ -3,7 +3,7 @@
  * refreshGlobalTask。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, Toast } from "../lib/app-types";
 import { WanJuanSunoHeaders, WanJuanSunoTaskFailed, WanJuanSunoTaskSucceeded, WanJuanTtsMusicApiUrl, WanJuanTtsMusicExtractAudio, WanJuanTtsMusicExtractClipId, WanJuanTtsMusicExtractTaskId, WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
@@ -18,12 +18,12 @@ interface UseRefreshGlobalTaskDeps {
   audioApiUrl: any;
   imageApiKey: any;
   imageApiUrl: any;
-  imageModelApiBindings: Bindings;
+  imageModelApiBindings: ApiBindings;
   showToast2: Toast;
   updateGlobalTasks: any;
   videoApiKey: any;
   videoApiUrl: any;
-  videoModelApiBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
   globalTasks: any;
 }
 

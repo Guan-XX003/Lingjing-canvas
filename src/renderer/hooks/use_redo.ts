@@ -2,18 +2,18 @@
  * redo。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Ref, SetAny } from "../lib/app-types";
+import type { Ref, SetAny, SetState, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseRedoDeps {
   historyIndex: any;
   historyIndexRef: Ref;
   isRestoringRef: Ref;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setHistoryIndex: SetAny;
-  setNodes: SetAny;
-  edges: any[];
+  setNodes: SetState<WjNode[]>;
+  edges: WjEdge[];
   history: any;
-  nodes: any[];
+  nodes: WjNode[];
 }
 
 export function use_redo(deps: UseRedoDeps) {

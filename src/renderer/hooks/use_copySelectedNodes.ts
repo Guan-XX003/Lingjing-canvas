@@ -2,18 +2,18 @@
  * copySelectedNodes。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { Ref, SetAny, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { wanjuanCloneNodeDataForClipboard } from "../lib/video-task";
 
 interface UseCopySelectedNodesDeps {
-  edgesRef: Ref;
+  edgesRef: Ref<WjEdge[]>;
   menuPosition: any;
-  nodesRef: Ref;
+  nodesRef: Ref<WjNode[]>;
   projectIdRef: Ref;
   setMenuPosition: SetAny;
   showToast: Toast;
-  edges: any[];
-  nodes: any[];
+  edges: WjEdge[];
+  nodes: WjNode[];
 }
 
 export function use_copySelectedNodes(deps: UseCopySelectedNodesDeps) {

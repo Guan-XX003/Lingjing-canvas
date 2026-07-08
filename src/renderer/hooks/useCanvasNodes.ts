@@ -2,10 +2,11 @@
  * wanjuanCanvasNodes。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
+import type { WjNode } from "../lib/app-types";
 
 interface UseCanvasNodesDeps {
   WanJuanComputeNodeRenderMode: any;
-  nodes: any[];
+  nodes: WjNode[];
   useMemo: any;
   wanjuanSelectedReferenceSourcesByTarget: any;
   wanjuanViewport: any;

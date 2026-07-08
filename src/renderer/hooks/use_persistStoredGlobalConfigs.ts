@@ -2,14 +2,14 @@
  * persistStoredGlobalConfigs。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny } from "../lib/app-types";
+import type { SetAny, SetState, StoredGlobalConfig } from "../lib/app-types";
 declare const chrome: any;
 
 interface UsePersistStoredGlobalConfigsDeps {
   activeStoredGlobalConfigId: any;
   setActiveStoredGlobalConfigId: SetAny;
-  setStoredGlobalConfigs: SetAny;
-  storedGlobalConfigs: any;
+  setStoredGlobalConfigs: SetState<StoredGlobalConfig[]>;
+  storedGlobalConfigs: StoredGlobalConfig[];
 }
 
 export function use_persistStoredGlobalConfigs(deps: UsePersistStoredGlobalConfigsDeps) {

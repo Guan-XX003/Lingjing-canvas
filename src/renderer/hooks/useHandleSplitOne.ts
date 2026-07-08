@@ -2,16 +2,16 @@
  * handleSplitOne。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseHandleSplitOneDeps {
-  getEdges: () => any[];
-  getNodes: () => any[];
+  getEdges: () => WjEdge[];
+  getNodes: () => WjNode[];
   handleCrop: any;
   openImageEditor: any;
   openImagePreview: any;
-  setEdges: SetAny;
-  setNodes: SetAny;
+  setEdges: SetState<WjEdge[]>;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
 }
 

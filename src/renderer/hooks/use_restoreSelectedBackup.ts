@@ -3,6 +3,7 @@
  * restoreSelectedBackup。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
+import type { TransitResource } from "../lib/app-types";
 import { buildBackupRestoreReport, cloneBackupValue, extractProjectPortableDataRefs, normalizeBackupSettingsSections, normalizeProjectLocalforagePayload } from "../lib/backup";
 import { buildProjectMediaFileUrl } from "../lib/resource";
 import { mergeTransitResourceEntries } from "../lib/app-root-helpers";
@@ -25,7 +26,7 @@ interface UseRestoreSelectedBackupDeps {
   projectGroups: any;
   projects: any;
   selectedAgentId: any;
-  transitResources: any;
+  transitResources: TransitResource[];
 }
 
 export function use_restoreSelectedBackup(deps: UseRestoreSelectedBackupDeps) {

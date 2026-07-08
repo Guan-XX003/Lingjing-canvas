@@ -3,7 +3,7 @@
  * useSafeEffect18（自 bundle 抽出的后置 useEffect，无组件级前向引用，行为不变）。
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import type { Ref, SetAny } from "../lib/app-types";
+import type { Ref, SetState, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseSafeEffect18Deps {
   e: any;
@@ -14,10 +14,10 @@ interface UseSafeEffect18Deps {
   groupSelectedNodes: any;
   handlePaste: any;
   menuPosition: any;
-  nodesRef: Ref;
+  nodesRef: Ref<WjNode[]>;
   redo: any;
-  setEdges: SetAny;
-  setNodes: SetAny;
+  setEdges: SetState<WjEdge[]>;
+  setNodes: SetState<WjNode[]>;
   stopGeneration: any;
 }
 

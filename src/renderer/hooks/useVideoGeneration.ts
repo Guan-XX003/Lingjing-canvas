@@ -3,7 +3,7 @@
  * 视频生成（generateVideo）。自 bundle(WanJuanAppCanvas) 抽出的自定义 hook，逻辑逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
@@ -20,29 +20,29 @@ interface UseVideoGenerationDeps {
   videoModel: any;
   videoDurations: any;
   apiConfigs: ApiConfig[];
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   videoModelRequestProfiles: any;
   seedanceUploadMode: any;
   tosConfig: any;
   customPublicUploadConfig: any;
   planLimits: any;
   showToast: Toast;
-  getNodes: () => any[];
-  getEdges: () => any[];
-  setNodes: SetAny;
+  getNodes: () => WjNode[];
+  getEdges: () => WjEdge[];
+  setNodes: SetState<WjNode[]>;
   addGeneratedAsset: any;
   membership: any;
   abortControllersRef: Ref;
   canvasStateKeyPrefix: any;
   localforageModule: any;
-  nodesRef: Ref;
+  nodesRef: Ref<WjNode[]>;
   pollIntervalMs: any;
   projectIdRef: Ref;
   qiniuConfig: any;
   setDailyGenerationCount: SetAny;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   timeoutSeconds: any;
   updateTaskList: any;
 }

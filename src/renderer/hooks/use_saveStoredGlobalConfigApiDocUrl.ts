@@ -2,13 +2,13 @@
  * saveStoredGlobalConfigApiDocUrl。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetAny, StoredGlobalConfig, Toast } from "../lib/app-types";
 
 interface UseSaveStoredGlobalConfigApiDocUrlDeps {
   persistStoredGlobalConfigs: any;
   setConfigButlerDocUrl: SetAny;
   showToast2: Toast;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
   configButlerDocUrl: any;
 }
 

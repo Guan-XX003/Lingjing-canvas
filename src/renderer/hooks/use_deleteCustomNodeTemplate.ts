@@ -2,13 +2,13 @@
  * deleteCustomNodeTemplate。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { SetAny, Toast } from "../lib/app-types";
+import type { SetState, Toast, WjEdge } from "../lib/app-types";
 declare const chrome: any;
 
 interface UseDeleteCustomNodeTemplateDeps {
-  edges: any[];
+  edges: WjEdge[];
   isPluginEnv: boolean;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   showToast2: Toast;
 }
 

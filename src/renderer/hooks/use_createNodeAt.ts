@@ -3,7 +3,7 @@
  * createNodeAt。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseCreateNodeAtDeps {
   createImageNode: any;
@@ -16,14 +16,14 @@ interface UseCreateNodeAtDeps {
   handleSplit: any;
   handleSplitOne: any;
   handleTianjiPortraitReview: any;
-  nodesRef: Ref;
+  nodesRef: Ref<WjNode[]>;
   openImageEditor: any;
   openImagePreview: any;
   openVideoEditor: any;
   projectIdRef: Ref;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setMenuPosition: SetAny;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   stopGeneration: any;
   addCustomNode: any;
   addGeneratedAsset: any;
@@ -31,14 +31,14 @@ interface UseCreateNodeAtDeps {
   audioApiKey: any;
   audioApiUrl: any;
   audioModel: any;
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   customPublicUploadConfig: any;
   drawingModel: any;
   imageCompatResolutions: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   presetPrompts: any;
   projectId: any;
   qiniuConfig: any;
@@ -54,8 +54,8 @@ interface UseCreateNodeAtDeps {
   sendToActiveTab: any;
   showToast: Toast;
   textModel: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   tianjiSeedanceModel: any;
   tongyiWanxiangDurations: any;
   tongyiWanxiangEditModels: any;
@@ -70,8 +70,8 @@ interface UseCreateNodeAtDeps {
   videoAspectRatios: any;
   videoDurations: any;
   videoModel: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoModelRequestProfiles: any;
   videoResolutions: any;
 }

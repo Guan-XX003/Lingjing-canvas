@@ -2,13 +2,13 @@
  * saveCurrentAsStoredGlobalConfig。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Toast } from "../lib/app-types";
+import type { StoredGlobalConfig, Toast } from "../lib/app-types";
 
 interface UseSaveCurrentAsStoredGlobalConfigDeps {
   captureCurrentGlobalConfig: any;
   persistStoredGlobalConfigs: any;
   showToast2: Toast;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
 }
 
 export function use_saveCurrentAsStoredGlobalConfig(deps: UseSaveCurrentAsStoredGlobalConfigDeps) {

@@ -3,13 +3,13 @@
  * stopGeneration。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { Ref, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseStopGenerationDeps {
   abortControllersRef: Ref;
-  nodesRef: Ref;
-  setEdges: SetAny;
-  setNodes: SetAny;
+  nodesRef: Ref<WjNode[]>;
+  setEdges: SetState<WjEdge[]>;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
   updateTaskList: any;
 }

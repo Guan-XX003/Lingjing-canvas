@@ -2,7 +2,7 @@
  * applyStoredGlobalConfig。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { wanjuanNormalizeSeedanceVirtualPortraits } from "../lib/seedance";
 declare const chrome: any;
@@ -68,14 +68,14 @@ interface UseApplyStoredGlobalConfigDeps {
   setVideoModels: SetAny;
   setVideoResolutions: SetAny;
   showToast2: Toast;
-  storedGlobalConfigs: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
   activeStoredGlobalConfigId: any;
   apiConfigs: ApiConfig[];
   audioApiConfigId: any;
   audioApiKey: any;
   audioApiUrl: any;
-  audioModelApiBindings: Bindings;
-  audioModelProtocolBindings: Bindings;
+  audioModelApiBindings: ApiBindings;
+  audioModelProtocolBindings: ProtocolBindings;
   configButlerDocUrl: any;
   configButlerMode: any;
   configButlerTargetApiConfigId: any;
@@ -84,9 +84,9 @@ interface UseApplyStoredGlobalConfigDeps {
   imageApiKey: any;
   imageApiUrl: any;
   imageCompatResolutions: any;
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   seedanceDurations: any;
   seedanceEnableWebSearch: any;
   seedanceGenerateAudio: any;
@@ -98,8 +98,8 @@ interface UseApplyStoredGlobalConfigDeps {
   textApiConfigId: any;
   textApiKey: any;
   textApiUrl: any;
-  textModelApiBindings: Bindings;
-  textModelProtocolBindings: Bindings;
+  textModelApiBindings: ApiBindings;
+  textModelProtocolBindings: ProtocolBindings;
   tianjiSeedanceModel: any;
   tongyiWanxiangDurations: any;
   tongyiWanxiangEditModels: any;
@@ -114,8 +114,8 @@ interface UseApplyStoredGlobalConfigDeps {
   videoApiUrl: any;
   videoAspectRatios: any;
   videoDurations: any;
-  videoModelApiBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  videoModelApiBindings: ApiBindings;
+  videoModelProtocolBindings: ProtocolBindings;
   videoResolutions: any;
 }
 

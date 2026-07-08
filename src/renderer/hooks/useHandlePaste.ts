@@ -2,7 +2,7 @@
  * handlePaste。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Ref, SetAny, Toast } from "../lib/app-types";
+import type { Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { wanjuanCloneNodeDataForClipboard } from "../lib/video-task";
 
 interface UseHandlePasteDeps {
@@ -14,9 +14,9 @@ interface UseHandlePasteDeps {
   openImagePreview: any;
   projectIdRef: Ref;
   screenToFlowPosition: any;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   setMenuPosition: SetAny;
-  setNodes: SetAny;
+  setNodes: SetState<WjNode[]>;
   showToast: Toast;
   wrapperRef: Ref;
 }

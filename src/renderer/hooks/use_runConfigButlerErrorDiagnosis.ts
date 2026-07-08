@@ -3,7 +3,7 @@
  * runConfigButlerErrorDiagnosis。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny } from "../lib/app-types";
+import type { ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, StoredGlobalConfig } from "../lib/app-types";
 import { buildConfigButlerToolContext, buildLocalConfigButlerErrorDiagnosis, formatConfigButlerToolContext, inferButlerCategoryFromModelName, normalizeButlerBaseUrl, normalizeConfigButlerDiagnosis, normalizeModelCategory, validateAndRepairConfigButlerResult } from "../lib/config-butler";
 import { extractJsonBlock } from "../lib/app-utils";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
@@ -11,16 +11,16 @@ import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 interface UseRunConfigButlerErrorDiagnosisDeps {
   activeStoredGlobalConfigId: any;
   apiConfigs: ApiConfig[];
-  audioModelProtocolBindings: Bindings;
+  audioModelProtocolBindings: ProtocolBindings;
   callConfigButlerModel: any;
   configButlerDocUrl: any;
   configButlerErrorAssistantInFlightRef: Ref;
-  imageModelProtocolBindings: Bindings;
-  modelProtocolRegistry: Bindings;
+  imageModelProtocolBindings: ProtocolBindings;
+  modelProtocolRegistry: ProtocolRegistry;
   setConfigButlerErrorAssistant: SetAny;
-  storedGlobalConfigs: any;
-  textModelProtocolBindings: Bindings;
-  videoModelProtocolBindings: Bindings;
+  storedGlobalConfigs: StoredGlobalConfig[];
+  textModelProtocolBindings: ProtocolBindings;
+  videoModelProtocolBindings: ProtocolBindings;
 }
 
 export function use_runConfigButlerErrorDiagnosis(deps: UseRunConfigButlerErrorDiagnosisDeps) {

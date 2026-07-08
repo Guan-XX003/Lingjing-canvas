@@ -2,10 +2,10 @@
  * ensureUniqueProtocolName。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { Bindings } from "../lib/app-types";
+import type { ProtocolRegistry } from "../lib/app-types";
 
 interface UseEnsureUniqueProtocolNameDeps {
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
 }
 
 export function use_ensureUniqueProtocolName(deps: UseEnsureUniqueProtocolNameDeps) {

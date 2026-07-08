@@ -2,14 +2,14 @@
  * layeredRunDownstream。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { Toast } from "../lib/app-types";
+import type { Toast, WjEdge, WjNode } from "../lib/app-types";
 
 interface UseLayeredRunDeps {
   generateImage: any;
   generateText: any;
   generateVideo: any;
-  getEdges: () => any[];
-  getNodes: () => any[];
+  getEdges: () => WjEdge[];
+  getNodes: () => WjNode[];
   handleGenerateCustom: any;
   layeredRunMaxConcurrency: any;
   resolveVideoRunModel: any;
@@ -188,7 +188,7 @@ export function useLayeredRun(deps: UseLayeredRunDeps) {
                   sourceIds.every((sourceId) => completedNodes.has(sourceId))
                 );
               })
-              .sort((firstId, secondId) => nodeIds.indexOf(firstId) - nodeIds.indexOf(secondId));
+              .sort((firstId: any, secondId: any) => nodeIds.indexOf(firstId) - nodeIds.indexOf(secondId));
             if (readyNodes.length === 0) {
               let remainingNodes = [...visited].filter((nodeId) => !completedNodes.has(nodeId) && !failedNodes.has(nodeId));
               remainingNodes.length > 0 &&

@@ -3,7 +3,7 @@
  * 图片生成（generateImage）。自 bundle(WanJuanAppCanvas) 抽出，逻辑逐字搬运、行为不变。
  */
 import { useCallback } from "react";
-import type { ApiConfig, Bindings, Ref, SetAny, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildProjectMediaFileUrl, wanjuanResourceKind, wanjuanResourceMediaUrl } from "../lib/resource";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNodeTextValue, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { parseSeedanceList, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
@@ -16,17 +16,17 @@ interface UseImageGenerationDeps {
   propImageApiUrl: any;
   drawingModel: any;
   apiConfigs: ApiConfig[];
-  imageModelApiBindings: Bindings;
-  imageModelProtocolBindings: Bindings;
+  imageModelApiBindings: ApiBindings;
+  imageModelProtocolBindings: ProtocolBindings;
   planLimits: any;
   showToast: Toast;
-  getNodes: () => any[];
-  getEdges: () => any[];
-  setNodes: SetAny;
+  getNodes: () => WjNode[];
+  getEdges: () => WjEdge[];
+  setNodes: SetState<WjNode[]>;
   addGeneratedAsset: any;
   membership: any;
   updateTaskList: any;
-  modelProtocolRegistry: Bindings;
+  modelProtocolRegistry: ProtocolRegistry;
   propTextApiUrl: any;
   propTextApiKey: any;
   textModel: any;
@@ -35,7 +35,7 @@ interface UseImageGenerationDeps {
   localforageModule: any;
   projectIdRef: Ref;
   setDailyGenerationCount: SetAny;
-  setEdges: SetAny;
+  setEdges: SetState<WjEdge[]>;
   timeoutSeconds: any;
 }
 
