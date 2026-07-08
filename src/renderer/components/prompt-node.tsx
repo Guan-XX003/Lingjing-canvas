@@ -88,7 +88,7 @@ export const WanJuanPromptNode = reactMemo(({
       nextModel &&
         !WanJuanSameModelId(nextModel, currentModel) &&
         ((wanjuanModelManualRef.current = !1),
-          useNodesState(nextModel),
+          te(nextModel),
           updateNodeData(nodeId, {
             selectedModel: nextModel,
             wanjuanModelAuto: !0,
@@ -101,7 +101,7 @@ export const WanJuanPromptNode = reactMemo(({
 	          setImageSize(data.imageSize || `1K`),
 	          setImageSizeMode(data.imageSizeMode || `quality`),
 	          setImageResolution(data.imageResolution || ``),
-          data.selectedModel && useNodesState(data.selectedModel),
+          data.selectedModel && te(data.selectedModel),
           data.selectedContextResources && setSelectedContextResources(data.selectedContextResources));
       }, [
         data.prompt,
@@ -973,7 +973,7 @@ export const WanJuanPromptNode = reactMemo(({
 	                                      border: selectedModel === model ? `1px solid currentColor` : `1px solid transparent`,
 	                                    },
                                     onClick: () => {
-                                      (useNodesState(model),
+                                      (te(model),
                                         updateNodeData(nodeId, {
                                           selectedModel: model,
                                           wanjuanModelAuto: !1,
