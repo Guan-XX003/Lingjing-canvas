@@ -2412,7 +2412,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     imageReferences.map((reference) =>
                       (async () => {
                         let referenceUrl = typeof reference === `string` ? reference : reference?.url || ``,
-                          imageUrl = referenceImagesAsUrls ?
+                          imageUrl = referenceImagesAsUrls || (referenceUrl && !/^(https?:|data:)/i.test(referenceUrl)) ?
                           await uploadReferenceMediaForUrlOnlyModel(referenceUrl, `image`) :
                           referenceUrl,
                           itemShape =
@@ -2429,7 +2429,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   (() => {
                     let itemShape = effectiveVideoRequestProfile?.referenceImageItemShape || ``,
                       firstReferenceUrl = typeof imageReferences[0] === `string` ? imageReferences[0] : imageReferences[0]?.url || ``;
-                    if (referenceImagesAsUrls)
+                    if (referenceImagesAsUrls || (firstReferenceUrl && !/^(https?:|data:)/i.test(firstReferenceUrl)))
                       return uploadReferenceMediaForUrlOnlyModel(firstReferenceUrl, `image`).then((imageUrl) =>
                         itemShape === `image_url_object` ? {
                           image_url: imageUrl
