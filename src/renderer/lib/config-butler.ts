@@ -825,6 +825,25 @@ export const buildConfigButlerToolContext = (docText, sourceUrl, modelInfo: any 
         );
       };
 
+export const specializeConfigButlerToolContext = (toolContext, modelInfo: any = {}) => {
+        if (!toolContext || typeof toolContext != `object`) return toolContext;
+        let target = {
+            ...(toolContext.target || {}),
+            modelName: modelInfo.modelName || toolContext.target?.modelName || ``,
+            category: normalizeModelCategory(modelInfo.category) || modelInfo.category || toolContext.target?.category || ``,
+            apiUrl: modelInfo.apiUrl || toolContext.target?.apiUrl || ``,
+          },
+          summary = {
+            ...(toolContext.openApi || {}),
+            curlExamples: toolContext.curlExamples || [],
+          };
+        return {
+          ...toolContext,
+          target: target,
+          inferredRequestType: inferButlerProtocolFromTools(summary, target),
+        };
+      };
+
 export const formatConfigButlerToolContext = (toolResult) => {
         if (!toolResult) return `未提取到结构化工具结果`;
         let endpointLines = toolResult.openApi?.endpointLines || [],
@@ -1155,9 +1174,10 @@ export const probeButlerProtocol = async (config, modelInfo: any = {}, apiUrl = 
             isPathErr = response.status === 404 || /not found|无效的?\s*(url|路径|endpoint)|invalid url/i.test(errMsg),
             isAuthErr = response.status === 401 || response.status === 403 || /无效的?令牌|invalid (api )?key|unauthorized|令牌/i.test(errMsg),
             requestSucceeded = response.ok && !errMsg;
-          return {
-            probed: true,
-            requestSucceeded,
+	          return {
+	            probed: true,
+	            ok: requestSucceeded,
+	            requestSucceeded,
             status: response.status,
             submitPath,
             errorMessage: errMsg.slice(0, 200),
@@ -1960,8 +1980,14 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 	          modelList.forEach((modelItem) => {
 	            let modelName = String(modelItem?.modelName || modelItem?.name || modelItem?.id || modelItem?.model || ``).trim();
 	            if (!modelName) return;
-	            let category = normalizeModelCategory(modelItem?.category) || inferButlerCategoryFromModelName(modelName),
-	              repairedConfig = validateAndRepairConfigButlerResult({
+            let category = normalizeModelCategory(modelItem?.category) || inferButlerCategoryFromModelName(modelName),
+              inferenceSource = modelItem?.inferenceSource || (modelItem?.protocol?.config ? `model` : `fallback`),
+              itemToolContext = specializeConfigButlerToolContext(options.toolContext || null, {
+                modelName: modelName,
+                category: category,
+                apiUrl: options.apiUrl || modelItem?.apiConfig?.url || ``,
+              }),
+              repairedConfig = validateAndRepairConfigButlerResult({
 		                ...modelItem,
 		                modelName: modelName,
 		                category: category,
@@ -1974,8 +2000,8 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 		                modelName: modelName,
 		                category: category,
 		                apiUrl: options.apiUrl || modelItem?.apiConfig?.url || ``,
-	                toolContext: options.toolContext || null,
-	              });
+		                toolContext: itemToolContext,
+		              });
 	            modelMap.set(modelName, {
 	              id: `${modelName}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
 	              modelName: modelName,
@@ -1985,6 +2011,8 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 	              notes: repairedConfig.notes || modelItem?.notes || ``,
 	              validation: repairedConfig.validation,
 	              dryRun: repairedConfig.dryRun,
+	              inferenceSource: inferenceSource,
+	              enabled: modelItem?.enabled !== undefined ? modelItem.enabled === true && repairedConfig.validation?.ok !== false : repairedConfig.validation?.ok !== false && inferenceSource !== `fallback`,
 	            });
 	          });
 	          modelNames.forEach((modelName) => {
@@ -1993,6 +2021,11 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 		                apiUrl: options.apiUrl || ``,
 		              }),
 		              category = inferButlerCategoryFromModelName(modelName),
+		              itemToolContext = specializeConfigButlerToolContext(options.toolContext || null, {
+		                modelName: modelName,
+		                category: category,
+		                apiUrl: options.apiUrl || ``,
+		              }),
 	              repairedConfig = validateAndRepairConfigButlerResult({
 	                modelName: modelName,
 	                category: category,
@@ -2001,7 +2034,7 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 	                modelName: modelName,
 	                category: category,
 	                apiUrl: options.apiUrl || ``,
-	                toolContext: options.toolContext || null,
+	                toolContext: itemToolContext,
 	              });
 	            modelMap.set(modelName, {
 	              id: `${modelName}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -2012,6 +2045,8 @@ export const normalizeButlerBatchItems = (payload, modelNames, options: any = {}
 	              notes: `未在配置管家结果中找到，已按模型名生成基础兼容配置${repairedConfig.notes ? `\n${repairedConfig.notes}` : ``}`,
 	              validation: repairedConfig.validation,
 	              dryRun: repairedConfig.dryRun,
+	              inferenceSource: `fallback`,
+	              enabled: false,
 	            });
 	          });
 	          return [...modelMap.values()];

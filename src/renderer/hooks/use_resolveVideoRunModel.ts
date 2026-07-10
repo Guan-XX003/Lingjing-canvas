@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * resolveVideoRunModel。自 bundle 抽出，逐字搬运、行为不变。
  */
@@ -16,7 +15,7 @@ export function use_resolveVideoRunModel(deps: UseResolveVideoRunModelDeps) {
     tianjiSeedanceModel,
     videoModel,
   } = deps;
-  const resolveVideoRunModel = (nodeData = {}, nodeType = ``) => {
+  const resolveVideoRunModel = (nodeData: Record<string, any> = {}, nodeType = ``) => {
 	      let modelText =
 	          nodeType === `seedanceNode` ?
 	          nodeData.seedanceMode === `tianji` ?

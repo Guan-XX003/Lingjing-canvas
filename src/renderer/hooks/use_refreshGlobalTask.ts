@@ -581,7 +581,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                             ),
                           ),
                           task.nodeId &&
-                          setNodes((nodes) =>
+                          Send((nodes) =>
                             nodes.map((node) =>
                               node.id === task.nodeId ?
                               {
@@ -925,7 +925,26 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                               parseInt(data.content.progress) :
                               progress || 0));
                       } else {
-                        let statusText = String(
+                        let readRespPath = (source, path) => {
+                            let trimmedPath = String(path || ``).trim();
+                            if (!trimmedPath) return undefined;
+                            return trimmedPath.split(`.`).reduce((cur, seg) => {
+                              if (cur == null) return undefined;
+                              let arrayIndexMatch = seg.match(/^(.+)\[(\d+)\]$/);
+                              return arrayIndexMatch ? cur?.[arrayIndexMatch[1]]?.[Number(arrayIndexMatch[2])] : /^\d+$/.test(seg) ? cur?.[Number(seg)] : cur?.[seg];
+                            }, source);
+                          },
+                          videoRespMapping = requestProfile.responseMapping && typeof requestProfile.responseMapping == `object` ? requestProfile.responseMapping : {},
+                          mappedVideoUrl = (() => {
+                            let paths = videoRespMapping.video || videoRespMapping.videoUrl || videoRespMapping.video_url || videoRespMapping.url || videoRespMapping.resultUrl;
+                            paths = Array.isArray(paths) ? paths : paths ? [paths] : [];
+                            for (let responsePath of paths) {
+                              let resolvedValue = readRespPath(data, responsePath);
+                              if (typeof resolvedValue == `string` && resolvedValue.trim()) return resolvedValue.replace(/[`\s]/g, ``);
+                            }
+                            return ``;
+                          })(),
+                          statusText = String(
                           data.status ||
                           data.data?.status ||
                           data.output?.status ||
@@ -937,9 +956,11 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           .trim()
                           .toLowerCase(),
                           videoUrl =
+                          mappedVideoUrl ||
                           (
                             data.video_url ||
                             data.videoUrl ||
+                            data.data?.result_url ||
                             data.data?.video_url ||
                             data.data?.videoUrl ||
                             data.output?.video_url ||
@@ -1043,7 +1064,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                         isCompleted &&
                         resultUrl &&
                         (task.nodeId &&
-                          setNodes((nodes) =>
+                          Send((nodes) =>
                             nodes.map((node) =>
                               node.id === task.nodeId ?
                               {

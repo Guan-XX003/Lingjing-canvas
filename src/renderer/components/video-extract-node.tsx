@@ -7,6 +7,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import { NodeResizer, Position, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { CircleAlert, CirclePlay, Copy, Film, Image, RefreshCw, Settings2, Upload } from "lucide-react";
 import { WanJuanNodeHandle, WanJuanUseThrottledNodeDataUpdate } from "./render-mode";
+import { buildProjectMediaFileUrl } from "../lib/resource";
 
 export const WanJuanVideoExtractNode = reactMemo(({
       id: nodeId,
@@ -27,6 +28,10 @@ export const WanJuanVideoExtractNode = reactMemo(({
         [intervalSec, setIntervalSec] = useState(data.intervalSec || 2),
         [_, setFrameCount] = useState(data.frameCount || 9),
         [sensitivity, setSensitivity] = useState(data.sensitivity || 30),
+        [framePage, setFramePage] = useState(0),
+        frameGridViewportRef = useRef<HTMLDivElement | null>(null),
+        [frameGridSize, setFrameGridSize] = useState({ width: 0, height: 0 }),
+        [frameGridScrollTop, setFrameGridScrollTop] = useState(0),
         [hiddenIndices] = useState(data.hiddenIndices || []);
       useEffect(() => {
         updateNodeData(nodeId, {
@@ -39,6 +44,9 @@ export const WanJuanVideoExtractNode = reactMemo(({
       }, [mode, intervalSec, _, sensitivity, hiddenIndices, nodeId, updateNodeData]);
       let connections = useNodeConnections({
           handleType: `target`
+        }),
+        sourceConnections = useNodeConnections({
+          handleType: `source`
         }),
         sourceData = useNodesData(useMemo(() => connections.map((connection) => connection.source), [connections])),
         lastVideoUrlRef = useRef(``);
@@ -196,7 +204,25 @@ export const WanJuanVideoExtractNode = reactMemo(({
                   ((width = Math.round((width * 800) / height)), (height = 800))),
                 (canvas.width = width),
                 (canvas.height = height));
-              let captureFrame = async (time) =>
+              let persistCapturedFrame = async (dataUrl, frameIndex) => {
+                  if (!window.wanjuanDesktop?.persistProjectAsset) return dataUrl;
+                  try {
+                    let persisted = await window.wanjuanDesktop.persistProjectAsset({
+                      url: dataUrl,
+                      projectId: globalThis.__wanjuanCurrentProjectId || `default`,
+                      nodeId,
+                      field: `extracted-frame-${frameIndex}`,
+                      kind: `image`,
+                      filename: `frame-${String(frameIndex + 1).padStart(4, `0`)}.jpg`,
+                      mime: `image/jpeg`,
+                      directory: ``,
+                    });
+                    return persisted?.ok && persisted.localPath ? buildProjectMediaFileUrl(persisted.localPath) : dataUrl;
+                  } catch {
+                    return dataUrl;
+                  }
+                },
+                captureFrame = async (time) =>
                 new Promise((resolve: any) => {
                   let onSeeked = () => {
                     (videoEl.removeEventListener(`seeked`, onSeeked),
@@ -256,7 +282,8 @@ export const WanJuanVideoExtractNode = reactMemo(({
                 wanjuanThrottledUpdateNodeData({
                   progress: 50 + Math.round((frameIndex / timestamps.length) * 50)
                 });
-                let frame = await captureFrame(timestamps[frameIndex]);
+                let capturedFrame = await captureFrame(timestamps[frameIndex]),
+                  frame = await persistCapturedFrame(capturedFrame, frameIndex);
                 (frames.push(frame), wanjuanThrottledUpdateNodeData({
                   extractedImages: [...frames]
                 }));
@@ -304,6 +331,44 @@ export const WanJuanVideoExtractNode = reactMemo(({
               nodeData.onShowToast?.(`复制失败`);
             }
           };
+      let allFrames = Array.isArray(nodeData.allExtractedImages) ? nodeData.allExtractedImages : [],
+        framePageSize = 60,
+        framePageCount = Math.max(1, Math.ceil(allFrames.length / framePageSize)),
+        safeFramePage = Math.min(framePage, framePageCount - 1),
+        visibleFrameEntries = allFrames
+          .map((imageSrc, index) => ({ imageSrc, index }))
+          .filter((entry) => !hiddenIndices.includes(entry.index))
+          .slice(safeFramePage * framePageSize, (safeFramePage + 1) * framePageSize),
+        frameGridGap = 8,
+        frameGridColumns = Math.max(1, Math.floor((Math.max(90, frameGridSize.width) + frameGridGap) / 98)),
+        frameGridCellWidth = Math.max(72, (Math.max(90, frameGridSize.width) - frameGridGap * (frameGridColumns - 1)) / frameGridColumns),
+        frameGridCellHeight = frameGridCellWidth * 9 / 16,
+        frameGridRowHeight = frameGridCellHeight + frameGridGap,
+        frameGridRowCount = Math.ceil(visibleFrameEntries.length / frameGridColumns),
+        frameGridStartRow = Math.max(0, Math.floor(frameGridScrollTop / frameGridRowHeight) - 2),
+        frameGridEndRow = Math.min(frameGridRowCount, Math.ceil((frameGridScrollTop + Math.max(120, frameGridSize.height)) / frameGridRowHeight) + 2),
+        virtualFrameEntries = visibleFrameEntries.slice(frameGridStartRow * frameGridColumns, frameGridEndRow * frameGridColumns),
+        renderedFrameIndices = new Set(virtualFrameEntries.map((entry) => entry.index)),
+        connectedFrameIndices = Array.from(new Set(sourceConnections
+          .map((connection) => String(connection.sourceHandle || ``).match(/^frame-(\d+)$/)?.[1])
+          .filter((index): index is string => index !== void 0)
+          .map(Number))),
+        hiddenConnectedFrameIndices = connectedFrameIndices.filter((index) => !renderedFrameIndices.has(index));
+      useEffect(() => {
+        const viewport = frameGridViewportRef.current;
+        if (!viewport) return;
+        const updateSize = () => setFrameGridSize({ width: viewport.clientWidth, height: viewport.clientHeight });
+        updateSize();
+        const observer = new ResizeObserver(updateSize);
+        observer.observe(viewport);
+        return () => observer.disconnect();
+      }, [safeFramePage, allFrames.length]);
+      useEffect(() => {
+        const viewport = frameGridViewportRef.current;
+        if (!viewport) return;
+        viewport.scrollTop = 0;
+        setFrameGridScrollTop(0);
+      }, [safeFramePage]);
       return jsxs(`div`, {
         className: `relative group/node w-full h-full min-w-[280px] min-h-[220px]`,
         children: [
@@ -363,7 +428,7 @@ export const WanJuanVideoExtractNode = reactMemo(({
                 className: `flex-1 flex flex-col overflow-hidden relative`,
                 children: [
                   jsx(`div`, {
-                    className: `flex-1 bg-[#111] p-2 overflow-y-auto relative border-b border-[#2a2a2a] custom-scrollbar`,
+                    className: `flex-1 bg-[#111] p-2 overflow-hidden relative border-b border-[#2a2a2a]`,
                     children: nodeData.errorMessage ?
                       jsxs(`div`, {
                         className: `flex flex-col items-center justify-center h-full gap-2 text-red-400 p-4 text-center`,
@@ -381,27 +446,56 @@ export const WanJuanVideoExtractNode = reactMemo(({
                       jsxs(`div`, {
                         className: `flex flex-col h-full gap-2`,
                         children: [
-                          jsx(`div`, {
+                          jsxs(`div`, {
                             className: `flex justify-between items-center px-1`,
-                            children: jsxs(`span`, {
-                              className: `text-[10px] text-gray-400`,
-                              children: [
-                                `已提取 `,
-                                nodeData.allExtractedImages.length,
-                                ` 帧 (当前生效 `,
-                                nodeData.extractedImages?.length || 0,
-                                ` 帧)`,
-                              ],
-                            }),
+                            children: [
+                              jsx(`span`, {
+                                className: `text-[10px] text-gray-400`,
+                                children: `已提取 ${nodeData.allExtractedImages.length} 帧 (当前生效 ${nodeData.extractedImages?.length || 0} 帧)`,
+                              }),
+                              framePageCount > 1 && jsxs(`div`, {
+                                className: `flex items-center gap-1 text-[9px] text-gray-500`,
+                                children: [
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    disabled: safeFramePage <= 0,
+                                    onClick: (event) => { event.stopPropagation(); setFramePage(Math.max(0, safeFramePage - 1)); },
+                                    className: `px-1.5 py-0.5 rounded border border-[#444] disabled:opacity-40`,
+                                    children: `上一页`,
+                                  }),
+                                  jsx(`span`, { children: `${safeFramePage + 1}/${framePageCount}` }),
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    disabled: safeFramePage >= framePageCount - 1,
+                                    onClick: (event) => { event.stopPropagation(); setFramePage(Math.min(framePageCount - 1, safeFramePage + 1)); },
+                                    className: `px-1.5 py-0.5 rounded border border-[#444] disabled:opacity-40`,
+                                    children: `下一页`,
+                                  }),
+                                ],
+                              }),
+                            ],
                           }),
                           jsx(`div`, {
-                            className: `grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2 auto-rows-max`,
-                            children: nodeData.allExtractedImages.map((imageSrc, index) =>
-                              hiddenIndices.includes(index) ?
-                              null :
-                              jsxs(
+                            ref: frameGridViewportRef,
+                            className: `flex-1 min-h-0 overflow-y-auto custom-scrollbar`,
+                            onScroll: (event) => setFrameGridScrollTop(event.currentTarget.scrollTop),
+                            children: jsx(`div`, {
+                              className: `relative w-full`,
+                              style: { height: `${Math.max(1, frameGridRowCount * frameGridRowHeight - frameGridGap)}px` },
+                              children: virtualFrameEntries.map(({ imageSrc, index }, virtualIndex) => {
+                                const pageIndex = frameGridStartRow * frameGridColumns + virtualIndex,
+                                  row = Math.floor(pageIndex / frameGridColumns),
+                                  column = pageIndex % frameGridColumns;
+                                return jsxs(
                                 `div`, {
                                   className: `aspect-video bg-black rounded border relative group/img border-[#333]`,
+                                  style: {
+                                    position: `absolute`,
+                                    left: `${column * (frameGridCellWidth + frameGridGap)}px`,
+                                    top: `${row * frameGridRowHeight}px`,
+                                    width: `${frameGridCellWidth}px`,
+                                    height: `${frameGridCellHeight}px`,
+                                  },
                                   children: [
                                     jsx(WanJuanNodeHandle, {
                                       type: `source`,
@@ -451,8 +545,9 @@ export const WanJuanVideoExtractNode = reactMemo(({
                                   ],
                                 },
                                 index,
-                              ),
-                            ),
+                              );
+                              }),
+                            }),
                           }),
                         ],
                       }) :
@@ -677,6 +772,18 @@ export const WanJuanVideoExtractNode = reactMemo(({
               }),
             ],
           }),
+          ...hiddenConnectedFrameIndices.map((index, anchorIndex) =>
+            jsx(`div`, {
+              className: `absolute right-0 w-px h-px opacity-0 pointer-events-none`,
+              style: { top: `${Math.min(90, 10 + anchorIndex * 5)}%` },
+              children: jsx(WanJuanNodeHandle, {
+                type: `source`,
+                position: Position.Right,
+                id: `frame-${index}`,
+                variant: `small`,
+              }),
+            }, `connected-frame-anchor-${index}`),
+          ),
         ],
       });
     });

@@ -3,7 +3,7 @@
  * 自 bundle 反混淆迁入，行为保持一致。
  */
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { BaseEdge, NodeToolbar, useReactFlow, getBezierPath } from "@xyflow/react";
+import { BaseEdge, NodeToolbar, useReactFlow, useStore, getBezierPath } from "@xyflow/react";
 
 export function WanJuanFlowEdge({
   id: id,
@@ -21,6 +21,7 @@ export function WanJuanFlowEdge({
   let {
     setEdges: setEdges
   } = useReactFlow(),
+    zoom = useStore((state: any) => state.transform[2]),
     [edgePath, labelX, labelY] = getBezierPath({
       sourceX: sourceX,
       sourceY: sourceY,
@@ -29,6 +30,20 @@ export function WanJuanFlowEdge({
       targetY: targetY,
       targetPosition: targetPosition,
     });
+  if (zoom < 0.48 && !selected) {
+    return jsx(BaseEdge, {
+      path: edgePath,
+      markerEnd,
+      interactionWidth: 12,
+      className: `wanjuan-flow-edge-lite`,
+      style: {
+        ...style,
+        stroke: `var(--wj-edge-main, #64748b)`,
+        strokeWidth: zoom < 0.2 ? 0.8 : 1.15,
+        opacity: zoom < 0.14 ? 0.38 : 0.62,
+      },
+    });
+  }
   return jsxs(Fragment, {
     children: [
       jsx(`path`, {

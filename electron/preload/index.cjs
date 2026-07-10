@@ -17,6 +17,14 @@ const { installChromeShim } = require("./chrome-shim.cjs");
 const { installDesktopFetchProxy, installFetchStabilityShim } = require("./fetch-proxy.cjs");
 const { installDesktopPatches } = require("./desktop-patches.cjs");
 
+if (process.env.WANJUAN_DEBUG === "1" && typeof document !== "undefined") {
+  const markDebugMode = () => {
+    if (document.documentElement) document.documentElement.dataset.wanjuanDebug = "1";
+  };
+  if (document.documentElement) markDebugMode();
+  else window.addEventListener("DOMContentLoaded", markDebugMode, { once: true });
+}
+
 // —— 启动期副作用（对应原文件行 3043-3055，顺序保持一致）——
 installDesktopFetchProxy();
 installFetchStabilityShim();

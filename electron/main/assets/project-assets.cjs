@@ -1,6 +1,7 @@
 // 项目素材管理：素材持久化、扫描匹配、外部素材导出/校验与清单注入。
 const fs = require("fs");
 const path = require("path");
+const { nativeImage } = require("../electron-refs.cjs");
 
 const {
   ensureExtname,
@@ -37,6 +38,29 @@ function writeFileAtomicSync(targetPath, buffer) {
     try {
       fs.rmSync(temporaryPath, { force: true });
     } catch {}
+  }
+}
+
+function createImageThumbnail(buffer, mime, originalPath) {
+  if (!nativeImage || !Buffer.isBuffer(buffer) || !/^image\//i.test(String(mime || ""))) return "";
+  try {
+    const image = nativeImage.createFromBuffer(buffer);
+    if (image.isEmpty()) return "";
+    const size = image.getSize();
+    if (!size.width || !size.height) return "";
+    if (Math.max(size.width, size.height) <= 1024) return originalPath;
+    const scale = 768 / Math.max(size.width, size.height);
+    const thumbnail = image.resize({
+      width: Math.max(1, Math.round(size.width * scale)),
+      height: Math.max(1, Math.round(size.height * scale)),
+      quality: "good"
+    });
+    const thumbnailPath = originalPath.replace(/\.[^.]+$/, "") + ".thumb.jpg";
+    if (!fs.existsSync(thumbnailPath)) writeFileAtomicSync(thumbnailPath, thumbnail.toJPEG(82));
+    return thumbnailPath;
+  } catch (error) {
+    console.warn("image thumbnail skipped", String(error?.message || error));
+    return "";
   }
 }
 
@@ -115,6 +139,7 @@ async function persistProjectAsset(payload = {}) {
     const targetPath = path.join(assetRoot, `${field}-${assetId}-${filename}`);
     if (!fs.existsSync(targetPath)) writeFileAtomicSync(targetPath, buffer);
     const stat = fs.statSync(targetPath);
+    const thumbnailLocalPath = createImageThumbnail(buffer, finalMime, targetPath);
     const portableValue =
       /^video\//i.test(finalMime) || /^audio\//i.test(finalMime)
         ? { valueFormat: "file-url" }
@@ -133,6 +158,7 @@ async function persistProjectAsset(payload = {}) {
       savedAt: new Date().toISOString(),
       sha256: sha256Buffer(buffer),
       contentAddressed: false,
+      thumbnailLocalPath: thumbnailLocalPath || undefined,
       ...portableValue
     };
   }
@@ -143,6 +169,7 @@ async function persistProjectAsset(payload = {}) {
   );
   const targetPath = stored.path;
   const stat = fs.statSync(targetPath);
+  const thumbnailLocalPath = createImageThumbnail(buffer, finalMime, targetPath);
   const isBinaryMedia =
     /^image\//i.test(finalMime) ||
     /^video\//i.test(finalMime) ||
@@ -165,6 +192,7 @@ async function persistProjectAsset(payload = {}) {
     sha256: stored.sha256,
     deduplicated: stored.deduplicated,
     contentAddressed: useGlobalStore,
+    thumbnailLocalPath: thumbnailLocalPath || undefined,
     ...portableValue
   };
   recordMigrationAsset(payload?.migrationId, result);

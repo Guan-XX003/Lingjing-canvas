@@ -386,9 +386,9 @@ export const WanJuanTextNode = reactMemo(({
             }),
           ],
         }),
-        jsx(`div`, {
+        isExpanded && jsx(`div`, {
           className: `absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-[#1c1c1c] rounded-xl border border-[#333] shadow-2xl w-[420px] transition-all duration-300 origin-top z-50 wanjuan-node-config-panel
-          ${isExpanded ? `opacity-100 scale-100 p-3 overflow-visible` : `opacity-0 scale-95 pointer-events-none h-0 p-0 border-0 overflow-hidden`}
+          opacity-100 scale-100 p-3 overflow-visible
         `,
           onClick: (event) => event.stopPropagation(),
           children: jsxs(`div`, {

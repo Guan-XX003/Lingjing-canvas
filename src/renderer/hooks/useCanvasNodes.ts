@@ -23,17 +23,44 @@ export function useCanvasNodes(deps: UseCanvasNodesDeps) {
     wanjuanViewportSize,
   } = deps;
   const wanjuanCanvasNodes = useMemo(
-		      () =>
-		      nodes.map((node) => {
+		      () => {
+		      const profile = (() => {
+		        try { return document.documentElement.dataset.wanjuanSessionPerformanceProfile || localStorage.getItem(`wanjuanPerformanceProfile`) || `balanced`; } catch { return `balanced`; }
+		      })();
+		      const fullBudget = profile === `performance` ? 8 : profile === `quality` ? 32 : 16;
+		      const zoom = Number(wanjuanViewport?.zoom || 1);
+		      const candidates: any[] = [];
+		      const baseModes = new Map();
+		      nodes.forEach((node) => {
+		        const mode = WanJuanComputeNodeRenderMode(node, wanjuanViewport, wanjuanViewportSize);
+		        baseModes.set(node.id, mode);
+		        if (mode !== `lite` || zoom < 0.56) return;
+		        const width = Number(node?.measured?.width || node?.style?.width || 280);
+		        const height = Number(node?.measured?.height || node?.style?.height || 220);
+		        const screenX = (Number(node?.position?.x || 0) + width / 2) * zoom + Number(wanjuanViewport?.x || 0);
+		        const screenY = (Number(node?.position?.y || 0) + height / 2) * zoom + Number(wanjuanViewport?.y || 0);
+		        const viewportWidth = Number(wanjuanViewportSize?.width || 1600);
+		        const viewportHeight = Number(wanjuanViewportSize?.height || 900);
+		        if (screenX < -width || screenY < -height || screenX > viewportWidth + width || screenY > viewportHeight + height) return;
+		        candidates.push({
+		          id: node.id,
+		          distance: Math.hypot(screenX - viewportWidth / 2, screenY - viewportHeight / 2)
+		        });
+		      });
+		      candidates.sort((a, b) => a.distance - b.distance);
+		      const promoted = new Set(candidates.slice(0, fullBudget).map((item) => item.id));
+		      return nodes.map((node) => {
 	        let referenceSources = wanjuanSelectedReferenceSourcesByTarget.get(node.id),
-	          renderMode = WanJuanComputeNodeRenderMode(node, wanjuanViewport, wanjuanViewportSize),
+	          baseMode = baseModes.get(node.id),
+	          renderMode = baseMode === `lite` && promoted.has(node.id) ? `full` : baseMode,
 	          data = node.data || {},
 	          nextReferenceSources = referenceSources && referenceSources.length ? referenceSources : undefined,
 	          hasReferenceChange =
 	            (nextReferenceSources && data.wanjuanSelectedReferenceSourceIds !== nextReferenceSources) ||
 	            (!nextReferenceSources && Array.isArray(data.wanjuanSelectedReferenceSourceIds)),
 	          hasRenderModeChange = data.wanjuanRenderMode !== renderMode;
-	        return hasReferenceChange || hasRenderModeChange ?
+	        let hasRenderZoomChange = renderMode === `shell` && data.wanjuanRenderZoom !== zoom;
+	        return hasReferenceChange || hasRenderModeChange || hasRenderZoomChange ?
 	          {
 	            ...node,
 	            data: {
@@ -44,11 +71,13 @@ export function useCanvasNodes(deps: UseCanvasNodesDeps) {
 	                wanjuanSelectedReferenceSourceIds: undefined
 	              }),
 	              wanjuanRenderMode: renderMode,
+	              wanjuanRenderZoom: renderMode === `shell` ? zoom : void 0,
 	              wanjuanRenderRuntime: true
 	            },
 	          } :
 	          node;
-		      }),
+		      });
+		      },
 		      [nodes, wanjuanSelectedReferenceSourcesByTarget, wanjuanViewport, wanjuanViewportSize],
 		    );
   return { wanjuanCanvasNodes };

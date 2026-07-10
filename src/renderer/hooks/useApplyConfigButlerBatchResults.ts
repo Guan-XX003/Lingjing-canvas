@@ -6,7 +6,7 @@ import { useCallback, useMemo } from "react";
 import type { ApiBindings, ProtocolBindings, SetAny, SetState, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
-import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
+import { finalizeButlerProtocolConfig, inferButlerCategoryFromModelName, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName, validateButlerProtocolConfig } from "../lib/config-butler";
 import { guessApiConfigName } from "../lib/unified-api-config";
 declare const chrome: any;
 
@@ -103,7 +103,7 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
   const applyConfigButlerBatchResults = (options = {}) => {
 	          let sourceBatchItems = Array.isArray(options.items) ? options.items : configButlerBatchItems,
 	            validBatchItems = (sourceBatchItems || []).filter((batchItem) =>
-	            String(batchItem?.modelName || ``).trim(),
+	            batchItem?.enabled !== false && String(batchItem?.modelName || ``).trim(),
 	          );
 	          if (!validBatchItems.length) {
 	            showToast2(`没有可导入的模型配置`);
@@ -138,6 +138,7 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
 	            videoProtocolBindings = {},
 	            audioProtocolBindings = {},
 	            protocolRegistry = {},
+	            rejectedItems = [],
 	            importedCount = 0;
 	          validBatchItems.forEach((batchItem) => {
 	            let modelName = String(batchItem.modelName || ``).trim(),
@@ -150,9 +151,18 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
 	                  category: category
 	                },
 	              ),
+	              validation = validateButlerProtocolConfig(protocolConfig, {
+	                modelName: modelName,
+	                apiUrl: apiUrl,
+	                category: category,
+	              }),
 	              protocolName = normalizeProtocolName(batchItem.protocol?.name, protocolConfig),
 	              protocolConfigKey = JSON.stringify(protocolConfig || {}),
 	              existingProtocolName = Object.keys(protocolRegistry).find((protocolName2) => JSON.stringify(protocolRegistry[protocolName2] || {}) === protocolConfigKey);
+	            if (!validation.ok) {
+	              rejectedItems.push(`${modelName}：${validation.errors.join(`；`)}`);
+	              return;
+	            }
 	            if (existingProtocolName) protocolName = existingProtocolName;
 	            else if (protocolName && protocolConfig && typeof protocolConfig == `object`) {
 	              let candidateName = protocolName,
@@ -173,7 +183,7 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
 	              ((ttsMusicModels = ensureModelInList(ttsMusicModels, modelName)), (audioApiBindings[modelName] = newApiConfig.id), protocolName && (audioProtocolBindings[modelName] = protocolName), (importedCount += 1));
 	          });
 	          if (!importedCount) {
-	            showToast2(`没有可导入的有效模型配置`);
+	            showToast2(rejectedItems.length ? `没有可导入的有效模型配置：${rejectedItems[0]}` : `没有可导入的有效模型配置`);
 	            return;
 	          }
 	          let docUrl = String(options.docUrl || configButlerDocUrl || ``).trim(),
@@ -294,9 +304,11 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
 	              configButlerMode: `batch`,
 	              configButlerTargetApiConfigId: newApiConfig.id
 	            }),
-	            showToast2(options.silentToast ? `已同步极鑫中转站模型（${importedCount} 个）` : `已保存并切换到 ${configName}（${importedCount} 个模型）`));
+	            showToast2(`${options.silentToast ? `已同步极鑫中转站模型` : `已保存并切换到 ${configName}`}（${importedCount} 个模型）${rejectedItems.length ? `，另有 ${rejectedItems.length} 个校验失败未导入` : ``}`));
 	          return {
 	            importedCount: importedCount,
+	            rejectedCount: rejectedItems.length,
+	            rejectedItems: rejectedItems,
 	            configId: configId,
 	            configName: configName,
 	            apiConfigId: newApiConfig.id,

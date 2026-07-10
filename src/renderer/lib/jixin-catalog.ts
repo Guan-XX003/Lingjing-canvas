@@ -77,7 +77,7 @@ export const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
 export const WANJUAN_JIXIN_DEFAULT_DOC_URL = `https://kcn07wr6x9xu.feishu.cn/wiki/RBPHwKfzhiq7Xuk06M8c3NgInKd`;
 export const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
 export const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-export const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-06-feishu-doc-url-v1`;
+export const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-09-unified-wan-video-v1`;
 export const wanjuanIsLegacyJixinDocUrl = (url: any) => {
   let normalizedUrl = String(url || ``).trim().replace(/\/+$/, ``);
   return normalizedUrl === `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs` ||
@@ -155,6 +155,7 @@ export const WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS = [
   `veo_3_1-fast`,
   // Grok Video 系列
   `grok-video-3`,
+  `grok-image-video`,
   `grok-imagine-video-1.5-preview`,
 ];
 export const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS = [
@@ -178,6 +179,10 @@ export const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_MODELS = [
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_IMAGE_MODELS,
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_REFERENCE_IMAGE_MODELS,
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_EDIT_MODELS,
+];
+export const WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS = [
+  ...WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS,
+  ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_MODELS,
 ];
 export const WANJUAN_JIXIN_BUILTIN_SEEDANCE_MODELS = [
   `doubao-seedance-2-0-260128`,
@@ -249,6 +254,7 @@ export const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
     ...bindings,
     [model]: /^grok-/i.test(model) ? `极鑫 Grok 视频兼容` : `极鑫 Veo/Omni 视频兼容`,
   }), {}),
+  [`grok-image-video`]: `极鑫 Grok Image Video JSON`,
   [`sora_video2`]: `极鑫 Sora 视频兼容`,
   [`sora-video2`]: `极鑫 Sora 视频兼容`,
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS.reduce((bindings, model) => ({
@@ -496,6 +502,43 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       completedValues: [`completed`, `complete`, `success`, `succeeded`],
     },
   },
+  [`极鑫 Grok Image Video JSON`]: {
+    category: `video`,
+    requestType: `json-video`,
+    submitPath: `/v1/video/generations`,
+    pollPath: `/v1/video/generations/{taskId}`,
+    referenceImageMode: `url`,
+    referenceImageAsArray: true,
+    fieldMapping: {
+      model: `model`,
+      prompt: `prompt`,
+      resolution: `resolution`,
+      aspectRatio: `aspect_ratio`,
+      duration: `seconds`,
+      referenceImage: `image_urls`,
+    },
+    fieldValueTypes: {
+      seconds: `number`,
+      resolution: `string`,
+      aspect_ratio: `string`,
+    },
+    parameterAdapter: {
+      resolutionValueMode: `quality`,
+      resolutionValueMap: {
+        [`480P`]: `480p`,
+        [`720P`]: `720p`,
+        [`1080P`]: `720p`,
+      },
+    },
+    responseMapping: {
+      video: [`data.result_url`, `result_url`, `video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
+      resultUrl: [`data.result_url`, `result_url`],
+      taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
+      status: [`status`, `data.status`, `state`],
+      completedValues: [`SUCCESS`, `completed`, `complete`, `success`, `succeeded`],
+      failedValues: [`FAILURE`, `failed`, `error`, `fail`],
+    },
+  },
   [`极鑫 Sora 视频兼容`]: {
     category: `video`,
     requestType: `multipart-video`,
@@ -719,7 +762,7 @@ export const wanjuanMergeJixinVideoProtocolDefaults = (target: any = {}, default
   let result = target && typeof target == `object` ? {
       ...target
     } : {},
-    replaceableBindings = new Set([`极鑫视频兼容`, `智创聚合视频统一`, `智创聚合视频 JSON`, `表单视频兼容`, `OpenAI 视频兼容`]);
+    replaceableBindings = new Set([`极鑫视频兼容`, `极鑫 Grok 视频兼容`, `智创聚合视频统一`, `智创聚合视频 JSON`, `表单视频兼容`, `OpenAI 视频兼容`]);
   Object.entries(defaults || {}).forEach(([model, protocolName]) => {
     let current = result[model];
     if (!current || replaceableBindings.has(current)) result[model] = protocolName;
@@ -890,7 +933,7 @@ export const wanjuanBuildJixinBuiltinBasePatch = (source: any = {}) => {
     jixinConfigId = jixinConfig?.id || WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
     textModel = wanjuanMergeModelText(source.textModel, WANJUAN_JIXIN_BUILTIN_TEXT_MODELS),
     drawingModel = wanjuanMergeModelText(source.drawingModel, WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS),
-    videoModel = wanjuanMergeModelText(source.videoModel, WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS),
+    videoModel = wanjuanMergeModelText(source.videoModel, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS),
     ttsMusicModel = wanjuanMergeModelText(source.ttsMusicModel, WANJUAN_JIXIN_BUILTIN_MUSIC_MODELS),
     audioModel = wanjuanMergeModelText(source.audioModel, WANJUAN_JIXIN_BUILTIN_AUDIO_MODELS),
     textBindings = wanjuanBuildJixinModelBindings(WANJUAN_JIXIN_BUILTIN_TEXT_MODELS, jixinConfigId),

@@ -7,6 +7,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import { Position, useReactFlow, useNodesData, useNodeConnections } from "@xyflow/react";
 import { Download } from "lucide-react";
 import { WanJuanNodeHandle, WanJuanUseThrottledNodeDataUpdate } from "./render-mode";
+import { buildProjectMediaFileUrl } from "../lib/resource";
 
 export const WanJuanQwenTtsCloneNode = reactMemo(({
 	        id: nodeId,
@@ -22,7 +23,8 @@ export const WanJuanQwenTtsCloneNode = reactMemo(({
 	        sourceMedia = useMemo(() => {
 	          for (let sourceNode of sourceIds) {
 	            let sourceData = sourceNode?.data || {};
-	            let sourceUrl = sourceData.audioUrl || sourceData.videoUrl || sourceData.imageUrl || sourceData.resultData || sourceData.text || ``;
+	            let localMediaUrl = sourceData.localPath || sourceData.filePath ? buildProjectMediaFileUrl(sourceData.localPath || sourceData.filePath) : ``,
+	              sourceUrl = sourceData.audioUrl || sourceData.videoUrl || localMediaUrl || sourceData.imageUrl || sourceData.resultData || sourceData.text || ``;
 	            if (typeof sourceUrl == `string` && /^(https?:\/\/|file:\/\/|data:audio\/|data:video\/|blob:)/i.test(sourceUrl.trim())) return {
 	              url: sourceUrl.trim(),
 	              filename: sourceData.audioName || sourceData.videoName || sourceData.label || `reference-${Date.now()}`

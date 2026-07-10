@@ -7,6 +7,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import { cloneBackupValue } from "./backup";
 import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
+export { compactGlobalTasks } from "./global-tasks";
 
 export const membershipLimits = {
       FREE: {
@@ -311,39 +312,6 @@ export const renderCopyGlyph = (size = 16) =>
             }),
           ],
         });
-
-export const compactGlobalTasks = (tasks: GlobalTask[]) => {
-		              if (!Array.isArray(tasks)) return [];
-		              let itemB = [],
-		                seenTaskKeys = new Set(),
-		                taskCountByKey = new Map(),
-		                isImageTask = (task: GlobalTask) => task?.type === `image` || task?.customOutputType === `image`,
-		                hasImageOutput = (task: GlobalTask) =>
-		                !!(task?.remoteTaskId || task?.asyncImageDetailUrl || task?.customResultData || task?.resultUrl),
-		                registerTask = (task: GlobalTask) => {
-		                  if (!task || !task.id || seenTaskKeys.has(task.id)) return false;
-		                  return (seenTaskKeys.add(task.id), itemB.push(task), true);
-		                };
-		              [...tasks]
-		                .sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0))
-		                .forEach((item) => {
-		                  if (!item || !item.id) return;
-		                  if (!item.nodeId) {
-		                    let existingBoundCount = taskCountByKey.get(`__unbound__`) || 0;
-		                    existingBoundCount < 100 && registerTask(item);
-		                    taskCountByKey.set(`__unbound__`, existingBoundCount + 1);
-		                    return;
-		                  }
-		                  let groupKey = `${item.projectId || `default`}::${item.nodeId}`,
-		                    groupCount = taskCountByKey.get(groupKey) || 0,
-		                    isTaskActive = item.status === `running` || item.status === `pending`,
-		                    shouldKeepTask = isImageTask(item) && hasImageOutput(item);
-		                  if (groupCount < 20 || isTaskActive || shouldKeepTask) {
-		                    if (registerTask(item)) taskCountByKey.set(groupKey, groupCount + 1);
-		                  }
-		                });
-		              return itemB.slice(0, 1200).sort((itemA, itemB) => (itemB?.createdAt || 0) - (itemA?.createdAt || 0));
-		            };
 
 export const BACKUP_SETTINGS_SECTION_KEYS = {
 	      basic: [

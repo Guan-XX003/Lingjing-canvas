@@ -1,5 +1,6 @@
 /** WanJuanSettingsSectionB：自 WanJuanAppRoot render 抽出的 JSX 段，props 传入，行为不变。 */
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
+import { useState } from "react";
 import { extractJsonBlock, formatExtensionToolError, formatStorageBytes, normalizeThemeMode } from "../lib/app-utils";
 import { WANJUAN_JIXIN_DEFAULT_API_URL } from "../lib/jixin-catalog";
 import { WanJuanAudioModelSettingsPanel } from "../components/audio-model-settings-panel";
@@ -15,11 +16,48 @@ import { WanJuanSettingsDataTab } from "../components/settings-data-tab";
 import { WanJuanSettingsExtensionsTab } from "../components/settings-extensions-tab";
 import { WanJuanSettingsGenerationTab } from "../components/settings-generation-tab";
 import { WanJuanTextModelSettingsPanel } from "../components/text-model-settings-panel";
-import { WanJuanTongyiModelsSection } from "../components/tongyi-models-section";
 import { WanJuanTtsMusicSettingsPanel } from "../components/tts-music-settings-panel";
 import { WanJuanVideoModelSettingsPanel } from "../components/video-model-settings-panel";
 
+const WANJUAN_ONE_STOP_CENTER_URL_KEY = `wanjuan.oneStopCenterUrl.v1`;
+
+function normalizeOneStopCenterUrl(value: unknown) {
+  const input = String(value || ``).trim();
+  if (!input) return WANJUAN_JIXIN_DEFAULT_API_URL;
+  try {
+    const url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
+    if (url.protocol !== `https:` && url.protocol !== `http:`) return null;
+    return url.href.replace(/\/$/, ``);
+  } catch {
+    return null;
+  }
+}
+
 export function WanJuanSettingsSectionB(props: any) {
+  const [oneStopCenterUrl, setOneStopCenterUrl] = useState(() => {
+    try {
+      return normalizeOneStopCenterUrl(window.localStorage?.getItem(WANJUAN_ONE_STOP_CENTER_URL_KEY)) || WANJUAN_JIXIN_DEFAULT_API_URL;
+    } catch {
+      return WANJUAN_JIXIN_DEFAULT_API_URL;
+    }
+  });
+  const [oneStopCenterUrlInput, setOneStopCenterUrlInput] = useState(oneStopCenterUrl);
+  const applyOneStopCenterUrl = () => {
+    const normalized = normalizeOneStopCenterUrl(oneStopCenterUrlInput);
+    if (!normalized) return;
+    setOneStopCenterUrl(normalized);
+    setOneStopCenterUrlInput(normalized);
+    try {
+      window.localStorage?.setItem(WANJUAN_ONE_STOP_CENTER_URL_KEY, normalized);
+    } catch {}
+  };
+  const resetOneStopCenterUrl = () => {
+    setOneStopCenterUrl(WANJUAN_JIXIN_DEFAULT_API_URL);
+    setOneStopCenterUrlInput(WANJUAN_JIXIN_DEFAULT_API_URL);
+    try {
+      window.localStorage?.removeItem(WANJUAN_ONE_STOP_CENTER_URL_KEY);
+    } catch {}
+  };
   const {
     $e,
     BACKUP_MODULE_LABELS,
@@ -420,16 +458,44 @@ export function WanJuanSettingsSectionB(props: any) {
                                       }),
                                       jsx(`p`, {
                                         className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help`,
-                                        children: `在应用内打开 jixing.guancn.uk，集中管理模型服务相关能力。`,
+                                        children: `在应用内打开自定义的模型服务管理网站。`,
                                       }),
                                     ],
                                   }),
                                   jsx(`a`, {
-                                    href: WANJUAN_JIXIN_DEFAULT_API_URL,
+                                    href: oneStopCenterUrl,
                                     target: `_blank`,
                                     rel: `noreferrer`,
                                     className: `px-3 py-2 rounded-lg border border-[#333] bg-[#222] text-xs text-gray-300 hover:bg-[#2a2a2a] hover:text-white transition-colors whitespace-nowrap`,
                                     children: `外部打开`,
+                                  }),
+                                ],
+                              }),
+                              jsxs(`div`, {
+                                className: `flex items-center gap-2 px-4 py-3 border-b border-[#222] wanjuan-settings-card-body`,
+                                children: [
+                                  jsx(`input`, {
+                                    type: `url`,
+                                    value: oneStopCenterUrlInput,
+                                    onChange: (event) => setOneStopCenterUrlInput(event.target.value),
+                                    onKeyDown: (event) => {
+                                      if (event.key === `Enter`) applyOneStopCenterUrl();
+                                    },
+                                    className: `min-w-0 flex-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-200 outline-none focus:border-blue-500 wanjuan-settings-control`,
+                                    placeholder: `https://example.com`,
+                                    "aria-label": `一站式中心网址`,
+                                  }),
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    onClick: applyOneStopCenterUrl,
+                                    className: `shrink-0 px-3 py-2 rounded-lg border border-[#333] bg-[#222] text-xs text-gray-200 hover:bg-[#2a2a2a] transition-colors`,
+                                    children: `打开`,
+                                  }),
+                                  jsx(`button`, {
+                                    type: `button`,
+                                    onClick: resetOneStopCenterUrl,
+                                    className: `shrink-0 px-3 py-2 rounded-lg border border-[#333] bg-transparent text-xs text-gray-400 hover:bg-[#222] hover:text-gray-200 transition-colors`,
+                                    children: `恢复默认`,
                                   }),
                                 ],
                               }),
@@ -440,7 +506,8 @@ export function WanJuanSettingsSectionB(props: any) {
                                   minHeight: 600,
                                 },
                                 children: jsx(`webview`, {
-                                  src: WANJUAN_JIXIN_DEFAULT_API_URL,
+                                  key: oneStopCenterUrl,
+                                  src: oneStopCenterUrl,
                                   className: `w-full h-full bg-white`,
                                   allowpopups: `true`,
                                   partition: `persist:wanjuan-one-stop-center`,
@@ -786,28 +853,6 @@ export function WanJuanSettingsSectionB(props: any) {
 }),
                             ],
                           }),
-                          activeSettingsTab === `models` &&
-                          jsx(WanJuanTongyiModelsSection, {
-  apiConfigs,
-  setTongyiWanxiangDurations,
-  setTongyiWanxiangEditModels,
-  setTongyiWanxiangImageModels,
-  setTongyiWanxiangRatios,
-  setTongyiWanxiangReferenceImageModels,
-  setTongyiWanxiangResolutions,
-  setTongyiWanxiangSettingsExpanded,
-  setTongyiWanxiangTextModels,
-  setVideoModelApiBindings,
-  tongyiWanxiangDurations,
-  tongyiWanxiangEditModels,
-  tongyiWanxiangImageModels,
-  tongyiWanxiangRatios,
-  tongyiWanxiangReferenceImageModels,
-  tongyiWanxiangResolutions,
-  tongyiWanxiangSettingsExpanded,
-  tongyiWanxiangTextModels,
-  videoModelApiBindings,
-}),
                           activeSettingsTab === `models` &&
                           jsxs(`div`, {
                             className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card wanjuan-seedance-settings-card ${tianjiSeedanceSettingsMode === `tianji` ? `wanjuan-tianji-mode-active` : ``}`,

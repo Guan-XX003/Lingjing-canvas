@@ -1,9 +1,17 @@
-// @ts-nocheck
 /**
  * createNodeAt。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
+import {
+  WANJUAN_API_CONFIG_NODE_TYPES,
+  WANJUAN_AUDIO_RUNTIME_NODE_TYPES,
+  WANJUAN_TOAST_NODE_TYPES,
+  WANJUAN_TRANSIT_RESOURCE_NODE_TYPES,
+  WANJUAN_UPLOAD_CONFIG_NODE_TYPES,
+  WANJUAN_VIDEO_GENERATION_NODE_TYPES,
+  wanjuanNodeHasRuntimeCapability,
+} from "../lib/node-runtime-contract";
 
 interface UseCreateNodeAtDeps {
   createImageNode: any;
@@ -147,7 +155,7 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
     videoModelRequestProfiles,
     videoResolutions,
   } = deps;
-  const createNodeAt = (nodeType, position, nodeData = {}, connection) => {
+  const createNodeAt = (nodeType, position, nodeData: Record<string, any> = {}, connection) => {
       let {
           __nodeId,
           ...cleanNodeData
@@ -192,7 +200,7 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
               cleanNodeData.expanded,
             onGenerate: nodeType === `promptNode` ? generateImage : undefined,
             onGenerateText: nodeType === `textNode` ? generateText : undefined,
-            onGenerateVideo: nodeType === `videoNode` || nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` ? generateVideo : undefined,
+            onGenerateVideo: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_VIDEO_GENERATION_NODE_TYPES) ? generateVideo : undefined,
             onGenerateCustom: nodeType === `customNode` ? handleGenerateCustom : undefined,
             onGenerateTtsMusic: nodeType === `ttsMusicNode` || nodeType === `musicNode` ? undefined : undefined,
             onAIAssist: nodeType === `customNode` ? handleAIAssist : undefined,
@@ -213,7 +221,8 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
 	              nodeType === `videoExtractNode` ||
 	              nodeType === `fileToLinkNode` ||
 	              nodeType === `videoFaceBlurNode` ||
-	              nodeType === `qwenTtsCloneNode` ?
+	              nodeType === `qwenTtsCloneNode` ||
+	              nodeType === `realEsrganVideoNode` ?
               openVideoEditor :
               undefined,
             onSplit: nodeType === `gridSplitNode` ? handleSplit : undefined,
@@ -239,17 +248,7 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
               nodeType === `videoExtractNode` ?
               stopGeneration :
               undefined,
-            onShowToast: nodeType === `textNode` ||
-              nodeType === `audioNode` ||
-              nodeType === `ttsMusicNode` ||
-              nodeType === `musicNode` ||
-              nodeType === `customNode` ||
-              nodeType === `seedanceNode` ||
-              nodeType === `tongyiWanxiangNode` ||
-              nodeType === `videoExtractNode` ||
-              nodeType === `fileToLinkNode` ||
-              nodeType === `videoFaceBlurNode` ||
-              nodeType === `qwenTtsCloneNode` ?
+            onShowToast: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_TOAST_NODE_TYPES) ?
               showToast :
               undefined,
             presetPrompts: presetPrompts,
@@ -291,28 +290,14 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
             watermark: nodeType === `seedanceNode` ? seedanceWatermark : undefined,
             enableWebSearch: nodeType === `seedanceNode` ? seedanceEnableWebSearch : undefined,
             seedanceVirtualPortraits: nodeType === `seedanceNode` ? seedanceVirtualPortraits : undefined,
-            seedanceUploadMode: nodeType === `fileToLinkNode` ? seedanceUploadMode : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` || nodeType === `musicNode` ? seedanceUploadMode : undefined,
-            tosConfig: nodeType === `fileToLinkNode` ? tosConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` || nodeType === `musicNode` ? tosConfig : undefined,
-            customPublicUploadConfig: nodeType === `fileToLinkNode` ? customPublicUploadConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` || nodeType === `musicNode` ? customPublicUploadConfig : undefined,
-            qiniuConfig: nodeType === `fileToLinkNode` ? qiniuConfig : nodeType === `seedanceNode` || nodeType === `tongyiWanxiangNode` || nodeType === `musicNode` ? qiniuConfig : undefined,
-            apiConfigs: nodeType === `promptNode` ||
-              nodeType === `textNode` ||
-              nodeType === `videoNode` ||
-              nodeType === `seedanceNode` ||
-              nodeType === `tongyiWanxiangNode` ||
-              nodeType === `audioNode` ||
-              nodeType === `ttsMusicNode` ||
-              nodeType === `musicNode` ?
+            seedanceUploadMode: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_UPLOAD_CONFIG_NODE_TYPES) ? seedanceUploadMode : undefined,
+            tosConfig: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_UPLOAD_CONFIG_NODE_TYPES) ? tosConfig : undefined,
+            customPublicUploadConfig: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_UPLOAD_CONFIG_NODE_TYPES) ? customPublicUploadConfig : undefined,
+            qiniuConfig: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_UPLOAD_CONFIG_NODE_TYPES) ? qiniuConfig : undefined,
+            apiConfigs: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_API_CONFIG_NODE_TYPES) ?
               apiConfigs :
               undefined,
-            modelProtocolRegistry: nodeType === `promptNode` ||
-              nodeType === `textNode` ||
-              nodeType === `videoNode` ||
-              nodeType === `audioNode` ||
-              nodeType === `ttsMusicNode` ||
-              nodeType === `musicNode` ||
-              nodeType === `seedanceNode` ||
-              nodeType === `tongyiWanxiangNode` ?
+            modelProtocolRegistry: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_API_CONFIG_NODE_TYPES) ?
               modelProtocolRegistry :
               undefined,
             textModelApiBindings: nodeType === `textNode` ? textModelApiBindings : undefined,
@@ -329,19 +314,19 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
               undefined,
             drawingModel: nodeType === `promptNode` ? drawingModel : undefined,
             textModel: nodeType === `textNode` ? textModel : undefined,
-	            audioApiUrl: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiUrl : undefined,
-	            audioApiKey: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioApiKey : undefined,
-	            audioModel: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModel : undefined,
-	            audioModelApiBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelApiBindings : undefined,
-	            ttsMusicModels: nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `audioNode` ? ttsMusicModel : undefined,
-            audioModelProtocolBindings: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? audioModelProtocolBindings : undefined,
-            projectId: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? projectIdRef.current : undefined,
-            updateGlobalTasks: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` ? updateTaskList : undefined,
-            addTransitResource: nodeType === `audioNode` || nodeType === `ttsMusicNode` || nodeType === `musicNode` || nodeType === `videoFaceBlurNode` || nodeType === `qwenTtsCloneNode` ? addGeneratedAsset : undefined,
+	            audioApiUrl: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? audioApiUrl : undefined,
+	            audioApiKey: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? audioApiKey : undefined,
+	            audioModel: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? audioModel : undefined,
+	            audioModelApiBindings: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? audioModelApiBindings : undefined,
+	            ttsMusicModels: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? ttsMusicModel : undefined,
+            audioModelProtocolBindings: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? audioModelProtocolBindings : undefined,
+            projectId: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? projectIdRef.current : undefined,
+            updateGlobalTasks: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_AUDIO_RUNTIME_NODE_TYPES) ? updateTaskList : undefined,
+	            addTransitResource: wanjuanNodeHasRuntimeCapability(nodeType, WANJUAN_TRANSIT_RESOURCE_NODE_TYPES) ? addGeneratedAsset : undefined,
           },
         };
       if ((setNodes((nodes2) => nodes2.concat(newNode)), connection)) {
-        let newEdge = {
+        let newEdge: any = {
           id: `e-${connection.source}-${newNodeId}`,
           source: connection.source,
           sourceHandle: connection.sourceHandle,

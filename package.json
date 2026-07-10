@@ -30,7 +30,8 @@
     "test:migrate-project": "node scripts/migrate-project-media-test.mjs",
     "test:migrated-project:electron": "electron scripts/test-migrated-project-electron.cjs",
     "test:storage:real-project": "electron scripts/test-real-project-transaction.cjs",
-    "test:file-filter": "electron scripts/test-file-access-filter.cjs"
+    "test:file-filter": "electron scripts/test-file-access-filter.cjs",
+    "test:canvas-perf": "node scripts/test-canvas-performance.cjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.2",

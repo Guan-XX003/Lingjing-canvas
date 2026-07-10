@@ -71,7 +71,7 @@ export const WanJuanImageNode = reactMemo(({
           let fileUrl = buildProjectMediaFileUrl(result.localPath);
           updateNodeData(nodeId, {
             imageUrl: fileUrl,
-            thumbnailUrl: data.thumbnailUrl || fileUrl,
+            thumbnailUrl: data.thumbnailUrl || (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl),
             localPath: result.localPath,
             filePath: result.localPath,
             projectAssetBindings: {
@@ -195,7 +195,9 @@ export const WanJuanImageNode = reactMemo(({
                 let fileUrl = buildProjectMediaFileUrl(result.localPath);
                 updateNodeData(nodeId, {
                   imageUrl: fileUrl,
-                  thumbnailUrl: mediaKind === `image` ? fileUrl : data.thumbnailUrl,
+                  thumbnailUrl: mediaKind === `image` ?
+                    (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl) :
+                    data.thumbnailUrl,
                   label: file.name,
                   mediaKind,
                   localPath: result.localPath,
@@ -370,7 +372,7 @@ export const WanJuanImageNode = reactMemo(({
               children: [
                 mediaType === `image` &&
                 jsx(`img`, {
-                  src: (selected ? imageUrl : (data.thumbnailUrl || imageUrl)),
+                  src: data.thumbnailUrl || imageUrl,
                   alt: `Content`,
                   className: `w-full h-full object-contain cursor-pointer`,
                   draggable: !1,

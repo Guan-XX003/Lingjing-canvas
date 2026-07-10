@@ -42,6 +42,8 @@ export function use_persistImportedMediaFile(deps: UsePersistImportedMediaFileDe
         return {
           url: fileUrl,
           localPath: persisted.localPath,
+          thumbnailUrl: persisted.thumbnailLocalPath ? buildProjectMediaFileUrl(persisted.thumbnailLocalPath) : fileUrl,
+          thumbnailLocalPath: persisted.thumbnailLocalPath || persisted.localPath,
           binding: wanjuanBuildProjectAssetBinding(persisted, {
             sourceOrigin: `external-upload`,
           }),

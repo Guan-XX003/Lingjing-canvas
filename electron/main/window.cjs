@@ -12,6 +12,9 @@ function createMainWindow(baseUrl) {
   let isRecoveringRenderer = false;
   let blankScreenHits = 0;
   let blankScreenTimer = null;
+  let lastRendererMetrics = null;
+  let sessionPerformanceProjectId = "";
+  const rendererCrashCounts = new Map();
   const recoverRenderer = (reason, details) => {
     if (isRecoveringRenderer || win.isDestroyed()) return;
     isRecoveringRenderer = true;
@@ -290,10 +293,26 @@ function createMainWindow(baseUrl) {
             rootChildren: root?.childElementCount || 0,
             rootWidth: Math.round(rootRect?.width || 0),
             rootHeight: Math.round(rootRect?.height || 0),
-            bodyBg: getComputedStyle(document.body).backgroundColor
+            bodyBg: getComputedStyle(document.body).backgroundColor,
+            projectId: document.documentElement.dataset.wanjuanProjectId || globalThis.__wanjuanCurrentProjectId || 'default',
+            nodes: document.querySelectorAll('.react-flow__node').length,
+            edges: document.querySelectorAll('.react-flow__edge').length,
+            images: document.querySelectorAll('.react-flow__node img').length,
+            videos: document.querySelectorAll('.react-flow__node video').length,
+            activeVideoSources: document.querySelectorAll('.react-flow__node video[src]').length,
+            audios: document.querySelectorAll('.react-flow__node audio').length,
+            activeAudioSources: document.querySelectorAll('.react-flow__node audio[src]').length,
+            domNodes: document.getElementsByTagName('*').length,
+            heap: performance.memory ? {
+              used: Math.round(performance.memory.usedJSHeapSize || 0),
+              total: Math.round(performance.memory.totalJSHeapSize || 0)
+            } : null,
+            runtime: globalThis.__wanjuanRenderRuntime?.snapshot?.() || null,
+            canvasRuntime: globalThis.__wanjuanCanvasRuntimeMetrics || null
           };
         })();
       `, true);
+      lastRendererMetrics = status;
 
       const looksBlank =
         status &&
@@ -324,8 +343,14 @@ function createMainWindow(baseUrl) {
     recoverRenderer("did-fail-load", { errorCode, errorDescription, validatedURL });
   });
   win.webContents.on("render-process-gone", (_event, details) => {
-    console.error("render-process-gone", details);
-    recoverRenderer("render-process-gone", details);
+    const projectId = lastRendererMetrics?.projectId || "default";
+    const crashCount = (rendererCrashCounts.get(projectId) || 0) + 1;
+    rendererCrashCounts.set(projectId, crashCount);
+    if (crashCount >= 2) sessionPerformanceProjectId = projectId;
+    const diagnostic = { ...details, projectId, crashCount, lastRendererMetrics };
+    console.error("render-process-gone", diagnostic);
+    appendDesktopLog("render-process-gone", diagnostic);
+    recoverRenderer("render-process-gone", diagnostic);
   });
   win.webContents.on("unresponsive", () => {
     recoverRenderer("unresponsive");
@@ -336,6 +361,14 @@ function createMainWindow(baseUrl) {
   });
   win.webContents.on("did-finish-load", () => {
     blankScreenHits = 0;
+    if (process.env.WANJUAN_DEBUG === "1" || sessionPerformanceProjectId) {
+      win.webContents.executeJavaScript(`
+        (() => {
+          ${process.env.WANJUAN_DEBUG === "1" ? "document.documentElement.dataset.wanjuanDebug = '1';" : ""}
+          ${sessionPerformanceProjectId ? `document.documentElement.dataset.wanjuanSessionPerformanceProfile = 'performance'; document.documentElement.classList.add('wj-perf-performance');` : ""}
+        })();
+      `, true).catch(() => {});
+    }
     if (!blankScreenTimer) blankScreenTimer = setInterval(checkForBlankScreen, 5000);
     setTimeout(checkForBlankScreen, 6000);
   });
@@ -672,8 +705,7 @@ function createMainWindow(baseUrl) {
 
   });
 
-  // webview 白名单：仅允许挂载一站式中心站点，剥离危险 webPreferences；弹窗一律转系统浏览器。
-  const WEBVIEW_ALLOWED_ORIGINS = new Set(["https://jixing.guancn.uk"]);
+  // 一站式中心允许用户配置 HTTP(S) 网站；始终剥离本地权限，弹窗交给系统浏览器。
   win.webContents.on("will-attach-webview", (event, webPreferences, params) => {
     delete webPreferences.preload;
     delete webPreferences.preloadURL;
@@ -681,7 +713,8 @@ function createMainWindow(baseUrl) {
     webPreferences.contextIsolation = true;
     let allowed = false;
     try {
-      allowed = WEBVIEW_ALLOWED_ORIGINS.has(new URL(String(params.src || "")).origin);
+      const url = new URL(String(params.src || ""));
+      allowed = url.protocol === "https:" || url.protocol === "http:";
     } catch {}
     if (!allowed) {
       appendDesktopLog("webview-attach-blocked", { src: truncateLogValue(String(params.src || "")) });

@@ -1,7 +1,6 @@
 /** 画布右键上下文菜单（menuPosition）：节点/选区/资源子菜单等全部操作。自 WanJuanAppCanvas 抽出，props 传入，行为不变。 */
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { Copy, ImageIcon, LayoutGrid, Link2, ListPlus, Mic, MonitorPlay, Puzzle, Trash2, Type, Upload } from "lucide-react";
-import { TongyiWanxiangLogo } from "./icons";
 import { WanJuanResourcePicker } from "./resource-picker";
 import { wanjuanResourceKind } from "../lib/resource";
 import { wanjuanCollectNodeReferenceMedia } from "../lib/reference-media";
@@ -177,37 +176,6 @@ export function WanJuanCanvasContextMenu({
 	                        jsx(`span`, {
 	                          className: `wanjuan-context-shortcut`,
 	                          children: `⌘J`
-	                        }),
-	                      ],
-	                    }),
-                    jsxs(`button`, {
-                      className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
-                      onClick: () =>
-                        createNodeAt(
-                          `tongyiWanxiangNode`,
-                          screenToFlowPosition({
-                            x: menuPosition.x +
-                              (wrapperRef.current?.getBoundingClientRect().left ||
-                                0),
-                            y: menuPosition.y +
-                              (wrapperRef.current?.getBoundingClientRect().top ||
-                                0),
-                          }), {
-                            prompt: ``
-                          },
-                          menuPosition.connection,
-                        ),
-                      children: [
-                        jsx(TongyiWanxiangLogo, {
-                          size: 16,
-                          className: `text-purple-500 flex-shrink-0`,
-                        }),
-	                        jsx(`span`, {
-	                          children: `通义万相`,
-	                        }),
-	                        jsx(`span`, {
-	                          className: `wanjuan-context-shortcut`,
-	                          children: `⌘W`
 	                        }),
 	                      ],
 	                    }),
@@ -521,7 +489,7 @@ export function WanJuanCanvasContextMenu({
 		                                  ],
 		                                }),
 	                                jsx(`span`, {
-	                                  children: `图片转网址`
+	                                  children: `文件转网址`
 	                                }),
 	                              ],
 	                            }),
@@ -1038,21 +1006,8 @@ export function WanJuanCanvasContextMenu({
                         }),
                       ],
                     }),
-                    jsxs(`button`, {
-                      className: `w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#333] hover:text-white rounded flex items-center gap-2 wanjuan-context-menu-item`,
-                      onClick: handleCopySelected,
-                      children: [
-                        jsx(Copy, {
-                          size: 16,
-                          className: `text-purple-400`,
-                        }),
-                        jsx(`span`, {
-                          children: `复制画布`
-                        }),
-                      ],
-                    }),
-                  ],
-                }) :
+	                  ],
+	                }) :
                 (() => {
 	                  let node = nodes.find((node2) => node2.id === menuPosition?.nodeId),
 	                    selectedNodes = nodes.filter((node2) => node2.selected),
@@ -1392,7 +1347,7 @@ export function WanJuanCanvasContextMenu({
 	                                  ],
 	                                }),
 	                                jsx(`span`, {
-	                                  children: `图片转链接`,
+	                                  children: `文件转链接`,
 	                                }),
 	                              ],
 	                            }),

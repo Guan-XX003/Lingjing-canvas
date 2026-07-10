@@ -9,7 +9,7 @@ export function WanJuanSettingsApiConfigSection({
   setApiConfigs,
 }: any) {
   return jsxs(`div`, {
-                            className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 pb-4 shadow-sm border border-[#222] wanjuan-settings-card`,
+                            className: `group bg-[#1a1a1a] rounded-xl overflow-hidden transition-all duration-300 shadow-sm border border-[#222] wanjuan-settings-card`,
                             children: [
                               jsxs(`div`, {
                                 className: `flex justify-between items-center p-4 select-none border-b border-[#222]`,
@@ -43,7 +43,7 @@ export function WanJuanSettingsApiConfigSection({
                                 ],
                               }),
                               jsxs(`div`, {
-                                className: `px-4 space-y-3 pt-4`,
+                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body`,
                                 children: [
                                   apiConfigs.map((config, index) =>
                                     jsxs(
@@ -158,7 +158,7 @@ export function WanJuanSettingsApiConfigSection({
 	                                        },
 	                                      ]);
 	                                    },
-	                                    className: `w-full py-2 rounded-lg transition-colors text-xs font-medium bg-[#222] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`,
+	                                    className: `w-full py-2.5 rounded-lg transition-colors text-xs font-medium bg-[#222] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`,
 	                                    children: `+ 添加统一配置`,
 	                                  }),
                                 ],

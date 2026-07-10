@@ -9,9 +9,10 @@
  *
  * 自 bundle 反混淆迁入，行为保持一致。
  */
-import { memo as reactMemo, useCallback, useEffect, useRef } from "react";
+import { memo as reactMemo, useCallback, useEffect, useRef, useState } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { jsx, jsxs } from "react/jsx-runtime";
+import { WANJUAN_RUNTIME_NODE_DATA_KEYS, wanjuanStripRuntimeNodeData } from "../lib/node-runtime-contract";
 
 /**
  * 节点连接柄：包装 @xyflow/react 的 Handle，提供大/小两种样式、
@@ -73,11 +74,16 @@ export const WanJuanRenderRuntime = (() => {
       globalThis.__wanjuanRenderRuntime = {
         counters: counters,
         mark: mark,
-        snapshot: () => ({
-          nodeUpdates5s: counters.nodeUpdates.length,
-          setNodes5s: counters.setNodes?.length || 0,
-          renderModeAt: counters.renderModeAt
-        })
+        snapshot: () => {
+          let now = Date.now();
+          counters.nodeUpdates = (counters.nodeUpdates || []).filter((time) => now - time <= 5000);
+          counters.setNodes = (counters.setNodes || []).filter((time) => now - time <= 5000);
+          return {
+            nodeUpdates5s: counters.nodeUpdates.length,
+            setNodes5s: counters.setNodes.length,
+            renderModeAt: counters.renderModeAt
+          };
+        }
       };
     } catch {}
     return {
@@ -87,17 +93,8 @@ export const WanJuanRenderRuntime = (() => {
     };
   })();
 
-export const WanJuanRuntimeNodeDataKeys = new Set([`wanjuanRenderMode`, `wanjuanRenderReason`, `wanjuanRenderRuntime`]);
-
-export const WanJuanStripRuntimeNodeData = (data) => {
-    if (!data || typeof data != `object`) return data;
-    let changed = !1,
-      nextData = {};
-    Object.entries(data).forEach(([key, value]) => {
-      WanJuanRuntimeNodeDataKeys.has(key) ? changed = !0 : nextData[key] = value;
-    });
-    return changed ? nextData : data;
-  };
+export const WanJuanRuntimeNodeDataKeys = WANJUAN_RUNTIME_NODE_DATA_KEYS;
+export const WanJuanStripRuntimeNodeData = wanjuanStripRuntimeNodeData;
 
 export const WanJuanNodeTypeLabel = (type, data: any = {}) => {
     if (type === `promptNode`) return `图像生成`;
@@ -138,8 +135,21 @@ export const WanJuanRenderShellNode = reactMemo(({
     let label = data.label || data.audioName || data.videoName || data.title || WanJuanNodeTypeLabel(nodeType, data),
       status = WanJuanNodeStatusLabel(data),
       color = WanJuanNodeStatusColor(data);
+    if (!selected && Number(data.wanjuanRenderZoom || 1) <= 0.18) {
+      return jsxs(`div`, {
+        className: `wanjuan-render-mini-shell`,
+        "data-wanjuan-render-mode": `shell`,
+        title: `${label}\n${status}`,
+        style: { "--wanjuan-shell-color": color },
+        children: [
+          jsx(`span`, { className: `wanjuan-render-mini-shell-dot` }),
+          jsx(`strong`, { children: label }),
+        ],
+      });
+    }
     return jsxs(`div`, {
       className: `wanjuan-render-shell-node group/node ${selected ? `is-selected` : ``}`,
+      "data-wanjuan-render-mode": `shell`,
       title: `${label}\n${status}\n点击节点可恢复完整视图`,
       children: [
         jsx(WanJuanNodeHandle, {
@@ -182,17 +192,92 @@ export const WanJuanRenderShellNode = reactMemo(({
     });
   });
 
+export const WanJuanRenderLiteNode = reactMemo(({
+    type: nodeType,
+    data: data = {},
+    selected: selected
+  }: any) => {
+    let label = data.label || data.audioName || data.videoName || data.title || WanJuanNodeTypeLabel(nodeType, data),
+      status = WanJuanNodeStatusLabel(data),
+      color = WanJuanNodeStatusColor(data),
+      previewUrl = data.thumbnailUrl || data.imageUrl || (data.mediaKind === `image` ? data.url : ``),
+      hasVideo = !!data.videoUrl || data.mediaKind === `video`,
+      hasAudio = !!data.audioUrl || data.mediaKind === `audio`;
+    return jsxs(`div`, {
+      className: `wanjuan-render-lite-node group/node ${selected ? `is-selected` : ``}`,
+      title: `${label}\n${status}\n悬停或点击恢复完整操作`,
+      children: [
+        jsx(WanJuanNodeHandle, { type: `target`, position: Position.Left, variant: `small` }),
+        jsxs(`div`, {
+          className: `wanjuan-render-lite-frame`,
+          style: { borderColor: selected ? `#3b82f6` : color, "--wanjuan-lite-color": color },
+          children: [
+            previewUrl ?
+              jsx(`img`, {
+                src: previewUrl,
+                alt: ``,
+                loading: `lazy`,
+                decoding: `async`,
+                draggable: !1,
+                className: `wanjuan-render-lite-preview`,
+              }) :
+              jsx(`div`, {
+                className: `wanjuan-render-lite-placeholder`,
+                children: hasVideo ? `视频` : hasAudio ? `音频` : WanJuanNodeTypeLabel(nodeType, data),
+              }),
+            jsxs(`div`, {
+              className: `wanjuan-render-lite-copy`,
+              children: [
+                jsx(`strong`, { children: label }),
+                jsx(`span`, { children: status }),
+              ],
+            }),
+          ],
+        }),
+        jsx(WanJuanNodeHandle, { type: `source`, position: Position.Right, variant: `small` }),
+      ],
+    });
+  });
+
 export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
     reactMemo((props: any) => {
-      let renderMode = props.data?.wanjuanRenderMode || `full`;
+      let renderMode = props.data?.wanjuanRenderMode || `full`,
+        [hovered, setHovered] = useState(!1),
+        leaveTimerRef = useRef(0),
+        forceFull = props.selected || props.data?.loading || hovered;
+      useEffect(() => () => {
+        if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
+      }, []);
       if (renderMode === `shell` && !props.selected && !props.data?.loading)
         return jsx(WanJuanRenderShellNode, {
           ...props,
           type: nodeType
         });
+      if (renderMode === `lite` && !forceFull)
+        return jsx(`div`, {
+          className: `wanjuan-render-mode-lite`,
+          "data-wanjuan-render-mode": `lite`,
+          onPointerEnter: () => {
+            if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
+            setHovered(!0);
+          },
+          onPointerLeave: () => {
+            if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = window.setTimeout(() => setHovered(!1), 300);
+          },
+          children: jsx(WanJuanRenderLiteNode, { ...props, type: nodeType }),
+        });
       return jsx(`div`, {
-        className: `wanjuan-render-mode-${renderMode}`,
-        "data-wanjuan-render-mode": renderMode,
+        className: `wanjuan-render-mode-${forceFull ? `full` : renderMode}`,
+        "data-wanjuan-render-mode": forceFull ? `full` : renderMode,
+        onPointerEnter: () => {
+          if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
+          setHovered(!0);
+        },
+        onPointerLeave: () => {
+          if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
+          leaveTimerRef.current = window.setTimeout(() => setHovered(!1), 300);
+        },
         children: jsx(Component, props)
       });
     });
@@ -200,6 +285,7 @@ export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
 export const WanJuanHeavyRenderNodeTypes = new Set([
     `imageNode`,
     `promptNode`,
+    `textNode`,
     `videoNode`,
     `seedanceNode`,
     `tongyiWanxiangNode`,
@@ -242,7 +328,6 @@ export const WanJuanComputeNodeRenderMode = (node, viewport = {
     if (!WanJuanHeavyRenderNodeTypes.has(node?.type)) return `full`;
     if (WanJuanNodeNeedsFullRender(node)) return `full`;
     let zoom = Number(viewport?.zoom || 1);
-    if (zoom >= 0.72) return `full`;
     let {
         width,
         height
@@ -256,7 +341,7 @@ export const WanJuanComputeNodeRenderMode = (node, viewport = {
     if (zoom <= 0.18) return `shell`;
     if (zoom <= 0.36 && distance > centerRadius * 0.72) return `shell`;
     if (zoom <= 0.52 && distance > centerRadius) return `shell`;
-    return zoom < 0.56 ? `lite` : `full`;
+    return `lite`;
   };
 
 export const WanJuanIsCriticalNodePatch = (patch: any = {}) =>
@@ -311,7 +396,7 @@ export const WanJuanUseThrottledNodeDataUpdate = (nodeId, updateNodeData, delay 
   let lastProfile = null;
   const apply = () => {
     let profile = ``;
-    try { profile = window.localStorage?.getItem(`wanjuanPerformanceProfile`) || `balanced`; } catch { profile = `balanced`; }
+    try { profile = document.documentElement.dataset.wanjuanSessionPerformanceProfile || window.localStorage?.getItem(`wanjuanPerformanceProfile`) || `balanced`; } catch { profile = `balanced`; }
     if (profile === lastProfile) return;
     lastProfile = profile;
     const root = document.documentElement;

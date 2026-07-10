@@ -68,32 +68,28 @@ export function useSafeEffect18(deps: UseSafeEffect18Deps) {
 	            if (guard(event)) return;
 	            (event.preventDefault(), redo());
 	          }
-	          else if (isPlainCommand && [`t`, `i`, `v`, `j`, `w`].includes(shortcutKey)) {
+	          else if (isPlainCommand && [`t`, `i`, `v`, `j`].includes(shortcutKey)) {
 	            if (guard(event) || event.repeat) return;
 	            event.preventDefault();
 	            if (shortcutKey === `v` && await clipboardHasPastePayload()) {
 	              handlePaste();
 	              return;
 	            }
-	            shortcutKey === `t` ?
-	              addKeyboardNode(`textNode`, {
-	                text: ``
-	              }) :
-	              shortcutKey === `i` ?
-	              addKeyboardNode(`promptNode`, {
-	                prompt: ``
-	              }) :
-	              shortcutKey === `v` ?
-	              addKeyboardNode(`videoNode`, {
-	                prompt: ``
-	              }) :
-	              shortcutKey === `j` ?
-	              addKeyboardNode(`seedanceNode`, {
-	                prompt: ``
-	              }) :
-	              addKeyboardNode(`tongyiWanxiangNode`, {
-	                prompt: ``
-	              });
+		            shortcutKey === `t` ?
+		              addKeyboardNode(`textNode`, {
+		                text: ``
+		              }) :
+		              shortcutKey === `i` ?
+		              addKeyboardNode(`promptNode`, {
+		                prompt: ``
+		              }) :
+		              shortcutKey === `v` ?
+		              addKeyboardNode(`videoNode`, {
+		                prompt: ``
+		              }) :
+		              addKeyboardNode(`seedanceNode`, {
+		                prompt: ``
+		              });
 	          }
 	          else if ((event.ctrlKey || event.metaKey) && event.key === `c`) {
 	            if (guard(event)) return;

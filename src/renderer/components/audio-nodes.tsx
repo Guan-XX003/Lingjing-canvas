@@ -16,6 +16,7 @@ import { resolveModelApiBindingIdHelper } from "../lib/model-binding";
 import { WanJuanGetPreferredModel, WanJuanShouldAutoPreferredModel, WanJuanUseFavoriteModels } from "../lib/model-favorites";
 import { WanJuanSameModelId } from "../lib/model-id";
 import { buildProjectMediaFileUrl } from "../lib/resource";
+import { useWanJuanMediaBudget } from "../lib/media-budget";
 import { WanJuanNodeHandle } from "./render-mode";
 
 export const wanjuanTranscribeAudioClip = async (audioFile, baseUrl, apiKey, model, prompt, startGapThreshold, endGapThreshold, wanJuanAudioProtocolProfile: any = {}) => {
@@ -377,6 +378,7 @@ export const WanJuanTtsMusicNode = reactMemo(({
       let favoriteModels = WanJuanUseFavoriteModels();
       let wanJuanTtsModelManualRef = useRef(nodeData.wanjuanTtsModelManual === !0),
         wanJuanMusicModelManualRef = useRef(nodeData.wanjuanMusicModelManual === !0);
+      const wanjuanTtsAudioMedia = useWanJuanMediaBudget(`audio`, nodeId, !!data.audioUrl && !!selected);
       useEffect(() => {
         updateNodeData(nodeId, {
           mode: mode,
@@ -1530,10 +1532,15 @@ ${data.audioModel || ``}`)
               })]
             }), data.audioUrl && jsxs(`div`, {
               className: `bg-[#111] border border-[#333] rounded p-2 flex flex-col gap-2 wanjuan-tts-node-subpanel`,
-              children: [jsx(`audio`, {
+              children: [wanjuanTtsAudioMedia.enabled ? jsx(`audio`, {
                 src: data.audioUrl,
                 controls: !0,
                 className: `w-full h-8 outline-none nodrag`
+              }) : jsx(`button`, {
+                type: `button`,
+                onClick: wanjuanTtsAudioMedia.activate,
+                className: `w-full h-8 rounded border border-[#444] text-[11px] text-gray-300`,
+                children: `播放音频`,
               }), jsx(`button`, {
                 className: `text-[10px] text-gray-400 hover:text-white text-left truncate`,
                 onClick: () => navigator.clipboard.writeText(data.audioUrl),
@@ -1592,6 +1599,7 @@ export const WanJuanAudioNode = reactMemo(({
         [prompt, setPrompt] = useState(nodeData.prompt || `请输出简体中文。`),
         [maxDuration, setMaxDuration] = useState(nodeData.maxDuration || 10),
         [_, setPauseGap] = useState(nodeData.pauseGap || 0.3);
+      const wanjuanAudioMedia = useWanJuanMediaBudget(`audio`, nodeId, !!data.audioUrl && !!selected);
       useEffect(() => {
         updateNodeData(nodeId, {
           prompt: prompt,
@@ -2082,6 +2090,13 @@ export const WanJuanAudioNode = reactMemo(({
                           }),
                         ],
                       }),
+                      !wanjuanAudioMedia.enabled ?
+                      jsx(`button`, {
+                        type: `button`,
+                        onClick: wanjuanAudioMedia.activate,
+                        className: `w-full h-8 rounded border border-[#444] text-[11px] text-gray-300`,
+                        children: `播放音视频`,
+                      }) :
                       data.audioUrl.match(/\.(mp4|webm|mov|ogg)($|\?)/i) ||
                       data.audioUrl.startsWith(`data:video/`) ?
                       jsx(`video`, {

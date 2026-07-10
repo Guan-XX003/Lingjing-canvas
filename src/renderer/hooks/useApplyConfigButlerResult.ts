@@ -6,7 +6,7 @@ import { useCallback, useMemo } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, SetState, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
 import { ensureModelInList } from "../lib/model-list-utils";
-import { finalizeButlerProtocolConfig, normalizeButlerBaseUrl, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName } from "../lib/config-butler";
+import { finalizeButlerProtocolConfig, normalizeButlerBaseUrl, normalizeModelCategory, normalizeProtocolConfig, normalizeProtocolName, validateButlerProtocolConfig } from "../lib/config-butler";
 import { guessApiConfigName, normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 declare const chrome: any;
 
@@ -136,15 +136,21 @@ export function useApplyConfigButlerResult(deps: UseApplyConfigButlerResultDeps)
             protocolName = normalizeProtocolName(butlerResult.protocol?.name, protocolConfig),
             apiConfigName = guessApiConfigName(butlerResult.apiConfig?.name, apiUrl),
             apiConfigs2 = [...apiConfigs],
-            matchedApiConfig =
+	            matchedApiConfig =
             apiConfigs2.find((apiConfig) => apiConfig.id === configButlerTargetApiConfigId) ||
             apiConfigs2.find(
               (apiConfig) =>
               normalizeButlerBaseUrl(apiConfig.url) === normalizeButlerBaseUrl(apiUrl) ||
               apiConfig.name === apiConfigName,
-            ) ||
-            null;
-          matchedApiConfig
+	            ) ||
+	            null;
+	          let validation = validateButlerProtocolConfig(protocolConfig, {
+	            modelName: modelName,
+	            apiUrl: apiUrl,
+	            category: category,
+	          });
+	          if (!validation.ok) throw Error(`配置校验未通过：${validation.errors.join(`；`)}`);
+	          matchedApiConfig
             ?
             ((matchedApiConfig.url = apiUrl), apiKey && (matchedApiConfig.key = apiKey), apiConfigName && (matchedApiConfig.name = apiConfigName), matchedApiConfig.protocolFormat || (matchedApiConfig.protocolFormat = `auto`)) :
             ((matchedApiConfig = {

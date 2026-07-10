@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * stopGeneration。自 bundle(WanJuanAppCanvas) 抽出，逐字搬运、行为不变。
  */
@@ -24,24 +23,28 @@ export function useStopGeneration(deps: UseStopGenerationDeps) {
     updateTaskList,
   } = deps;
   const stopGeneration = useCallback(
-      (nodeId, options = {}) => {
+      (nodeId: string, options: { silent?: boolean } = {}) => {
         let {
           silent: silent = false
         } = options,
         abortController = abortControllersRef.current.get(nodeId);
         updateTaskList &&
-          updateTaskList((nodes2) =>
-            nodes2.map((node) => {
-              let task = nodesRef.current.find((task2) => task2.id === nodeId),
-                taskId = task?.data?.seedanceTaskId || task?.data?.taskId;
-              return taskId && node.id === taskId ?
+          updateTaskList((tasks) =>
+            tasks.map((taskRecord) => {
+              let node = nodesRef.current.find((task2) => task2.id === nodeId),
+                taskId = node?.data?.seedanceTaskId || node?.data?.taskId || node?.data?.tianjiExecuteId,
+                isActiveTask = taskRecord?.status === `running` || taskRecord?.status === `pending`,
+                matchesCurrentTaskId = !!taskId && taskRecord.id === taskId,
+                matchesActiveNodeTask = isActiveTask && taskRecord.nodeId === nodeId;
+              return matchesCurrentTaskId || matchesActiveNodeTask ?
                 {
-                  ...node,
+                  ...taskRecord,
                   status: `failed`,
                   errorMsg: `已手动停止`,
                   stoppedByUser: true,
+                  updatedAt: Date.now(),
                 } :
-                node;
+                taskRecord;
             }),
           );
         (abortController && abortController.abort(),

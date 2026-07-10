@@ -25,7 +25,7 @@ export function use_createImportedMediaNode(deps: UseCreateImportedMediaNodeDeps
         nodeId = `imageNode-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         nativePath = wanjuanGetDroppedFilePath(file),
         stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
-        createNodeWithUrl = (mediaUrl) => {
+        createNodeWithUrl = (mediaUrl, initialPersisted = null) => {
           if (!mediaUrl) return;
           createNodeAt(
             `imageNode`,
@@ -36,6 +36,7 @@ export function use_createImportedMediaNode(deps: UseCreateImportedMediaNodeDeps
               sourceOrigin: `external-upload`,
               originalName: file.name,
               mediaKind,
+              ...(initialPersisted?.thumbnailUrl ? { thumbnailUrl: initialPersisted.thumbnailUrl } : {}),
               ...(nativePath ? {
                 localPath: nativePath,
                 filePath: nativePath,
@@ -43,7 +44,8 @@ export function use_createImportedMediaNode(deps: UseCreateImportedMediaNodeDeps
             },
             connection,
           );
-          persistImportedMediaFile(file, nodeId, `imageUrl`, mediaKind, mediaUrl).then((persisted) => {
+          const persistedPromise = initialPersisted ? Promise.resolve(initialPersisted) : persistImportedMediaFile(file, nodeId, `imageUrl`, mediaKind, mediaUrl);
+          persistedPromise.then((persisted) => {
         if (!persisted?.url) {
           addGeneratedAsset?.(mediaUrl, mediaKind, file.name, `external-upload`);
           return;
@@ -56,6 +58,7 @@ export function use_createImportedMediaNode(deps: UseCreateImportedMediaNodeDeps
               data: {
                 ...node.data,
                 imageUrl: persisted.url,
+                thumbnailUrl: mediaKind === `image` ? persisted.thumbnailUrl || persisted.url : node.data?.thumbnailUrl,
                 localPath: persisted.localPath,
                 filePath: persisted.localPath,
                 projectAssetBindings: persisted.binding ? {
@@ -71,6 +74,12 @@ export function use_createImportedMediaNode(deps: UseCreateImportedMediaNodeDeps
           });
         };
       if (stableUrl) {
+        if (mediaKind === `image`) {
+          persistImportedMediaFile(file, nodeId, `imageUrl`, mediaKind, stableUrl)
+            .then((persisted) => createNodeWithUrl(persisted?.url || stableUrl, persisted))
+            .catch(() => createNodeWithUrl(stableUrl));
+          return;
+        }
         createNodeWithUrl(stableUrl);
         return;
       }

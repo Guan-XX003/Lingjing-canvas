@@ -183,11 +183,11 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 		          let isSeedanceNode =
 		            seedanceSourceNode?.type === `seedanceNode` ||
 		            /^(?:doubao-)?seedance(?:-2(?:\.|-)?0|-2-0)/i.test(modelName),
+		            selectedVideoProtocolName =
+		            resolveModelProtocolBindingHelper(seedanceSourceNode?.data?.videoModelProtocolBindings, modelName) ||
+		            resolveModelProtocolBindingHelper(videoModelProtocolBindings, modelName),
 		            modelProtocolDefinition =
-		            modelProtocolRegistry?.[
-	              resolveModelProtocolBindingHelper(seedanceSourceNode?.data?.videoModelProtocolBindings, modelName) ||
-	              resolveModelProtocolBindingHelper(videoModelProtocolBindings, modelName)
-            ],
+		            modelProtocolRegistry?.[selectedVideoProtocolName],
             parseVideoModelRequestProfiles = (value) => {
               if (!value) return {};
               if (typeof value == `object`) return value;
@@ -2011,11 +2011,11 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                      size: `string`,
 	                      seconds: `number`,
 	                    })),
-	                  modelConfig.category === `video` &&
-	                  /^grok-(?:image-video|video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
-                  (/^https?:\/\/jixing\.guancn\.uk/i.test(apiUrl) ||
-	                    /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl)) &&
-	                  ((requestProfile.requestType = `multipart-video`),
+		                  modelConfig.category === `video` &&
+		                  /^grok-(?:video|imagine)/i.test(String(modelConfig.modelName || ``)) &&
+	                  (/^https?:\/\/jixing\.guancn\.uk/i.test(apiUrl) ||
+		                    /(^|\.)lconai\.com|\/\/[nsv]\.lconai\.com/i.test(apiUrl)) &&
+		                  ((requestProfile.requestType = `multipart-video`),
 	          (requestProfile.submitPath = `/v1/videos`),
 	          (requestProfile.pollPath = `/v1/videos/{taskId}`),
 	          delete requestProfile.contentPath,
@@ -2103,6 +2103,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               effectiveVideoRequestProfile?.requiresReferenceVideo === true,
               videoGatewayFormatOverride =
               !modelProtocolDefinition &&
+              !effectiveVideoRequestProfile?.requestType &&
               videoConfig?.protocolFormat && videoConfig.protocolFormat !== `auto`
                 ? videoConfig.protocolFormat
                 : null,
@@ -2401,11 +2402,10 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   ...jsonBody,
                   ...effectiveVideoRequestProfile.extraBody,
                 });
-              imageReferences.length > 0 &&
-                (jsonBody[
-                    effectiveFieldMapping.referenceImage || `first_frame_image`
-                  ] = referenceImagesAsArray ?
-                  await Promise.all(
+              if (imageReferences.length > 0) {
+                let referenceImageField = effectiveFieldMapping.referenceImage || `first_frame_image`;
+                if (referenceImagesAsArray) {
+                  jsonBody[referenceImageField] = await Promise.all(
                     imageReferences.map((reference) =>
                       (async () => {
                         let referenceUrl = typeof reference === `string` ? reference : reference?.url || ``,
@@ -2422,20 +2422,18 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                           imageUrl;
                       })(),
                     ),
-                  ) :
-                  (() => {
-                    let itemShape = effectiveVideoRequestProfile?.referenceImageItemShape || ``,
-                      firstReferenceUrl = typeof imageReferences[0] === `string` ? imageReferences[0] : imageReferences[0]?.url || ``;
-                    if (referenceImagesAsUrls || (firstReferenceUrl && !/^(https?:|data:)/i.test(firstReferenceUrl)))
-                      return uploadReferenceMediaForUrlOnlyModel(firstReferenceUrl, `image`).then((imageUrl) =>
-                        itemShape === `image_url_object` ? {
-                          image_url: imageUrl
-                        } : imageUrl,
-                      );
-                    return itemShape === `image_url_object` ? {
-                      image_url: firstReferenceUrl
-                    } : firstReferenceUrl;
-                  })());
+                  );
+                } else {
+                  let itemShape = effectiveVideoRequestProfile?.referenceImageItemShape || ``,
+                    firstReferenceUrl = typeof imageReferences[0] === `string` ? imageReferences[0] : imageReferences[0]?.url || ``,
+                    imageUrl = referenceImagesAsUrls || (firstReferenceUrl && !/^(https?:|data:)/i.test(firstReferenceUrl)) ?
+                    await uploadReferenceMediaForUrlOnlyModel(firstReferenceUrl, `image`) :
+                    firstReferenceUrl;
+                  jsonBody[referenceImageField] = itemShape === `image_url_object` ? {
+                    image_url: imageUrl
+                  } : imageUrl;
+                }
+              }
               if (/^grok-imagine-video$/i.test(String(modelName || ``))) {
                 let referenceImageField = effectiveFieldMapping.referenceImage || `first_frame_image`,
                   referenceImages = jsonBody[referenceImageField];
@@ -2461,6 +2459,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               console.info(
                 `Sending Video API request info: ${safeStringifyRequestForLog({
 			                modelName: modelName,
+			                protocolName: selectedVideoProtocolName,
 			                requestType: requestType,
 			                submitUrl: submitUrl,
 			                pollPath: pollPathTemplate,
@@ -2922,6 +2921,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
             console.info(
               `Sending Multipart Video API request info: ${safeStringifyRequestForLog({
                 modelName: modelName,
+                protocolName: selectedVideoProtocolName,
                 requestType: requestType,
                 submitUrl: submitUrl,
                 pollPath: pollPathTemplate,
@@ -2993,12 +2993,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   };
                   let videoRespMapping = effectiveVideoRequestProfile?.responseMapping && typeof effectiveVideoRequestProfile.responseMapping == `object` ? effectiveVideoRequestProfile.responseMapping : {};
                   let mappedVideoUrl = (() => {
-                    let paths = videoRespMapping.videoUrl || videoRespMapping.video_url || videoRespMapping.url || videoRespMapping.resultUrl;
+                    let paths = videoRespMapping.video || videoRespMapping.videoUrl || videoRespMapping.video_url || videoRespMapping.url || videoRespMapping.resultUrl;
                     paths = Array.isArray(paths) ? paths : paths ? [paths] : [];
                     for (let responsePath of paths) { let resolvedValue = readRespPath(taskResult, responsePath); if (typeof resolvedValue == `string` && resolvedValue.trim()) return resolvedValue.replace(/[`\s]/g, ``); }
                     return ``;
                   })();
-                  let videoUrl = mappedVideoUrl || (taskResult.video_url || taskResult.videoUrl || taskResult.data?.video_url || taskResult.data?.videoUrl || taskResult.output?.video_url || taskResult.output?.videoUrl || taskResult.result?.video_url || taskResult.result?.videoUrl || taskResult.video?.url || taskResult.artifact?.video?.url || taskResult.artifact?.video_raw?.url || taskResult.video || taskResult.result_url || taskResult.url)?.replace(
+                  let videoUrl = mappedVideoUrl || (taskResult.video_url || taskResult.videoUrl || taskResult.data?.result_url || taskResult.data?.video_url || taskResult.data?.videoUrl || taskResult.output?.video_url || taskResult.output?.videoUrl || taskResult.result?.video_url || taskResult.result?.videoUrl || taskResult.video?.url || taskResult.artifact?.video?.url || taskResult.artifact?.video_raw?.url || taskResult.video || taskResult.result_url || taskResult.url)?.replace(
                       /[`\s]/g,
                       ``,
                     ) || ``,
@@ -3131,6 +3131,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     pollResult.output?.videoUrl ||
                     pollResult.result?.video_url ||
                     pollResult.result?.videoUrl ||
+                    pollResult.data?.result_url ||
                     pollResult.video?.url ||
                     pollResult.artifact?.video?.url ||
                     pollResult.artifact?.video_raw?.url;
@@ -3221,7 +3222,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                       addGeneratedAsset && videoUrl && addGeneratedAsset(videoUrl, `video`, `generated`),
                       showToast(`视频生成成功！`));
                     break;
-                  } else if ([`failed`, `error`, `fail`, `expired`, `canceled`, `cancelled`, `rejected`].includes(status)) {
+                  } else if (((() => {
+                    let videoResponseMapping = effectiveVideoRequestProfile?.responseMapping;
+                    let failedValuesSpec = videoResponseMapping && typeof videoResponseMapping == `object` ? (videoResponseMapping.failedValues || videoResponseMapping.failed) : null;
+                    failedValuesSpec = Array.isArray(failedValuesSpec) ? failedValuesSpec.map((item) => normalizeGenericStatus(item)).filter(Boolean) : [];
+                    return (failedValuesSpec.length ? failedValuesSpec : [`failed`, `failure`, `error`, `fail`, `expired`, `canceled`, `cancelled`, `rejected`]).includes(status);
+                  })())) {
                     let taskError = extractVideoTaskErrorHelper(pollResult);
                     throw (
                       pollResult.error &&

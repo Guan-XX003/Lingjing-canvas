@@ -7,10 +7,9 @@
  *
  * 自 bundle 反混淆迁入，行为保持一致。
  */
-import { jsx, jsxs } from "react/jsx-runtime";
 import { CanvasNode } from "./types";
-import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
-import { buildProjectMediaFileUrl, wanjuanResourceMediaUrl } from "../lib/resource";
+import { localPathFromProjectFileUrl } from "./project-asset-binding";
+import { buildProjectMediaFileUrl, wanjuanResourceMediaUrl } from "./resource";
 
 export const wanjuanLooksLikeLocalMediaPath = (value) => {
       let text = String(value || ``).trim();
@@ -21,6 +20,27 @@ export const wanjuanLooksLikeLocalMediaPath = (value) => {
           /^\\\\[^\\]+\\/.test(text) ||
           /^\/\/[^/]+\//.test(text))
       );
+    };
+export const wanjuanIsPublicHttpMediaUrl = (value) => {
+      try {
+        const url = new URL(String(value || ``).trim());
+        if (url.protocol !== `http:` && url.protocol !== `https:`) return false;
+        const hostname = url.hostname.toLowerCase();
+        if (hostname === `localhost` || hostname.endsWith(`.localhost`) || hostname === `::1` || hostname === `[::1]`) return false;
+        const ipv4 = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+        if (!ipv4) return true;
+        const first = Number(ipv4[1]);
+        const second = Number(ipv4[2]);
+        return !(
+          first === 10 ||
+          first === 127 ||
+          (first === 169 && second === 254) ||
+          (first === 172 && second >= 16 && second <= 31) ||
+          (first === 192 && second === 168)
+        );
+      } catch {
+        return false;
+      }
     };
 export const wanjuanNormalizeReferenceMediaUrl = (value, kindHint = ``) => {
       let rawValue =
@@ -73,7 +93,18 @@ export const wanjuanCollectNodeReferenceMedia = (node: CanvasNode, handleId?: st
         images: images,
         videos: videos
       };
-      wanjuanPushReferenceMediaUrl(images, videos, node.data.imageUrl || node.data.mediaUrl || node.data.localPath || node.data.filePath || node.data.path, node.data.mediaKind);
+      const pushPrimaryMedia = () =>
+        wanjuanPushReferenceMediaUrl(images, videos, node.data.imageUrl || node.data.mediaUrl || node.data.localPath || node.data.filePath || node.data.path, node.data.mediaKind);
+      const dedupeMedia = (items) => Array.from(new Set(items.filter(Boolean)));
+      const selectedGridCell =
+        node.type === `gridSplitNode` && handleId?.startsWith(`cell-`) ?
+        parseInt(handleId.replace(`cell-`, ``), 10) :
+        -1;
+      const selectedVideoFrame =
+        node.type === `videoExtractNode` && handleId?.startsWith(`frame-`) ?
+        parseInt(handleId.replace(`frame-`, ``), 10) :
+        -1;
+      if (selectedGridCell < 0 && selectedVideoFrame < 0) pushPrimaryMedia();
       if (node.type === `customNode` && node.data.resultData) {
         let resultData = node.data.resultData;
         node.data.config?.outputType === `image` &&
@@ -84,30 +115,26 @@ export const wanjuanCollectNodeReferenceMedia = (node: CanvasNode, handleId?: st
             typeof resultData == `string` && wanjuanPushReferenceMediaUrl(images, videos, resultData, `image`));
       }
       if (node.type === `videoExtractNode` && node.data.extractedImages)
-        if (handleId && handleId.startsWith(`frame-`)) {
-          let frameIndex = parseInt(handleId.replace(`frame-`, ``), 10);
-          if (!(node.data.hiddenIndices || []).includes(frameIndex)) {
+        if (selectedVideoFrame >= 0) {
+          if (!(node.data.hiddenIndices || []).includes(selectedVideoFrame)) {
             let allExtractedImages = node.data.allExtractedImages;
-            allExtractedImages && allExtractedImages[frameIndex] && wanjuanPushReferenceMediaUrl(images, videos, allExtractedImages[frameIndex], `image`);
+            allExtractedImages && allExtractedImages[selectedVideoFrame] && wanjuanPushReferenceMediaUrl(images, videos, allExtractedImages[selectedVideoFrame], `image`);
           }
         } else node.data.extractedImages.forEach((node2) => wanjuanPushReferenceMediaUrl(images, videos, node2, `image`));
       if (
         node.type === `gridSplitNode` &&
         node.data.imageUrl &&
-        handleId &&
-        handleId.startsWith(`cell-`)
+        selectedGridCell >= 0
       ) {
-        let cellIndex = parseInt(handleId.replace(`cell-`, ``), 10);
         node.data.extractedImages &&
           Array.isArray(node.data.extractedImages) &&
-          node.data.extractedImages[cellIndex] &&
-          wanjuanPushReferenceMediaUrl(images, videos, node.data.extractedImages[cellIndex], `image`);
+          node.data.extractedImages[selectedGridCell] &&
+          wanjuanPushReferenceMediaUrl(images, videos, node.data.extractedImages[selectedGridCell], `image`);
       }
       return (
-        node.type === `gridMergeNode` && node.data.imageUrl && wanjuanPushReferenceMediaUrl(images, videos, node.data.imageUrl, `image`),
-        node.data.videoUrl && wanjuanPushReferenceMediaUrl(images, videos, node.data.videoUrl, `video`), {
-          images: images,
-          videos: videos
+        selectedVideoFrame < 0 && node.data.videoUrl && wanjuanPushReferenceMediaUrl(images, videos, node.data.videoUrl, `video`), {
+          images: dedupeMedia(images),
+          videos: dedupeMedia(videos)
         }
       );
     };

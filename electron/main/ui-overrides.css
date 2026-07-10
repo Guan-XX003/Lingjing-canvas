@@ -1310,6 +1310,118 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   display: block !important;
 }
 
+.wanjuan-beginner-guide-anchor {
+  position: relative !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+}
+
+.wanjuan-beginner-guide-button.is-unseen {
+  animation: wanjuan-beginner-guide-nudge 900ms ease-in-out 3 !important;
+  border-color: color-mix(in srgb, var(--wj-accent) 72%, var(--wj-border) 28%) !important;
+  background: color-mix(in srgb, var(--wj-control-hover-bg) 72%, var(--wj-accent) 28%) !important;
+  color: color-mix(in srgb, var(--wj-accent) 88%, var(--wj-text) 12%) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wj-text) 12%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--wj-accent) 24%, transparent),
+    0 0 16px color-mix(in srgb, var(--wj-accent) 52%, transparent) !important;
+}
+
+.wanjuan-beginner-guide-button.is-unseen::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -6px !important;
+  border: 2px solid color-mix(in srgb, var(--wj-accent) 76%, transparent) !important;
+  border-radius: 13px !important;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--wj-accent) 58%, transparent) !important;
+  pointer-events: none !important;
+  animation: wanjuan-beginner-guide-ring 1800ms ease-in-out infinite !important;
+}
+
+.wanjuan-beginner-guide-dot {
+  position: absolute !important;
+  top: 5px !important;
+  right: 5px !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 9999px !important;
+  background: var(--wj-accent) !important;
+  box-shadow: 0 0 0 2px var(--wj-control-bg), 0 0 8px color-mix(in srgb, var(--wj-accent) 62%, transparent) !important;
+}
+
+.wanjuan-beginner-guide-coachmark {
+  position: absolute !important;
+  z-index: 120 !important;
+  top: calc(100% + 10px) !important;
+  right: 0 !important;
+  width: 220px !important;
+  padding: 10px 12px !important;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 44%, var(--wj-border) 56%) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--wj-surface-2) 94%, var(--wj-accent) 6%) !important;
+  color: var(--wj-text) !important;
+  box-shadow: var(--wj-panel-shadow) !important;
+  pointer-events: none !important;
+  animation: wanjuan-beginner-guide-coachmark-in 180ms ease-out both !important;
+}
+
+.wanjuan-beginner-guide-coachmark::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -5px !important;
+  right: 10px !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-left: 1px solid color-mix(in srgb, var(--wj-accent) 44%, var(--wj-border) 56%) !important;
+  border-top: 1px solid color-mix(in srgb, var(--wj-accent) 44%, var(--wj-border) 56%) !important;
+  background: color-mix(in srgb, var(--wj-surface-2) 94%, var(--wj-accent) 6%) !important;
+  transform: rotate(45deg) !important;
+}
+
+.wanjuan-beginner-guide-coachmark strong,
+.wanjuan-beginner-guide-coachmark span {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  letter-spacing: 0 !important;
+}
+
+.wanjuan-beginner-guide-coachmark strong {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+}
+
+.wanjuan-beginner-guide-coachmark span {
+  margin-top: 3px !important;
+  color: var(--wj-text-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+@keyframes wanjuan-beginner-guide-nudge {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-2px) scale(1.08); }
+}
+
+@keyframes wanjuan-beginner-guide-ring {
+  0%, 100% { opacity: 0.34; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes wanjuan-beginner-guide-coachmark-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wanjuan-beginner-guide-button.is-unseen,
+  .wanjuan-beginner-guide-button.is-unseen::after,
+  .wanjuan-beginner-guide-coachmark {
+    animation: none !important;
+  }
+}
+
 .wanjuan-topbar-notification-dot {
   position: absolute !important;
   top: 6px !important;
@@ -2368,6 +2480,100 @@ html:is(.theme-dark, .theme-graphite) input[type="range"]::-moz-range-thumb {
 .react-flow__node {
   contain: layout style;
   overflow: visible !important;
+}
+
+.wanjuan-render-lite-node {
+  width: clamp(168px, 18vw, 236px);
+  min-height: 116px;
+  color: var(--wj-text, #e5e7eb);
+}
+
+.wanjuan-render-lite-frame {
+  display: grid;
+  grid-template-rows: minmax(72px, 1fr) auto;
+  min-height: 116px;
+  overflow: hidden;
+  border: 1px solid var(--wanjuan-lite-color, var(--wj-border, #475569));
+  border-radius: 8px;
+  background: var(--wj-surface, #171a1f);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--wanjuan-theme-shadow, #000) 32%, transparent);
+}
+
+.wanjuan-render-lite-preview,
+.wanjuan-render-lite-placeholder {
+  width: 100%;
+  height: 82px;
+  object-fit: cover;
+  background: var(--wj-bg, #0f1115);
+}
+
+.wanjuan-render-lite-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--wj-muted, #8b95a3);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wanjuan-render-lite-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px 8px;
+  border-top: 1px solid color-mix(in srgb, var(--wj-border, #303640) 72%, transparent);
+}
+
+.wanjuan-render-lite-copy strong,
+.wanjuan-render-lite-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wanjuan-render-lite-copy strong {
+  font-size: 11px;
+  color: var(--wj-text, #f3f4f6);
+}
+
+.wanjuan-render-lite-copy span {
+  font-size: 9px;
+  color: var(--wj-muted, #8b95a3);
+}
+
+.wanjuan-render-lite-node.is-selected .wanjuan-render-lite-frame {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wj-accent, #3b82f6) 42%, transparent);
+}
+
+.wanjuan-render-mini-shell {
+  width: 112px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 72%, transparent);
+  border-radius: 6px;
+  background: var(--wj-surface, #171a1f);
+  color: var(--wj-text, #e5e7eb);
+  contain: strict;
+}
+
+.wanjuan-render-mini-shell-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--wanjuan-shell-color, #64748b);
+}
+
+.wanjuan-render-mini-shell strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 700;
 }
 
 /* Long prompts and generated text should scroll inside the node instead of

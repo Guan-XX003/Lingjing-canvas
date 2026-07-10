@@ -11,6 +11,7 @@ export function WanJuanConfigButlerBatchModal({
   setConfigButlerBatchItems,
   setConfigButlerBatchModalOpen,
 }: any) {
+  const enabledCount = (configButlerBatchItems || []).filter((item) => item?.enabled !== false && item?.validation?.ok !== false).length;
   return jsx(`div`, {
 				                            style: {
 				                              position: `fixed`,
@@ -47,7 +48,7 @@ export function WanJuanConfigButlerBatchModal({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `text-[11px] text-gray-500 mt-1`,
-	                                          children: `确认分类、删除不需要的模型后再导入。`,
+	                                          children: `确认分类、协议路径和校验状态；兜底猜测默认不会导入。`,
 	                                        }),
 	                                      ],
 	                                    }),
@@ -130,19 +131,47 @@ export function WanJuanConfigButlerBatchModal({
 		                                                  children: filteredItems.map((item) =>
 		                                                    jsxs(
 		                                                      `div`, {
-		                                                        className: `flex flex-col md:flex-row gap-2 md:items-center px-3 py-2`,
-		                                                        children: [
-		                                                          jsxs(`div`, {
-		                                                            className: `flex-1 min-w-0`,
-		                                                            children: [
-		                                                              jsx(`div`, {
-		                                                                className: `text-xs text-gray-200 truncate`,
-		                                                                title: item.modelName,
-		                                                                children: item.modelName,
-		                                                              }),
-		                                                              item.notes &&
-		                                                              jsx(`div`, {
-		                                                                className: `text-[10px] text-gray-500 truncate mt-0.5`,
+			                                                        className: `flex flex-col md:flex-row gap-2 md:items-center px-3 py-2`,
+			                                                        children: [
+			                                                          jsx(`input`, {
+			                                                            type: `checkbox`,
+			                                                            checked: item.enabled !== false && item.validation?.ok !== false,
+			                                                            disabled: item.validation?.ok === false,
+			                                                            onChange: (event) =>
+			                                                              setConfigButlerBatchItems((items) =>
+			                                                                items.map((item2) => item2.id === item.id ? {
+			                                                                  ...item2,
+			                                                                  enabled: event.target.checked,
+			                                                                } : item2),
+			                                                              ),
+			                                                            className: `h-4 w-4 shrink-0 accent-blue-500 disabled:opacity-40`,
+			                                                            title: item.validation?.ok === false ? `存在校验错误，不能导入` : `是否导入此模型`,
+			                                                          }),
+			                                                          jsxs(`div`, {
+			                                                            className: `flex-1 min-w-0`,
+			                                                            children: [
+			                                                              jsxs(`div`, {
+			                                                                className: `flex items-center gap-2 min-w-0`,
+			                                                                children: [
+			                                                                  jsx(`span`, {
+			                                                                    className: `text-xs text-gray-200 truncate`,
+			                                                                    title: item.modelName,
+			                                                                    children: item.modelName,
+			                                                                  }),
+			                                                                  jsx(`span`, {
+			                                                                    className: `shrink-0 rounded border px-1.5 py-0.5 text-[9px] ${item.validation?.ok === false ? `border-red-500/40 bg-red-500/10 text-red-300` : item.inferenceSource === `fallback` ? `border-amber-500/40 bg-amber-500/10 text-amber-300` : `border-emerald-500/35 bg-emerald-500/10 text-emerald-300`}`,
+			                                                                    children: item.validation?.ok === false ? `校验失败` : item.inferenceSource === `fallback` ? `兜底猜测` : `结构校验通过`,
+			                                                                  }),
+			                                                                ],
+			                                                              }),
+			                                                              jsx(`div`, {
+			                                                                className: `text-[10px] text-gray-400 truncate mt-0.5 font-mono`,
+			                                                                title: `${item.protocol?.config?.requestType || `custom`} · ${item.protocol?.config?.submitPath || `未识别提交路径`}`,
+			                                                                children: `${item.protocol?.config?.requestType || `custom`} · ${item.protocol?.config?.submitPath || `未识别提交路径`}`,
+			                                                              }),
+			                                                              item.notes &&
+			                                                              jsx(`div`, {
+			                                                                className: `text-[10px] text-gray-500 line-clamp-2 mt-0.5`,
 		                                                                title: item.notes,
 		                                                                children: item.notes,
 		                                                              }),
@@ -206,7 +235,7 @@ export function WanJuanConfigButlerBatchModal({
 	                                  children: [
 	                                    jsx(`div`, {
 	                                      className: `text-[11px] text-gray-500`,
-	                                      children: `当前将保存为新全局配置：${configButlerBatchItems.length} 个模型`,
+		                                      children: `将保存 ${enabledCount} 个模型，共识别 ${configButlerBatchItems.length} 个`,
 	                                    }),
 	                                    jsxs(`div`, {
 	                                      className: `flex items-center gap-2`,
@@ -220,7 +249,7 @@ export function WanJuanConfigButlerBatchModal({
 	                                        jsx(`button`, {
 	                                          type: `button`,
 	                                          onClick: applyConfigButlerBatchResults,
-	                                          disabled: !configButlerBatchItems.length,
+		                                          disabled: !enabledCount,
 	                                          className: `px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500 disabled:opacity-50 transition-colors`,
 		                                          children: `保存并切换`,
 	                                        }),

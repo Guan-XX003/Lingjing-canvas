@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { ApiBindings, ProtocolBindings, Ref, SetAny, SetState, StoredGlobalConfig, Toast, TransitResource, WjEdge } from "../lib/app-types";
-import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
+import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { WanJuanNormalizePerformanceProfile } from "../lib/performance-profile";
 import { compactGlobalTasks } from "../lib/app-root-helpers";
 import { normalizeThemeMode } from "../lib/app-utils";
@@ -656,7 +656,7 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
 	                    })(),
                     settings.activeStoredGlobalConfigId &&
                     setActiveStoredGlobalConfigId(settings.activeStoredGlobalConfigId),
-                    settings.videoModel && setVideoModels(settings.videoModel),
+                    settings.videoModel && setVideoModels(wanjuanMergeModelText(settings.videoModel, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS)),
                     settings.videoDurations && setVideoDurations(settings.videoDurations),
                     settings.videoResolutions &&
                     setVideoResolutions(settings.videoResolutions),
@@ -753,6 +753,9 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     settings.agentConversations &&
                     typeof settings.agentConversations == `object` &&
                     setAgentConversations(settings.agentConversations),
+                    settings.modelProtocolRegistry &&
+                    typeof settings.modelProtocolRegistry == `object` &&
+                    setModelProtocolRegistry(settings.modelProtocolRegistry),
                     settings.textModelApiBindings &&
                     typeof settings.textModelApiBindings == `object` &&
                     setTextModelApiBindings(settings.textModelApiBindings),
@@ -768,6 +771,11 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     typeof settings.imageModelProtocolBindings == `object` &&
                     setImageModelProtocolBindings(
                       settings.imageModelProtocolBindings,
+                    ),
+                    settings.videoModelProtocolBindings &&
+                    typeof settings.videoModelProtocolBindings == `object` &&
+                    setVideoModelProtocolBindings(
+                      settings.videoModelProtocolBindings,
                     ),
                     settings.videoModelApiBindings &&
                     typeof settings.videoModelApiBindings == `object` &&

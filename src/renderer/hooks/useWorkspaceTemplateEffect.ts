@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { Ref, Toast, WjNode } from "../lib/app-types";
+import { WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS } from "../lib/jixin-catalog";
 import { localPathFromProjectFileUrl } from "../lib/project-asset-binding";
 
 interface UseWorkspaceTemplateEffectDeps {
@@ -76,7 +77,8 @@ export function useWorkspaceTemplateEffect(deps: UseWorkspaceTemplateEffectDeps)
 			          }),
 			          nodeData = {
 			            prompt: String(template.prompt || ``),
-			            selectedModel: String(template.modelName || ``),
+			            selectedModel: String(template.modelName || (template.sourceProvider === `tongyi-wanxiang` ? WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS[0] : ``)),
+			            wanjuanModelManual: template.sourceProvider === `tongyi-wanxiang` ? true : undefined,
 			            seedanceMode: params.seedanceMode === `tianji` || template.sourceProvider === `tianji-seedance` ? `tianji` : `official`,
 			            tianjiSeedanceGenerationMode: params.tianjiSeedanceGenerationMode || template.generationMode || `text-to-video`,
 			            selectedSeconds: params.selectedSeconds || undefined,
@@ -88,11 +90,11 @@ export function useWorkspaceTemplateEffect(deps: UseWorkspaceTemplateEffectDeps)
 			            workspaceTemplateSource: template.memberName || template.sourceMemberName || ``,
 			          };
 			        createNodeAt(
-			          template.sourceProvider === `tongyi-wanxiang` ? `tongyiWanxiangNode` : `seedanceNode`,
+			          template.sourceProvider === `tongyi-wanxiang` ? `videoNode` : `seedanceNode`,
 			          position,
 			          nodeData
 			        );
-			        showToast(`已从工作空间创建即梦节点`);
+			        showToast(template.sourceProvider === `tongyi-wanxiang` ? `已从工作空间创建视频节点` : `已从工作空间创建即梦节点`);
 			      },
 			      handleSaveWorkspaceTemplateFromNode = (event) => {
 			        try {

@@ -191,7 +191,7 @@ export const WanJuanFileToLinkNode = reactMemo(({
 	                }),
 	                jsx(`span`, {
 	                  className: `text-xs font-bold`,
-	                  children: `图片转链接`,
+	                  children: `文件转链接`,
 	                }),
 	              ],
 	            }),

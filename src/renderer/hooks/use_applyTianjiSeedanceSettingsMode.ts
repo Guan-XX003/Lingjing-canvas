@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * applyTianjiSeedanceSettingsMode。自 bundle 抽出，逐字搬运、行为不变。
  */
@@ -21,7 +20,7 @@ export function use_applyTianjiSeedanceSettingsMode(deps: UseApplyTianjiSeedance
       setTianjiSeedanceSettingsMode(normalizedMode);
       try {
         document.querySelector(`.wanjuan-seedance-settings-card`)?.classList?.toggle(`wanjuan-tianji-mode-active`, normalizedMode === `tianji`);
-        let panel = document.querySelector(`.wanjuan-tianji-settings-card`);
+        let panel = document.querySelector<HTMLElement>(`.wanjuan-tianji-settings-card`);
         panel && (panel.hidden = normalizedMode !== `tianji`);
         document.querySelectorAll(`[data-tianji-mode]`).forEach((button) => {
           let isActive = button.getAttribute(`data-tianji-mode`) === normalizedMode;
@@ -29,6 +28,9 @@ export function use_applyTianjiSeedanceSettingsMode(deps: UseApplyTianjiSeedance
           button.setAttribute?.(`aria-pressed`, isActive ? `true` : `false`);
           button.removeAttribute?.(`style`);
         });
+        window.dispatchEvent(new CustomEvent(`wanjuan:tianji-settings-mode-changed`, {
+          detail: { mode: normalizedMode },
+        }));
       } catch (error) {
         console.warn(`Failed to apply Tianji settings mode`, error);
       }

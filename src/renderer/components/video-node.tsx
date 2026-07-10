@@ -10,6 +10,7 @@ import { NodeResizer, Position, useNodeConnections, useNodesData, useReactFlow }
 import { ArrowUp, CircleAlert, CirclePlay, Download, Film, Maximize2, RefreshCw, Square, Trash2, Type, Upload, X as CloseX } from "lucide-react";
 import localforage from "localforage";
 import { WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE } from "../lib/upload-defaults";
+import { useWanJuanMediaBudget } from "../lib/media-budget";
 import { TongyiWanxiangLogo } from "./icons";
 import { wanjuanClearMentionPickerPosition, wanjuanDeleteMentionTokenAsUnit, wanjuanFormatMentionToken, wanjuanLegacyMentionToken, wanjuanMentionRangeFromPicker, wanjuanReplaceMentionToken, wanjuanShouldShowMentionPicker } from "../lib/mention";
 import { parseSeedanceList } from "../lib/model-binding";
@@ -227,6 +228,7 @@ export const WanJuanVideoNode = reactMemo(({
 	      [tianjiPortraitPickerReachedEnd, setTianjiPortraitPickerReachedEnd] = useState(!1),
 	      [tianjiPortraitPickerTotalCount, setTianjiPortraitPickerTotalCount] = useState(0),
 	      seedanceNodeVirtualPortraits = wanjuanNormalizeSeedanceVirtualPortraits(data.seedanceVirtualPortraits || []);
+	    const wanjuanVideoMedia = useWanJuanMediaBudget(`video`, nodeId, !!data.videoUrl && (isHovered || selected));
 	    let applyPreferredVideoModel = (favoritesOverride = favoriteModels.favorites) => {
 	      if (!activeVideoModelText) return;
 	      let currentModel = selectedModel || activeVideoSelectedModel || ``;
@@ -1078,6 +1080,8 @@ export const WanJuanVideoNode = reactMemo(({
 	          className: `relative bg-[#1c1c1c] rounded-xl overflow-hidden border shadow-xl transition-all cursor-pointer group/display w-full flex-1 flex flex-col ${data.loading ? `wanjuan-loading-node-frame` : ``}
 	            ${selected ? `border-blue-500 shadow-blue-500/20` : `border-[#333] hover:border-gray-500`}
 	        `,
+          onMouseEnter: () => { setIsHovered(!0); wanjuanVideoMedia.activate(); },
+          onMouseLeave: () => setIsHovered(!1),
           onClick: () => setIsExpanded(!isExpanded),
           children: [
             jsxs(`div`, {
@@ -1111,7 +1115,21 @@ export const WanJuanVideoNode = reactMemo(({
                 aspectRatio: peAspectRatio || `16 / 9`
               },
               children: [
-                data.videoUrl &&
+                data.videoUrl && (!isHovered && !selected || !wanjuanVideoMedia.enabled) &&
+                (data.thumbnailUrl ?
+                  jsx(`img`, {
+                    src: data.thumbnailUrl,
+                    alt: `视频预览`,
+                    loading: `lazy`,
+                    decoding: `async`,
+                    draggable: !1,
+                    className: `max-w-full w-full h-full object-cover object-bottom block`,
+                  }) :
+                  jsx(`div`, {
+                    className: `absolute inset-0 grid place-items-center bg-[#111] text-gray-500`,
+                    children: jsx(CirclePlay, { className: `w-10 h-10` }),
+                  })),
+                data.videoUrl && (isHovered || selected) && wanjuanVideoMedia.enabled &&
                 jsxs(Fragment, {
                   children: [
                     jsx(`video`, {
@@ -1367,9 +1385,9 @@ export const WanJuanVideoNode = reactMemo(({
           type: `source`,
           position: Position.Right
         }),
-        jsx(`div`, {
+        isExpanded && jsx(`div`, {
           className: `absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-[#1c1c1c] rounded-2xl border border-[#333] shadow-2xl w-[500px] transition-all duration-300 origin-top z-50 wanjuan-node-config-panel
-          ${isExpanded ? `opacity-100 scale-100 p-4 overflow-visible` : `opacity-0 scale-95 pointer-events-none h-0 p-0 border-0 overflow-hidden`}
+          opacity-100 scale-100 p-4 overflow-visible
         `,
           onClick: (event) => event.stopPropagation(),
           children: jsxs(`div`, {

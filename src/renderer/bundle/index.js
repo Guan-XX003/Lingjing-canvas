@@ -174,6 +174,7 @@ import {
   WANJUAN_JIXIN_BUILTIN_TEXT_MODELS,
   WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS,
   WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS,
+  WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS,
   WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS,
   WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_IMAGE_MODELS,
   WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_REFERENCE_IMAGE_MODELS,
@@ -635,10 +636,10 @@ import { WanJuanFileToLinkNode } from "../components/file-to-link-node";
 import { WanJuanFlowEdge } from "../components/flow-edge";
 import { WanJuanImageAnnotateModal } from "../components/image-annotate-modal";
 import { agentThemePalettes } from "../lib/agent-theme-palettes";
-import { WanJuanTongyiModelsSection } from "../components/tongyi-models-section";
 import { WanJuanSettingsApiConfigSection } from "../components/settings-api-config-section";
 import { WanJuanEmptyCanvasPlaceholder } from "../components/empty-canvas-placeholder";
 import { WanJuanGlobalTasksPanel } from "../components/global-tasks-panel";
+import { WanJuanCanvasPressureMeter } from "../components/canvas-pressure-meter";
 import { WanJuanCanvasContextMenu } from "../components/canvas-context-menu";
 import { WanJuanRenameProjectDialog } from "../components/rename-project-dialog";
 import { WanJuanSystemNotificationDialog } from "../components/system-notification-dialog";
@@ -1183,7 +1184,8 @@ function WanJuanAppCanvas({
       screenToFlowPosition: screenToFlowPosition,
       getNodes: getNodes,
       getEdges: getEdges,
-      fitView: fitView
+      fitView: fitView,
+      setViewport: setViewport
     } = useReactFlow(),
 	    [isResourceSubmenuOpen, setResourceSubmenuOpen] = useState(false),
 	    [resourceSubmenuOpenAlt, setResourceSubmenuOpenAlt] = useState(false),
@@ -1201,6 +1203,189 @@ function WanJuanAppCanvas({
 	    }),
 	    wanjuanViewportUpdateRef = useRef(0);
   (useSafeEffect1({ nodes, setNodes }),
+    useEffect(() => {
+      const previewCanvas = document.createElement(`canvas`);
+      previewCanvas.width = 640;
+      previewCanvas.height = 360;
+      const previewContext = previewCanvas.getContext(`2d`);
+      if (previewContext) {
+        const gradient = previewContext.createLinearGradient(0, 0, 640, 360);
+        gradient.addColorStop(0, `#334155`);
+        gradient.addColorStop(0.5, `#0f766e`);
+        gradient.addColorStop(1, `#7c3aed`);
+        previewContext.fillStyle = gradient;
+        previewContext.fillRect(0, 0, 640, 360);
+        previewContext.fillStyle = `rgba(255,255,255,0.88)`;
+        previewContext.font = `600 32px sans-serif`;
+        previewContext.fillText(`WanJuan result fixture`, 36, 190);
+      }
+      const tinyPreview = previewCanvas.toDataURL(`image/jpeg`, 0.78);
+      const nodeTypes = [`imageNode`, `promptNode`, `videoNode`, `textNode`, `audioNode`, `musicNode`, `videoExtractNode`];
+      globalThis.__wanjuanCanvasDebug = {
+        loadFixture: (requestedCount = 100, options = {}) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          const count = Math.max(0, Math.min(1200, Number(requestedCount) || 0));
+          const withResults = options.withResults !== !1;
+          const extractedFrameCount = Math.max(0, Math.min(500, Number(options.extractedFrameCount || 120)));
+          const sampleVideoUrl = `https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4`;
+          const sampleAudioUrl = `https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3`;
+          const columns = Math.max(1, Math.ceil(Math.sqrt(count)));
+          const fixtureNodes = Array.from({ length: count }, (_, index) => {
+            const type = nodeTypes[index % nodeTypes.length];
+            const extractedFrames = type === `videoExtractNode` && withResults ? Array.from({ length: extractedFrameCount }, () => tinyPreview) : void 0;
+            const data = {
+              label: `压力节点 ${index + 1}`,
+              expanded: !1,
+              prompt: `性能测试 ${index + 1}`,
+              text: `性能测试文本 ${index + 1}`,
+              mediaKind: type === `imageNode` ? `image` : void 0,
+              imageUrl: withResults && (type === `imageNode` || type === `promptNode`) ? tinyPreview : void 0,
+              thumbnailUrl: withResults && (type === `imageNode` || type === `promptNode` || type === `videoNode`) ? tinyPreview : void 0,
+              videoUrl: withResults && type === `videoNode` ? sampleVideoUrl : void 0,
+              audioUrl: withResults && type === `audioNode` ? sampleAudioUrl : void 0,
+              resultData: withResults && type === `textNode` ? `已生成的文本结果 ${index + 1}` : void 0,
+              sunoClips: withResults && type === `musicNode` ? Array.from({ length: 4 }, (_, clipIndex) => ({
+                id: `perf-clip-${index}-${clipIndex}`,
+                title: `生成曲目 ${clipIndex + 1}`,
+                audioUrl: sampleAudioUrl,
+                duration: 4,
+              })) : void 0,
+              allExtractedImages: extractedFrames,
+              extractedImages: extractedFrames,
+            };
+            return {
+              id: `wanjuan-perf-${index}`,
+              type,
+              position: { x: (index % columns) * 340, y: Math.floor(index / columns) * 300 },
+              style: { width: 260, height: 220 },
+              data,
+            };
+          });
+          const fixtureEdges = fixtureNodes.slice(1).map((node, index) => ({
+            id: `wanjuan-perf-edge-${index}`,
+            source: fixtureNodes[index].id,
+            target: node.id,
+            type: `custom`,
+          }));
+          setNodes(fixtureNodes);
+          setEdges(fixtureEdges);
+          window.setTimeout(() => fitView({ padding: 0.12, duration: 0 }), 50);
+          return { nodes: fixtureNodes.length, edges: fixtureEdges.length };
+        },
+        clearFixture: () => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          setNodes([]);
+          setEdges([]);
+        },
+        selectMediaNodes: (videoCount = 12, audioCount = 8) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          let selectedVideos = 0,
+            selectedAudios = 0;
+          setNodes((items) => items.map((node) => {
+            let shouldSelect = !1;
+            if (node.type === `videoNode` && selectedVideos < videoCount) {
+              selectedVideos += 1;
+              shouldSelect = !0;
+            } else if (node.type === `audioNode` && selectedAudios < audioCount) {
+              selectedAudios += 1;
+              shouldSelect = !0;
+            }
+            return node.selected === shouldSelect ? node : { ...node, selected: shouldSelect };
+          }));
+          return { videos: selectedVideos, audios: selectedAudios };
+        },
+        selectNodesByType: (nodeType, requestedCount = 1) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          let selectedCount = 0;
+          const limit = Math.max(0, Number(requestedCount) || 0);
+          setNodes((items) => items.map((node) => {
+            const shouldSelect = node.type === nodeType && selectedCount < limit;
+            if (shouldSelect) selectedCount += 1;
+            return node.selected === shouldSelect ? node : { ...node, selected: shouldSelect };
+          }));
+          return { type: nodeType, selected: selectedCount };
+        },
+        clearSelection: () => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          setNodes((items) => items.map((node) => node.selected ? { ...node, selected: !1 } : node));
+        },
+        inspectFixtureData: () => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          const items = getNodes();
+          return {
+            imageResults: items.filter((node) => typeof node.data?.imageUrl === `string` && node.data.imageUrl).length,
+            videoResults: items.filter((node) => typeof node.data?.videoUrl === `string` && node.data.videoUrl).length,
+            audioResults: items.filter((node) => typeof node.data?.audioUrl === `string` && node.data.audioUrl).length,
+            musicClips: items.reduce((total, node) => total + (Array.isArray(node.data?.sunoClips) ? node.data.sunoClips.length : 0), 0),
+            extractedFrames: items.reduce((total, node) => total + (Array.isArray(node.data?.allExtractedImages) ? node.data.allExtractedImages.length : 0), 0),
+          };
+        },
+        nodeSnapshot: (nodeId) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          const node = getNodes().find((item) => item.id === nodeId),
+            element = document.querySelector(`.react-flow__node[data-id="${CSS.escape(String(nodeId))}"]`),
+            renderElement = element?.querySelector(`[data-wanjuan-render-mode]`);
+          return {
+            exists: !!node,
+            selected: !!node?.selected,
+            renderMode: renderElement?.getAttribute(`data-wanjuan-render-mode`) || null,
+            images: element?.querySelectorAll(`img`).length || 0,
+            videos: element?.querySelectorAll(`video`).length || 0,
+            audios: element?.querySelectorAll(`audio`).length || 0,
+            extractedFrames: Array.isArray(node?.data?.allExtractedImages) ? node.data.allExtractedImages.length : 0,
+            musicClips: Array.isArray(node?.data?.sunoClips) ? node.data.sunoClips.length : 0,
+            hasImageResult: !!node?.data?.imageUrl,
+            hasVideoResult: !!node?.data?.videoUrl,
+            hasAudioResult: !!node?.data?.audioUrl,
+            frameHandles: element?.querySelectorAll(`[data-handleid^="frame-"]`).length || 0,
+            hasLastFrameHandle: !!element?.querySelector(`[data-handleid="frame-119"]`),
+          };
+        },
+        connectFixtureFrame: (sourceId = `wanjuan-perf-6`, frameIndex = 119, targetId = `wanjuan-perf-7`) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          const edge = {
+            id: `wanjuan-perf-frame-edge-${sourceId}-${frameIndex}-${targetId}`,
+            source: sourceId,
+            sourceHandle: `frame-${frameIndex}`,
+            target: targetId,
+            type: `custom`,
+          };
+          setEdges((items) => [...items.filter((item) => item.id !== edge.id), edge]);
+          return edge;
+        },
+        setViewport: (viewport = {}) => {
+          if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
+          const nextViewport = {
+            x: Number(viewport.x || 0),
+            y: Number(viewport.y || 0),
+            zoom: Math.max(0.1, Math.min(2, Number(viewport.zoom || 1))),
+          };
+          setViewport(nextViewport, { duration: 0 });
+          setWanjuanViewport(nextViewport);
+          return nextViewport;
+        },
+        snapshot: () => ({
+          nodes: document.querySelectorAll(`.react-flow__node`).length,
+          edges: document.querySelectorAll(`.react-flow__edge`).length,
+          dom: document.getElementsByTagName(`*`).length,
+          images: document.querySelectorAll(`.react-flow__node img`).length,
+          videos: document.querySelectorAll(`.react-flow__node video`).length,
+          activeVideos: document.querySelectorAll(`.react-flow__node video[src]`).length,
+          audios: document.querySelectorAll(`.react-flow__node audio`).length,
+          activeAudios: document.querySelectorAll(`.react-flow__node audio[src]`).length,
+          modes: Array.from(document.querySelectorAll(`.react-flow__node [data-wanjuan-render-mode]`)).reduce((result, element) => {
+            const mode = element.getAttribute(`data-wanjuan-render-mode`) || `unknown`;
+            result[mode] = (result[mode] || 0) + 1;
+            return result;
+          }, {}),
+          runtime: globalThis.__wanjuanRenderRuntime?.snapshot?.() || {},
+          canvasRuntime: globalThis.__wanjuanCanvasRuntimeMetrics || {},
+          mediaPerf: globalThis.__wanjuanCanvasMediaPerfStats || {},
+          heap: performance.memory ? performance.memory.usedJSHeapSize : 0,
+        }),
+      };
+      return () => { delete globalThis.__wanjuanCanvasDebug; };
+    }, [fitView, setEdges, setNodes, setViewport]),
     useEffect(() => {
       let handleBeforeUnload = () => {
         // 关窗/刷新时同步 flush 当前画布到 localStorage，避免 2.8s 自动保存防抖窗口内的未保存编辑丢失。
@@ -1371,51 +1556,20 @@ function WanJuanAppCanvas({
 	      };
     }, [nodes, relinkMissingProjectAssets, relinkMissingProjectAssetsFromFolder]),
     useEffect(() => {
-      setNodes((nodes2) =>
-        nodes2.map((node) =>
-          node.type === `videoNode` ?
-          {
-            ...node,
-            data: {
-              ...node.data,
-              videoModel: videoModel,
-              videoDurations: videoDurations,
-              videoResolutions: videoResolutions,
-              videoAspectRatios: videoAspectRatios,
-            },
-          } :
-	          node.type === `promptNode` ?
-	          {
-	            ...node,
-	            data: {
-	              ...node.data,
-	              drawingModel: drawingModel,
-	              imageCompatResolutions: imageCompatResolutions,
-	            }
-	          } :
-          node.type === `textNode` ?
-          {
-            ...node,
-            data: {
-              ...node.data,
-              textModel: textModel
-            }
-          } :
-          node.type === `audioNode` ?
-          {
-            ...node,
-            data: {
-              ...node.data,
-              audioModel: audioModel,
-              audioApiUrl: audioApiUrl,
-              audioApiKey: audioApiKey,
-              projectId: projectIdRef.current,
-              updateGlobalTasks: updateTaskList,
-            },
-          } :
-          node,
-        ),
-      );
+	      setNodes((nodes2) => {
+	        let changed = false;
+	        let nextNodes = nodes2.map((node) => {
+	          let patch = null;
+	          if (node.type === `videoNode`) patch = { videoModel, videoDurations, videoResolutions, videoAspectRatios };
+	          else if (node.type === `promptNode`) patch = { drawingModel, imageCompatResolutions };
+	          else if (node.type === `textNode`) patch = { textModel };
+	          else if (node.type === `audioNode`) patch = { audioModel, audioApiUrl, audioApiKey, projectId: projectIdRef.current, updateGlobalTasks: updateTaskList };
+	          if (!patch || Object.entries(patch).every(([key, value]) => Object.is(node.data?.[key], value))) return node;
+	          changed = true;
+	          return { ...node, data: { ...node.data, ...patch } };
+	        });
+	        return changed ? nextNodes : nodes2;
+	      });
 	    }, [videoModel, videoDurations, videoResolutions, videoAspectRatios, drawingModel, imageCompatResolutions, textModel, audioModel, audioApiUrl, audioApiKey, setNodes]));
   let handleConnect = useHandleConnect({ addEdge, getNodes, setEdges }).handleConnect,
     handleMultiConnectToTarget = useMultiConnect({ addEdge, multiConnectIds, setEdges, setMultiConnectIds, showToast }).handleMultiConnectToTarget,
@@ -1528,16 +1682,7 @@ function WanJuanAppCanvas({
 	          onSelectionEnd: handleDelayedSelectionMenu,
 	          onMove: (event, viewport) => {
 	            if (!viewport) return;
-	            let now = performance.now();
-	            if (now - wanjuanViewportUpdateRef.current < 120) return;
-	            wanjuanViewportUpdateRef.current = now;
-	            setWanjuanViewport((prev) =>
-	              Math.abs(prev.x - viewport.x) > 0.5 ||
-	              Math.abs(prev.y - viewport.y) > 0.5 ||
-	              Math.abs(prev.zoom - viewport.zoom) > 0.01 ?
-	              viewport :
-	              prev,
-	            );
+	            wanjuanViewportUpdateRef.current = viewport;
 	          },
 	          onMoveEnd: (event, viewport) => {
 	            viewport &&
@@ -1574,6 +1719,10 @@ function WanJuanAppCanvas({
 	                transformOrigin: `top right`
 	              },
 	              children: [
+	                jsx(WanJuanCanvasPressureMeter, {
+	                  nodes: wanjuanCanvasNodes,
+	                  edges: edges,
+	                }),
 	                jsxs(`div`, {
 	                  className: `flex items-center bg-[#2a2a2a] border border-[#333] rounded-lg p-1 shadow-lg`,
 	                  children: [
@@ -1789,7 +1938,7 @@ function WanJuanAppRoot() {
   [imageModels, setImageModels] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_IMAGE_MODELS)),
   [videoApiUrl, setVideoApiUrl] = useState(``),
   [videoApiKey, setVideoApiKey] = useState(``),
-  [videoModels, setVideoModels] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_VIDEO_MODELS)),
+  [videoModels, setVideoModels] = useState(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS)),
   [videoDurations, setVideoDurations] = useState(`5
 10
 11

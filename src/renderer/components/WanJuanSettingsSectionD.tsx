@@ -6,6 +6,12 @@ import { WanJuanGlobalTasksPanel } from "../components/global-tasks-panel";
 import { WanJuanProjectGroupPanel } from "../components/project-group-panel";
 import { WanJuanProjectMenu } from "../components/project-menu";
 import { WanJuanRenameProjectDialog } from "../components/rename-project-dialog";
+import { BookOpen } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const WANJUAN_BEGINNER_GUIDE_URL =
+  "https://kcn07wr6x9xu.feishu.cn/docx/JcmqdxcI9oSt9yxEatscvioEnHn";
+const WANJUAN_BEGINNER_GUIDE_OPENED_KEY = "wanjuan.beginnerGuideOpened.v1";
 
 export function WanJuanSettingsSectionD(props: any) {
   const {
@@ -149,6 +155,47 @@ export function WanJuanSettingsSectionD(props: any) {
     videoModels,
     videoResolutions,
   } = props;
+  const [beginnerGuideUnseen, setBeginnerGuideUnseen] = useState(() => {
+    try {
+      return window.localStorage.getItem(WANJUAN_BEGINNER_GUIDE_OPENED_KEY) !== `1`;
+    } catch {
+      return true;
+    }
+  });
+  const [beginnerGuideCoachmarkVisible, setBeginnerGuideCoachmarkVisible] = useState(beginnerGuideUnseen);
+
+  useEffect(() => {
+    if (!beginnerGuideUnseen || !beginnerGuideCoachmarkVisible) return;
+    const timer = window.setTimeout(() => setBeginnerGuideCoachmarkVisible(false), 10000);
+    return () => window.clearTimeout(timer);
+  }, [beginnerGuideCoachmarkVisible, beginnerGuideUnseen]);
+
+  const openBeginnerGuide = async (event: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      let opened = false;
+      if (window.wanjuanDesktop?.openExternal) {
+        const result = await window.wanjuanDesktop.openExternal(WANJUAN_BEGINNER_GUIDE_URL);
+        opened = result?.ok === true;
+      } else {
+        window.open(WANJUAN_BEGINNER_GUIDE_URL, `_blank`, `noopener,noreferrer`);
+        opened = true;
+      }
+      if (!opened) {
+        showToast2?.(`无法打开新手操作手册，请稍后重试`);
+        return;
+      }
+      try {
+        window.localStorage.setItem(WANJUAN_BEGINNER_GUIDE_OPENED_KEY, `1`);
+      } catch {}
+      setBeginnerGuideUnseen(false);
+      setBeginnerGuideCoachmarkVisible(false);
+    } catch (error) {
+      showToast2?.(`无法打开新手操作手册：${error?.message || error}`);
+    }
+  };
+
   return jsxs(`div`, {
               className: `absolute inset-0 w-full h-full bg-[#121212] flex flex-col ${activeView === `canvas` ? `visible z-10` : `invisible -z-10`}`,
               children: [
@@ -240,6 +287,42 @@ export function WanJuanSettingsSectionD(props: any) {
 	                    jsx(`div`, {
 	                      className: `flex items-center gap-2`,
 	                      children: [
+	                        jsxs(`div`, {
+	                          className: `wanjuan-beginner-guide-anchor`,
+	                          children: [
+	                            jsxs(`button`, {
+	                              type: `button`,
+	                              className: `wanjuan-topbar-notification-button wanjuan-beginner-guide-button ${beginnerGuideUnseen ? `is-unseen` : ``}`,
+	                              title: `新手操作手册`,
+	                              "aria-label": `打开新手操作手册`,
+	                              onClick: openBeginnerGuide,
+	                              children: [
+	                                jsx(BookOpen, {
+	                                  size: 18,
+	                                  "aria-hidden": `true`,
+	                                }),
+	                                beginnerGuideUnseen && jsx(`span`, {
+	                                  className: `wanjuan-beginner-guide-dot`,
+	                                  "aria-hidden": `true`,
+	                                }),
+	                              ],
+	                            }),
+	                            beginnerGuideCoachmarkVisible &&
+	                            jsxs(`div`, {
+	                              className: `wanjuan-beginner-guide-coachmark`,
+	                              role: `status`,
+	                              "aria-live": `polite`,
+	                              children: [
+	                                jsx(`strong`, {
+	                                  children: `第一次使用？从这里开始`,
+	                                }),
+	                                jsx(`span`, {
+	                                  children: `查看模型配置和画布操作手册`,
+	                                }),
+	                              ],
+	                            }),
+	                          ],
+	                        }),
 	                        jsxs(`button`, {
 	                          type: `button`,
 	                          className: `wanjuan-topbar-notification-button`,

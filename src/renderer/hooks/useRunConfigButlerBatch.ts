@@ -4,7 +4,7 @@
  */
 import { useCallback, useMemo } from "react";
 import type { SetAny, Toast } from "../lib/app-types";
-import { buildConfigButlerToolContext, configButlerCategoryOptions, formatConfigButlerToolContext, normalizeButlerBatchItems, normalizeModelCategory, probeButlerProtocol, scanButlerTargetModels } from "../lib/config-butler";
+import { buildConfigButlerToolContext, configButlerCategoryOptions, formatConfigButlerToolContext, inferButlerCategoryFromModelName, normalizeButlerBatchItems, normalizeModelCategory, probeButlerProtocol, scanButlerTargetModels, specializeConfigButlerToolContext } from "../lib/config-butler";
 import { extractJsonBlock } from "../lib/app-utils";
 import { fetchDocAsPlainText } from "../lib/app-root-helpers";
 
@@ -98,29 +98,44 @@ ${scannedModels.map((modelName) => `- ${modelName}`).join(`
 
 文档摘要：
 ${docText}`;
-	            let batchDocText = docText.length > 5e4 ? `${docText.slice(0, 5e4)}
+		            let batchDocText = docText.length > 5e4 ? `${docText.slice(0, 5e4)}
 
 [文档过长，配置管家已截断剩余 ${docText.length - 5e4} 字符；结构化端点和 curl 示例已保留在工具预解析结果中。]` : docText,
-	              fullModelListText = scannedModels.map((modelName) => `- ${modelName}`).join(`
+		              fullModelListText = scannedModels.map((modelName) => `- ${modelName}`).join(`
 `),
-	              batchChunks = [];
+		              buildModelToolHints = (modelNames) => modelNames.map((modelName) => {
+		                let category = inferButlerCategoryFromModelName(modelName),
+		                  itemContext = specializeConfigButlerToolContext(toolContext, {
+		                    modelName: modelName,
+		                    category: category,
+		                    apiUrl: String(targetApiConfig.url || ``).trim(),
+		                  });
+		                return `- ${modelName}: category=${category}, requestType候选=${itemContext?.inferredRequestType || `custom`}`;
+		              }).join(`\n`),
+		              batchChunks = [];
 	            for (let chunkStart = 0; chunkStart < scannedModels.length; chunkStart += 25) batchChunks.push(scannedModels.slice(chunkStart, chunkStart + 25));
 	            let batchItems = [],
 	              batchRawResults = [],
 	              batchFailedChunks = [],
-	              buildBatchPrompt = ((modelName, batchIndex, batchTotal) =>
-	                basePrompt
-	                .replace(`模型列表：
+		              buildBatchPrompt = ((modelName, batchIndex, batchTotal) =>
+		                basePrompt
+		                .replace(`模型列表：
 ${fullModelListText}`, `模型列表（第 ${batchIndex + 1}/${batchTotal} 批，仅分析本批模型）：
 ${modelName.map((modelName2) => `- ${modelName2}`).join(`
 `)}`)
-	                .replace(`文档摘要：
+		                .replace(`工具预解析结果：
+${formatConfigButlerToolContext(toolContext)}`, `工具预解析结果：
+${formatConfigButlerToolContext(toolContext)}
+
+逐模型工具候选（仅用于缩小范围，最终仍以对应端点和请求示例为准）：
+${buildModelToolHints(modelName)}`)
+		                .replace(`文档摘要：
 ${docText}`, `文档摘要：
 ${batchDocText}`));
 	            for (let batchIndex = 0; batchIndex < batchChunks.length; batchIndex++) {
 	              let chunkModels = batchChunks[batchIndex],
 	                batchResult = null;
-	              try {
+		            if (options.enableLiveProbe === true) try {
 	                showToast2(`配置管家正在分析第 ${batchIndex + 1}/${batchChunks.length} 批模型`);
 	                let responseText = await callConfigButlerModel(buildBatchPrompt(chunkModels, batchIndex, batchChunks.length), options.butlerConfig || {});
 	                batchResult = extractJsonBlock(responseText);
@@ -193,7 +208,7 @@ ${batchDocText}`));
 	                fixedCount && showToast2(`探活已自动修复 ${fixedCount} 个模型的协议参数`);
 	              }
 	            } catch (probeError) { console.warn(`Config butler probe skipped`, probeError); }
-	            if (options.autoApply) {
+		            if (options.autoApply && options.allowUnreviewedApply === true && normalizedBatchItems.every((item) => item.enabled !== false && item.validation?.ok !== false && item.inferenceSource !== `fallback`)) {
 	              setConfigButlerBatchItems(normalizedBatchItems);
 	              let applyResult = applyConfigButlerBatchResults({
 	                items: normalizedBatchItems,
@@ -221,7 +236,9 @@ ${batchDocText}`));
 	                toolContext: toolContext,
 	              }, null, 2)),
 	              setConfigButlerBatchModalOpen(true),
-	              showToast2(`已识别 ${normalizedBatchItems.length} 个模型，请确认后导入`));
+		              showToast2(options.autoApply ?
+		                `已识别 ${normalizedBatchItems.length} 个模型，其中有未验证或兜底配置，请确认后导入` :
+		                `已识别 ${normalizedBatchItems.length} 个模型，请确认后导入`));
 	            return {
 	              items: normalizedBatchItems,
 	              scannedModels: scannedModels,

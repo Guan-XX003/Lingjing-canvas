@@ -149,7 +149,7 @@ export const WanJuanRealEsrganVideoNode = reactMemo(({
 	              realEsrganStage: `完成`,
 	              realEsrganPaused: !1,
 	              realEsrganJobId: null
-	            }), nodeData.onShowToast?.(`本地视频超分完成`));
+	            }), nodeData.addTransitResource?.(upscaleResult.url, `video`, upscaleResult.filename || `Real-ESRGAN超分视频.mp4`), nodeData.onShowToast?.(`本地视频超分完成`));
 	          } catch (error) {
 	            console.error(`Real-ESRGAN upscale failed`, error);
 	            updateNodeData(nodeId, {

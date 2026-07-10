@@ -71,10 +71,7 @@ function installDesktopPatches() {
 
   const installDesktopUiStateStyle = () => {
     const existingStyle = document.getElementById("wanjuan-desktop-ui-state-style");
-    if (existingStyle) {
-      document.head.appendChild(existingStyle);
-      return;
-    }
+    if (existingStyle) return;
     const style = document.createElement("style");
     style.id = "wanjuan-desktop-ui-state-style";
     style.textContent = `
@@ -1130,72 +1127,98 @@ function installDesktopPatches() {
       Array.from(document.querySelectorAll(".react-flow__node video"))
         .filter((video) => video instanceof HTMLVideoElement);
 
-    const shouldKeepVideoLoaded = (video) =>
-      video.matches(":hover") ||
-      document.activeElement === video ||
-      Boolean(video.closest(".react-flow__node.selected, .react-flow__node[aria-selected='true']"));
+    const getCanvasAudios = () =>
+      Array.from(document.querySelectorAll(".react-flow__node audio"))
+        .filter((audio) => audio instanceof HTMLAudioElement);
+
+    const shouldKeepMediaLoaded = (media) =>
+      !media.paused ||
+      media.matches(":hover") ||
+      document.activeElement === media;
 
     const pauseCanvasVideos = () => {
       for (const video of getCanvasVideos()) {
-        if (shouldKeepVideoLoaded(video)) continue;
+        if (shouldKeepMediaLoaded(video)) continue;
         try {
           if (!video.paused) video.pause();
         } catch {}
       }
     };
 
-    const restoreVideoSource = (video) => {
-      const storedSrc = video.dataset.wanjuanMediaSrc;
-      if (storedSrc && !video.getAttribute("src")) {
-        video.setAttribute("src", storedSrc);
-        perfStats.restoredVideos++;
-        try {
-          video.load();
-        } catch {}
-      }
+    const enforceMediaBudget = (kind) => {
+      const mediaItems = kind === "video" ? getCanvasVideos() : getCanvasAudios();
+      const limit = kind === "video" ? 4 : 2;
+      const loaded = mediaItems.filter((media) => media.getAttribute("src") || media.currentSrc);
+      if (loaded.length <= limit) return;
+      loaded
+        .filter((media) => !shouldKeepMediaLoaded(media))
+        .sort((mediaA, mediaB) => Number(mediaA.dataset.wanjuanMediaTouchedAt || 0) - Number(mediaB.dataset.wanjuanMediaTouchedAt || 0))
+        .slice(0, Math.max(0, loaded.length - limit))
+        .forEach((media) => unloadMediaSource(media));
     };
 
-    const unloadVideoSource = (video) => {
-      if (shouldKeepVideoLoaded(video)) return;
+    const restoreMediaSource = (media) => {
+      const storedSrc = media.dataset.wanjuanMediaSrc;
+      if (storedSrc && !media.getAttribute("src")) {
+        media.setAttribute("src", storedSrc);
+        media.dataset.wanjuanMediaTouchedAt = String(Date.now());
+        perfStats.restoredVideos++;
+        try {
+          media.load();
+        } catch {}
+      }
+      enforceMediaBudget(media instanceof HTMLVideoElement ? "video" : "audio");
+    };
+
+    const unloadMediaSource = (media) => {
+      if (shouldKeepMediaLoaded(media)) return;
       try {
-        if (!video.paused) video.pause();
+        if (!media.paused) media.pause();
       } catch {}
-      const src = video.getAttribute("src") || video.currentSrc;
+      const src = media.getAttribute("src") || media.currentSrc;
       if (!src) return;
-      video.dataset.wanjuanMediaSrc = src;
-      video.removeAttribute("src");
+      media.dataset.wanjuanMediaSrc = src;
+      media.removeAttribute("src");
       perfStats.unloadedVideos++;
       try {
-        video.load();
+        media.load();
       } catch {}
     };
 
     const observer = typeof IntersectionObserver !== "undefined" ?
       new IntersectionObserver((entries) => {
         for (const entry of entries) {
-          const video = entry.target;
-          if (!(video instanceof HTMLVideoElement)) continue;
-          if (entry.isIntersecting) restoreVideoSource(video);
-          else unloadVideoSource(video);
+          const media = entry.target;
+          if (!(media instanceof HTMLVideoElement || media instanceof HTMLAudioElement)) continue;
+          if (entry.isIntersecting) restoreMediaSource(media);
+          else unloadMediaSource(media);
         }
       }, { root: null, rootMargin: "900px", threshold: 0.01 }) :
       null;
 
-    const manageVideo = (video) => {
-      if (!(video instanceof HTMLVideoElement) || video.dataset.wanjuanMediaManaged === "true") return;
-      video.dataset.wanjuanMediaManaged = "true";
+    const manageMedia = (media) => {
+      if (!(media instanceof HTMLVideoElement || media instanceof HTMLAudioElement) || media.dataset.wanjuanMediaManaged === "true") return;
+      media.dataset.wanjuanMediaManaged = "true";
+      media.dataset.wanjuanMediaTouchedAt = String(Date.now());
       perfStats.managedVideos++;
-      video.preload = "metadata";
-      video.playsInline = true;
-      video.disableRemotePlayback = true;
-      video.addEventListener("pointerenter", () => restoreVideoSource(video), { passive: true });
-      video.addEventListener("focus", () => restoreVideoSource(video), { passive: true });
-      observer?.observe(video);
+      media.preload = media instanceof HTMLVideoElement ? "metadata" : "none";
+      if (media instanceof HTMLVideoElement) media.playsInline = true;
+      media.disableRemotePlayback = true;
+      media.addEventListener("pointerenter", () => restoreMediaSource(media), { passive: true });
+      media.addEventListener("focus", () => restoreMediaSource(media), { passive: true });
+      media.addEventListener("play", () => {
+        media.dataset.wanjuanMediaTouchedAt = String(Date.now());
+        enforceMediaBudget(media instanceof HTMLVideoElement ? "video" : "audio");
+      }, { passive: true });
+      observer?.observe(media);
     };
 
     const refreshVideos = () => {
       perfStats.lastRefreshAt = Date.now();
-      for (const video of getCanvasVideos()) manageVideo(video);
+      for (const video of getCanvasVideos()) manageMedia(video);
+      for (const audio of getCanvasAudios()) manageMedia(audio);
+      enforceMediaBudget("video");
+      enforceMediaBudget("audio");
     };
 
     let mediaRefreshTimer = 0;
@@ -1209,10 +1232,25 @@ function installDesktopPatches() {
 
     window.__wanjuanPauseCanvasVideos = pauseCanvasVideos;
     refreshVideos();
-    new MutationObserver(queueRefreshVideos).observe(document.documentElement, { childList: true, subtree: true });
+    const mediaMutationObserver = new MutationObserver((mutations) => {
+      if (mutations.some((mutation) => Array.from(mutation.addedNodes || []).some((node) =>
+        node instanceof Element && (node.matches?.("video, audio, .react-flow") || node.querySelector?.("video, audio"))
+      ))) queueRefreshVideos();
+    });
+    const mediaObserveRoot = document.getElementById("root") || document.body;
+    mediaObserveRoot && mediaMutationObserver.observe(mediaObserveRoot, { childList: true, subtree: true });
+    const mediaBudgetTimer = window.setInterval(() => {
+      if (!document.hidden && document.querySelector(".react-flow")) refreshVideos();
+    }, 1200);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) pauseCanvasVideos();
     }, true);
+    window.addEventListener("beforeunload", () => {
+      mediaMutationObserver.disconnect();
+      observer?.disconnect();
+      window.clearInterval(mediaBudgetTimer);
+      if (mediaRefreshTimer) window.clearTimeout(mediaRefreshTimer);
+    }, { once: true });
   };
 
   let canvasInteractionTimer = 0;
@@ -1284,6 +1322,9 @@ function installDesktopPatches() {
     watermark: false
   };
   let tianjiSettingsInstalled = false;
+  let tianjiSettingsInstallPromise = null;
+  let tianjiPointsActionsUnlocked = false;
+  let tianjiModeUnlockClickCount = 0;
   let tianjiSettingsState = null;
   let tianjiAssetsState = { LivenessFace: [], AIGC: [] };
   let tianjiAssetPagesState = { LivenessFace: 1, AIGC: 1 };
@@ -1293,6 +1334,7 @@ function installDesktopPatches() {
   let tianjiGroupsState = {};
   let tianjiPointsLogsDialog = null;
   let tianjiSettingsStorageListener = null;
+  let tianjiSettingsModeListener = null;
   let workspacePanelInstalled = false;
   let workspaceState = {
     activeSection: "templates",
@@ -1569,55 +1611,40 @@ function installDesktopPatches() {
     workspaceRefreshTeamMembers();
   };
 
-  const tianjiStorageGet = (keys) =>
-    new Promise((resolve) => {
-      try {
-        window.chrome?.storage?.local?.get(keys, (value) => {
-          const result = value || {};
-          const keyList = Array.isArray(keys) ? keys : [keys];
-          if (keyList.includes("tianjiSeedanceConfig") && !String(result.tianjiSeedanceConfig?.token || "").trim()) {
-            try {
-              const mirrored = JSON.parse(window.localStorage?.getItem(TIANJI_CONFIG_MIRROR_KEY) || "null");
-              if (mirrored && typeof mirrored === "object" && String(mirrored.token || "").trim()) {
-                result.tianjiSeedanceConfig = {
-                  ...(result.tianjiSeedanceConfig && typeof result.tianjiSeedanceConfig === "object" ? result.tianjiSeedanceConfig : {}),
-                  ...mirrored
-                };
-              }
-            } catch {}
-          }
-          resolve(result);
-        });
-      } catch {
-        const result = {};
-        try {
-          const keyList = Array.isArray(keys) ? keys : [keys];
-          const mirrored = JSON.parse(window.localStorage?.getItem(TIANJI_CONFIG_MIRROR_KEY) || "null");
-          if (keyList.includes("tianjiSeedanceConfig") && mirrored && typeof mirrored === "object") result.tianjiSeedanceConfig = mirrored;
-        } catch {}
-        resolve(result);
-      }
-    });
-
-  const tianjiStorageSet = (items) =>
-    new Promise((resolve) => {
-      try {
-        if (items?.tianjiSeedanceConfig) {
-          try {
-            const mirroredConfig = tianjiNormalizeConfig(items.tianjiSeedanceConfig);
-            window.localStorage?.setItem(TIANJI_CONFIG_MIRROR_KEY, JSON.stringify(mirroredConfig));
-            window.dispatchEvent(new CustomEvent("wanjuan:tianji-config-updated", {
-              detail: {
-                config: mirroredConfig
-              }
-            }));
-          } catch {}
+  const tianjiStorageGet = async (keys) => {
+    let result = {};
+    try {
+      result = await getDesktopStorageItems(keys) || {};
+    } catch {}
+    try {
+      const keyList = Array.isArray(keys) ? keys : [keys];
+      if (keyList.includes("tianjiSeedanceConfig") && !String(result.tianjiSeedanceConfig?.token || "").trim()) {
+        const mirrored = JSON.parse(window.localStorage?.getItem(TIANJI_CONFIG_MIRROR_KEY) || "null");
+        if (mirrored && typeof mirrored === "object" && String(mirrored.token || "").trim()) {
+          result.tianjiSeedanceConfig = {
+            ...(result.tianjiSeedanceConfig && typeof result.tianjiSeedanceConfig === "object" ? result.tianjiSeedanceConfig : {}),
+            ...mirrored
+          };
         }
-        window.chrome?.storage?.local?.set(items || {}, resolve);
-      } catch {
-        resolve();
       }
-    });
+    } catch {}
+    return result;
+  };
+
+  const tianjiStorageSet = async (items) => {
+    if (items?.tianjiSeedanceConfig) {
+      try {
+        const mirroredConfig = tianjiNormalizeConfig(items.tianjiSeedanceConfig);
+        window.localStorage?.setItem(TIANJI_CONFIG_MIRROR_KEY, JSON.stringify(mirroredConfig));
+        window.dispatchEvent(new CustomEvent("wanjuan:tianji-config-updated", {
+          detail: {
+            config: mirroredConfig
+          }
+        }));
+      } catch {}
+    }
+    await setDesktopStorageItems(items || {});
+  };
 
   const tianjiEncodeBody = (value) => Buffer.from(String(value || ""), "utf8").toString("base64");
   const tianjiDecodeBody = (value) => Buffer.from(String(value || ""), "base64").toString("utf8");
@@ -2413,13 +2440,21 @@ function installDesktopPatches() {
     };
   };
 
-  const installTianjiSettingsPanel = async () => {
+  const installTianjiSettingsPanelImpl = async () => {
     if (!document.body) return;
     const tianjiModeHost = document.querySelector("[data-wanjuan-tianji-mode-host]");
     if (tianjiSettingsInstalled) {
       const existingPanel = document.querySelector(".wanjuan-tianji-settings-card");
       const existingModeSwitch = document.querySelector("[data-wanjuan-tianji-mode-switch]");
-      if (document.body.contains(existingPanel) && (!tianjiModeHost || document.body.contains(existingModeSwitch))) return;
+      if (document.body.contains(existingPanel) && (!tianjiModeHost || document.body.contains(existingModeSwitch))) {
+        const selectedMode = document.querySelector("[data-tianji-mode][aria-pressed='true']")?.getAttribute("data-tianji-mode");
+        if (selectedMode) {
+          existingPanel.hidden = selectedMode !== "tianji";
+          existingPanel.dataset.tianjiMode = selectedMode;
+          existingPanel.closest(".wanjuan-settings-card")?.classList?.toggle("wanjuan-tianji-mode-active", selectedMode === "tianji");
+        }
+        return;
+      }
       tianjiSettingsInstalled = false;
     }
     const tianjiHost = document.querySelector("[data-wanjuan-tianji-settings-host]");
@@ -2454,7 +2489,10 @@ function installDesktopPatches() {
       AIGC: tianjiMergeLocalAssets(stored.tianjiSeedanceAssets?.AIGC || tianjiAssetsState.AIGC)
     };
     tianjiGroupsState = stored.tianjiSeedanceGroups || tianjiGroupsState;
-    const tianjiSettingsPanelMode = stored.tianjiSeedanceSettingsMode === "tianji" ? "tianji" : "official";
+    const selectedMode = document.querySelector("[data-tianji-mode][aria-pressed='true']")?.getAttribute("data-tianji-mode");
+    const tianjiSettingsPanelMode = selectedMode === "tianji" || (!selectedMode && stored.tianjiSeedanceSettingsMode === "tianji")
+      ? "tianji"
+      : "official";
     if (!document.getElementById("wanjuan-tianji-settings-style")) {
       const style = document.createElement("style");
       style.id = "wanjuan-tianji-settings-style";
@@ -2487,6 +2525,7 @@ function installDesktopPatches() {
       .wanjuan-tianji-settings-card textarea{min-height:76px;resize:vertical}
       .wanjuan-tianji-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
       .wanjuan-tianji-settings-card button{border:1px solid var(--wj-control-border,color-mix(in srgb,var(--wj-border,#333) 72%,transparent));background:var(--wj-control-bg,color-mix(in srgb,var(--wj-surface-3,#222) 86%,transparent));color:var(--wj-control-text,var(--wj-text,#d1d5db));border-radius:7px;padding:7px 10px;font-size:11px;cursor:pointer;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--wj-text,#fff) 7%,transparent)}
+      .wanjuan-tianji-settings-card [data-tianji-points-action][hidden]{display:none!important}
       .wanjuan-tianji-settings-card button:hover{background:var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-accent,#60a5fa) 10%,var(--wj-surface-3,#2a2a2a)));border-color:var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#60a5fa) 42%,var(--wj-border,#333) 58%));color:var(--wj-control-hover-text,var(--wj-text,#fff))}
       .wanjuan-tianji-mode-switch button.is-active,.wanjuan-tianji-mode-switch button[aria-pressed="true"]{background:var(--wj-control-selected-bg,var(--wj-accent,#60a5fa))!important;background-image:var(--wj-control-selected-bg,var(--wj-accent,#60a5fa))!important;border-color:var(--wj-control-selected-border,color-mix(in srgb,var(--wj-accent,#60a5fa) 88%,var(--wj-text,#fff) 12%))!important;color:var(--wj-control-selected-text,var(--wj-on-accent,#fff))!important;font-weight:750!important;text-shadow:none!important;box-shadow:var(--wj-control-selected-shadow,inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent),0 0 0 1px color-mix(in srgb,var(--wj-accent,#60a5fa) 34%,transparent),0 6px 14px color-mix(in srgb,var(--wj-accent,#60a5fa) 26%,transparent))!important}
       .wanjuan-tianji-mode-switch button.is-active::before,.wanjuan-tianji-mode-switch button[aria-pressed="true"]::before{content:"✓";display:inline-block;margin-right:4px;font-size:10px;font-weight:900;line-height:1;color:currentColor}
@@ -2554,8 +2593,8 @@ function installDesktopPatches() {
     panel.innerHTML = `
       <div class="wanjuan-tianji-body">
         <div class="wanjuan-tianji-actions">
-          <button data-tianji-action="balance">查询积分</button>
-          <button data-tianji-action="pointsLogs">积分明细</button>
+          <button data-tianji-points-action data-tianji-action="balance" ${tianjiPointsActionsUnlocked ? "" : "hidden"}>查询积分</button>
+          <button data-tianji-points-action data-tianji-action="pointsLogs" ${tianjiPointsActionsUnlocked ? "" : "hidden"}>积分明细</button>
           <button data-tianji-action="groups">获取组 ID</button>
           <button data-tianji-action="refresh">刷新素材</button>
           <button data-tianji-action="syncJixin">同步极鑫配置</button>
@@ -2601,6 +2640,33 @@ function installDesktopPatches() {
       updateTianjiModeButtons(normalizedMode);
       if (shouldSave) await tianjiStorageSet({ tianjiSeedanceSettingsMode: normalizedMode });
     };
+    if (tianjiSettingsModeListener) {
+      window.removeEventListener("wanjuan:tianji-settings-mode-changed", tianjiSettingsModeListener);
+    }
+    tianjiSettingsModeListener = (event) => {
+      setTianjiMode(event?.detail?.mode, false).catch(console.warn);
+    };
+    window.addEventListener("wanjuan:tianji-settings-mode-changed", tianjiSettingsModeListener);
+    document.querySelectorAll("[data-tianji-mode]").forEach((button) => {
+      if (button.dataset.tianjiPanelSyncInstalled === "true") return;
+      button.dataset.tianjiPanelSyncInstalled = "true";
+      button.addEventListener("click", () => {
+        const selectedMode = button.getAttribute("data-tianji-mode");
+        if (selectedMode === "tianji" && !tianjiPointsActionsUnlocked) {
+          tianjiModeUnlockClickCount += 1;
+          if (tianjiModeUnlockClickCount >= 10) {
+            tianjiPointsActionsUnlocked = true;
+            tianjiModeUnlockClickCount = 0;
+            panel.querySelectorAll("[data-tianji-points-action]").forEach((actionButton) => {
+              actionButton.hidden = false;
+            });
+          }
+        } else if (selectedMode !== "tianji") {
+          tianjiModeUnlockClickCount = 0;
+        }
+        setTianjiMode(selectedMode, false).catch(console.warn);
+      });
+    });
     setTianjiMode(tianjiSettingsPanelMode, false).catch(console.warn);
     const status = (text) => {
       panel.querySelectorAll("[data-tianji-status],[data-tianji-status-top]").forEach((node) => {
@@ -2734,12 +2800,17 @@ function installDesktopPatches() {
     tianjiRenderAssetList(panel);
   };
 
+  const installTianjiSettingsPanel = () => {
+    if (tianjiSettingsInstallPromise) return tianjiSettingsInstallPromise;
+    tianjiSettingsInstallPromise = installTianjiSettingsPanelImpl().finally(() => {
+      tianjiSettingsInstallPromise = null;
+    });
+    return tianjiSettingsInstallPromise;
+  };
+
   const ensureWorkspaceStyle = () => {
     const existingStyle = document.getElementById("wanjuan-workspace-style");
-    if (existingStyle) {
-      document.head.appendChild(existingStyle);
-      return;
-    }
+    if (existingStyle) return;
     const style = document.createElement("style");
     style.id = "wanjuan-workspace-style";
     style.textContent = `
@@ -3493,7 +3564,6 @@ function installDesktopPatches() {
     markCanvasModelToolbar();
     installPerformanceSettingsPanel();
     installSettingsUpdateButton();
-    installCanvasPressureMeter();
     installSeedreamOfficialIcons();
     installTianjiSettingsPanel().catch((error) => console.warn("Tianji settings panel skipped", error));
     installWorkspacePanel();
@@ -3522,25 +3592,33 @@ function installDesktopPatches() {
       window.setTimeout(refresh, 32);
     }
   };
-  const mo = new MutationObserver((mutations) => {
-    const onlyWorkspaceMutation = mutations.length > 0 && mutations.every((mutation) => {
-      const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
-      if (target?.closest?.(".wanjuan-workspace-page, .wanjuan-workspace-nav-tab, #wanjuan-workspace-style")) return true;
-      return Array.from(mutation.addedNodes || []).every((node) =>
-        node instanceof Element &&
-        node.closest?.(".wanjuan-workspace-page, .wanjuan-workspace-nav-tab, #wanjuan-workspace-style")
+  const desktopPatchMutationIsRelevant = (mutation) => {
+    const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
+    if (!target || target.closest?.("head, .react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card")) return false;
+    const changedNodes = [...Array.from(mutation.addedNodes || []), ...Array.from(mutation.removedNodes || [])];
+    if (!changedNodes.length) return false;
+    return changedNodes.some((node) => {
+      if (!(node instanceof Element)) return false;
+      if (node.matches?.("style, script, img, video, audio, source")) return false;
+      if (node.closest?.(".react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card")) return false;
+      return !!(
+        node.matches?.(".wanjuan-app-top-nav, [data-wanjuan-settings-root], .wanjuan-settings-card") ||
+        node.querySelector?.(".wanjuan-app-top-nav, [data-wanjuan-settings-root], .wanjuan-settings-card")
       );
     });
-    if (onlyWorkspaceMutation) return;
-    queueDesktopPatchRefresh();
+  };
+  const mo = new MutationObserver((mutations) => {
+    if (mutations.some(desktopPatchMutationIsRelevant)) queueDesktopPatchRefresh();
   });
-  mo.observe(document.documentElement, { subtree: true, childList: true });
+  const patchObserveRoot = document.getElementById("root") || document.body;
+  patchObserveRoot && mo.observe(patchObserveRoot, { subtree: true, childList: true });
+  window.addEventListener("beforeunload", () => mo.disconnect(), { once: true });
 
   let seedreamIconPatchQueued = false;
   const seedreamIconObserver = new MutationObserver((mutations) => {
     if (mutations.length && mutations.every((mutation) => {
       const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
-      return target?.closest?.(".wanjuan-workspace-page");
+      return target?.closest?.("head, .react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card");
     })) return;
     if (seedreamIconPatchQueued) return;
     seedreamIconPatchQueued = true;
@@ -3549,7 +3627,8 @@ function installDesktopPatches() {
       installSeedreamOfficialIcons();
     }, 800);
   });
-  seedreamIconObserver.observe(document.documentElement, { subtree: true, childList: true });
+  patchObserveRoot && seedreamIconObserver.observe(patchObserveRoot, { subtree: true, childList: true });
+  window.addEventListener("beforeunload", () => seedreamIconObserver.disconnect(), { once: true });
 
   const timer = window.setInterval(() => {
     if (autoClicked) {

@@ -106,8 +106,7 @@ export function wanjuanVideoTaskMatchesNodeByPrompt(
   if (node.type === `videoNode`)
     return (task.type === `video` || task.customOutputType === `video`) &&
       provider !== `seedance` &&
-      provider !== `tongyi-wanxiang` &&
-      !/seedance|doubao|wanx|wan\d|tongyi/i.test(taskModel);
+      !/seedance|doubao/i.test(taskModel);
   return false;
 }
 
@@ -135,8 +134,7 @@ export function wanjuanVideoTaskCanAttachToNode(
   if (node.type === `videoNode`)
     return (task.type === `video` || task.customOutputType === `video`) &&
       provider !== `seedance` &&
-      provider !== `tongyi-wanxiang` &&
-      !/seedance|doubao|wanx|wan\d|tongyi/i.test(taskModel);
+      !/seedance|doubao/i.test(taskModel);
   return false;
 }
 

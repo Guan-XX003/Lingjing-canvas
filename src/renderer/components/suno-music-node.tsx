@@ -14,7 +14,8 @@ import { memo as reactMemo, useEffect, useRef, useState, type CSSProperties } fr
 import { Position, useNodeConnections, useNodesData, useReactFlow } from "@xyflow/react";
 import { CircleAlert, RefreshCw, Download, Settings2 } from "lucide-react";
 import { resolveModelApiBindingIdHelper } from "../lib/model-binding";
-import { wanjuanUploadMediaToPublicUrl } from "../lib/reference-media";
+import { wanjuanIsPublicHttpMediaUrl, wanjuanNormalizeReferenceMediaUrl, wanjuanUploadMediaToPublicUrl } from "../lib/reference-media";
+import { useWanJuanMediaBudget } from "../lib/media-budget";
 import { WanJuanNodeHandle } from "./render-mode";
 import {
   SUNO_MV_MODELS,
@@ -78,6 +79,10 @@ const COL = {
   textFaint: v("muted", "#6b7280"),
   resultBg: v("surface-3", "#151515"),
   onAccent: v("bg", "#111"),
+  selectedBg: "var(--wj-control-selected-bg, var(--wanjuan-theme-accent, #d8dde3))",
+  selectedBorder: "var(--wj-control-selected-border, color-mix(in srgb, var(--wanjuan-theme-accent, #d8dde3) 72%, #ffffff 28%))",
+  selectedText: "var(--wj-control-selected-text, #111111)",
+  selectedShadow: "var(--wj-control-selected-shadow, inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 0 rgba(0,0,0,0.22))",
 };
 const uiInput: CSSProperties = {
   width: "100%", boxSizing: "border-box", background: COL.input, border: `1px solid ${COL.border}`,
@@ -85,13 +90,91 @@ const uiInput: CSSProperties = {
 };
 const uiLabel: CSSProperties = { fontSize: 11, color: COL.textDim, lineHeight: 1.4, whiteSpace: "normal", wordBreak: "break-word" };
 const uiBtn = (active: boolean): CSSProperties => ({
-  padding: "6px 8px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: "none",
-  background: active ? COL.accent : COL.btnOff, color: active ? COL.onAccent : COL.textMain,
-  whiteSpace: "nowrap", fontWeight: active ? 600 : 400,
+  padding: "7px 9px", borderRadius: 7, fontSize: 12, cursor: "pointer",
+  border: `1px solid ${active ? COL.selectedBorder : COL.border}`,
+  background: active ? COL.selectedBg : COL.btnOff,
+  color: active ? COL.selectedText : COL.textMain,
+  whiteSpace: "nowrap", fontWeight: active ? 700 : 500,
+  boxShadow: active ? COL.selectedShadow : "inset 0 1px 0 rgba(255,255,255,0.04)",
+  transition: "background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease",
 });
 const uiPanel: CSSProperties = {
   display: "flex", flexDirection: "column", gap: 6, border: `1px solid ${COL.border}`, borderRadius: 6, padding: 8,
 };
+
+const SUNO_AUDIO_EXT_RE = /\.(mp3|wav|m4a|aac|ogg|flac|opus)(?:$|[?#])/i;
+const SUNO_VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:$|[?#])/i;
+type SunoReferenceKind = "audio" | "video";
+
+function sunoReferenceKindFromUrl(value: any, fallback?: SunoReferenceKind): SunoReferenceKind | "" {
+  const text = String(value || "").trim();
+  if (/^data:video\//i.test(text) || SUNO_VIDEO_EXT_RE.test(text)) return "video";
+  if (/^data:audio\//i.test(text) || SUNO_AUDIO_EXT_RE.test(text)) return "audio";
+  return fallback || "";
+}
+
+function sunoFirstReferenceUrlFromValue(value: any, fallbackKind?: SunoReferenceKind): { url: string; kind: SunoReferenceKind } | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (!text) return null;
+    const kind = sunoReferenceKindFromUrl(text, fallbackKind);
+    if (
+      kind &&
+      (/^(https?:\/\/|file:\/\/|blob:|data:audio\/|data:video\/)/i.test(text) ||
+        /^\/(?:Users|Volumes|private|var|tmp|opt|home)\//i.test(text) ||
+        /^[A-Za-z]:(?!\/\/)/.test(text) ||
+        /^\\\\[^\\]+\\/.test(text) ||
+        /^\/\/[^/]+\//.test(text) ||
+        SUNO_AUDIO_EXT_RE.test(text) ||
+        SUNO_VIDEO_EXT_RE.test(text))
+    ) {
+      return { url: wanjuanNormalizeReferenceMediaUrl(text, kind), kind };
+    }
+    try {
+      return sunoFirstReferenceUrlFromValue(JSON.parse(text), fallbackKind);
+    } catch {
+      const match = text.match(/(?:https?:\/\/|file:\/\/)[^\s"'<>]+?\.(?:mp3|wav|m4a|aac|ogg|flac|opus|mp4|webm|mov|m4v|mpeg|mpg|avi|mkv)(?:[?#][^\s"'<>]*)?/i);
+      if (!match?.[0]) return null;
+      const matchedKind = sunoReferenceKindFromUrl(match[0], fallbackKind);
+      return matchedKind ? { url: wanjuanNormalizeReferenceMediaUrl(match[0], matchedKind), kind: matchedKind } : null;
+    }
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const hit = sunoFirstReferenceUrlFromValue(item, fallbackKind);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    const declaredKindText = String(value.mediaKind || value.type || "").toLowerCase();
+    const declaredKind: SunoReferenceKind | undefined =
+      declaredKindText.startsWith("video") ? "video" :
+      declaredKindText.startsWith("audio") ? "audio" :
+      fallbackKind;
+    const keys = declaredKind === "video"
+      ? ["videoUrl", "resultVideoUrl", "outputVideoUrl", "video_url", "result_video_url", "output_video_url", "imageUrl", "mediaUrl", "resultUrl", "url", "localPath", "filePath", "path", "resultData", "customResultData"]
+      : declaredKind === "audio"
+        ? ["audioUrl", "resultAudioUrl", "outputAudioUrl", "audio_url", "result_audio_url", "output_audio_url", "imageUrl", "mediaUrl", "resultUrl", "url", "localPath", "filePath", "path", "resultData", "customResultData"]
+        : ["audioUrl", "resultAudioUrl", "outputAudioUrl", "videoUrl", "resultVideoUrl", "outputVideoUrl", "mediaUrl", "resultUrl", "url", "localPath", "filePath", "path", "resultData", "customResultData", "text"];
+    for (const key of keys) {
+      const hit = sunoFirstReferenceUrlFromValue(value[key], declaredKind);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+function sunoReferenceFromNode(node: any): { url: string; kind: SunoReferenceKind } | null {
+  const data = node?.data || {};
+  const mediaKindText = String(data.mediaKind || "").toLowerCase();
+  const fallbackKind: SunoReferenceKind | undefined =
+    mediaKindText === "video" ? "video" :
+    mediaKindText === "audio" ? "audio" :
+    undefined;
+  return sunoFirstReferenceUrlFromValue(data, fallbackKind);
+}
 
 export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: any) => {
   const { updateNodeData } = useReactFlow();
@@ -109,6 +192,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
   const [referenceClipId, setReferenceClipId] = useState<string>(data.referenceClipId || "");
   const [coverAudioUrl, setCoverAudioUrl] = useState<string>(data.coverAudioUrl || "");
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const [activeClipId, setActiveClipId] = useState<string>("");
+  const sunoAudioMedia = useWanJuanMediaBudget("audio", `${nodeId}:${activeClipId || "idle"}`, !!activeClipId);
 
   const runningRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -126,14 +211,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
     .filter(Boolean).join("\n").trim();
   const effectivePrompt = (prompt || upstreamText || "").trim();
   // 上游音频/视频节点的媒体（翻唱时自动上传为参考；音频或视频都行）
-  const upstreamRef = (upstream
-    .map((n: any) =>
-      typeof n?.data?.audioUrl === "string" && n.data.audioUrl
-        ? { url: n.data.audioUrl as string, kind: "audio" as const }
-        : typeof n?.data?.videoUrl === "string" && n.data.videoUrl
-          ? { url: n.data.videoUrl as string, kind: "video" as const }
-          : { url: "", kind: "audio" as const })
-    .filter((r) => r.url)[0]) || { url: "", kind: "audio" as const };
+  const upstreamRef = upstream.map(sunoReferenceFromNode).filter(Boolean)[0] || { url: "", kind: "audio" as const };
   const upstreamAudioUrl = String(upstreamRef.url || "");
   const effectiveCoverAudio = (coverAudioUrl || upstreamAudioUrl || "").trim();
   // 参考媒体类型（音频/视频），决定自动上传时用哪种 kind
@@ -177,7 +255,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
         return;
       }
       // 本地/私有音频 → 复用 app 的「参考媒体转公网直链」上传，换成公网 URL
-      if (!refClipId && refUrl && !/^https?:\/\//i.test(refUrl)) {
+      if (!refClipId && refUrl && !wanjuanIsPublicHttpMediaUrl(refUrl)) {
         runningRef.current = true;
         try {
           updateNodeData(nodeId, { loading: true, errorMessage: undefined, statusText: "参考媒体转公网直链…" });
@@ -187,6 +265,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
             qiniuConfig: data.qiniuConfig,
             customPublicUploadConfig: data.customPublicUploadConfig,
           }, undefined, (msg) => updateNodeData(nodeId, { statusText: msg }));
+          setCoverAudioUrl(refUrl);
+          updateNodeData(nodeId, { coverAudioUrl: refUrl });
         } catch (error: any) {
           updateNodeData(nodeId, { loading: false, statusText: undefined, errorMessage: `参考媒体转公网失败：${error?.message || error}（可在设置里配置自定义公网直链/TOS/七牛，或直接填公网 URL）` });
           data.onShowToast?.("参考媒体转公网失败");
@@ -284,7 +364,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
           {/* 动作 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {ACTIONS.map((a) => (
-              <button key={a.key} className="nodrag" onClick={() => setAction(a.key)} style={uiBtn(action === a.key)}>{a.label}</button>
+              <button key={a.key} className={`nodrag wj-mode-tab ${action === a.key ? "wj-mode-tab-active" : ""}`} aria-pressed={action === a.key} onClick={() => setAction(a.key)} style={uiBtn(action === a.key)}>{a.label}</button>
             ))}
           </div>
 
@@ -303,7 +383,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
               {!coverAudioUrl && upstreamAudioUrl && (
                 <span style={{ fontSize: 10, color: COL.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>将参考上游{effectiveCoverKind === "video" ? "视频" : "音频"}：{upstreamAudioUrl}</span>
               )}
-              {!referenceClipId && effectiveCoverAudio && !/^https?:\/\//i.test(effectiveCoverAudio) && (
+              {!referenceClipId && effectiveCoverAudio && !wanjuanIsPublicHttpMediaUrl(effectiveCoverAudio) && (
                 <span style={{ fontSize: 10, color: COL.textFaint }}>本地/私有{effectiveCoverKind === "video" ? "视频" : "音频"}将用「设置→上传」的公网直链配置，点生成时自动上传后再翻唱</span>
               )}
               <span style={{ fontSize: 10, color: COL.textFaint }}>或直接填 Suno 内已有的 clip_id（填了优先用它）：</span>
@@ -313,8 +393,8 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
 
           {/* 模式 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button className="nodrag" onClick={() => setCustomMode(false)} style={uiBtn(!customMode)}>灵感模式</button>
-            <button className="nodrag" onClick={() => setCustomMode(true)} style={uiBtn(customMode)}>自定义</button>
+            <button className={`nodrag wj-mode-tab ${!customMode ? "wj-mode-tab-active" : ""}`} aria-pressed={!customMode} onClick={() => setCustomMode(false)} style={uiBtn(!customMode)}>灵感模式</button>
+            <button className={`nodrag wj-mode-tab ${customMode ? "wj-mode-tab-active" : ""}`} aria-pressed={customMode} onClick={() => setCustomMode(true)} style={uiBtn(customMode)}>自定义</button>
           </div>
 
           {/* 模型版本 mv */}
@@ -367,7 +447,25 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
                       {c.audioUrl && (<a title="下载" href={c.audioUrl} download style={{ color: COL.textDim, display: "flex" }}><Download size={13} /></a>)}
                     </div>
                   </div>
-                  {c.audioUrl && <audio controls src={c.audioUrl} className="nodrag" style={{ width: "100%", height: 32 }} />}
+                  {c.audioUrl && activeClipId !== (c.id || String(i)) && (
+                    <button
+                      className="nodrag"
+                      onClick={() => setActiveClipId(c.id || String(i))}
+                      style={{ height: 30, borderRadius: 6, border: `1px solid ${COL.border}`, background: COL.btnOff, color: COL.textMain, cursor: "pointer", fontSize: 11 }}
+                    >
+                      播放曲目
+                    </button>
+                  )}
+                  {c.audioUrl && activeClipId === (c.id || String(i)) && sunoAudioMedia.enabled && (
+                    <audio
+                      controls
+                      autoPlay
+                      src={c.audioUrl}
+                      className="nodrag"
+                      onEnded={() => setActiveClipId("")}
+                      style={{ width: "100%", height: 32 }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
