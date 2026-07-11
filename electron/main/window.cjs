@@ -442,7 +442,7 @@ function createMainWindow(baseUrl) {
   }, 2200);
 
   // Helpful for debugging blank screen. Enable by launching with WANJUAN_DEBUG=1
-  if (process.env.WANJUAN_DEBUG === "1") {
+  if (process.env.WANJUAN_DEBUG === "1" && process.env.WANJUAN_PERF_TEST !== "1") {
     win.webContents.openDevTools({ mode: "detach" });
   }
 

@@ -1,0 +1,1 @@
+Bootstraps Electron, selects stable or isolated user-data paths, configures GPU mode and single-instance behavior, starts the static server, registers IPC, creates the main window, and schedules update checks.

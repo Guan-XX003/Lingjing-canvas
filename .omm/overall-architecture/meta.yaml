@@ -1,0 +1,14 @@
+created: 2026-07-10T15:52:05.838Z
+updated: 2026-07-10T15:53:25.016Z
+update_count: 3
+last_field: note
+children:
+  - canvas-system
+  - desktop-entry
+  - external-tools
+  - generation-system
+  - main-process
+  - network-upload
+  - preload-bridge
+  - renderer-app
+  - storage-assets

@@ -1,0 +1,1 @@
+The renderer assembly remains concentrated in src/renderer/bundle/index.js, and several generation hooks are still very large. Cross-layer behavior can therefore be difficult to trace and regressions can appear when runtime data is duplicated into node state.

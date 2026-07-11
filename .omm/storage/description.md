@@ -1,0 +1,1 @@
+The storage architecture combines renderer preferences, desktop storage mirrors, IndexedDB canvas state, safety snapshots, content-addressed media, project asset bindings, migration transactions, cleanup trash, and portable backup modules.

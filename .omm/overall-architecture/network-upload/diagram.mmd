@@ -1,0 +1,12 @@
+graph LR
+    static-server["Static Renderer Server\nnet/static-server.cjs"]
+    proxy-fetch["Outbound Proxy Fetch\nnet/proxy-fetch.cjs"]
+    security-filter["Security Filters\nnet/security + file-access-filter"]
+    anonymous-upload["Temporary Upload Hosts\nuploaders/anonymous-hosts.cjs"]
+    cloud-upload["TOS and Qiniu Upload\nuploaders/cloud-storage.cjs"]
+    custom-upload["Custom Public Host\nuploaders/custom-host.cjs"]
+    static-server -->|"establishes trusted renderer origin"| security-filter
+    security-filter -->|"validates outbound URL and local access"| proxy-fetch
+    proxy-fetch -->|"submits temporary media uploads"| anonymous-upload
+    proxy-fetch -->|"submits configured object-storage uploads"| cloud-upload
+    proxy-fetch -->|"submits user-defined upload contracts"| custom-upload

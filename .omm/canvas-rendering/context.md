@@ -1,0 +1,1 @@
+Large projects are expensive because visible nodes can contain full editors, images, videos, audio players, historical results, task state, and large configuration objects even after offscreen culling.

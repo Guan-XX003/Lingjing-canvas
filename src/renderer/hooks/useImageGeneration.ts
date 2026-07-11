@@ -10,6 +10,7 @@ import { parseSeedanceList, resolveModelApiBindingIdHelper, resolveModelProtocol
 import { safeStringifyRequestForLog, serializeErrorPreview, WanJuanIsTransientNetworkError } from "../lib/log-utils";
 import { WanJuanGetPreferredModel } from "../lib/model-favorites";
 import { WanJuanParseModelList } from "../lib/model-id";
+import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
 
 interface UseImageGenerationDeps {
   propImageApiKey: any;
@@ -1217,7 +1218,7 @@ ${combinedPrompt}`,
                             height: height
                           },
                           data: {
-	                            ...node.data,
+	                            ...wanjuanResetTianjiPortraitBindingForImage(node.data, seedreamDisplayImage),
 	                            imageUrl: seedreamDisplayImage,
 	                            projectAssetBindings: seedreamAssetBinding ? {
 	                              ...(node.data?.projectAssetBindings || {}),
@@ -1263,7 +1264,7 @@ ${combinedPrompt}`,
                         {
                           ...node,
                           data: {
-	                            ...node.data,
+	                            ...wanjuanResetTianjiPortraitBindingForImage(node.data, seedreamDisplayImage),
 	                            imageUrl: seedreamDisplayImage,
 	                            projectAssetBindings: seedreamAssetBinding ? {
 	                              ...(node.data?.projectAssetBindings || {}),
@@ -1607,7 +1608,7 @@ ${combinedPrompt}`,
                                 height: height
                               },
                               data: {
-                                ...node.data,
+                                ...wanjuanResetTianjiPortraitBindingForImage(node.data, imageUrl2),
                                 imageUrl: imageUrl2,
                                 loading: false,
                                 progress: 100,
@@ -1646,7 +1647,7 @@ ${combinedPrompt}`,
                             {
                               ...node,
                               data: {
-                                ...node.data,
+                                ...wanjuanResetTianjiPortraitBindingForImage(node.data, imageUrl2),
                                 imageUrl: imageUrl2,
                                 loading: false,
                                 progress: 100,
@@ -1790,7 +1791,7 @@ ${combinedPrompt}`,
                             height: height
                           },
                           data: {
-                            ...node.data,
+                            ...wanjuanResetTianjiPortraitBindingForImage(node.data, imageDataUrl),
                             imageUrl: imageDataUrl,
                             loading: false,
                             errorMessage: undefined,
@@ -1842,7 +1843,7 @@ ${combinedPrompt}`,
                         {
                           ...node,
                           data: {
-                            ...node.data,
+                            ...wanjuanResetTianjiPortraitBindingForImage(node.data, imageDataUrl),
                             imageUrl: imageDataUrl,
                             loading: false,
                             errorMessage: undefined,

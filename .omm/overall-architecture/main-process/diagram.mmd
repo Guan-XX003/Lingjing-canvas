@@ -1,0 +1,14 @@
+graph LR
+    app-lifecycle["App Lifecycle\nindex.cjs + config.cjs"]
+    trusted-ipc["Trusted IPC Gateway\nipc.cjs"]
+    window-shell["Window and UI Shell\nwindow.cjs"]
+    asset-services["Asset and Migration Services\nassets/"]
+    network-services["Network Services\nnet/ + uploaders/"]
+    tool-services["Local Tool Services\ntools/"]
+    update-collaboration["Update and Collaboration\nupdate-checker + workspace-team"]
+    app-lifecycle -->|"registers handlers before window creation"| trusted-ipc
+    app-lifecycle -->|"creates the main BrowserWindow"| window-shell
+    trusted-ipc -->|"dispatches project operations"| asset-services
+    trusted-ipc -->|"dispatches fetch and upload operations"| network-services
+    trusted-ipc -->|"dispatches extension tool jobs"| tool-services
+    window-shell -->|"hosts renderer and webviews"| update-collaboration

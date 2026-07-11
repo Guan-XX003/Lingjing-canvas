@@ -1,0 +1,22 @@
+graph LR
+    react-flow["React Flow Viewport\ncanvas root"]
+    visibility-culling["Viewport Visibility Culling\nonlyRenderVisibleElements"]
+    render-mode["Full Lite Shell Runtime\ncomponents/render-mode.tsx"]
+    node-registry["Node Component Registry\ncomponents/canvas-node-registry.tsx"]
+    media-budget["Media Mount Budget\nlib/media-budget.ts"]
+    task-index["Task Index and Throttling\nlib/global-tasks.ts"]
+    interaction-css["Interaction Paint Reduction\nstyles and ui-overrides.css"]
+    perf-profile["Performance Profiles\nlib/performance-profile.ts"]
+    diagnostics["Canvas Diagnostics\ndebug snapshot and test harness"]
+    crash-recovery["Renderer Recovery\nwindow and project safety"]
+    react-flow -->|"culls offscreen elements"| visibility-culling
+    visibility-culling -->|"assigns runtime presentation level"| render-mode
+    render-mode -->|"renders lightweight wrappers or full nodes"| node-registry
+    node-registry -->|"requests scarce video and audio mounts"| media-budget
+    task-index -->|"limits progress-driven node updates"| node-registry
+    perf-profile -->|"sets full-node and media budgets"| render-mode
+    perf-profile -->|"controls interaction reductions"| interaction-css
+    diagnostics -->|"samples FPS, DOM, heap, media, and updates"| react-flow
+    crash-recovery -->|"restores project in a lighter state"| render-mode
+    classDef concern fill:#f38ba8,stroke:#f38ba8,color:#1e1e2e
+    class diagnostics,crash-recovery concern

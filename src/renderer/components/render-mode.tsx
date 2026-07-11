@@ -9,8 +9,9 @@
  *
  * 自 bundle 反混淆迁入，行为保持一致。
  */
-import { memo as reactMemo, useCallback, useEffect, useRef, useState } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { memo as reactMemo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
+import { CirclePlay, Image as ImageIcon, Music2 } from "lucide-react";
 import { jsx, jsxs } from "react/jsx-runtime";
 import { WANJUAN_RUNTIME_NODE_DATA_KEYS, wanjuanStripRuntimeNodeData } from "../lib/node-runtime-contract";
 
@@ -200,9 +201,12 @@ export const WanJuanRenderLiteNode = reactMemo(({
     let label = data.label || data.audioName || data.videoName || data.title || WanJuanNodeTypeLabel(nodeType, data),
       status = WanJuanNodeStatusLabel(data),
       color = WanJuanNodeStatusColor(data),
-      previewUrl = data.thumbnailUrl || data.imageUrl || (data.mediaKind === `image` ? data.url : ``),
       hasVideo = !!data.videoUrl || data.mediaKind === `video`,
-      hasAudio = !!data.audioUrl || data.mediaKind === `audio`;
+      hasAudio = !!data.audioUrl || data.mediaKind === `audio`,
+      previewUrl = data.thumbnailUrl || (!hasVideo && !hasAudio ? data.imageUrl || (data.mediaKind === `image` ? data.url : ``) : ``),
+      [previewFailed, setPreviewFailed] = useState(!1),
+      hasPreview = !!previewUrl && !previewFailed;
+    useEffect(() => setPreviewFailed(!1), [previewUrl]);
     return jsxs(`div`, {
       className: `wanjuan-render-lite-node group/node ${selected ? `is-selected` : ``}`,
       title: `${label}\n${status}\n悬停或点击恢复完整操作`,
@@ -212,19 +216,32 @@ export const WanJuanRenderLiteNode = reactMemo(({
           className: `wanjuan-render-lite-frame`,
           style: { borderColor: selected ? `#3b82f6` : color, "--wanjuan-lite-color": color },
           children: [
-            previewUrl ?
-              jsx(`img`, {
-                src: previewUrl,
-                alt: ``,
-                loading: `lazy`,
-                decoding: `async`,
-                draggable: !1,
-                className: `wanjuan-render-lite-preview`,
-              }) :
-              jsx(`div`, {
-                className: `wanjuan-render-lite-placeholder`,
-                children: hasVideo ? `视频` : hasAudio ? `音频` : WanJuanNodeTypeLabel(nodeType, data),
-              }),
+            jsxs(`div`, {
+              className: `wanjuan-render-lite-media ${hasVideo ? `is-video` : hasAudio ? `is-audio` : `is-image`}`,
+              children: [
+                hasPreview ?
+                  jsx(`img`, {
+                    src: previewUrl,
+                    alt: ``,
+                    loading: `lazy`,
+                    decoding: `async`,
+                    draggable: !1,
+                    onError: () => setPreviewFailed(!0),
+                    className: `wanjuan-render-lite-preview`,
+                  }) :
+                  jsxs(`div`, {
+                    className: `wanjuan-render-lite-placeholder`,
+                    children: [
+                      hasVideo ? jsx(CirclePlay, { size: 24 }) : hasAudio ? jsx(Music2, { size: 22 }) : jsx(ImageIcon, { size: 22 }),
+                      jsx(`span`, { children: hasVideo ? `视频结果` : hasAudio ? `音频结果` : `图片结果` }),
+                    ],
+                  }),
+                hasVideo && hasPreview && jsx(`span`, {
+                  className: `wanjuan-render-lite-play-badge`,
+                  children: jsx(CirclePlay, { size: 22 }),
+                }),
+              ],
+            }),
             jsxs(`div`, {
               className: `wanjuan-render-lite-copy`,
               children: [
@@ -244,16 +261,26 @@ export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
       let renderMode = props.data?.wanjuanRenderMode || `full`,
         [hovered, setHovered] = useState(!1),
         leaveTimerRef = useRef(0),
-        forceFull = props.selected || props.data?.loading || hovered;
+        forceFull = props.selected || props.data?.loading || hovered,
+        effectiveRenderMode = renderMode === `shell` && !props.selected && !props.data?.loading ? `shell` :
+          renderMode === `lite` && !forceFull ? `lite` : `full`,
+        updateNodeInternals = useUpdateNodeInternals();
+      useLayoutEffect(() => {
+        let firstFrame = window.requestAnimationFrame(() => {
+          updateNodeInternals(props.id);
+          window.requestAnimationFrame(() => updateNodeInternals(props.id));
+        });
+        return () => window.cancelAnimationFrame(firstFrame);
+      }, [effectiveRenderMode, props.id, updateNodeInternals]);
       useEffect(() => () => {
         if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
       }, []);
-      if (renderMode === `shell` && !props.selected && !props.data?.loading)
+      if (effectiveRenderMode === `shell`)
         return jsx(WanJuanRenderShellNode, {
           ...props,
           type: nodeType
         });
-      if (renderMode === `lite` && !forceFull)
+      if (effectiveRenderMode === `lite`)
         return jsx(`div`, {
           className: `wanjuan-render-mode-lite`,
           "data-wanjuan-render-mode": `lite`,
@@ -268,8 +295,8 @@ export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
           children: jsx(WanJuanRenderLiteNode, { ...props, type: nodeType }),
         });
       return jsx(`div`, {
-        className: `wanjuan-render-mode-${forceFull ? `full` : renderMode}`,
-        "data-wanjuan-render-mode": forceFull ? `full` : renderMode,
+        className: `wanjuan-render-mode-${effectiveRenderMode}`,
+        "data-wanjuan-render-mode": effectiveRenderMode,
         onPointerEnter: () => {
           if (leaveTimerRef.current) window.clearTimeout(leaveTimerRef.current);
           setHovered(!0);
@@ -299,21 +326,22 @@ export const WanJuanHeavyRenderNodeTypes = new Set([
   ]);
 
 export const WanJuanEstimateNodeSize = (node) => ({
-    width: Number(node?.measured?.width || node?.style?.width || 280),
-    height: Number(node?.measured?.height || node?.style?.height || 220)
+    width: Number(node?.style?.width || node?.width || node?.measured?.width || 280),
+    height: Number(node?.style?.height || node?.height || node?.measured?.height || 220)
   });
 
-export const WanJuanNodeNeedsFullRender = (node) => {
+export const WanJuanNodeNeedsFullRender = (node, zoom = 1) => {
     let data = node?.data || {};
-    return !!(
+    if (
       node?.selected ||
       node?.dragging ||
-      data.loading ||
+      data.loading
+    ) return !0;
+    if (zoom <= 0.52) return !1;
+    return !!(
       data.expanded ||
       data.configMode ||
-      data.wanjuanForceFullRender ||
-      data.errorMessage ||
-      data.errorMsg
+      data.wanjuanForceFullRender
     );
   };
 
@@ -326,8 +354,8 @@ export const WanJuanComputeNodeRenderMode = (node, viewport = {
     height: 900
   }) => {
     if (!WanJuanHeavyRenderNodeTypes.has(node?.type)) return `full`;
-    if (WanJuanNodeNeedsFullRender(node)) return `full`;
     let zoom = Number(viewport?.zoom || 1);
+    if (WanJuanNodeNeedsFullRender(node, zoom)) return `full`;
     let {
         width,
         height

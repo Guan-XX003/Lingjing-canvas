@@ -203,6 +203,7 @@ export const WanJuanVideoNode = reactMemo(({
 	      seedanceApiMenuRef = useRef(null),
 	      [isFullscreen, setIsFullscreen] = useState(!1),
 	      [isHovered, setIsHovered] = useState(!1),
+	      [videoPreviewReady, setVideoPreviewReady] = useState(!1),
 	      [videoPlaybackError, setVideoPlaybackError] = useState(``),
 	      fileInputRef = useRef(null),
       [w, T] = useState(!1),
@@ -228,7 +229,9 @@ export const WanJuanVideoNode = reactMemo(({
 	      [tianjiPortraitPickerReachedEnd, setTianjiPortraitPickerReachedEnd] = useState(!1),
 	      [tianjiPortraitPickerTotalCount, setTianjiPortraitPickerTotalCount] = useState(0),
 	      seedanceNodeVirtualPortraits = wanjuanNormalizeSeedanceVirtualPortraits(data.seedanceVirtualPortraits || []);
-	    const wanjuanVideoMedia = useWanJuanMediaBudget(`video`, nodeId, !!data.videoUrl && (isHovered || selected));
+	    const shouldRenderVideo = !!data.videoUrl && (data.wanjuanRenderMode === `full` || isHovered || selected);
+	    const wanjuanVideoMedia = useWanJuanMediaBudget(`video`, nodeId, shouldRenderVideo);
+	    useEffect(() => setVideoPreviewReady(!1), [data.videoUrl]);
 	    let applyPreferredVideoModel = (favoritesOverride = favoriteModels.favorites) => {
 	      if (!activeVideoModelText) return;
 	      let currentModel = selectedModel || activeVideoSelectedModel || ``;
@@ -1115,7 +1118,7 @@ export const WanJuanVideoNode = reactMemo(({
                 aspectRatio: peAspectRatio || `16 / 9`
               },
               children: [
-                data.videoUrl && (!isHovered && !selected || !wanjuanVideoMedia.enabled) &&
+                data.videoUrl && (!shouldRenderVideo || !wanjuanVideoMedia.enabled) &&
                 (data.thumbnailUrl ?
                   jsx(`img`, {
                     src: data.thumbnailUrl,
@@ -1125,13 +1128,26 @@ export const WanJuanVideoNode = reactMemo(({
                     draggable: !1,
                     className: `max-w-full w-full h-full object-cover object-bottom block`,
                   }) :
-                  jsx(`div`, {
-                    className: `absolute inset-0 grid place-items-center bg-[#111] text-gray-500`,
-                    children: jsx(CirclePlay, { className: `w-10 h-10` }),
+                  jsxs(`div`, {
+                    className: `wanjuan-video-poster-fallback absolute inset-0`,
+                    children: [
+                      jsx(CirclePlay, { size: 30 }),
+                      jsx(`span`, { children: `视频结果` }),
+                      jsx(`small`, { children: `悬停预览` }),
+                    ],
                   })),
-                data.videoUrl && (isHovered || selected) && wanjuanVideoMedia.enabled &&
+                data.videoUrl && shouldRenderVideo && wanjuanVideoMedia.enabled &&
                 jsxs(Fragment, {
                   children: [
+                    !videoPreviewReady && !data.thumbnailUrl &&
+                    jsxs(`div`, {
+                      className: `wanjuan-video-poster-fallback absolute inset-0 z-[1] pointer-events-none`,
+                      children: [
+                        jsx(CirclePlay, { size: 30 }),
+                        jsx(`span`, { children: `视频结果` }),
+                        jsx(`small`, { children: `正在载入预览` }),
+                      ],
+                    }),
                     jsx(`video`, {
                       src: data.videoUrl,
                       poster: data.thumbnailUrl,
@@ -1180,7 +1196,9 @@ export const WanJuanVideoNode = reactMemo(({
                             ));
                         }
 	                      },
+	                      onLoadedData: () => setVideoPreviewReady(!0),
 	                      onError: () => {
+	                        setVideoPreviewReady(!1);
 	                        setVideoPlaybackError(`视频文件不可播放，可能是本地文件丢失、下载未完成，或接口返回了网页登录页。`);
 	                      },
 	                      onMouseEnter: () => setIsHovered(!0),
@@ -1206,9 +1224,9 @@ export const WanJuanVideoNode = reactMemo(({
 	                    !data.loading &&
 	                    !videoPlaybackError &&
 	                    jsx(`div`, {
-                      className: `absolute inset-0 flex items-center justify-center pointer-events-none`,
+                      className: `wanjuan-video-play-overlay pointer-events-none`,
                       children: jsx(`div`, {
-                        className: `w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center`,
+                        className: `wanjuan-video-play-button`,
                         children: jsx(CirclePlay, {
                           className: `text-white/80 w-6 h-6`,
                         }),

@@ -1,0 +1,9 @@
+created: 2026-07-10T15:55:54.361Z
+updated: 2026-07-10T15:55:54.365Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: proxy-fetch
+children: []
+parentPath:
+  - network-upload

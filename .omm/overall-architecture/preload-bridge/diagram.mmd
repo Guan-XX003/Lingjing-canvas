@@ -1,0 +1,14 @@
+graph LR
+    startup-sequence["Startup Sequence\npreload/index.cjs"]
+    fetch-bridge["Fetch Proxy Bridge\nfetch-proxy.cjs"]
+    chrome-compat["Chrome Compatibility Shim\nchrome-shim.cjs"]
+    desktop-api["Desktop API Surface\nbridge-api.cjs"]
+    storage-recovery["Storage and Legacy Recovery\nstorage.cjs + legacy-data.cjs"]
+    project-safety["Project Safety Layer\nproject-safety.cjs"]
+    desktop-patches["Desktop Patches\ndesktop-patches.cjs"]
+    startup-sequence -->|"installs before renderer execution"| fetch-bridge
+    startup-sequence -->|"restores storage before exposing compatibility APIs"| storage-recovery
+    storage-recovery -->|"backs chrome.storage implementation"| chrome-compat
+    startup-sequence -->|"exposes trusted desktop functions"| desktop-api
+    project-safety -->|"guards project saves and backups"| desktop-api
+    startup-sequence -->|"mounts desktop-only behavior after DOM ready"| desktop-patches

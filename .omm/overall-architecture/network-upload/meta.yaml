@@ -1,0 +1,12 @@
+created: 2026-07-10T15:54:13.311Z
+updated: 2026-07-10T15:55:07.755Z
+update_count: 2
+last_field: diagram
+kind: nested-class
+title: network-upload
+children:
+  - anonymous-upload
+  - cloud-upload
+  - proxy-fetch
+  - security-filter
+parentPath: []

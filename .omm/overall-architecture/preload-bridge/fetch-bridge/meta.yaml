@@ -1,0 +1,9 @@
+created: 2026-07-10T15:55:53.935Z
+updated: 2026-07-10T15:55:53.944Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: fetch-bridge
+children: []
+parentPath:
+  - preload-bridge

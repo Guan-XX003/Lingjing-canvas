@@ -1226,6 +1226,7 @@ function WanJuanAppCanvas({
           if (document.documentElement.dataset.wanjuanDebug !== `1`) throw Error(`Canvas debug mode is disabled`);
           const count = Math.max(0, Math.min(1200, Number(requestedCount) || 0));
           const withResults = options.withResults !== !1;
+          const videoThumbnails = options.videoThumbnails !== !1;
           const extractedFrameCount = Math.max(0, Math.min(500, Number(options.extractedFrameCount || 120)));
           const sampleVideoUrl = `https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4`;
           const sampleAudioUrl = `https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3`;
@@ -1240,7 +1241,7 @@ function WanJuanAppCanvas({
               text: `性能测试文本 ${index + 1}`,
               mediaKind: type === `imageNode` ? `image` : void 0,
               imageUrl: withResults && (type === `imageNode` || type === `promptNode`) ? tinyPreview : void 0,
-              thumbnailUrl: withResults && (type === `imageNode` || type === `promptNode` || type === `videoNode`) ? tinyPreview : void 0,
+              thumbnailUrl: withResults && (type === `imageNode` || type === `promptNode` || type === `videoNode` && videoThumbnails) ? tinyPreview : void 0,
               videoUrl: withResults && type === `videoNode` ? sampleVideoUrl : void 0,
               audioUrl: withResults && type === `audioNode` ? sampleAudioUrl : void 0,
               resultData: withResults && type === `textNode` ? `已生成的文本结果 ${index + 1}` : void 0,
@@ -1373,6 +1374,16 @@ function WanJuanAppCanvas({
           activeVideos: document.querySelectorAll(`.react-flow__node video[src]`).length,
           audios: document.querySelectorAll(`.react-flow__node audio`).length,
           activeAudios: document.querySelectorAll(`.react-flow__node audio[src]`).length,
+          brokenImages: Array.from(document.querySelectorAll(`.react-flow__node img`)).filter((image) => image.complete && image.naturalWidth === 0).length,
+          videoPlayOverlays: Array.from(document.querySelectorAll(`.wanjuan-video-play-overlay`)).map((overlay) => {
+            const button = overlay.querySelector(`.wanjuan-video-play-button`),
+              overlayRect = overlay.getBoundingClientRect(),
+              buttonRect = button?.getBoundingClientRect();
+            return buttonRect ? {
+              dx: Math.round(buttonRect.left + buttonRect.width / 2 - (overlayRect.left + overlayRect.width / 2)),
+              dy: Math.round(buttonRect.top + buttonRect.height / 2 - (overlayRect.top + overlayRect.height / 2)),
+            } : { dx: 999, dy: 999 };
+          }),
           modes: Array.from(document.querySelectorAll(`.react-flow__node [data-wanjuan-render-mode]`)).reduce((result, element) => {
             const mode = element.getAttribute(`data-wanjuan-render-mode`) || `unknown`;
             result[mode] = (result[mode] || 0) + 1;

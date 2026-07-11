@@ -1,0 +1,15 @@
+graph LR
+    storage-mirror["Storage Mirror\npreload/storage.cjs"]
+    canvas-state["Canvas State\nIndexedDB project records"]
+    safety-snapshots["Safety Snapshots\nproject-safety.cjs"]
+    content-store["Content Store\ncontent-store.cjs"]
+    project-bindings["Project Bindings\nproject-assets.cjs"]
+    migrations["Migration Transactions\nmigration-manager.cjs"]
+    cleanup["Storage Cleanup\nstorage-optimization.cjs"]
+    backup["Backup Portability\nbackup hooks and IPC"]
+    storage-mirror -->|"persists project metadata"| canvas-state
+    canvas-state -->|"creates recovery points"| safety-snapshots
+    project-bindings -->|"deduplicates binary payloads"| content-store
+    migrations -->|"rewrites durable references"| project-bindings
+    cleanup -->|"uses reference index from bindings"| project-bindings
+    backup -->|"serializes canvas and optional media"| project-bindings

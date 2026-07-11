@@ -223,7 +223,9 @@ export const WanJuanPromptNode = reactMemo(({
       imageUrl = data.imageUrl,
       ce = data.loading,
       le = data.errorMessage,
-      tianjiBindingStatus = String(data.tianjiPortraitBindingStatus || (data.tianjiPortraitAssetId ? `ready` : ``)).trim(),
+      tianjiBindingSourceUrl = String(data.tianjiPortraitBindingSourceUrl || ``).trim(),
+      tianjiBindingMatchesImage = !tianjiBindingSourceUrl || tianjiBindingSourceUrl === String(imageUrl || ``).trim(),
+      tianjiBindingStatus = tianjiBindingMatchesImage ? String(data.tianjiPortraitBindingStatus || (data.tianjiPortraitAssetId ? `ready` : ``)).trim() : ``,
       tianjiBindingState =
       tianjiBindingStatus === `reviewing` ?
       {

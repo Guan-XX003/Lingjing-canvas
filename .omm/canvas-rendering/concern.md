@@ -1,0 +1,1 @@
+Dynamic node dimensions and legacy expanded states can cause visual mismatch during zoom transitions. Mounting video or audio URLs as image thumbnails creates broken previews and unnecessary decode work.

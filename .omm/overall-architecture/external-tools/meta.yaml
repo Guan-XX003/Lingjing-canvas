@@ -1,0 +1,11 @@
+created: 2026-07-10T15:54:13.283Z
+updated: 2026-07-10T15:55:07.764Z
+update_count: 2
+last_field: diagram
+kind: nested-class
+title: external-tools
+children:
+  - face-blur
+  - qwen-tts
+  - toolpack-import
+parentPath: []

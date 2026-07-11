@@ -1,0 +1,1 @@
+The application evolved from a bundled renderer and has been progressively decomposed into named React components, hooks, libraries, preload domains, and main-process services while preserving existing project data and provider behavior.

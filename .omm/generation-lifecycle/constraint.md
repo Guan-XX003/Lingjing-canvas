@@ -1,0 +1,1 @@
+Terminal states and result URLs must update immediately, while ordinary progress may be throttled. Explicit user model choices and Tianji portrait asset IDs must not be overwritten by compatibility fallbacks.

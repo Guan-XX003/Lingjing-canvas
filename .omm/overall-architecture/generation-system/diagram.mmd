@@ -1,0 +1,14 @@
+graph LR
+    image-flow["Image Generation\nuseImageGeneration.ts"]
+    video-flow["Video Generation\nuseVideoGeneration.ts"]
+    text-flow["Text and Multimodal Generation\nuseTextGeneration.ts"]
+    audio-music-flow["Audio and Music Generation\naudio nodes + Suno"]
+    seedance-tianji["Seedance and Tianji\nseedance + tianji libraries"]
+    custom-flow["Custom Node Generation\nuseCustomNodeGeneration.ts"]
+    task-reconciliation["Task Reconciliation\nglobal tasks + refresh hooks"]
+    image-flow -->|"records asynchronous image tasks"| task-reconciliation
+    video-flow -->|"records and polls video tasks"| task-reconciliation
+    text-flow -->|"returns direct or streamed text results"| task-reconciliation
+    audio-music-flow -->|"tracks clips and audio outputs"| task-reconciliation
+    seedance-tianji -->|"tracks execute IDs and portrait assets"| task-reconciliation
+    custom-flow -->|"normalizes arbitrary output contracts"| task-reconciliation

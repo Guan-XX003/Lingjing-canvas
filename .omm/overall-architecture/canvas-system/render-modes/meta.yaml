@@ -1,0 +1,9 @@
+created: 2026-07-10T15:55:54.381Z
+updated: 2026-07-10T15:55:54.383Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: render-modes
+children: []
+parentPath:
+  - canvas-system

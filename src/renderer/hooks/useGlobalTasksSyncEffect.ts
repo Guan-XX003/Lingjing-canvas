@@ -6,6 +6,7 @@ import type { GlobalTask, Ref, SetState, WjNode } from "../lib/app-types";
 import { WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { indexGlobalTasks } from "../lib/global-tasks";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
+import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
 import { wanjuanNewestNodeTask, wanjuanTaskUsesSeedanceSlot, wanjuanVideoTaskCanAttachToNode, wanjuanVideoTaskMatchesNodeByPrompt } from "../lib/video-task";
 
 interface UseGlobalTasksSyncEffectDeps {
@@ -88,7 +89,8 @@ export function useGlobalTasksSyncEffect(deps: UseGlobalTasksSyncEffectDeps) {
                 matchedTask.customOutputType === `text` &&
                 (updatedData.text = matchedTask.customResultData || updatedData.text),
                 matchedTask.customOutputType === `image` &&
-                (updatedData.imageUrl = matchedTask.customResultData || matchedTask.resultUrl || updatedData.imageUrl),
+                ((updatedData = wanjuanResetTianjiPortraitBindingForImage(updatedData, matchedTask.customResultData || matchedTask.resultUrl || updatedData.imageUrl)),
+                  (updatedData.imageUrl = matchedTask.customResultData || matchedTask.resultUrl || updatedData.imageUrl)),
 	                (updatedData.videoUrl = resolveWanjuanPlayableTaskUrl(updatedData.videoUrl, matchedTask.resultUrl)),
                 matchedTask.customOutputType === `video` &&
                 (updatedData.videoUrl = matchedTask.customResultData || updatedData.videoUrl),

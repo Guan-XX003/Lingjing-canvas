@@ -1,0 +1,9 @@
+created: 2026-07-10T15:55:54.251Z
+updated: 2026-07-10T15:55:54.260Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: app-assembly
+children: []
+parentPath:
+  - renderer-app

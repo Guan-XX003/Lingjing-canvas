@@ -1,0 +1,12 @@
+graph LR
+    app-assembly["Application Assembly\nbundle/index.js"]
+    navigation-shell["Navigation and Project Shell\ncanvas/resources/agents/workspace/settings"]
+    settings-surface["Settings Surface\nsettings components"]
+    agents-workspace["Agents and Workspace\nagent components and hooks"]
+    resource-system["Resources and Media Picking\nresource components and lib"]
+    notification-backup["Notifications and Backup\nnotification + backup components"]
+    app-assembly -->|"mounts top-level surfaces"| navigation-shell
+    navigation-shell -->|"opens configuration tabs"| settings-surface
+    navigation-shell -->|"switches agent and workspace experiences"| agents-workspace
+    navigation-shell -->|"selects and reuses project media"| resource-system
+    navigation-shell -->|"shows system messages and data portability"| notification-backup

@@ -1,0 +1,1 @@
+Storage optimization was added to support large multimedia projects without keeping large Base64 payloads inside canvas state. Existing projects may contain a mixture of legacy URLs, local paths, file URLs, and project asset bindings.

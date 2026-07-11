@@ -18,6 +18,28 @@ interface TianjiPortraitAsset {
   createdAt: number;
 }
 
+/** Clear image-specific Tianji binding metadata when a new result replaces the image. */
+export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUrl: any): any {
+  const currentImageUrl = String(data?.imageUrl || ``).trim();
+  const normalizedNextImageUrl = String(nextImageUrl || ``).trim();
+  if (!normalizedNextImageUrl || normalizedNextImageUrl === currentImageUrl) return { ...(data || {}) };
+  return {
+    ...(data || {}),
+    tianjiPortraitAssetId: undefined,
+    tianjiPortraitGroupType: undefined,
+    tianjiPortraitPreviewUrl: undefined,
+    tianjiPortraitBindingLookupUrl: undefined,
+    tianjiPortraitBindingName: undefined,
+    tianjiPortraitBindingSourceUrl: undefined,
+    tianjiPortraitBindingStatus: undefined,
+    tianjiPortraitBindingMessage: undefined,
+    tianjiPortraitReviewedAt: undefined,
+    tianjiPortraitBoundAt: undefined,
+    isTianjiPortrait: false,
+    sourceOrigin: data?.sourceOrigin === `tianji-portrait` ? `generated` : data?.sourceOrigin,
+  };
+}
+
 /**
  * 归一化天玑人像素材。
  *

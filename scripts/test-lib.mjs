@@ -33,6 +33,7 @@ function compile() {
       join(root, "src/renderer/lib/config-butler.ts"),
       join(root, "src/renderer/lib/jixin-catalog.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
+      join(root, "src/renderer/lib/tianji-portrait.ts"),
       join(root, "src/renderer/lib/suno-music-api.ts"),
     ],
     { cwd: root, stdio: "inherit" }
@@ -71,8 +72,19 @@ async function run() {
     wanjuanMarkTianjiConfigManual,
     wanjuanNormalizeTianjiSeedanceConfig
   } = await import(pathToFileURL(join(outDir, "tianji-api.js")).href);
+  const { wanjuanResetTianjiPortraitBindingForImage } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
 
   console.log("运行用例...");
+  check(
+    "tianji image binding survives same result",
+    wanjuanResetTianjiPortraitBindingForImage({ imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready" }, "https://cdn/a.png"),
+    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready" }
+  );
+  check(
+    "tianji image binding clears for new result",
+    wanjuanResetTianjiPortraitBindingForImage({ imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready", tianjiPortraitBindingMessage: "bound", isTianjiPortrait: true, sourceOrigin: "tianji-portrait" }, "https://cdn/b.png"),
+    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated" }
+  );
   // wanjuanResourceKind
   check("kind text", wanjuanResourceKind({ type: "text" }), "text");
   check("kind audio mime", wanjuanResourceKind({ type: "audio/mp3" }), "audio");

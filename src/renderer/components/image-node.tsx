@@ -85,7 +85,9 @@ export const WanJuanImageNode = reactMemo(({
       })();
       return () => { cancelled = true; };
 	    }, [imageUrl, mediaType, nodeId]);
-    let tianjiBindingStatus = String(data.tianjiPortraitBindingStatus || (data.tianjiPortraitAssetId ? `ready` : ``)).trim(),
+    let tianjiBindingSourceUrl = String(data.tianjiPortraitBindingSourceUrl || ``).trim(),
+      tianjiBindingMatchesImage = !tianjiBindingSourceUrl || tianjiBindingSourceUrl === String(imageUrl || ``).trim(),
+      tianjiBindingStatus = tianjiBindingMatchesImage ? String(data.tianjiPortraitBindingStatus || (data.tianjiPortraitAssetId ? `ready` : ``)).trim() : ``,
       tianjiBindingState =
       tianjiBindingStatus === `reviewing` ?
       {

@@ -1,0 +1,1 @@
+Cleanup and migration operations must be non-destructive, transactional, and recoverable. Formal user data, project media, resources, agents, workspaces, and configuration must never be silently reset.

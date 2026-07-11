@@ -1,0 +1,1 @@
+Canvas rendering combines React Flow viewport culling with full, lite, and shell node modes, media mount budgets, task-update reduction, interaction-time CSS simplification, performance profiles, diagnostics, and renderer recovery.

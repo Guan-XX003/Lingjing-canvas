@@ -1,0 +1,24 @@
+graph LR
+    renderer-adapters["Renderer API Adapters\ngeneration hooks and provider libs"]
+    proxy-security["Proxy and Security Boundary\npreload/fetch-proxy + main/net"]
+    jixin["Jixin Unified Gateway\nConfigured models"]
+    tianji["Seedance Tianji APIs\nTasks, assets, portraits, points"]
+    tongyi["Tongyi Wanxiang and Qwen\nImage, video, speech"]
+    suno["Suno Music APIs\nMusic generation and cover"]
+    custom-providers["Custom OpenAI-Compatible Providers\nUser configuration"]
+    upload-services["Public Media Upload Services\nTOS, Qiniu, custom host, temporary host"]
+    admin-services["WanJuan Admin Services\nNotifications and activation"]
+    update-service["GitHub Release Update Feed\nDesktop updater"]
+    local-tools["Local Tool Runtime\nFFmpeg, Real-ESRGAN, deface, Qwen TTS"]
+    renderer-adapters -->|"sends protected requests through desktop gateway"| proxy-security
+    proxy-security -->|"text, image, video, and audio requests"| jixin
+    proxy-security -->|"Tianji task and asset operations"| tianji
+    proxy-security -->|"Wanxiang and Qwen protocols"| tongyi
+    proxy-security -->|"music task operations"| suno
+    proxy-security -->|"user-defined endpoints and protocol mappings"| custom-providers
+    renderer-adapters -->|"converts local references to public URLs"| upload-services
+    renderer-adapters -->|"fetches published notifications and activation state"| admin-services
+    proxy-security -->|"checks release metadata"| update-service
+    renderer-adapters -->|"invokes local processing through IPC"| local-tools
+    classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
+    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,update-service external

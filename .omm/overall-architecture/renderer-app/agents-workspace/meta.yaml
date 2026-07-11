@@ -1,0 +1,9 @@
+created: 2026-07-10T15:55:54.262Z
+updated: 2026-07-10T15:55:54.274Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: agents-workspace
+children: []
+parentPath:
+  - renderer-app

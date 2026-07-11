@@ -1,0 +1,23 @@
+graph LR
+    renderer-preferences["Renderer Preferences\nchrome.storage and localStorage"]
+    desktop-storage["Desktop Storage Mirror\npreload/storage.cjs"]
+    canvas-database["Canvas State IndexedDB\nproject canvas records"]
+    project-safety["Project Safety Snapshots\npreload/project-safety.cjs"]
+    content-store["Content Addressed Store\nelectron/main/assets/content-store.cjs"]
+    project-assets["Project Asset Bindings\nelectron/main/assets/project-assets.cjs"]
+    media-library["Media Library Files\nconfigured download and asset roots"]
+    migration-manager["Transactional Migration\nelectron/main/assets/migration-manager.cjs"]
+    storage-optimizer["Reference Index and Trash\nstorage-optimization.cjs"]
+    backup-portability["Backup Import and Export\nrenderer backup hooks"]
+    renderer-preferences -->|"mirrored for desktop compatibility"| desktop-storage
+    desktop-storage -->|"stores per-project canvas state"| canvas-database
+    canvas-database -->|"creates healthy-state snapshots"| project-safety
+    canvas-database -->|"references media bindings"| project-assets
+    project-assets -->|"deduplicates payloads by content hash"| content-store
+    content-store -->|"materializes playable files"| media-library
+    migration-manager -->|"moves and rewrites project references transactionally"| project-assets
+    storage-optimizer -->|"scans reference index and quarantines unreferenced files"| media-library
+    backup-portability -->|"exports project metadata and optional media bundles"| project-assets
+    backup-portability -->|"restores preferences and canvas modules"| desktop-storage
+    classDef store fill:#a6e3a1,stroke:#a6e3a1,color:#1e1e2e
+    class renderer-preferences,desktop-storage,canvas-database,project-safety,content-store,project-assets,media-library store

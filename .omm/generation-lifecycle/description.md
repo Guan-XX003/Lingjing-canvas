@@ -1,0 +1,1 @@
+Generation begins from a canvas node, gathers connected references and parameters, resolves model protocol and API configuration, uploads private media when necessary, submits through the desktop proxy, tracks remote tasks, and binds the newest result back to the node and project media library.

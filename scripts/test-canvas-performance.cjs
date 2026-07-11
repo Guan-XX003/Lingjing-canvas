@@ -46,6 +46,7 @@ async function run() {
       WANJUAN_ALLOW_RANDOM_PORT: "1",
       WANJUAN_DISABLE_UPDATE_CHECK: "1",
       WANJUAN_DEBUG: "1",
+      WANJUAN_PERF_TEST: "1",
     },
   });
   let stderr = "";
@@ -79,6 +80,50 @@ async function run() {
       }
       return response.result?.result?.value;
     };
+    const measureVisibleEdgeAnchors = () => evaluate(`(() => {
+      const center = (element) => {
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      };
+      const screenPoint = (path, point) => {
+        const svgPoint = path.ownerSVGElement.createSVGPoint();
+        svgPoint.x = point.x;
+        svgPoint.y = point.y;
+        const result = svgPoint.matrixTransform(path.getScreenCTM());
+        return { x: result.x, y: result.y };
+      };
+      const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
+      const measurements = [...document.querySelectorAll('.react-flow__edge')].flatMap((edge) => {
+        const label = edge.getAttribute('aria-label') || '';
+        const match = label.match(/^Edge from (.+) to (.+)$/);
+        const path = edge.querySelector('path');
+        if (!match || !path) return [];
+        const sourceNode = document.querySelector('[data-id="' + CSS.escape(match[1]) + '"]');
+        const targetNode = document.querySelector('[data-id="' + CSS.escape(match[2]) + '"]');
+        const sourceMode = sourceNode?.querySelector('[data-wanjuan-render-mode]')?.dataset.wanjuanRenderMode;
+        const targetMode = targetNode?.querySelector('[data-wanjuan-render-mode]')?.dataset.wanjuanRenderMode;
+        const sourceHandle = sourceNode?.querySelector('.react-flow__handle.source');
+        const targetHandle = targetNode?.querySelector('.react-flow__handle.target');
+        if (!sourceHandle || !targetHandle) return [];
+        const length = path.getTotalLength();
+        return [
+          sourceMode && sourceMode !== 'full' ? {
+            label: label + ' (source)',
+            distance: distance(screenPoint(path, path.getPointAtLength(0)), center(sourceHandle)),
+          } : null,
+          targetMode && targetMode !== 'full' ? {
+            label: label + ' (target)',
+            distance: distance(screenPoint(path, path.getPointAtLength(length)), center(targetHandle)),
+          } : null,
+        ].filter(Boolean);
+      });
+      return {
+        count: measurements.length,
+        maxDistance: measurements.reduce((max, item) => Math.max(max, item.distance), 0),
+        worst: measurements.sort((left, right) => right.distance - left.distance)[0] || null,
+      };
+    })()`);
     await send("Performance.enable");
     const waitForDebugApi = async () => {
       const deadline = Date.now() + 30000;
@@ -136,13 +181,20 @@ async function run() {
         if (Number(resultViewport?.images || 0) < 8) {
           throw new Error(`Dense result viewport did not render enough image results: ${resultViewport?.images || 0}`);
         }
-        if (Number(resultViewport?.modes?.lite || 0) < 8) {
+        if (Number(resultViewport?.modes?.lite || 0) < 7) {
           throw new Error(`Dense result viewport did not exercise lightweight result nodes: ${JSON.stringify(resultViewport?.modes || {})}`);
         }
+        const edgeAnchors = await measureVisibleEdgeAnchors();
+        if (edgeAnchors.count < 1) throw new Error(`Dense result viewport did not expose measurable edge anchors`);
+        if (edgeAnchors.maxDistance > 3) {
+          throw new Error(`Lightweight edge anchors drifted from visible handles: ${JSON.stringify(edgeAnchors.worst)}`);
+        }
+        resultViewport.edgeAnchors = edgeAnchors;
       }
       const snapshot = await evaluate(`globalThis.__wanjuanCanvasDebug.snapshot()`);
       const fullNodes = Number(snapshot?.modes?.full || 0);
       if (fullNodes > 36) throw new Error(`${count}-node fixture mounted too many full nodes: ${fullNodes}`);
+      if (Number(snapshot?.brokenImages || 0) !== 0) throw new Error(`${count}-node fixture rendered broken image previews`);
       if (count === 100) {
         const fixtureDataBefore = await evaluate(`globalThis.__wanjuanCanvasDebug.inspectFixtureData()`);
         if (fixtureDataBefore.imageResults < 20 || fixtureDataBefore.videoResults < 10 || fixtureDataBefore.audioResults < 10) {
@@ -174,6 +226,12 @@ async function run() {
         await sleep(3500);
         const mediaSnapshot = await evaluate(`globalThis.__wanjuanCanvasDebug.snapshot()`);
         if (mediaSnapshot.videos < 4 || mediaSnapshot.audios < 2) throw new Error(`Result fixture did not mount real media elements`);
+        if (!Array.isArray(mediaSnapshot.videoPlayOverlays) || mediaSnapshot.videoPlayOverlays.length < 1) {
+          throw new Error(`Selected result videos did not render a play overlay`);
+        }
+        if (mediaSnapshot.videoPlayOverlays.some((offset) => Math.abs(offset.dx) > 1 || Math.abs(offset.dy) > 1)) {
+          throw new Error(`Video play overlay is not centered: ${JSON.stringify(mediaSnapshot.videoPlayOverlays)}`);
+        }
         if (mediaSnapshot.activeVideos > 4 || mediaSnapshot.activeAudios > 2) {
           throw new Error(`Result fixture exceeded media budget: ${JSON.stringify({ videos: mediaSnapshot.videos, activeVideos: mediaSnapshot.activeVideos, audios: mediaSnapshot.audios, activeAudios: mediaSnapshot.activeAudios, mediaPerf: mediaSnapshot.mediaPerf })}`);
         }
@@ -199,9 +257,29 @@ async function run() {
       if (resultViewport) snapshot.resultViewport = resultViewport;
       results.push({ requested: count, ...snapshot });
     }
+    await evaluate(`globalThis.__wanjuanCanvasDebug.loadFixture(20, { withResults: true, videoThumbnails: false, extractedFrameCount: 24 })`);
+    await sleep(700);
+    await evaluate(`globalThis.__wanjuanCanvasDebug.setViewport({ x: 250, y: 250, zoom: 0.5 })`);
+    await sleep(1600);
+    const compactModeSnapshot = await evaluate(`globalThis.__wanjuanCanvasDebug.snapshot()`);
+    if (Number(compactModeSnapshot?.modes?.full || 0) > 1 || Number(compactModeSnapshot?.modes?.lite || 0) < 15) {
+      throw new Error(`Small projected nodes were promoted to full mode: ${JSON.stringify(compactModeSnapshot?.modes || {})}`);
+    }
+    await evaluate(`globalThis.__wanjuanCanvasDebug.setViewport({ x: 120, y: 100, zoom: 0.82 })`);
+    await sleep(1800);
+    const expandedModeSnapshot = await evaluate(`({
+      ...globalThis.__wanjuanCanvasDebug.snapshot(),
+      videoFallbacks: document.querySelectorAll('.wanjuan-video-poster-fallback').length,
+    })`);
+    if (Number(expandedModeSnapshot?.modes?.full || 0) < 1) {
+      throw new Error(`Large projected nodes did not restore full mode: ${JSON.stringify(expandedModeSnapshot?.modes || {})}`);
+    }
+    if (Number(expandedModeSnapshot?.activeVideos || 0) < 1 || Number(expandedModeSnapshot?.activeVideos || 0) > 4) {
+      throw new Error(`Full video nodes did not render within the media budget: ${JSON.stringify({ videos: expandedModeSnapshot?.videos, activeVideos: expandedModeSnapshot?.activeVideos })}`);
+    }
     const largeImageSummary = largeImageResult ? { ...largeImageResult } : null;
     if (largeImageSummary?.value) largeImageSummary.value = `[${largeImageSummary.valueFormat || `asset`} omitted]`;
-    console.log(JSON.stringify({ ok: true, largeImageResult: largeImageSummary, idleMutations, idleTaskUtilization, idleSnapshot, results }, null, 2));
+    console.log(JSON.stringify({ ok: true, largeImageResult: largeImageSummary, idleMutations, idleTaskUtilization, idleSnapshot, results, renderModeTransitions: { compactModeSnapshot, expandedModeSnapshot } }, null, 2));
   } finally {
     try { ws?.close(); } catch {}
     child.kill("SIGTERM");

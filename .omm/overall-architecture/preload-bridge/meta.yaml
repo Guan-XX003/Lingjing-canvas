@@ -1,0 +1,15 @@
+created: 2026-07-10T15:54:13.180Z
+updated: 2026-07-10T15:55:07.758Z
+update_count: 2
+last_field: diagram
+kind: nested-class
+title: preload-bridge
+children:
+  - chrome-compat
+  - desktop-api
+  - desktop-patches
+  - fetch-bridge
+  - project-safety
+  - startup-sequence
+  - storage-recovery
+parentPath: []

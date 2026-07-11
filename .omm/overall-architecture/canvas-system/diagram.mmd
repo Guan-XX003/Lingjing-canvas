@@ -1,0 +1,12 @@
+graph LR
+    react-flow-root["React Flow Root\nbundle canvas assembly"]
+    node-registry["Node Registry\ncanvas-node-registry.tsx"]
+    interaction-hooks["Canvas Interaction Hooks\nconnect/drop/paste/context/layout"]
+    render-modes["Render Modes\nrender-mode.tsx"]
+    media-editors["Media Nodes and Editors\nimage/video/audio/tool nodes"]
+    layout-grouping["Layout and Grouping\nauto layout + group hooks"]
+    react-flow-root -->|"renders registered node types"| node-registry
+    react-flow-root -->|"delegates user interaction"| interaction-hooks
+    node-registry -->|"wraps heavy components by runtime mode"| render-modes
+    node-registry -->|"maps media types to concrete controls"| media-editors
+    interaction-hooks -->|"changes positions and group membership"| layout-grouping

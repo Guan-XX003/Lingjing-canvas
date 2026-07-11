@@ -6,6 +6,7 @@ import type { GlobalTask, Ref, SetAny, SetState, WjEdge, WjNode } from "../lib/a
 import { WANJUAN_STARTER_EDGES, wanjuanIsDefaultStarterCanvas } from "../components/canvas-node-registry";
 import { WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
+import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
 import { wanjuanNewestNodeTask, wanjuanTaskUsesSeedanceSlot, wanjuanVideoTaskCanAttachToNode, wanjuanVideoTaskMatchesNodeByPrompt } from "../lib/video-task";
 declare const chrome: any;
 
@@ -209,7 +210,9 @@ export function useCanvasLoadEffect(deps: UseCanvasLoadEffectDeps) {
                           hydratedNode = {
                             ...hydratedNode,
                             data: {
-                              ...hydratedNode.data,
+                              ...(activeTask.customOutputType === `image` ?
+                                wanjuanResetTianjiPortraitBindingForImage(hydratedNode.data, activeTask.customResultData || activeTask.resultUrl || hydratedNode.data.imageUrl) :
+                                hydratedNode.data),
                               taskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? undefined : activeTask.id,
                               seedanceTaskId: wanjuanTaskUsesSeedanceSlot(activeTask, hydratedNode) ? activeTask.id : undefined,
                               tianjiExecuteId: activeTask.provider === `tianji-seedance` ? activeTask.id : hydratedNode.data.tianjiExecuteId,

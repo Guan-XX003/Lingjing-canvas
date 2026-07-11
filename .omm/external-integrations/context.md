@@ -1,0 +1,1 @@
+Jixin default configuration is a catalog and protocol preset rather than a separate forwarding layer. User configuration can override defaults, and advanced Tianji settings can become independently authoritative after manual edits.

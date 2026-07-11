@@ -1,0 +1,1 @@
+External integration is mediated by renderer adapters and a desktop proxy boundary. The app supports unified model gateways, Seedance Tianji, Tongyi and Qwen, Suno, user-defined providers, public media upload services, admin notifications, update feeds, and local extension tools.

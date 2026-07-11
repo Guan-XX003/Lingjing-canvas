@@ -3,10 +3,27 @@
  * 自 bundle 反混淆迁入，行为保持一致。
  */
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { BaseEdge, NodeToolbar, useReactFlow, useStore, getBezierPath } from "@xyflow/react";
+import { BaseEdge, NodeToolbar, Position, useReactFlow, useStore, getBezierPath } from "@xyflow/react";
+
+const LITE_NODE_WIDTH = 224;
+const LITE_NODE_HEIGHT = 132;
+const sameAnchorState = (left: any, right: any) =>
+  left.mode === right.mode && left.x === right.x && left.y === right.y;
+
+const useLiteNodeAnchor = (nodeId: string) => useStore((state: any) => {
+  const node = state.nodeLookup.get(nodeId);
+  const data = node?.data || node?.internals?.userNode?.data || {};
+  return {
+    mode: data.wanjuanRenderMode === `lite` && !node?.selected && !data.loading ? `lite` : `full`,
+    x: Number(node?.internals?.positionAbsolute?.x || 0),
+    y: Number(node?.internals?.positionAbsolute?.y || 0),
+  };
+}, sameAnchorState);
 
 export function WanJuanFlowEdge({
   id: id,
+  source: source,
+  target: target,
   sourceX: sourceX,
   sourceY: sourceY,
   targetX: targetX,
@@ -22,13 +39,21 @@ export function WanJuanFlowEdge({
     setEdges: setEdges
   } = useReactFlow(),
     zoom = useStore((state: any) => state.transform[2]),
+    sourceAnchor = useLiteNodeAnchor(source),
+    targetAnchor = useLiteNodeAnchor(target),
+    resolvedSourceX = sourceAnchor.mode === `lite` ? sourceAnchor.x + LITE_NODE_WIDTH : sourceX,
+    resolvedSourceY = sourceAnchor.mode === `lite` ? sourceAnchor.y + LITE_NODE_HEIGHT / 2 : sourceY,
+    resolvedTargetX = targetAnchor.mode === `lite` ? targetAnchor.x : targetX,
+    resolvedTargetY = targetAnchor.mode === `lite` ? targetAnchor.y + LITE_NODE_HEIGHT / 2 : targetY,
+    resolvedSourcePosition = sourceAnchor.mode === `lite` ? Position.Right : sourcePosition,
+    resolvedTargetPosition = targetAnchor.mode === `lite` ? Position.Left : targetPosition,
     [edgePath, labelX, labelY] = getBezierPath({
-      sourceX: sourceX,
-      sourceY: sourceY,
-      sourcePosition: sourcePosition,
-      targetX: targetX,
-      targetY: targetY,
-      targetPosition: targetPosition,
+      sourceX: resolvedSourceX,
+      sourceY: resolvedSourceY,
+      sourcePosition: resolvedSourcePosition,
+      targetX: resolvedTargetX,
+      targetY: resolvedTargetY,
+      targetPosition: resolvedTargetPosition,
     });
   if (zoom < 0.48 && !selected) {
     return jsx(BaseEdge, {

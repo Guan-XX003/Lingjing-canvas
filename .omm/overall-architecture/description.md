@@ -1,0 +1,1 @@
+WanJuan Lingjing is an Electron desktop application whose renderer hosts a React Flow multimedia AI canvas. A trusted preload bridge connects the UI to main-process networking, files, project assets, local tools, updates, and workspace services.

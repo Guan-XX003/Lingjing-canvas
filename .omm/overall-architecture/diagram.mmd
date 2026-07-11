@@ -1,0 +1,27 @@
+graph LR
+    desktop-entry["Desktop Entry\nelectron/main/index.cjs"]
+    main-process["Main Process Services\nelectron/main/"]
+    preload-bridge["Preload Bridge\nelectron/preload/"]
+    renderer-app["Renderer Application\nsrc/renderer/"]
+    canvas-system["Canvas and Node System\nsrc/renderer/components + hooks"]
+    generation-system["Generation and Task System\nsrc/renderer/hooks + lib"]
+    storage-assets["Storage and Project Assets\nelectron/main/assets + preload/storage"]
+    network-upload["Network and Upload Gateway\nelectron/main/net + uploaders"]
+    external-tools["Local Extension Tools\nelectron/main/tools"]
+    external-services["Model and Platform Services\nExternal APIs"]
+    desktop-entry -->|"starts static server and window"| main-process
+    main-process -->|"exposes trusted IPC capabilities"| preload-bridge
+    preload-bridge -->|"publishes wanjuanDesktop and compatibility APIs"| renderer-app
+    renderer-app -->|"mounts React Flow and node registry"| canvas-system
+    canvas-system -->|"dispatches generation workflows"| generation-system
+    generation-system -->|"persists outputs and references"| storage-assets
+    generation-system -->|"routes HTTP and media uploads"| network-upload
+    network-upload -->|"calls configured providers"| external-services
+    main-process -->|"runs FFmpeg and optional AI tools"| external-tools
+    external-tools -->|"returns local media results through IPC"| renderer-app
+    classDef entry fill:#89b4fa,stroke:#89b4fa,color:#1e1e2e
+    classDef store fill:#a6e3a1,stroke:#a6e3a1,color:#1e1e2e
+    classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
+    class desktop-entry entry
+    class storage-assets store
+    class external-services external

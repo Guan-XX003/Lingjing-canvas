@@ -35,8 +35,11 @@ export function useCanvasNodes(deps: UseCanvasNodesDeps) {
 		        const mode = WanJuanComputeNodeRenderMode(node, wanjuanViewport, wanjuanViewportSize);
 		        baseModes.set(node.id, mode);
 		        if (mode !== `lite` || zoom < 0.56) return;
-		        const width = Number(node?.measured?.width || node?.style?.width || 280);
-		        const height = Number(node?.measured?.height || node?.style?.height || 220);
+		        const width = Number(node?.style?.width || node?.width || node?.measured?.width || 280);
+		        const height = Number(node?.style?.height || node?.height || node?.measured?.height || 220);
+		        const projectedWidth = width * zoom;
+		        const projectedHeight = height * zoom;
+		        if (Math.min(projectedWidth, projectedHeight) < 96) return;
 		        const screenX = (Number(node?.position?.x || 0) + width / 2) * zoom + Number(wanjuanViewport?.x || 0);
 		        const screenY = (Number(node?.position?.y || 0) + height / 2) * zoom + Number(wanjuanViewport?.y || 0);
 		        const viewportWidth = Number(wanjuanViewportSize?.width || 1600);

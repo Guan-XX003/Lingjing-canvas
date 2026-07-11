@@ -2482,16 +2482,39 @@ html:is(.theme-dark, .theme-graphite) input[type="range"]::-moz-range-thumb {
   overflow: visible !important;
 }
 
+/* React Flow keeps the last measured full-node dimensions as inline styles.
+   Lightweight nodes must size the outer node from their visible card so edge
+   anchors and hit areas do not remain attached to an invisible full-size box. */
+.react-flow__node:has(> .wanjuan-render-mode-lite),
+.react-flow__node:has(> .wanjuan-render-shell-node),
+.react-flow__node:has(> .wanjuan-render-mini-shell) {
+  width: fit-content !important;
+  height: fit-content !important;
+}
+
+.wanjuan-render-mode-lite {
+  position: relative;
+  width: fit-content;
+  height: fit-content;
+}
+
 .wanjuan-render-lite-node {
-  width: clamp(168px, 18vw, 236px);
+  position: relative;
+  width: 224px;
   min-height: 116px;
+  box-sizing: border-box;
   color: var(--wj-text, #e5e7eb);
+}
+
+.wanjuan-render-shell-node {
+  position: relative;
 }
 
 .wanjuan-render-lite-frame {
   display: grid;
   grid-template-rows: minmax(72px, 1fr) auto;
   min-height: 116px;
+  box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--wanjuan-lite-color, var(--wj-border, #475569));
   border-radius: 8px;
@@ -2503,16 +2526,55 @@ html:is(.theme-dark, .theme-graphite) input[type="range"]::-moz-range-thumb {
 .wanjuan-render-lite-placeholder {
   width: 100%;
   height: 82px;
-  object-fit: cover;
   background: var(--wj-bg, #0f1115);
+}
+
+.wanjuan-render-lite-media {
+  position: relative;
+  width: 100%;
+  height: 82px;
+  overflow: hidden;
+  background: var(--wj-bg, #0f1115);
+}
+
+.wanjuan-render-lite-preview {
+  display: block;
+  object-fit: contain;
+}
+
+.wanjuan-render-lite-media.is-video .wanjuan-render-lite-preview {
+  object-fit: cover;
 }
 
 .wanjuan-render-lite-placeholder {
   display: grid;
+  grid-template-rows: auto auto;
   place-items: center;
+  align-content: center;
+  gap: 5px;
   color: var(--wj-muted, #8b95a3);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.wanjuan-render-lite-placeholder svg {
+  position: static !important;
+  flex: 0 0 auto;
+}
+
+.wanjuan-render-lite-play-badge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--wj-bg, #0f1115) 18%, transparent);
+  pointer-events: none;
+}
+
+.wanjuan-render-lite-play-badge svg {
+  position: static !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
 }
 
 .wanjuan-render-lite-copy {
@@ -2544,27 +2606,94 @@ html:is(.theme-dark, .theme-graphite) input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--wj-accent, #3b82f6) 42%, transparent);
 }
 
+.wanjuan-video-play-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+}
+
+.wanjuan-video-poster-fallback {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  place-content: center;
+  place-items: center;
+  gap: 6px;
+  color: color-mix(in srgb, var(--wj-text, #e5e7eb) 76%, var(--wj-muted, #8b95a3) 24%);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--wj-surface-2, #1c1c1c) 92%, var(--wj-accent, #3b82f6) 8%),
+      color-mix(in srgb, var(--wj-bg, #111318) 96%, var(--wj-accent, #3b82f6) 4%));
+}
+
+.wanjuan-video-poster-fallback::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #3f4652) 55%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.wanjuan-video-poster-fallback svg,
+.wanjuan-video-poster-fallback span,
+.wanjuan-video-poster-fallback small {
+  position: relative;
+  z-index: 1;
+}
+
+.wanjuan-video-poster-fallback span {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wanjuan-video-poster-fallback small {
+  font-size: 9px;
+  color: var(--wj-muted, #8b95a3);
+}
+
+.wanjuan-video-play-button {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.34);
+}
+
+.wanjuan-video-play-button svg {
+  position: static !important;
+  margin: 0;
+}
+
 .wanjuan-render-mini-shell {
-  width: 112px;
-  height: 34px;
+  width: 148px;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 10px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 72%, transparent);
-  border-radius: 6px;
-  background: var(--wj-surface, #171a1f);
+  border: 3px solid color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 86%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 18%, var(--wj-surface, #171a1f));
   color: var(--wj-text, #e5e7eb);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 28%, transparent);
   contain: strict;
 }
 
 .wanjuan-render-mini-shell-dot {
-  width: 6px;
-  height: 6px;
+  width: 12px;
+  height: 12px;
   flex: 0 0 auto;
   border-radius: 999px;
   background: var(--wanjuan-shell-color, #64748b);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--wanjuan-shell-color, #64748b) 70%, transparent);
 }
 
 .wanjuan-render-mini-shell strong {
@@ -2572,7 +2701,7 @@ html:is(.theme-dark, .theme-graphite) input[type="range"]::-moz-range-thumb {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
 }
 

@@ -1,0 +1,27 @@
+graph LR
+    node-action["Node Generate Action\ncomponents and canvas callbacks"]
+    reference-collector["Reference Media Collector\nlib/reference-media.ts"]
+    model-resolution["Model and Protocol Resolution\nmodel binding and provider catalog"]
+    upload-normalization["Public URL Normalization\nreference upload configuration"]
+    request-adapter["Generation Hook Adapter\nuseImageGeneration/useVideoGeneration/useTextGeneration"]
+    proxy-gateway["Desktop Proxy Fetch\npreload fetch proxy + main net"]
+    provider-api["Configured Provider API\nExternal service"]
+    task-registry["Global Task Registry\nlib/global-tasks.ts"]
+    polling-refresh["Polling and Manual Refresh\ngeneration hooks"]
+    result-binding["Latest Result Binding\nnode data and task reconciliation"]
+    asset-persistence["Project Media Persistence\nproject assets"]
+    node-action -->|"collects prompt, parameters, and connected inputs"| reference-collector
+    reference-collector -->|"normalizes image, video, audio, and text references"| model-resolution
+    model-resolution -->|"selects protocol, endpoint, model ID, and API config"| upload-normalization
+    upload-normalization -->|"uploads local/private media when public URLs are required"| request-adapter
+    request-adapter -->|"submits provider-specific payload"| proxy-gateway
+    proxy-gateway -->|"sanitizes and forwards request"| provider-api
+    provider-api -->|"returns immediate result or remote task ID"| task-registry
+    task-registry -->|"drives pending/running state"| polling-refresh
+    polling-refresh -->|"receives terminal status and result URL"| result-binding
+    result-binding -->|"writes newest result into the originating node"| asset-persistence
+    asset-persistence -->|"restores local media URL on project load"| result-binding
+    classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
+    classDef store fill:#a6e3a1,stroke:#a6e3a1,color:#1e1e2e
+    class provider-api external
+    class task-registry,asset-persistence store

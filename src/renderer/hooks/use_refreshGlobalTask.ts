@@ -6,6 +6,7 @@ import { useCallback, useMemo } from "react";
 import type { ApiBindings, ApiConfig, Toast } from "../lib/app-types";
 import { WanJuanSunoHeaders, WanJuanSunoTaskFailed, WanJuanSunoTaskSucceeded, WanJuanTtsMusicApiUrl, WanJuanTtsMusicExtractAudio, WanJuanTtsMusicExtractClipId, WanJuanTtsMusicExtractTaskId, WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
+import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
 import { wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
 import { wanjuanTaskUsesSeedanceSlot } from "../lib/video-task";
 declare const chrome: any;
@@ -326,7 +327,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
 		                                {
 		                                  ...node,
 		                                  data: {
-		                                    ...node.data,
+		                                    ...wanjuanResetTianjiPortraitBindingForImage(node.data, manualImageUrl),
 		                                    imageUrl: manualImageUrl,
 		                                    loading: false,
 		                                    progress: 100,
@@ -377,7 +378,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           {
                             ...node,
                             data: {
-                              ...node.data,
+                              ...wanjuanResetTianjiPortraitBindingForImage(node.data, existingImageUrl),
                               taskId: task.id,
                               seedanceTaskId: undefined,
                               imageUrl: existingImageUrl,
@@ -502,8 +503,8 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                                 {
                                   ...node,
                                   data: {
-                                    ...node.data,
-                                    taskId: task.id,
+                                  ...wanjuanResetTianjiPortraitBindingForImage(node.data, imageUrl),
+                                  taskId: task.id,
                                     seedanceTaskId: undefined,
                                     imageUrl: imageUrl,
                                     loading: false,
