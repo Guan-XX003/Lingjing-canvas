@@ -77,7 +77,7 @@ export const WANJUAN_JIXIN_DEFAULT_API_URL = `https://jixing.guancn.uk`;
 export const WANJUAN_JIXIN_DEFAULT_DOC_URL = `https://kcn07wr6x9xu.feishu.cn/wiki/RBPHwKfzhiq7Xuk06M8c3NgInKd`;
 export const WANJUAN_CONFIG_BUTLER_DEFAULT_MODEL = `gpt-5.5`;
 export const WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID = `builtin-jixin-base`;
-export const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-09-unified-wan-video-v1`;
+export const WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION = `2026-07-11-wan27-protocols-v3`;
 export const wanjuanIsLegacyJixinDocUrl = (url: any) => {
   let normalizedUrl = String(url || ``).trim().replace(/\/+$/, ``);
   return normalizedUrl === `${WANJUAN_JIXIN_DEFAULT_API_URL}/docs` ||
@@ -163,8 +163,8 @@ export const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS = [
   `wan2.7-t2v-720P`,
 ];
 export const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_IMAGE_MODELS = [
-  `wan2.7-i2v-1080P`,
-  `wan2.7-i2v-720P`,
+  `wan2.7-i2v-flash-1080P`,
+  `wan2.7-i2v-flash-720P`,
 ];
 export const WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_REFERENCE_IMAGE_MODELS = [
   `wan2.7-r2v-1080P`,
@@ -254,7 +254,7 @@ export const WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS = {
     ...bindings,
     [model]: /^grok-/i.test(model) ? `极鑫 Grok 视频兼容` : `极鑫 Veo/Omni 视频兼容`,
   }), {}),
-  [`grok-image-video`]: `极鑫 Grok Image Video JSON`,
+  [`grok-image-video`]: `极鑫 Grok Image Video 兼容`,
   [`sora_video2`]: `极鑫 Sora 视频兼容`,
   [`sora-video2`]: `极鑫 Sora 视频兼容`,
   ...WANJUAN_JIXIN_BUILTIN_TONGYI_WANXIANG_TEXT_MODELS.reduce((bindings, model) => ({
@@ -502,41 +502,41 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       completedValues: [`completed`, `complete`, `success`, `succeeded`],
     },
   },
-  [`极鑫 Grok Image Video JSON`]: {
+  [`极鑫 Grok Image Video 兼容`]: {
     category: `video`,
-    requestType: `json-video`,
-    submitPath: `/v1/video/generations`,
-    pollPath: `/v1/video/generations/{taskId}`,
-    referenceImageMode: `url`,
-    referenceImageAsArray: true,
+    parameterMode: `exact-resolution`,
+    requestType: `openai-video`,
+    submitPath: `/v1/videos`,
+    pollPath: `/v1/videos/{taskId}`,
+    contentPath: `/v1/videos/{taskId}/content`,
+    authType: `bearer`,
+    contentType: `application/json`,
+    referenceImageMode: `field`,
+    referenceImageAsArray: false,
+    referenceImageItemShape: `string`,
     fieldMapping: {
       model: `model`,
       prompt: `prompt`,
-      resolution: `resolution`,
-      aspectRatio: `aspect_ratio`,
+      resolution: `size`,
+      aspectRatio: ``,
       duration: `seconds`,
-      referenceImage: `image_urls`,
+      referenceImage: `image`,
+      referenceVideo: ``,
     },
     fieldValueTypes: {
-      seconds: `number`,
-      resolution: `string`,
-      aspect_ratio: `string`,
+      seconds: `string`,
+      size: `string`,
     },
     parameterAdapter: {
-      resolutionValueMode: `quality`,
-      resolutionValueMap: {
-        [`480P`]: `480p`,
-        [`720P`]: `720p`,
-        [`1080P`]: `720p`,
-      },
+      resolutionValueMode: `dimension`,
+      aspectRatioValueMode: `omit`,
     },
     responseMapping: {
-      video: [`data.result_url`, `result_url`, `video_url`, `data.video_url`, `output.video_url`, `result.video_url`, `url`],
-      resultUrl: [`data.result_url`, `result_url`],
+      video: [`video_url`, `videoUrl`, `data.video_url`, `data.videoUrl`, `data.0.url`, `output.video_url`, `result.video_url`, `url`],
       taskId: [`id`, `task_id`, `data.id`, `data.task_id`],
       status: [`status`, `data.status`, `state`],
-      completedValues: [`SUCCESS`, `completed`, `complete`, `success`, `succeeded`],
-      failedValues: [`FAILURE`, `failed`, `error`, `fail`],
+      completedValues: [`completed`, `complete`, `success`, `succeeded`],
+      failedValues: [`failed`, `error`, `fail`],
     },
   },
   [`极鑫 Sora 视频兼容`]: {
@@ -570,6 +570,9 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
   },
   [`极鑫通义万相文生视频`]: {
     category: `video`,
+    parameterMode: `ratio-quality`,
+    parameterOptions: { qualities: [`720P`, `1080P`] },
+    qualityModelVariants: { [`720P`]: `wan2.7-t2v-720P`, [`1080P`]: `wan2.7-t2v-1080P` },
     requestType: `multipart-video`,
     submitPath: `/v1/videos`,
     pollPath: `/v1/videos/{taskId}`,
@@ -582,6 +585,7 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       duration: `seconds`,
       referenceImage: ``,
       referenceVideo: ``,
+      referenceAudio: `audio_url`,
     },
     fieldValueTypes: {
       seconds: `number`,
@@ -600,12 +604,18 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
   },
   [`极鑫通义万相参考图视频`]: {
     category: `video`,
+    parameterMode: `ratio-quality`,
+    parameterOptions: { qualities: [`720P`, `1080P`] },
+    qualityModelVariants: { [`720P`]: `wan2.7-r2v-720P`, [`1080P`]: `wan2.7-r2v-1080P` },
     requestType: `multipart-video`,
     submitPath: `/v1/videos`,
     pollPath: `/v1/videos/{taskId}`,
     requiresReferenceImage: !0,
     referenceImageMode: `url`,
     referenceVideoMode: `url`,
+    referenceMediaAggregation: `comma-separated`,
+    referenceMediaField: `input_reference`,
+    referenceMediaKinds: [`image`],
     fieldMapping: {
       model: `model`,
       prompt: `prompt`,
@@ -613,7 +623,8 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       aspectRatio: ``,
       duration: `seconds`,
       referenceImage: `input_reference`,
-      referenceVideo: `input_reference`,
+      referenceVideo: ``,
+      referenceAudio: `input_audio`,
     },
     fieldValueTypes: {
       seconds: `string`,
@@ -632,12 +643,19 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
   },
   [`极鑫通义万相图生视频`]: {
     category: `video`,
+    parameterMode: `follow-source`,
+    parameterOptions: { qualities: [`720P`, `1080P`] },
+    qualityModelVariants: { [`720P`]: `wan2.7-i2v-flash-720P`, [`1080P`]: `wan2.7-i2v-flash-1080P` },
     requestType: `multipart-video`,
     submitPath: `/v1/videos`,
     pollPath: `/v1/videos/{taskId}`,
-    requiresReferenceImage: !0,
+    requiresAnyReference: !0,
     referenceImageMode: `url`,
     referenceVideoMode: `url`,
+    referenceMediaAggregation: `comma-separated`,
+    referenceMediaField: `input_reference`,
+    referenceMediaKinds: [`image`, `video`],
+    referenceMediaOrder: `image-first`,
     fieldMapping: {
       model: `model`,
       prompt: `prompt`,
@@ -646,6 +664,7 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
       duration: `seconds`,
       referenceImage: `input_reference`,
       referenceVideo: `input_reference`,
+      referenceAudio: `input_audio`,
     },
     fieldValueTypes: {
       seconds: `string`,
@@ -663,12 +682,19 @@ export const WANJUAN_JIXIN_BUILTIN_PROTOCOLS = {
   },
   [`极鑫通义万相视频编辑`]: {
     category: `video`,
+    parameterMode: `follow-source`,
+    parameterOptions: { qualities: [`720P`, `1080P`] },
+    qualityModelVariants: { [`720P`]: `wan2.7-videoedit-720P`, [`1080P`]: `wan2.7-videoedit-1080P` },
     requestType: `multipart-video`,
     submitPath: `/v1/videos`,
     pollPath: `/v1/videos/{taskId}`,
-    requiresReferenceVideo: !0,
+    requiresAnyReference: !0,
     referenceImageMode: `url`,
     referenceVideoMode: `url`,
+    referenceMediaAggregation: `comma-separated`,
+    referenceMediaField: `input_reference`,
+    referenceMediaKinds: [`image`, `video`],
+    referenceMediaOrder: `video-first`,
     fieldMapping: {
       model: `model`,
       prompt: `prompt`,
@@ -762,7 +788,7 @@ export const wanjuanMergeJixinVideoProtocolDefaults = (target: any = {}, default
   let result = target && typeof target == `object` ? {
       ...target
     } : {},
-    replaceableBindings = new Set([`极鑫视频兼容`, `极鑫 Grok 视频兼容`, `智创聚合视频统一`, `智创聚合视频 JSON`, `表单视频兼容`, `OpenAI 视频兼容`]);
+    replaceableBindings = new Set([`极鑫视频兼容`, `极鑫 Grok 视频兼容`, `极鑫 Grok Image Video JSON`, `智创聚合视频统一`, `智创聚合视频 JSON`, `表单视频兼容`, `OpenAI 视频兼容`]);
   Object.entries(defaults || {}).forEach(([model, protocolName]) => {
     let current = result[model];
     if (!current || replaceableBindings.has(current)) result[model] = protocolName;

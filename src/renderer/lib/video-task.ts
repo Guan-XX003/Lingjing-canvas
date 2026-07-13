@@ -144,6 +144,17 @@ export function wanjuanTaskCreatedAt(task: any): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+export function wanjuanBuildReferenceMediaEntries(
+  imageReferences: any[] = [],
+  videoReferences: any[] = [],
+  options: { kinds?: string[]; order?: string } = {},
+): Array<{ kind: `image` | `video`; value: string }> {
+  let kinds = Array.isArray(options.kinds) ? options.kinds : [`image`, `video`],
+    imageEntries = kinds.includes(`image`) ? imageReferences.map((reference) => ({ kind: `image` as const, value: typeof reference === `string` ? reference : String(reference?.url || ``) })) : [],
+    videoEntries = kinds.includes(`video`) ? videoReferences.map((reference) => ({ kind: `video` as const, value: typeof reference === `string` ? reference : String(reference?.url || ``) })) : [];
+  return (options.order === `video-first` ? [...videoEntries, ...imageEntries] : [...imageEntries, ...videoEntries]).filter((entry) => entry.value);
+}
+
 /** 判断任务是否占用 Seedance 生成配额槽位（按 provider 或节点类型 + 模型名）。 */
 export function wanjuanTaskUsesSeedanceSlot(task: any, node: any): boolean {
   let provider = String(task?.provider || ``).toLowerCase(),

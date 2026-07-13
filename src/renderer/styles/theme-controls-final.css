@@ -470,20 +470,26 @@ html .wanjuan-agent-page .wanjuan-agent-role-card-active[class][class],
 html .wanjuan-agent-page .wanjuan-agent-role-card-active:hover[class][class],
 html .wanjuan-agent-page .wanjuan-agent-role-card-active:focus-visible[class][class],
 html .wanjuan-agent-page .wanjuan-agent-role-card-active:active[class][class] {
-  background: var(--wj-card-selected-bg) !important;
+  background: color-mix(in srgb, #f3f4f6 82%, var(--wj-accent) 18%) !important;
   background-image: none !important;
-  border-color: var(--wj-card-selected-border) !important;
-  color: var(--wj-text) !important;
+  border-color: color-mix(in srgb, #111827 24%, transparent) !important;
+  color: #111827 !important;
   -webkit-text-fill-color: currentColor !important;
-  box-shadow: var(--wj-card-selected-shadow) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 8px 20px color-mix(in srgb, var(--wanjuan-theme-shadow, rgba(0, 0, 0, 0.28)) 24%, transparent) !important;
   filter: none !important;
   transform: none !important;
 }
 
 html .wanjuan-agent-page .wanjuan-agent-role-card-active > div:first-child,
 html .wanjuan-agent-page .wanjuan-agent-role-card-active:hover > div:first-child {
-  background: var(--wj-card-selected-rail) !important;
+  background: transparent !important;
   box-shadow: none !important;
+}
+
+html .wanjuan-agent-page .wanjuan-agent-role-card-active > div:nth-child(2),
+html .wanjuan-agent-page .wanjuan-agent-role-card-active > div:nth-child(2) :is(div, span, svg) {
+  color: #111827 !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 html :is(

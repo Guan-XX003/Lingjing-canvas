@@ -58,6 +58,7 @@ import {
   gt as useUpdateNodeInternals,
   h as Star,
   ht as useReactFlow,
+  useOnViewportChange,
   i as ReactCrop,
   it as NodeToolbar,
   j as Music,
@@ -640,6 +641,7 @@ import { WanJuanSettingsApiConfigSection } from "../components/settings-api-conf
 import { WanJuanEmptyCanvasPlaceholder } from "../components/empty-canvas-placeholder";
 import { WanJuanGlobalTasksPanel } from "../components/global-tasks-panel";
 import { WanJuanCanvasPressureMeter } from "../components/canvas-pressure-meter";
+import { WanJuanCanvasBottomDock } from "../components/canvas-bottom-dock";
 import { WanJuanCanvasContextMenu } from "../components/canvas-context-menu";
 import { WanJuanRenameProjectDialog } from "../components/rename-project-dialog";
 import { WanJuanSystemNotificationDialog } from "../components/system-notification-dialog";
@@ -1201,7 +1203,19 @@ function WanJuanAppCanvas({
 	      width: 1600,
 	      height: 900
 	    }),
-	    wanjuanViewportUpdateRef = useRef(0);
+	    wanjuanViewportUpdateRef = useRef(0),
+	    wanjuanCommitViewport = useCallback((viewport) => {
+	      if (!viewport) return;
+	      wanjuanViewportUpdateRef.current = viewport;
+	      setWanjuanViewport((prev) =>
+	        Math.abs(prev.x - viewport.x) > 0.5 ||
+	        Math.abs(prev.y - viewport.y) > 0.5 ||
+	        Math.abs(prev.zoom - viewport.zoom) > 0.005 ?
+	        viewport :
+	        prev,
+	      );
+	    }, []);
+  useOnViewportChange({ onEnd: wanjuanCommitViewport });
   (useSafeEffect1({ nodes, setNodes }),
     useEffect(() => {
       const previewCanvas = document.createElement(`canvas`);
@@ -1687,7 +1701,6 @@ function WanJuanAppCanvas({
           nodeTypes: WANJUAN_NODE_TYPES,
           edgeTypes: WANJUAN_EDGE_TYPES,
           onNodeClick: handleMultiConnectToTarget,
-          onPaneContextMenu: handleContextMenu,
           onNodeContextMenu: handleNodeContextMenu,
 	          onSelectionContextMenu: handleSelectionContextMenu,
 	          onSelectionEnd: handleDelayedSelectionMenu,
@@ -1696,14 +1709,7 @@ function WanJuanAppCanvas({
 	            wanjuanViewportUpdateRef.current = viewport;
 	          },
 	          onMoveEnd: (event, viewport) => {
-	            viewport &&
-	              setWanjuanViewport((prev) =>
-	                Math.abs(prev.x - viewport.x) > 0.5 ||
-	                Math.abs(prev.y - viewport.y) > 0.5 ||
-	                Math.abs(prev.zoom - viewport.zoom) > 0.005 ?
-	                viewport :
-	                prev,
-	              );
+	            wanjuanCommitViewport(viewport);
 	          },
           onPaneClick: handleCancel,
           onDragOver: onDragOver,
@@ -1722,18 +1728,26 @@ function WanJuanAppCanvas({
             hideAttribution: true
           },
           children: [
+	            jsx(Panel, {
+	              position: `top-left`,
+	              className: `wanjuan-canvas-pressure-panel mt-2 ml-2`,
+	              style: {
+	                transform: `scale(0.8)`,
+	                transformOrigin: `top left`
+	              },
+	              children: jsx(WanJuanCanvasPressureMeter, {
+	                nodes: wanjuanCanvasNodes,
+	                edges: edges,
+	              }),
+	            }),
 	            jsxs(Panel, {
 	              position: `top-right`,
-	              className: `wanjuan-canvas-top-tools flex items-center gap-3 mt-2 mr-2`,
+	              className: `wanjuan-canvas-top-tools flex items-center mt-2 mr-2`,
 	              style: {
 	                transform: `scale(0.8)`,
 	                transformOrigin: `top right`
 	              },
 	              children: [
-	                jsx(WanJuanCanvasPressureMeter, {
-	                  nodes: wanjuanCanvasNodes,
-	                  edges: edges,
-	                }),
 	                jsxs(`div`, {
 	                  className: `flex items-center bg-[#2a2a2a] border border-[#333] rounded-lg p-1 shadow-lg`,
 	                  children: [
@@ -1789,6 +1803,21 @@ function WanJuanAppCanvas({
             jsx(Controls, {
               className: `wanjuan-canvas-controls`,
             }),
+	          jsx(Panel, {
+	            position: `bottom-center`,
+	            className: `mb-4`,
+	            style: {
+	              zIndex: 200,
+	            },
+	            children: jsx(WanJuanCanvasBottomDock, {
+	              createNodeAt,
+	              fileInputRef,
+	              nodes,
+	              resources,
+	              screenToFlowPosition,
+	              wrapperRef,
+	            }),
+	          }),
             jsxs(`div`, {
               className: `absolute right-4 bottom-4 z-10 flex flex-col items-end gap-2 pointer-events-none`,
               children: [
@@ -1851,10 +1880,10 @@ function WanJuanAppCanvas({
             shouldFitView &&
             nodes.length === 0 &&
             jsx(WanJuanEmptyCanvasPlaceholder, {
-  createNodeAt,
-  screenToFlowPosition,
-  wrapperRef,
-}),
+              createNodeAt,
+              screenToFlowPosition,
+              wrapperRef,
+            }),
             menuPosition &&
             jsx(WanJuanCanvasContextMenu, {
   addGridSplitNode,
@@ -4075,7 +4104,7 @@ Suno 音乐生成`,
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-					                  children: `v1.3.6`,
+				                  children: `v1.3.7`,
                 }),
               ],
             }),

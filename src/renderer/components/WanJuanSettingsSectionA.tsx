@@ -164,11 +164,9 @@ export function WanJuanSettingsSectionA(props: any) {
                               className: `wanjuan-agent-role-card ${selectedAgentId === agent.id ? `wanjuan-agent-role-card-active` : ``} group relative w-full text-left rounded-2xl border p-3 transition-colors`,
                               style: selectedAgentId === agent.id ?
                                 {
-                                  borderColor: agentTheme.cardBorderActive,
-                                  background: agentTheme.cardBgActive,
-                                  boxShadow: isLightAgentTheme ?
-                                    `0 0 0 1px rgba(150,154,160,0.12) inset,0 10px 24px rgba(150,174,186,0.16)` :
-                                    `0 0 0 1px rgba(150,154,160,0.16) inset,0 12px 28px rgba(0,0,0,0.18)`,
+                                  borderColor: isLightAgentTheme ? agentTheme.textMuted : agentTheme.textSecondary,
+                                  background: isLightAgentTheme ? agentTheme.panelBorder : agentTheme.textSecondary,
+                                  boxShadow: `0 0 0 1px rgba(255,255,255,0.18) inset,0 8px 20px rgba(0,0,0,0.12)`,
                                 } :
                                 {
                                   borderColor: agentTheme.panelBorder,
@@ -176,8 +174,7 @@ export function WanJuanSettingsSectionA(props: any) {
                                 },
                               children: [
                                 jsxs(`div`, {
-                                  className: `absolute inset-y-3 left-0 w-[3px] rounded-r-full ${selectedAgentId === agent.id ? `` : `bg-transparent group-hover:bg-[#3b4554]`}`,
-                                  style: selectedAgentId === agent.id ? { background: agentTheme.accentText } : undefined,
+                                  className: `absolute inset-y-3 left-0 w-[3px] rounded-r-full ${selectedAgentId === agent.id ? `bg-transparent` : `bg-transparent group-hover:bg-[#3b4554]`}`,
                                 }),
                                 jsxs(`div`, {
                                   className: `flex items-start gap-3`,
@@ -185,11 +182,9 @@ export function WanJuanSettingsSectionA(props: any) {
                                     jsx(`div`, {
                                       className: `w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0`,
                                       style: {
-                                        border: `1px solid ${agentTheme.chipBorder}`,
-                                        background: agentTheme.chipBg,
-                                        color: isLightAgentTheme ?
-                                          `#56727e` :
-                                          `#a7c5d0`,
+                                        border: `1px solid ${selectedAgentId === agent.id ? `rgba(17,24,39,0.28)` : agentTheme.chipBorder}`,
+                                        background: selectedAgentId === agent.id ? `rgba(255,255,255,0.22)` : agentTheme.chipBg,
+                                        color: selectedAgentId === agent.id ? `#111827` : isLightAgentTheme ? `#56727e` : `#a7c5d0`,
                                       },
                                       children: renderAgentIconSurface(
                                         agent.icon, {
@@ -208,14 +203,14 @@ export function WanJuanSettingsSectionA(props: any) {
                                             jsx(`div`, {
                                               className: `truncate text-sm font-semibold`,
                                               style: {
-                                                color: agentTheme.textPrimary,
+                                                color: selectedAgentId === agent.id ? `#111827` : agentTheme.textPrimary,
                                               },
                                               children: agent.name,
                                             }),
                                             jsx(`span`, {
                                               className: `text-[10px] whitespace-nowrap`,
                                               style: {
-                                                color: agentTheme.textMuted,
+                                                color: selectedAgentId === agent.id ? `rgba(17,24,39,0.72)` : agentTheme.textMuted,
                                               },
                                               children: formatAgentTime(
                                                 (agentConversations[agent.id] || []).slice(-1)[0]
@@ -227,7 +222,7 @@ export function WanJuanSettingsSectionA(props: any) {
                                         jsx(`div`, {
                                           className: `mt-1 line-clamp-2 text-[11px] leading-5`,
                                           style: {
-                                            color: agentTheme.textSecondary,
+                                            color: selectedAgentId === agent.id ? `rgba(17,24,39,0.82)` : agentTheme.textSecondary,
                                           },
                                           children: agent.description || `未填写描述`,
                                         }),
@@ -238,9 +233,9 @@ export function WanJuanSettingsSectionA(props: any) {
                                               className: `rounded-full px-2 py-0.5 text-[10px]`,
                                               style: selectedAgentId === agent.id ?
                                                 {
-                                                  border: `1px solid ${agentTheme.accentBorder}`,
-                                                  background: agentTheme.accentBg,
-                                                  color: agentTheme.accentText,
+                                                  border: `1px solid rgba(17,24,39,0.30)`,
+                                                  background: `rgba(255,255,255,0.24)`,
+                                                  color: `#111827`,
                                                 } :
                                                 {
                                                   border: `1px solid ${agentTheme.chipBorder}`,
@@ -256,7 +251,7 @@ export function WanJuanSettingsSectionA(props: any) {
                                             jsx(`span`, {
                                               className: `truncate max-w-[110px]`,
                                               style: {
-                                                color: agentTheme.textSecondary,
+                                                color: selectedAgentId === agent.id ? `rgba(17,24,39,0.82)` : agentTheme.textSecondary,
                                               },
                                               children: agent.model || `未绑定模型`,
                                             }),

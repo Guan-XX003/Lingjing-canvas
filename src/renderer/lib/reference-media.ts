@@ -72,6 +72,18 @@ export const wanjuanPushReferenceMediaUrl = (images, videos, value, kindHint = `
         videos.push(mediaUrl);
       else images.push(mediaUrl);
     };
+export const wanjuanNodeMediaValueWithLocalBinding = (data, field) => {
+      const currentValue = data?.[field];
+      if (!currentValue) return ``;
+      const binding = data?.projectAssetBindings?.[field];
+      const localPath = String(binding?.localPath || ``).trim();
+      const sourceSignature = String(binding?.sourceSignature || ``).trim();
+      const currentText = String(currentValue || ``).trim();
+      const bindingMatchesCurrent = !sourceSignature || sourceSignature === currentText;
+      if (localPath && binding?.ok !== false && binding?.missing !== true && bindingMatchesCurrent)
+        return localPath;
+      return currentValue;
+    };
 export const wanjuanNodeTextValue = (node: CanvasNode) =>
     node?.data ?
     node.data.text === void 0 ?
@@ -93,8 +105,11 @@ export const wanjuanCollectNodeReferenceMedia = (node: CanvasNode, handleId?: st
         images: images,
         videos: videos
       };
-      const pushPrimaryMedia = () =>
-        wanjuanPushReferenceMediaUrl(images, videos, node.data.imageUrl || node.data.mediaUrl || node.data.localPath || node.data.filePath || node.data.path, node.data.mediaKind);
+      const pushPrimaryMedia = () => {
+        const primaryField = node.data.imageUrl ? `imageUrl` : node.data.mediaUrl ? `mediaUrl` : ``;
+        const primaryValue = primaryField ? wanjuanNodeMediaValueWithLocalBinding(node.data, primaryField) : node.data.localPath || node.data.filePath || node.data.path;
+        wanjuanPushReferenceMediaUrl(images, videos, primaryValue, node.data.mediaKind);
+      };
       const dedupeMedia = (items) => Array.from(new Set(items.filter(Boolean)));
       const selectedGridCell =
         node.type === `gridSplitNode` && handleId?.startsWith(`cell-`) ?
@@ -132,7 +147,7 @@ export const wanjuanCollectNodeReferenceMedia = (node: CanvasNode, handleId?: st
           wanjuanPushReferenceMediaUrl(images, videos, node.data.extractedImages[selectedGridCell], `image`);
       }
       return (
-        selectedVideoFrame < 0 && node.data.videoUrl && wanjuanPushReferenceMediaUrl(images, videos, node.data.videoUrl, `video`), {
+        selectedVideoFrame < 0 && node.data.videoUrl && wanjuanPushReferenceMediaUrl(images, videos, wanjuanNodeMediaValueWithLocalBinding(node.data, `videoUrl`), `video`), {
           images: dedupeMedia(images),
           videos: dedupeMedia(videos)
         }

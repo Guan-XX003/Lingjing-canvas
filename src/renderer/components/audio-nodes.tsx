@@ -1247,7 +1247,7 @@ ${data.audioModel || ``}`)
               className: `w-full h-24 bg-[#111] border border-[#333] rounded p-2 text-xs text-gray-200 outline-none focus:border-blue-500 resize-none relative z-0 wanjuan-tts-node-field`,
               value: prompt,
               onChange: (event) => setPrompt(event.target.value),
-              placeholder: mode === `tts` ? `输入要朗读的文本，或连接文本节点` : `输入歌词/音乐描述，或连接文本节点`
+              placeholder: `输入提示词以开展你的任务`
             }), mode === `tts` ? jsxs(Fragment, {
               children: [jsxs(`div`, {
                 className: `grid grid-cols-2 gap-2`,

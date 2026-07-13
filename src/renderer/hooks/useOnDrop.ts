@@ -25,6 +25,18 @@ export function useOnDrop(deps: UseOnDropDeps) {
                 x: event.clientX,
                 y: event.clientY
               });
+              let dockNodePayload = event.dataTransfer.getData(`application/x-wanjuan-node`);
+              if (dockNodePayload) {
+                try {
+                  let parsed = JSON.parse(dockNodePayload);
+                  if (parsed?.type) {
+                    createNodeAt(parsed.type, dropPosition, parsed.data || {});
+                    return;
+                  }
+                } catch (error) {
+                  console.warn(`Invalid dock node drag payload`, error);
+                }
+              }
               if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
                 Array.from(event.dataTransfer.files).forEach((file, index) => {
                   if (

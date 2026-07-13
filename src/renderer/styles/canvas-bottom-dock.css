@@ -1,0 +1,203 @@
+.wanjuan-canvas-bottom-dock-wrap {
+  position: relative;
+  pointer-events: auto;
+  color: var(--wj-text, #e5e7eb);
+  letter-spacing: 0;
+}
+
+.wanjuan-canvas-bottom-dock {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 190px);
+  padding: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid color-mix(in srgb, var(--wj-border, #52565b) 78%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--wj-surface-2, #292a2c) 94%, transparent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+}
+
+.wanjuan-canvas-dock-button {
+  width: 48px;
+  min-width: 48px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--wj-muted, #b4b8bf);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  user-select: none;
+}
+
+html .wanjuan-canvas-bottom-dock > button.wanjuan-canvas-dock-button[class][class] {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.wanjuan-canvas-dock-button span {
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 12px;
+}
+
+.wanjuan-canvas-bottom-dock > .wanjuan-canvas-dock-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+html .wanjuan-canvas-bottom-dock > button.wanjuan-canvas-dock-button[class][class]:hover {
+  border-color: transparent !important;
+  background: var(--wj-surface-3, #3a3b3d) !important;
+  color: var(--wj-control-hover-text, #fff) !important;
+}
+
+html .wanjuan-canvas-bottom-dock > button.wanjuan-canvas-dock-button.is-active[class][class] {
+  border-color: transparent !important;
+  background: var(--wj-accent, #d8dde3) !important;
+  color: var(--wj-accent-contrast, #171819) !important;
+}
+
+.wanjuan-canvas-dock-button.is-active svg {
+  color: currentColor !important;
+}
+
+.wanjuan-canvas-dock-divider {
+  width: 1px;
+  min-width: 1px;
+  height: 25px;
+  margin: 0 3px;
+  background: color-mix(in srgb, var(--wj-border, #5f6368) 76%, transparent);
+}
+
+.wanjuan-canvas-dock-popover {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 120;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--wj-border, #52565b) 82%, transparent);
+  border-radius: 7px;
+  background: var(--wj-surface-2, #292a2c);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.48);
+}
+
+.wanjuan-canvas-dock-tools {
+  width: 430px;
+  padding: 7px;
+}
+
+.wanjuan-canvas-dock-tool-tabs,
+.wanjuan-canvas-dock-tool-items {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wanjuan-canvas-dock-tool-tabs {
+  padding-bottom: 7px;
+  margin-bottom: 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--wj-border, #52565b) 64%, transparent);
+}
+
+.wanjuan-canvas-dock-tool-tab {
+  min-width: 0;
+  flex: 1;
+  height: 32px;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--wj-muted, #b4b8bf);
+  background: transparent;
+  font-size: 12px;
+}
+
+.wanjuan-canvas-dock-tool-tab:hover {
+  background: var(--wj-surface-3, #383a3d);
+  color: var(--wj-text, #fff);
+}
+
+.wanjuan-canvas-dock-tool-tab.is-active {
+  border-color: var(--wj-border, #5f6368);
+  background: var(--wj-surface-3, #383a3d);
+  color: var(--wj-text, #fff);
+}
+
+.wanjuan-canvas-dock-tool-items {
+  justify-content: center;
+}
+
+.wanjuan-canvas-dock-tool-items .wanjuan-canvas-dock-button {
+  width: 128px;
+  min-width: 128px;
+  height: 40px;
+  flex-direction: row;
+  gap: 7px;
+}
+
+.wanjuan-canvas-dock-tool-items > button.wanjuan-canvas-dock-button:hover {
+  border-color: transparent !important;
+  background: var(--wj-surface-3, #3a3b3d) !important;
+  color: var(--wj-control-hover-text, #fff) !important;
+}
+
+.wanjuan-canvas-dock-tool-items .wanjuan-canvas-dock-button span {
+  max-width: 98px;
+  font-size: 12px;
+}
+
+.wanjuan-canvas-dock-resources {
+  width: 380px;
+  overflow: hidden;
+}
+
+.wanjuan-canvas-dock-resources .wanjuan-material-picker {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html.theme-light .wanjuan-canvas-bottom-dock,
+html.theme-warm-light .wanjuan-canvas-bottom-dock,
+html.theme-mist-blue .wanjuan-canvas-bottom-dock,
+html.theme-chrome-blue .wanjuan-canvas-bottom-dock,
+html.theme-sage-green .wanjuan-canvas-bottom-dock,
+html.theme-light .wanjuan-canvas-dock-popover,
+html.theme-warm-light .wanjuan-canvas-dock-popover,
+html.theme-mist-blue .wanjuan-canvas-dock-popover,
+html.theme-chrome-blue .wanjuan-canvas-dock-popover,
+html.theme-sage-green .wanjuan-canvas-dock-popover {
+  --wj-surface-2: #f8fafc;
+  --wj-surface-3: #e8eef5;
+  --wj-border: #c3ccd8;
+  --wj-text: #263445;
+  --wj-muted: #64748b;
+  --wj-control-hover-text: #172033;
+  --wj-accent: #dce5ef;
+  --wj-accent-contrast: #172033;
+}
+
+@media (max-width: 920px) {
+  .wanjuan-canvas-bottom-dock {
+    max-width: calc(100vw - 96px);
+  }
+  .wanjuan-canvas-dock-button {
+    width: 44px;
+    min-width: 44px;
+  }
+}

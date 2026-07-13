@@ -13,6 +13,7 @@ import { wanjuanFormatMentionToken, wanjuanLegacyMentionToken, wanjuanNormalizeM
 import { WanJuanGetPreferredModel } from "../lib/model-favorites";
 import { wanjuanNormalizeSeedanceAssetId, wanjuanSeedanceAssetUrl } from "../lib/seedance";
 import { wanjuanRunTianjiSeedanceVideo } from "../lib/tianji-api";
+import { wanjuanBuildReferenceMediaEntries } from "../lib/video-task";
 
 interface UseVideoGenerationDeps {
   videoApiKey: any;
@@ -1933,6 +1934,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 duration: `seconds`,
                 referenceImage: `input_reference`,
                 referenceVideo: `input_video`,
+                referenceAudio: ``,
               },
               normalizedFieldMapping = {
                 ...multipartFieldMapping,
@@ -2101,6 +2103,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               effectiveVideoRequestProfile?.requiresReferenceImage === true,
               requiresReferenceVideo =
               effectiveVideoRequestProfile?.requiresReferenceVideo === true,
+              requiresAnyReference =
+              effectiveVideoRequestProfile?.requiresAnyReference === true,
+              referenceMediaAggregation = String(effectiveVideoRequestProfile?.referenceMediaAggregation || ``).trim(),
+              referenceMediaField = String(effectiveVideoRequestProfile?.referenceMediaField || effectiveFieldMapping.referenceImage || effectiveFieldMapping.referenceVideo || `input_reference`).trim(),
+              referenceMediaOrder = String(effectiveVideoRequestProfile?.referenceMediaOrder || `image-first`).trim(),
+              referenceMediaKinds = Array.isArray(effectiveVideoRequestProfile?.referenceMediaKinds) ? effectiveVideoRequestProfile.referenceMediaKinds : [`image`, `video`],
               videoGatewayFormatOverride =
               !modelProtocolDefinition &&
               !effectiveVideoRequestProfile?.requestType &&
@@ -2220,6 +2228,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               throw Error(`模型 ${modelName} 需要至少一张参考图片，请先连接图片节点后再生成`);
             if (requiresReferenceVideo && videoReferences.length === 0)
               throw Error(`模型 ${modelName} 需要至少一个参考视频，请先连接视频节点后再生成`);
+            if (requiresAnyReference && imageReferences.length === 0 && videoReferences.length === 0)
+              throw Error(`模型 ${modelName} 需要至少一张参考图片或一个参考视频，请先连接素材节点后再生成`);
             abortControllersRef.current.set(nodeId, abortController);
             let prompt2 =
               promptParts.length > 0 ?
@@ -2823,15 +2833,26 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     effectiveFieldMapping.aspectRatio || `aspect_ratio`,
                     aspectRatioValue,
                   );
-              })();
-	            if (
-	              (effectiveVideoRequestProfile?.omitDuration === true ||
+		              })();
+		            let referencesHandledByAggregation = false;
+		            if (referenceMediaAggregation === `comma-separated`) {
+		              let orderedEntries = wanjuanBuildReferenceMediaEntries(imageReferences, videoReferences, { kinds: referenceMediaKinds, order: referenceMediaOrder }),
+		                referenceUrls = [];
+		              for (let entry of orderedEntries) {
+		                let publicUrl = await uploadReferenceMediaForUrlOnlyModel(entry.value, entry.kind);
+		                publicUrl && referenceUrls.push(publicUrl);
+		              }
+		              referenceUrls.length > 0 && formData.append(referenceMediaField, referenceUrls.join(`,`));
+		              referencesHandledByAggregation = true;
+		            }
+		            if (
+		              (effectiveVideoRequestProfile?.omitDuration === true ||
 	                effectiveFieldMapping.duration === `` ||
 	                (() => {
 	                  let durationField = effectiveFieldMapping.duration || `seconds`;
 	                  formData.append(durationField, getFieldValue(durationField, durationValue));
 	                })(),
-	                imageReferences.length > 0)
+		                !referencesHandledByAggregation && imageReferences.length > 0)
 	            )
               if (referenceImagesAsUrls) {
                 for (let index = 0; index < imageReferences.length; index++) {
@@ -2877,7 +2898,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     );
                   }
                 }
-            if (videoReferences.length > 0)
+            if (!referencesHandledByAggregation && videoReferences.length > 0)
               if (referenceVideosAsUrls) {
                 for (let index = 0; index < videoReferences.length; index++) {
                   let referenceVideoUrl = await uploadReferenceMediaForUrlOnlyModel(videoReferences[index], `video`);
@@ -2918,6 +2939,10 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     );
                   }
                 }
+            if (seedanceAudioRefs.length > 0 && effectiveFieldMapping.referenceAudio) {
+              let referenceAudioUrl = await uploadReferenceMediaForUrlOnlyModel(seedanceAudioRefs[0], `audio`);
+              referenceAudioUrl && formData.append(effectiveFieldMapping.referenceAudio, referenceAudioUrl);
+            }
             console.info(
               `Sending Multipart Video API request info: ${safeStringifyRequestForLog({
                 modelName: modelName,

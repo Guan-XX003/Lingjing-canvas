@@ -7,6 +7,8 @@
 import "./styles/reactflow.css";
 import "./styles/app.css";
 import "./styles/canvas-controls-polish.css";
+import "./styles/canvas-bottom-dock.css";
 import "./styles/theme-controls-final.css";
+import "./styles/tianji-settings-native.css";
 import "./lib/i18n-runtime.js";
 import "./bundle/index.js";

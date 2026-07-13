@@ -56,7 +56,7 @@ export function WanJuanEmptyCanvasPlaceholder({
                         style: {
                           lineHeight: `22px`
                         },
-                        children: `右键自由生成你的想象`,
+                        children: `创建节点，展开你的想象`,
                       }),
                     ],
                   }),

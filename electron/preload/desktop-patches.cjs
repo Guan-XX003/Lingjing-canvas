@@ -3565,7 +3565,6 @@ function installDesktopPatches() {
     installPerformanceSettingsPanel();
     installSettingsUpdateButton();
     installSeedreamOfficialIcons();
-    installTianjiSettingsPanel().catch((error) => console.warn("Tianji settings panel skipped", error));
     installWorkspacePanel();
     installProjectSafetyBackupCenter();
     ensureProjectSafetyAutoBackupStarted();
@@ -3594,13 +3593,13 @@ function installDesktopPatches() {
   };
   const desktopPatchMutationIsRelevant = (mutation) => {
     const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
-    if (!target || target.closest?.("head, .react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card")) return false;
+    if (!target || target.closest?.("head, .react-flow, .wanjuan-workspace-page")) return false;
     const changedNodes = [...Array.from(mutation.addedNodes || []), ...Array.from(mutation.removedNodes || [])];
     if (!changedNodes.length) return false;
     return changedNodes.some((node) => {
       if (!(node instanceof Element)) return false;
       if (node.matches?.("style, script, img, video, audio, source")) return false;
-      if (node.closest?.(".react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card")) return false;
+      if (node.closest?.(".react-flow, .wanjuan-workspace-page")) return false;
       return !!(
         node.matches?.(".wanjuan-app-top-nav, [data-wanjuan-settings-root], .wanjuan-settings-card") ||
         node.querySelector?.(".wanjuan-app-top-nav, [data-wanjuan-settings-root], .wanjuan-settings-card")
@@ -3618,7 +3617,7 @@ function installDesktopPatches() {
   const seedreamIconObserver = new MutationObserver((mutations) => {
     if (mutations.length && mutations.every((mutation) => {
       const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
-      return target?.closest?.("head, .react-flow, .wanjuan-workspace-page, .wanjuan-tianji-settings-card");
+      return target?.closest?.("head, .react-flow, .wanjuan-workspace-page");
     })) return;
     if (seedreamIconPatchQueued) return;
     seedreamIconPatchQueued = true;
@@ -3638,14 +3637,6 @@ function installDesktopPatches() {
     if (autoClickByText(autoClickLabels)) autoClicked = true;
   }, 300);
   window.setTimeout(() => window.clearInterval(timer), 10000);
-  const tianjiSettingsTimer = window.setInterval(() => {
-    if (tianjiSettingsInstalled) {
-      window.clearInterval(tianjiSettingsTimer);
-      return;
-    }
-    installTianjiSettingsPanel().catch(() => {});
-  }, 1000);
-  window.setTimeout(() => window.clearInterval(tianjiSettingsTimer), 30000);
 }
 
 module.exports = { installDesktopPatches };

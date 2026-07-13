@@ -1,8 +1,13 @@
 /** Seedance 模型设置面板（含人像库）。自 WanJuanAppRoot 抽出，props 传入，行为不变。 */
 import { jsx, jsxs } from "react/jsx-runtime";
+import { useState } from "react";
 import { wanjuanUseBrokenResourceImage } from "../lib/resource-tabs";
 import { wanjuanSeedanceAssetUrl } from "../lib/seedance";
+import { WanJuanTianjiSettingsNative } from "./tianji-settings-native";
 declare const chrome: any;
+
+let tianjiPointsUnlockClickCount = 0;
+let tianjiPointsActionsUnlocked = false;
 
 export function WanJuanSeedanceSettingsPanel({
   apiConfigs,
@@ -39,8 +44,19 @@ export function WanJuanSeedanceSettingsPanel({
   tianjiSeedanceSettingsMode,
   videoModelApiBindings,
 }: any) {
+  const [, forceUnlockRender] = useState(0);
+  const selectTianjiMode = () => {
+    tianjiPointsUnlockClickCount += 1;
+    if (tianjiPointsUnlockClickCount >= 10) {
+      tianjiPointsActionsUnlocked = true;
+      tianjiPointsUnlockClickCount = 0;
+      forceUnlockRender((value) => value + 1);
+    }
+    applyTianjiSeedanceSettingsMode(`tianji`);
+  };
+
   return jsxs(`div`, {
-	                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body`,
+	                                className: `px-4 pt-4 space-y-4 wanjuan-settings-card-body${tianjiSeedanceSettingsMode === `tianji` ? ` wanjuan-tianji-mode-active` : ``}`,
 	                                children: [
 		                                  true ?
 	                                    jsxs(`div`, {
@@ -75,7 +91,7 @@ export function WanJuanSeedanceSettingsPanel({
 	                                              type: `button`,
 	                                              "data-tianji-mode": `tianji`,
 	                                              "aria-pressed": tianjiSeedanceSettingsMode === `tianji` ? `true` : `false`,
-	                                              onClick: () => applyTianjiSeedanceSettingsMode(`tianji`),
+	                                              onClick: selectTianjiMode,
 	                                              className: `wanjuan-tianji-mode-option ${tianjiSeedanceSettingsMode === `tianji` ? `is-active` : ``}`,
 	                                              children: `天玑模式`,
 	                                            }),
@@ -555,9 +571,8 @@ export function WanJuanSeedanceSettingsPanel({
                                     className: `text-[10px] text-gray-500`,
                                     children: `即梦节点会使用这里的专属模型、API 配置、比例、时长和默认开关；节点里也可以再单独覆盖 API。`,
                                   }),
-	                                  jsx(`div`, {
-                                    className: `wanjuan-tianji-settings-host`,
-                                    "data-wanjuan-tianji-settings-host": `true`,
+	                                  tianjiSeedanceSettingsMode === `tianji` && jsx(WanJuanTianjiSettingsNative, {
+                                    pointsUnlocked: tianjiPointsActionsUnlocked,
                                   }),
                                 ],
                               });

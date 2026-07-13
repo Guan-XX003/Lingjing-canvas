@@ -179,7 +179,7 @@ async function run() {
         await sleep(2500);
         resultViewport = await evaluate(`globalThis.__wanjuanCanvasDebug.snapshot()`);
         if (Number(resultViewport?.images || 0) < 8) {
-          throw new Error(`Dense result viewport did not render enough image results: ${resultViewport?.images || 0}`);
+          throw new Error(`Dense result viewport did not render enough image results: ${JSON.stringify({ images: resultViewport?.images || 0, nodes: resultViewport?.nodes || 0, modes: resultViewport?.modes || {}, viewport: { x: 80, y: 80, zoom: 0.62 } })}`);
         }
         if (Number(resultViewport?.modes?.lite || 0) < 7) {
           throw new Error(`Dense result viewport did not exercise lightweight result nodes: ${JSON.stringify(resultViewport?.modes || {})}`);

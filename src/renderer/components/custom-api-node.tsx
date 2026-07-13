@@ -298,7 +298,7 @@ export const WanJuanCustomApiNode = reactMemo(({
                           children: [
                             jsx(`textarea`, {
                               className: `flex-1 bg-[#121212] border border-[#333] rounded p-2 text-gray-200 focus:border-blue-500 outline-none custom-scrollbar text-[10px] resize-y nodrag wanjuan-custom-node-field`,
-                              placeholder: `描述你想调用的API... (如：调用百度翻译)`,
+                              placeholder: `输入提示词以开展你的任务`,
                               value: aiPrompt,
                               onChange: (event) => setAiPrompt(event.target.value),
                               onKeyDown: (event) => {

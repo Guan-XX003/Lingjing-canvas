@@ -339,11 +339,7 @@ export const WanJuanSunoMusicNode = reactMemo(({ id: nodeId, data: nodeData }: a
     else setReferenceClipId(id);
   };
 
-  const textareaPlaceholder = upstreamText
-    ? "已连接文本节点作为输入；也可在此覆盖"
-    : customMode
-      ? (instrumental ? "纯伴奏自定义模式可留空歌词" : "输入歌词（可带 [Verse]/[Chorus] 结构），或连接文本节点")
-      : "输入歌曲描述（AI 自动写词），或连接文本节点";
+  const textareaPlaceholder = "输入提示词以开展你的任务";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: 400 }}>

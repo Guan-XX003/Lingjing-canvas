@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.3.6：接入后台系统通知，优化通知铃铛、已读不再显示、天玑模式提示、素材选择触发和极鑫默认配置体验，并发布新的 Mac/Windows 安装包。`),
+				                                          children: wanjuanT(`1.3.7：优化大画布渲染和媒体节点稳定性，新增底部节点创建栏，完善视频参数、参考上传与配置管家协议识别，并将天玑设置迁移为原生组件。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-					                                          children: `1.3.6`,
+				                                          children: `1.3.7`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

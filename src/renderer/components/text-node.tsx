@@ -509,21 +509,12 @@ export const WanJuanTextNode = reactMemo(({
                   jsxs(`div`, {
                     className: `flex items-start gap-2`,
                     children: [
-                      connections.length === 0 &&
-                      jsx(`div`, {
-                        className: `w-8 h-8 rounded border border-dashed border-[#444] flex flex-col items-center justify-center text-gray-600 bg-[#151515] hover:bg-[#222] hover:border-blue-500 hover:text-blue-500 cursor-pointer transition-colors flex-shrink-0 wanjuan-node-upload-trigger`,
-                        onClick: () => fileInputRef.current?.click(),
-                        title: `上传图片`,
-                        children: jsx(Upload, {
-                          size: 10
-                        }),
-                      }),
                       jsxs(`div`, {
                         className: `flex-1 relative`,
                         children: [
                           jsx(`textarea`, {
                             className: `w-full h-24 bg-[#121212] border border-[#333] rounded p-2 text-xs text-gray-200 resize-y outline-none focus:border-blue-500 custom-scrollbar nodrag nopan min-h-[60px]`,
-                            placeholder: `输入提示词 (输入 @ 调出素材)...`,
+                            placeholder: `输入提示词以开展你的任务`,
                             value: prompt,
 	                            onChange: (event) => {
 	                              let value = event.target.value;

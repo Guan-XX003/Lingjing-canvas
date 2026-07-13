@@ -61,8 +61,9 @@ export function useCanvasNodes(deps: UseCanvasNodesDeps) {
 	          hasReferenceChange =
 	            (nextReferenceSources && data.wanjuanSelectedReferenceSourceIds !== nextReferenceSources) ||
 	            (!nextReferenceSources && Array.isArray(data.wanjuanSelectedReferenceSourceIds)),
-	          hasRenderModeChange = data.wanjuanRenderMode !== renderMode;
-	        let hasRenderZoomChange = renderMode === `shell` && data.wanjuanRenderZoom !== zoom;
+	          hasRenderModeChange = data.wanjuanRenderMode !== renderMode,
+	          nextRenderZoom = renderMode === `full` ? undefined : zoom;
+	        let hasRenderZoomChange = data.wanjuanRenderZoom !== nextRenderZoom;
 	        return hasReferenceChange || hasRenderModeChange || hasRenderZoomChange ?
 	          {
 	            ...node,
@@ -74,7 +75,7 @@ export function useCanvasNodes(deps: UseCanvasNodesDeps) {
 	                wanjuanSelectedReferenceSourceIds: undefined
 	              }),
 	              wanjuanRenderMode: renderMode,
-	              wanjuanRenderZoom: renderMode === `shell` ? zoom : void 0,
+	              wanjuanRenderZoom: nextRenderZoom,
 	              wanjuanRenderRuntime: true
 	            },
 	          } :

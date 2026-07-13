@@ -3342,18 +3342,24 @@ html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card:not(.wanjuan-ag
 html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active[class][class],
 html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active:hover[class][class],
 html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active:focus-visible[class][class] {
-  background: var(--wanjuan-agent-card-selected-bg) !important;
+  background: color-mix(in srgb, #f3f4f6 82%, var(--wanjuan-theme-accent) 18%) !important;
   background-image: none !important;
-  border-color: var(--wanjuan-agent-card-selected-border) !important;
-  box-shadow: var(--wanjuan-agent-card-selected-shadow) !important;
-  color: var(--wanjuan-theme-text) !important;
+  border-color: color-mix(in srgb, #111827 24%, transparent) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+  color: #111827 !important;
   -webkit-text-fill-color: currentColor !important;
   filter: none !important;
 }
 
 html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active > div:first-child {
-  background: var(--wanjuan-agent-accent) !important;
+  background: transparent !important;
   box-shadow: none !important;
+}
+
+html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active > div:nth-child(2),
+html.theme-graphite .wanjuan-agent-page .wanjuan-agent-role-card-active > div:nth-child(2) :is(div, span, svg) {
+  color: #111827 !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 html.theme-graphite .wanjuan-app-top-nav .wanjuan-app-nav-tab,
@@ -4698,13 +4704,14 @@ html[data-wanjuan-performance-profile="performance"] .react-flow__edge .wanjuan-
   -webkit-text-fill-color: currentColor;
 }
 
-.wanjuan-tianji-settings-host {
+.wanjuan-tianji-native-card,
+.wanjuan-tianji-native-loading {
   display: grid;
   gap: 12px;
   min-width: 0;
 }
 
-.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-seedance-mode-model-settings):not(.wanjuan-tianji-settings-host) {
+.wanjuan-seedance-settings-card.wanjuan-tianji-mode-active .wanjuan-settings-card-body > :not(.wanjuan-tianji-mode-row):not(.wanjuan-seedance-mode-model-settings):not(.wanjuan-tianji-native-card):not(.wanjuan-tianji-native-loading) {
   display: none !important;
 }
 

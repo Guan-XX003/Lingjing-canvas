@@ -5,6 +5,7 @@
  */
 import { buildApiUrl } from "./model-binding";
 import { GlobalTask, ProtocolConfig } from "./types";
+import { wanjuanResolveVideoParameterMode } from "./video-parameter-mode";
 
 export const normalizeButlerBaseUrl = (value) =>
     String(value || ``)
@@ -718,6 +719,25 @@ export const extractButlerOpenApiSummary = (docText) => {
           endpoints: any[] = [],
           collectedRequests = [],
           collectedResponses = [];
+        const resolveSchema = (schema, seen = new Set()) => {
+          if (!schema || typeof schema != `object`) return {};
+          if (schema.$ref && spec) {
+            let ref = String(schema.$ref || ``),
+              resolved: any = ref.startsWith(`#/`) ? ref.slice(2).split(`/`).reduce((value, key) => value?.[key], spec) : null;
+            if (resolved && !seen.has(ref)) return resolveSchema(resolved, new Set([...seen, ref]));
+          }
+          let variants = [...(schema.allOf || []), ...(schema.oneOf || []), ...(schema.anyOf || [])],
+            mergedProperties = { ...(schema.properties || {}) };
+          variants.forEach((variant) => {
+            let resolved = resolveSchema(variant, seen);
+            Object.assign(mergedProperties, resolved.properties || {});
+          });
+          if (schema.items) {
+            let resolvedItems = resolveSchema(schema.items, seen);
+            Object.assign(mergedProperties, resolvedItems.properties || {});
+          }
+          return { ...schema, properties: mergedProperties };
+        };
         if (spec?.paths && typeof spec.paths == `object`) {
           Object.entries(spec.paths).forEach(([path, pathItem]) => {
             pathItem &&
@@ -725,13 +745,10 @@ export const extractButlerOpenApiSummary = (docText) => {
               Object.entries(pathItem).forEach(([method, operation]) => {
                 if (!/^(get|post|put|patch|delete)$/i.test(method)) return;
                 let content = operation?.requestBody?.content || {},
-                  schema: any = (Object.values(content)[0] as any)?.schema || {},
-                  properties =
-                  schema?.properties ||
-                  schema?.items?.properties ||
-                  (Object.values((schema?.allOf || {}) as any)?.[0] as any)?.properties ||
-                  {},
-                  requestKeys = Object.keys(properties || {}).slice(0, 40),
+                  contentTypes = Object.keys(content),
+                  schemas = Object.values(content).map((entry: any) => resolveSchema(entry?.schema || {})),
+                  requestKeys = [...new Set(schemas.flatMap((schema: any) => Object.keys(schema?.properties || {})))].slice(0, 80),
+                  requestFieldTypes = Object.fromEntries(schemas.flatMap((schema: any) => Object.entries(schema?.properties || {}).map(([key, value]: any) => [key, value?.type || (value?.items ? `array` : ``)])).filter(([, type]) => type)),
                   responses = operation?.responses || {},
                   responseKeys = Object.keys(responses).slice(0, 8);
                 endpoints.push({
@@ -739,6 +756,8 @@ export const extractButlerOpenApiSummary = (docText) => {
                   path: path,
                   operationId: operation?.operationId || ``,
                   requestKeys: requestKeys,
+                  requestFieldTypes: requestFieldTypes,
+                  contentTypes: contentTypes,
                   responseCodes: responseKeys,
                 });
               });
@@ -777,26 +796,32 @@ export const inferButlerProtocolFromTools = (summary, modelInfo: any = {}) => {
             .map((example) => `${example.method} ${example.path || example.url} ${(example.bodyKeys || []).join(`,`)}`)
             .join(`\n`)}`.toLowerCase();
         return category === `text` ?
+          /\/messages\b|anthropic-version/.test(text) ?
+          `claude-messages` :
           /\/responses\b/.test(text) ?
           `openai-responses` :
           /generatecontent|gemini/.test(text) ?
           `gemini-generate-content` :
           `openai-chat` :
           category === `image` ?
-          /\/images\/edits|\/images\/generations|b64_json|response_format/.test(text) ?
+          /\/images\/edits|\/images\/generations|b64_json|response_format|image_url/.test(text) ?
           `openai-images` :
           `openai-images` :
           category === `video` ?
+          /multipart|form-data/.test(text) ?
+          `multipart-video` :
           /\/v1\/videos\b/.test(text) ?
           `openai-video` :
-          /multipart|form-data|input_reference/.test(text) ?
-          `multipart-video` :
           /query\/video|video\/query|task_id/.test(text) ?
           `json-video` :
           `openai-video` :
           category === `audio` ?
+          /\/audio\/speech|response_format|voice/.test(text) ?
+          `openai-audio-speech` :
           `openai-audio-transcription` :
           category === `music` ?
+          /suno|\/music|\/songs|audio_url|clips/.test(text) ?
+          `suno-music` :
           `suno-music` :
           category === `tts-music` ?
           `openai-audio-speech` :
@@ -875,6 +900,122 @@ export const getButlerDocFieldsForPath = (toolResult, path) => {
           }),
           [...keys].filter(Boolean)
         );
+      };
+
+export const getButlerDocFieldTypesForPath = (toolResult, path) => {
+        let normalizedPath = String(path || ``).replace(/^https?:\/\/[^/]+/i, ``).replace(/\/+$/g, ``),
+          normalizePath = (path2) => String(path2 || ``).replace(/^https?:\/\/[^/]+/i, ``).replace(/\/+$/g, ``),
+          types = {};
+        (toolResult?.openApi?.endpoints || []).forEach((endpoint) => {
+          normalizePath(endpoint.path) === normalizedPath && Object.assign(types, endpoint.requestFieldTypes || {});
+        });
+        return types;
+      };
+
+export const inferButlerVideoFieldMapping = (toolResult, path, currentMapping: any = {}) => {
+        return inferButlerProtocolFieldMapping(toolResult, path, `video`, ``, currentMapping);
+      };
+
+export const inferButlerProtocolFieldMapping = (toolResult, path, category, requestType, currentMapping: any = {}) => {
+        let fields = getButlerDocFieldsForPath(toolResult, path),
+          normalizedFields = new Map(fields.map((field) => [String(field).trim().toLowerCase(), String(field).trim()])),
+          findAlias = (aliases) => {
+            for (let alias of aliases) {
+              let matched = normalizedFields.get(String(alias).toLowerCase());
+              if (matched) return matched;
+            }
+            return ``;
+          },
+          inferred: any = {},
+          commonAliases = {
+            model: [`model`, `model_id`, `model_name`],
+            prompt: [`prompt`, `text`, `description`, `query`],
+          },
+          categoryAliases: any = {
+            text: {
+              messages: [`messages`, `conversation`, `chat_history`],
+              input: [`input`, `contents`, `content`],
+              system: [`system`, `system_prompt`, `instructions`],
+              temperature: [`temperature`],
+              maxTokens: [`max_tokens`, `max_output_tokens`, `max_completion_tokens`],
+              responseFormat: [`response_format`],
+            },
+            image: {
+              count: [`n`, `count`, `num_images`, `number_of_images`],
+              size: [`size`, `resolution`, `dimensions`, `image_size`],
+              aspectRatio: [`aspect_ratio`, `aspectratio`, `ratio`],
+              responseFormat: [`response_format`, `output_format`],
+              referenceImage: [`image`, `images`, `image_url`, `image_urls`, `input_image`, `reference_image`, `reference_images`, `mask`],
+            },
+            video: {
+            duration: [`seconds`, `duration`, `duration_seconds`, `length_seconds`, `video_length`],
+            resolution: [`size`, `resolution`, `dimensions`, `video_size`, `quality`],
+            aspectRatio: [`aspect_ratio`, `aspectratio`, `ratio`, `frame_ratio`],
+            referenceImage: [`input_reference`, `input_references`, `image`, `images`, `image_url`, `image_urls`, `first_frame_image`, `first_frame_image_url`, `reference_image`],
+            referenceVideo: [`input_video`, `video`, `video_url`, `reference_video`],
+            },
+            audio: {
+              file: [`file`, `audio`, `audio_file`, `input_audio`],
+              input: [`input`, `text`, `prompt`],
+              voice: [`voice`, `voice_id`, `speaker`, `speaker_id`],
+              format: [`response_format`, `format`, `output_format`, `audio_format`],
+              speed: [`speed`, `rate`],
+              language: [`language`, `language_code`],
+            },
+            music: {
+              title: [`title`, `song_title`],
+              tags: [`tags`, `style`, `styles`, `genre`],
+              lyrics: [`lyrics`, `prompt`],
+              instrumental: [`make_instrumental`, `instrumental`],
+              referenceAudio: [`audio`, `audio_url`, `reference_audio`, `reference_url`],
+            },
+            "tts-music": {
+              input: [`input`, `text`, `prompt`],
+              voice: [`voice`, `voice_id`, `speaker`, `speaker_id`],
+              format: [`response_format`, `format`, `output_format`, `audio_format`],
+              speed: [`speed`, `rate`],
+              referenceAudio: [`audio`, `audio_url`, `reference_audio`, `reference_url`],
+            },
+          },
+          aliases = { ...commonAliases, ...(categoryAliases[normalizeModelCategory(category)] || {}) };
+        Object.entries(aliases).forEach(([logicalField, fieldAliases]) => {
+          let matched = findAlias(fieldAliases);
+          matched && (inferred[logicalField] = matched);
+        });
+        return {
+          fields: fields,
+          mapping: { ...(currentMapping || {}), ...inferred },
+          inferred: inferred,
+          hasAuthoritativeFields: fields.length > 0,
+          requestType: requestType,
+        };
+      };
+
+export const mergeButlerProtocolRepair = (currentConfig: any = {}, suggestedConfig: any = {}, errorMessage = ``) => {
+        let current = currentConfig && typeof currentConfig == `object` ? currentConfig : {},
+          suggested = suggestedConfig && typeof suggestedConfig == `object` ? suggestedConfig : {},
+          errorText = String(errorMessage || ``).toLowerCase(),
+          unknownFieldMatch = errorText.match(/(?:unknown|unsupported|unrecognized|invalid|does not (?:accept|support))[^a-z0-9_]{0,20}(?:parameter|field)?[^a-z0-9_]{0,10}([a-z][a-z0-9_.-]*)/i),
+          rejectedField = String(unknownFieldMatch?.[1] || ``).toLowerCase(),
+          mergeObject = (key) => ({ ...(current[key] || {}), ...(suggested[key] || {}) }),
+          merged = {
+            ...current,
+            ...suggested,
+            fieldMapping: mergeObject(`fieldMapping`),
+            fieldValueTypes: mergeObject(`fieldValueTypes`),
+            parameterAdapter: mergeObject(`parameterAdapter`),
+            responseMapping: mergeObject(`responseMapping`),
+            extraBody: mergeObject(`extraBody`),
+          };
+        Object.entries(suggested.fieldMapping || {}).forEach(([logicalField, fieldName]) => {
+          if (fieldName !== ``) return;
+          let previousField = String(current.fieldMapping?.[logicalField] || ``).trim();
+          if (!previousField) return;
+          let explicitlyRejected = rejectedField && (rejectedField === previousField.toLowerCase() || errorText.includes(`parameter ${previousField.toLowerCase()}`) || errorText.includes(`field ${previousField.toLowerCase()}`));
+          explicitlyRejected || (merged.fieldMapping[logicalField] = previousField);
+        });
+        suggested.omitDuration === true && merged.fieldMapping?.duration && !rejectedField && (merged.omitDuration = current.omitDuration === true);
+        return merged;
       };
 
 export const applyButlerLearnedProtocolRules = (baseConfig, modelInfo: any = {}) => {
@@ -960,23 +1101,19 @@ ${curlText}`,
             (protocolName = `X-See Veo 帧转视频`),
             notes.push(`已按 X-See Veo 帧转/参考视频模型规则启用 input_reference，并要求画布提供参考图`));
         }
-        if (category === `video`) {
-          let docFields = getButlerDocFieldsForPath(toolContext, config.submitPath),
-            fieldSet = new Set(docFields.map((field: any) => field.toLowerCase())),
-            hasField = (field) => fieldSet.has(String(field || ``).toLowerCase());
-          if (docFields.length) {
-            let durationField = String(config.fieldMapping?.duration || ``).trim();
-            durationField && !hasField(durationField) && ((config.fieldMapping.duration = ``), (config.omitDuration = true), notes.push(`文档请求体未声明 ${durationField}，已省略时长字段`));
-            let resolutionField = String(config.fieldMapping?.resolution || ``).trim();
-            resolutionField &&
-              !hasField(resolutionField) &&
-              (hasField(`size`) ?
-                ((config.fieldMapping.resolution = `size`), notes.push(`分辨率字段已按文档修正为 size`)) :
-                hasField(`resolution`) ?
-                ((config.fieldMapping.resolution = `resolution`), notes.push(`分辨率字段已按文档修正为 resolution`)) :
-                ((config.fieldMapping.resolution = ``), notes.push(`文档请求体未声明 ${resolutionField}，已省略分辨率字段`)));
-            let aspectRatioField = String(config.fieldMapping?.aspectRatio || ``).trim();
-            aspectRatioField && !hasField(aspectRatioField) && ((config.fieldMapping.aspectRatio = ``), notes.push(`文档请求体未声明 ${aspectRatioField}，已省略比例字段`));
+        if ([`text`, `image`, `video`, `audio`, `music`, `tts-music`].includes(category)) {
+          let inferredFields = inferButlerProtocolFieldMapping(toolContext, config.submitPath, category, config.requestType, config.fieldMapping);
+          if (inferredFields.hasAuthoritativeFields) {
+            Object.entries(inferredFields.inferred).forEach(([logicalField, fieldName]) => {
+              let previous = String(config.fieldMapping?.[logicalField] ?? ``).trim();
+              previous !== fieldName && notes.push(`${logicalField} 字段已按文档识别为 ${fieldName}`);
+            });
+            config.fieldMapping = inferredFields.mapping;
+            category === `video` && inferredFields.inferred.duration && (config.omitDuration = false);
+            let durationField = String(config.fieldMapping?.duration || ``).trim(),
+              resolutionField = String(config.fieldMapping?.resolution || ``).trim();
+            category === `video` && durationField && (config.fieldValueTypes[durationField] = config.fieldValueTypes[durationField] || `string`);
+            category === `video` && resolutionField && (config.fieldValueTypes[resolutionField] = config.fieldValueTypes[resolutionField] || `string`);
           }
         }
         return {
@@ -1008,6 +1145,11 @@ export const validateButlerProtocolConfig = (baseConfig, modelInfo: any = {}) =>
           category === `video` &&
           (!trimValue(config.submitPath) || !trimValue(config.pollPath)) &&
           issues.push(`视频协议缺少 submitPath 或 pollPath`),
+          category === `video` &&
+          !trimValue(config.fieldMapping?.duration) &&
+          !trimValue(config.fieldMapping?.resolution) &&
+          !trimValue(config.fieldMapping?.aspectRatio) &&
+          warnings.push(`视频协议未映射时长、分辨率或比例，画布参数将不会发送；只有接口明确不支持这些参数时才应全部省略`),
           category === `video` &&
           /\/v1\/videos\b/.test(`${config.submitPath || ``} ${config.pollPath || ``}`) &&
           /\/v1\/video\/generations\b/.test(`${config.submitPath || ``} ${config.pollPath || ``}`) &&
@@ -1124,17 +1266,23 @@ export const dryRunButlerProtocolConfig = (baseConfig, modelInfo: any = {}) => {
               ...buildField(fieldMapping.size || `size`, parameterAdapter.size),
               ...buildField(fieldMapping.aspectRatio || ``, parameterAdapter.aspectRatio),
             })) :
-          category === `video` &&
-          ((parameterAdapter = resolveVideoDimensions(`720x1280`, `9:16`)),
-            (result = {
+	          category === `video` &&
+	          ((parameterAdapter = resolveVideoDimensions(`720x1280`, `9:16`)),
+	            (result = {
               ...buildField(fieldMapping.model || `model`, modelInfo.modelName || `model`),
               ...buildField(fieldMapping.prompt || `prompt`, `test video`),
               ...(config.omitDuration === true || fieldMapping.duration === `` ?
                 {} :
                 buildField(fieldMapping.duration || `seconds`, config.fieldValueTypes?.[fieldMapping.duration || `seconds`] === `number` ? 5 : `5`)),
               ...buildField(fieldMapping.resolution || `size`, parameterAdapter.resolution),
-              ...buildField(fieldMapping.aspectRatio || ``, parameterAdapter.aspectRatio),
-            })),
+	              ...buildField(fieldMapping.aspectRatio || ``, parameterAdapter.aspectRatio),
+	            }),
+	            (() => {
+	              let referenceImageField = String(fieldMapping.referenceImage || ``).trim(),
+	                referenceUrl = `https://example.com/reference.png`,
+	                referenceValue: any = config.referenceImageItemShape === `image_url_object` ? { image_url: referenceUrl } : config.referenceImageItemShape === `url_object` ? { url: referenceUrl } : referenceUrl;
+	              referenceImageField && (result[referenceImageField] = config.referenceImageAsArray === true ? [referenceValue] : referenceValue);
+	            })()),
           {
             method: `POST`,
             submitPath: config.submitPath || ``,
@@ -1240,6 +1388,9 @@ export const validateAndRepairConfigButlerResult = (baseModel, options: any = {}
             apiUrl: apiUrl,
             category: category,
           }),
+          documentedRequestFields = getButlerDocFieldsForPath(options.toolContext, finalConfig.submitPath),
+          documentedFieldTypes = getButlerDocFieldTypesForPath(options.toolContext, finalConfig.submitPath),
+          hasDocumentedReferenceShape = documentedRequestFields.some((field) => /image|reference|frame/i.test(String(field || ``))),
           learnedResult = applyButlerLearnedProtocolRules(finalConfig, {
             modelName: modelName,
             apiUrl: apiUrl,
@@ -1247,6 +1398,19 @@ export const validateAndRepairConfigButlerResult = (baseModel, options: any = {}
             toolContext: options.toolContext || null,
           });
         finalConfig = learnedResult.config;
+        category === `video` && !finalConfig.parameterMode && (finalConfig.parameterMode = wanjuanResolveVideoParameterMode(finalConfig));
+        let documentedReferenceField = String(finalConfig.fieldMapping?.referenceImage || ``).trim(),
+          documentedReferenceType = String(documentedFieldTypes[documentedReferenceField] || ``).toLowerCase();
+        category === `video` &&
+          finalConfig.requestType === `openai-video` &&
+          !hasDocumentedReferenceShape &&
+          (String(finalConfig.fieldMapping?.referenceImage || ``).trim() || (finalConfig.fieldMapping = { ...(finalConfig.fieldMapping || {}), referenceImage: `input_reference` }),
+            (finalConfig.referenceImageAsArray = false),
+            (finalConfig.referenceImageItemShape = `string`));
+        category === `video` && documentedReferenceType &&
+          ((finalConfig.referenceImageMode = `url`),
+            (finalConfig.referenceImageAsArray = documentedReferenceType === `array`),
+            (finalConfig.referenceImageItemShape = `string`));
         let
           validationResult = validateButlerProtocolConfig(finalConfig, {
             modelName: modelName,
@@ -1301,7 +1465,11 @@ export const configButlerAdvancedToolsExposed = (() => {
               extractButlerOpenApiSummary,
               buildConfigButlerToolContext,
               formatConfigButlerToolContext,
-	              getButlerDocFieldsForPath,
+              getButlerDocFieldsForPath,
+	              getButlerDocFieldTypesForPath,
+	              inferButlerProtocolFieldMapping,
+	              inferButlerVideoFieldMapping,
+	              mergeButlerProtocolRepair,
 	              applyButlerLearnedProtocolRules,
 	              validateButlerProtocolConfig,
               dryRunButlerProtocolConfig,

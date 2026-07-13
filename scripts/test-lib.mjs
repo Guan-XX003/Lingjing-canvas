@@ -29,6 +29,7 @@ function compile() {
       join(root, "src/renderer/lib/node-runtime-contract.ts"),
       join(root, "src/renderer/lib/video-aspect-ratio.ts"),
       join(root, "src/renderer/lib/video-task.ts"),
+      join(root, "src/renderer/lib/video-parameter-mode.ts"),
       join(root, "src/renderer/lib/global-tasks.ts"),
       join(root, "src/renderer/lib/config-butler.ts"),
       join(root, "src/renderer/lib/jixin-catalog.ts"),
@@ -61,9 +62,11 @@ async function run() {
   const { wanjuanCollectNodeReferenceMedia, wanjuanIsPublicHttpMediaUrl } = await import(pathToFileURL(join(outDir, "reference-media.js")).href);
   const { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } = await import(pathToFileURL(join(outDir, "video-aspect-ratio.js")).href);
   const { compactGlobalTasks, indexGlobalTasks } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
+  const videoTask = await import(pathToFileURL(join(outDir, "video-task.js")).href);
+  const videoParameterMode = await import(pathToFileURL(join(outDir, "video-parameter-mode.js")).href);
   const nodeRuntime = await import(pathToFileURL(join(outDir, "node-runtime-contract.js")).href);
   const configButler = await import(pathToFileURL(join(outDir, "config-butler.js")).href);
-  const { WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS } = await import(pathToFileURL(join(outDir, "jixin-catalog.js")).href);
+  const { WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS, WANJUAN_JIXIN_BUILTIN_PROTOCOLS, WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS, wanjuanMergeJixinVideoProtocolDefaults } = await import(pathToFileURL(join(outDir, "jixin-catalog.js")).href);
   const {
     WANJUAN_TIANJI_DEFAULT_BASE_URL,
     WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
@@ -107,6 +110,50 @@ async function run() {
     "reference grid merge image is not duplicated",
     wanjuanCollectNodeReferenceMedia({ type: "gridMergeNode", data: { imageUrl: "https://cdn/merged.png" } }),
     { images: ["https://cdn/merged.png"], videos: [] }
+  );
+  check(
+    "reference prefers matching local project binding over expiring public URL",
+    wanjuanCollectNodeReferenceMedia({
+      type: "imageNode",
+      data: {
+        imageUrl: "https://temporary.example.com/result.png",
+        projectAssetBindings: {
+          imageUrl: {
+            ok: true,
+            missing: false,
+            localPath: "/Users/test/project/result.png",
+            sourceSignature: "https://temporary.example.com/result.png"
+          }
+        }
+      }
+    }),
+    { images: ["file:///Users/test/project/result.png"], videos: [] }
+  );
+  check(
+    "reference ignores missing local project binding",
+    wanjuanCollectNodeReferenceMedia({
+      type: "imageNode",
+      data: {
+        imageUrl: "https://cdn.example.com/result.png",
+        projectAssetBindings: {
+          imageUrl: { ok: true, missing: true, localPath: "/Users/test/project/missing.png", sourceSignature: "https://cdn.example.com/result.png" }
+        }
+      }
+    }),
+    { images: ["https://cdn.example.com/result.png"], videos: [] }
+  );
+  check(
+    "reference does not reuse binding from an older generated result",
+    wanjuanCollectNodeReferenceMedia({
+      type: "imageNode",
+      data: {
+        imageUrl: "https://cdn.example.com/new-result.png",
+        projectAssetBindings: {
+          imageUrl: { ok: true, missing: false, localPath: "/Users/test/project/old-result.png", sourceSignature: "https://cdn.example.com/old-result.png" }
+        }
+      }
+    }),
+    { images: ["https://cdn.example.com/new-result.png"], videos: [] }
   );
   check(
     "reference selected video frame excludes source video",
@@ -165,6 +212,38 @@ async function run() {
   check("size normalize", normalizeVideoSizeValue("1280 x 720"), "1280x720");
   check("size fallback", normalizeVideoSizeValue("nope"), "1280x720");
   check("jixin unified video contains wan t2v", WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS.includes("wan2.7-t2v-1080P"), true);
+  check("jixin unified video contains grok image video", WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS.includes("grok-image-video"), true);
+  check("jixin grok image video protocol binding", WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS["grok-image-video"], "极鑫 Grok Image Video 兼容");
+  check(
+    "jixin grok image video protocol uses scalar reference and dynamic controls",
+    WANJUAN_JIXIN_BUILTIN_PROTOCOLS["极鑫 Grok Image Video 兼容"],
+    {
+      category: "video",
+      parameterMode: "exact-resolution",
+      requestType: "openai-video",
+      submitPath: "/v1/videos",
+      pollPath: "/v1/videos/{taskId}",
+      contentPath: "/v1/videos/{taskId}/content",
+      authType: "bearer",
+      contentType: "application/json",
+      referenceImageMode: "field",
+      referenceImageAsArray: false,
+      referenceImageItemShape: "string",
+      fieldMapping: { model: "model", prompt: "prompt", resolution: "size", aspectRatio: "", duration: "seconds", referenceImage: "image", referenceVideo: "" },
+      fieldValueTypes: { seconds: "string", size: "string" },
+      parameterAdapter: { resolutionValueMode: "dimension", aspectRatioValueMode: "omit" },
+      responseMapping: { video: ["video_url", "videoUrl", "data.video_url", "data.videoUrl", "data.0.url", "output.video_url", "result.video_url", "url"], taskId: ["id", "task_id", "data.id", "data.task_id"], status: ["status", "data.status", "state"], completedValues: ["completed", "complete", "success", "succeeded"], failedValues: ["failed", "error", "fail"] }
+    }
+  );
+  check("jixin legacy grok binding migrates", wanjuanMergeJixinVideoProtocolDefaults({ "grok-image-video": "极鑫 Grok Image Video JSON" }, WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS)["grok-image-video"], "极鑫 Grok Image Video 兼容");
+  check(
+    "wan video edit aggregates video before image into one reference sequence",
+    videoTask.wanjuanBuildReferenceMediaEntries([{ url: "https://cdn/image.png" }], ["https://cdn/video.mp4"], { kinds: ["image", "video"], order: "video-first" }),
+    [{ kind: "video", value: "https://cdn/video.mp4" }, { kind: "image", value: "https://cdn/image.png" }]
+  );
+  check("video parameter mode resolves ratio quality", videoParameterMode.wanjuanResolveVideoParameterMode({ parameterAdapter: { resolutionValueMode: "aspect-ratio", aspectRatioValueMode: "omit" } }), "ratio-quality");
+  check("video parameter mode resolves exact dimensions", videoParameterMode.wanjuanResolveVideoParameterMode({ parameterAdapter: { resolutionValueMode: "dimension" } }), "exact-resolution");
+  check("video parameter mode resolves follow source", videoParameterMode.wanjuanResolveVideoParameterMode({ parameterAdapter: { resolutionValueMode: "omit", aspectRatioValueMode: "omit" } }), "follow-source");
 
   // config butler: tool hints must specialize per model, and fallback/invalid
   // results must not be selected for import automatically.
@@ -182,6 +261,135 @@ async function run() {
     "configButler specializes text request type",
     configButler.specializeConfigButlerToolContext(butlerContext, { modelName: "demo-chat", category: "text" }).inferredRequestType,
     "openai-chat"
+  );
+  const referencedOpenApiContext = configButler.buildConfigButlerToolContext(
+    JSON.stringify({
+      openapi: "3.0.0",
+      paths: {
+        "/v1/videos": {
+          post: {
+            requestBody: {
+              content: {
+                "application/json": { schema: { $ref: "#/components/schemas/VideoRequest" } }
+              }
+            },
+            responses: { "200": { description: "ok" } }
+          }
+        }
+      },
+      components: {
+        schemas: {
+          VideoRequest: {
+            type: "object",
+            allOf: [
+              { type: "object", properties: { model: { type: "string" }, prompt: { type: "string" } } },
+              { type: "object", properties: { seconds: { type: "string" }, size: { type: "string" }, input_reference: { type: "string" } } }
+            ]
+          }
+        }
+      }
+    }),
+    "https://docs.example.com/openapi.json",
+    { modelName: "configurable-video-model", category: "video", apiUrl: "https://api.example.com" }
+  );
+  check(
+    "configButler resolves referenced video request fields",
+    configButler.getButlerDocFieldsForPath(referencedOpenApiContext, "/v1/videos"),
+    ["model", "prompt", "seconds", "size", "input_reference"]
+  );
+  check("configButler resolves referenced video request field types", configButler.getButlerDocFieldTypesForPath(referencedOpenApiContext, "/v1/videos").input_reference, "string");
+  const repairedVideoProtocol = configButler.validateAndRepairConfigButlerResult({
+    modelName: "configurable-video-model",
+    category: "video",
+    protocol: {
+      name: "OpenAI 视频兼容",
+      config: {
+        category: "video",
+        requestType: "openai-video",
+        submitPath: "/v1/videos",
+        pollPath: "/v1/videos/{taskId}",
+        fieldMapping: {
+          model: "model",
+          prompt: "prompt",
+          duration: "seconds",
+          resolution: "size",
+          aspectRatio: "",
+          referenceImage: "input_reference"
+        }
+      }
+    }
+  }, {
+    modelName: "configurable-video-model",
+    category: "video",
+    apiUrl: "https://api.example.com",
+    toolContext: configButler.buildConfigButlerToolContext(
+      "POST /v1/videos\n请求体示例只展示 model、prompt 和 input_reference，其他可选参数请参考完整 schema。",
+      "https://docs.example.com/partial",
+      { modelName: "configurable-video-model", category: "video", apiUrl: "https://api.example.com" }
+    )
+  });
+  check("configButler partial docs preserve duration mapping", repairedVideoProtocol.protocol.config.fieldMapping.duration, "seconds");
+  check("configButler partial docs preserve resolution mapping", repairedVideoProtocol.protocol.config.fieldMapping.resolution, "size");
+  check("configButler partial docs do not force omit duration", repairedVideoProtocol.protocol.config.omitDuration === true, false);
+  const noEvidenceVideoProtocol = configButler.validateAndRepairConfigButlerResult({
+    modelName: "configurable-video-model",
+    category: "video",
+    protocol: { name: "OpenAI 视频兼容", config: { category: "video", requestType: "openai-video", submitPath: "/v1/videos", pollPath: "/v1/videos/{taskId}", fieldMapping: { referenceImage: "image", duration: "seconds", resolution: "size" }, referenceImageMode: "field", referenceImageAsArray: true } }
+  }, { modelName: "configurable-video-model", category: "video", apiUrl: "https://api.example.com", toolContext: configButler.buildConfigButlerToolContext("plain text without endpoint schema", "https://docs.example.com", { category: "video" }) });
+  check("configButler no-evidence OpenAI video preserves inferred reference field", noEvidenceVideoProtocol.protocol.config.fieldMapping.referenceImage, "image");
+  check("configButler no-evidence OpenAI video uses scalar reference", noEvidenceVideoProtocol.protocol.config.referenceImageAsArray, false);
+  check("configButler dry-run includes scalar reference", noEvidenceVideoProtocol.dryRun.requestBody.image, "https://example.com/reference.png");
+  const aliasVideoFields = configButler.inferButlerVideoFieldMapping({
+    openApi: { endpoints: [{ path: "/generate", requestKeys: ["model_id", "description", "duration_seconds", "dimensions", "ratio", "image_url"] }] },
+    curlExamples: []
+  }, "/generate", {});
+  check(
+    "configButler recognizes configurable video field aliases",
+    aliasVideoFields.inferred,
+    { model: "model_id", prompt: "description", duration: "duration_seconds", resolution: "dimensions", aspectRatio: "ratio", referenceImage: "image_url" }
+  );
+  check(
+    "configButler recognizes text protocol fields",
+    configButler.inferButlerProtocolFieldMapping({ openApi: { endpoints: [{ path: "/v1/responses", requestKeys: ["model", "input", "instructions", "max_output_tokens"] }] }, curlExamples: [] }, "/v1/responses", "text", "openai-responses", {}).inferred,
+    { model: "model", input: "input", system: "instructions", maxTokens: "max_output_tokens" }
+  );
+  check(
+    "configButler recognizes image protocol fields",
+    configButler.inferButlerProtocolFieldMapping({ openApi: { endpoints: [{ path: "/images/generations", requestKeys: ["model_name", "description", "num_images", "image_size", "aspect_ratio", "reference_images"] }] }, curlExamples: [] }, "/images/generations", "image", "openai-images", {}).inferred,
+    { model: "model_name", prompt: "description", count: "num_images", size: "image_size", aspectRatio: "aspect_ratio", referenceImage: "reference_images" }
+  );
+  check(
+    "configButler recognizes audio speech protocol fields",
+    configButler.inferButlerProtocolFieldMapping({ openApi: { endpoints: [{ path: "/audio/speech", requestKeys: ["model", "text", "voice_id", "audio_format", "rate"] }] }, curlExamples: [] }, "/audio/speech", "audio", "openai-audio-speech", {}).inferred,
+    { model: "model", prompt: "text", input: "text", voice: "voice_id", format: "audio_format", speed: "rate" }
+  );
+  check(
+    "configButler recognizes music protocol fields",
+    configButler.inferButlerProtocolFieldMapping({ openApi: { endpoints: [{ path: "/music/generate", requestKeys: ["model", "lyrics", "song_title", "genre", "instrumental", "reference_audio"] }] }, curlExamples: [] }, "/music/generate", "music", "suno-music", {}).inferred,
+    { model: "model", title: "song_title", tags: "genre", lyrics: "lyrics", instrumental: "instrumental", referenceAudio: "reference_audio" }
+  );
+  check(
+    "configButler warns when all video controls are omitted",
+    configButler.validateButlerProtocolConfig({ category: "video", requestType: "openai-video", submitPath: "/v1/videos", pollPath: "/v1/videos/{taskId}", fieldMapping: { duration: "", resolution: "", aspectRatio: "" } }).warnings.length > 0,
+    true
+  );
+  check(
+    "configButler repair preserves unrelated protocol fields",
+    configButler.mergeButlerProtocolRepair(
+      { fieldMapping: { prompt: "prompt", duration: "seconds", resolution: "size", referenceImage: "input_reference" }, parameterAdapter: { resolutionValueMode: "dimension" } },
+      { fieldMapping: { referenceImage: "image_url", duration: "", resolution: "" } },
+      "input_reference must be a string"
+    ),
+    { fieldMapping: { prompt: "prompt", duration: "seconds", resolution: "size", referenceImage: "image_url" }, parameterAdapter: { resolutionValueMode: "dimension" }, fieldValueTypes: {}, responseMapping: {}, extraBody: {} }
+  );
+  check(
+    "configButler repair may remove explicitly rejected field",
+    configButler.mergeButlerProtocolRepair(
+      { fieldMapping: { prompt: "prompt", duration: "seconds", resolution: "size" } },
+      { fieldMapping: { duration: "" }, omitDuration: true },
+      "unknown parameter seconds"
+    ).fieldMapping.duration,
+    ""
   );
   const fallbackButlerItem = configButler.normalizeButlerBatchItems(
     { models: [] },

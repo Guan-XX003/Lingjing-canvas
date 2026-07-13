@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.7 - 2026-07-13
+
+- Improved large-canvas responsiveness with adaptive full, lightweight, and shell node rendering, stable viewport transitions, and lighter inactive media handling.
+- Replaced the canvas context-menu workflow with a compact bottom node-creation dock and restored the empty-canvas creation guidance.
+- Added ratio/quality and exact-resolution video parameter modes, improved reference image/video/audio uploads, and expanded configurable protocol support for Grok and Wan 2.7 model families.
+- Strengthened Config Butler model-family detection, dry-run validation, error diagnosis, and generated protocol mappings without hard-coding individual user models.
+- Migrated Jimeng Tianji settings from preload DOM injection to a native React panel while preserving configuration sync, group IDs, uploads, asset pagination, and the hidden points actions.
+- Fixed Tianji portrait previews by refreshing expiring signed asset URLs on panel open and keeping a stable fallback preview when the remote image is unavailable.
+- Refined selected states, graphite-theme controls, node prompt placeholders, media result presentation, and task-list deduplication across video, Jimeng, and Wan workflows.
+
 ## 1.3.6 - 2026-07-01
 
 - Realigned built-in Jixin defaults with the LConAI/Zhichuang API docs across text, image, video, Tongyi Wanxiang, Suno, TTS, and ASR modules.

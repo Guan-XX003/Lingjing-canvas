@@ -261,7 +261,8 @@ export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
       let renderMode = props.data?.wanjuanRenderMode || `full`,
         [hovered, setHovered] = useState(!1),
         leaveTimerRef = useRef(0),
-        forceFull = props.selected || props.data?.loading || hovered,
+        renderZoom = Number(props.data?.wanjuanRenderZoom || 1),
+        forceFull = props.selected || props.data?.loading || (hovered && renderZoom > 0.52),
         effectiveRenderMode = renderMode === `shell` && !props.selected && !props.data?.loading ? `shell` :
           renderMode === `lite` && !forceFull ? `lite` : `full`,
         updateNodeInternals = useUpdateNodeInternals();

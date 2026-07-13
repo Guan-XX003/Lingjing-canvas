@@ -613,21 +613,6 @@ export const WanJuanPromptNode = reactMemo(({
                   jsxs(`div`, {
                     className: `flex items-start gap-2`,
                     children: [
-                      extractedResources.images.length === 0 &&
-                      jsxs(`div`, {
-                        className: `w-10 h-10 rounded-md border border-dashed border-[#444] flex flex-col items-center justify-center text-gray-600 bg-[#151515] hover:bg-[#222] hover:border-blue-500 hover:text-blue-500 cursor-pointer transition-colors flex-shrink-0 wanjuan-node-upload-trigger`,
-                        onClick: () => fileInputRef.current?.click(),
-                        title: `上传参考图`,
-                        children: [
-                          jsx(Upload, {
-                            size: 12
-                          }),
-                          jsx(`span`, {
-                            className: `text-[8px] scale-90`,
-                            children: `上传`,
-                          }),
-                        ],
-                      }),
 	                      jsxs(`div`, {
 	                        className: `flex-1 nodrag relative`,
 	                        style: {
@@ -636,7 +621,7 @@ export const WanJuanPromptNode = reactMemo(({
                         children: [
                           jsx(`textarea`, {
                             className: `w-full h-20 bg-transparent text-[15px] text-gray-200 resize-y min-h-[80px] outline-none leading-relaxed placeholder-gray-600 font-sans custom-scrollbar nodrag wanjuan-video-prompt-textarea`,
-                            placeholder: `描述你想要的画面 (输入 @ 调出素材)...`,
+                            placeholder: `输入提示词以开展你的任务`,
                             value: prompt,
 	                            onChange: (event) => {
 	                              let value = event.target.value;

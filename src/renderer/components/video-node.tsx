@@ -23,6 +23,7 @@ import { wanjuanGetSyncedTianjiSeedanceConfig } from "../lib/tianji-api";
 import { wanjuanTianjiFlattenPortraitAssets, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData } from "../lib/tianji-assets";
 import { wanjuanNormalizeTianjiPortraitAssets, wanjuanTianjiPortraitToResource } from "../lib/tianji-portrait";
 import { normalizeVideoAspectRatioValue } from "../lib/video-aspect-ratio";
+import { wanjuanResolveVideoParameterMode, wanjuanVideoParameterModeLabel } from "../lib/video-parameter-mode";
 import { WanJuanConfigButlerHelp } from "./config-butler-help";
 import { WanJuanNodeHandle } from "./render-mode";
 import { wanjuanRenderResourcePickerHeader, wanjuanRenderResourcePreview } from "./resource-picker";
@@ -172,6 +173,7 @@ export const WanJuanVideoNode = reactMemo(({
         data.selectedResolution :
         firstSeedanceResolution,
 	      ),
+	      [selectedVideoQuality, setSelectedVideoQuality] = useState(data.selectedVideoQuality || data.selectedQuality || data.selectedResolution || `720P`),
 	      [selectedModel, _] = useState(() =>
 	        WanJuanGetPreferredModel(activeVideoModelText, activeVideoSelectedModel || ``, void 0, {
 	          manual: activeVideoModelManual,
@@ -425,7 +427,17 @@ export const WanJuanVideoNode = reactMemo(({
         () => document.removeEventListener(`keydown`, handleKeyDown, !0)
       );
     }, [isFullscreen]));
-    let videoResolutionOptions = data.videoResolutions ?
+    let selectedVideoProtocolName = data.videoModelProtocolBindings?.[selectedModel] || ``,
+      selectedVideoProtocol = selectedVideoProtocolName && data.modelProtocolRegistry?.[selectedVideoProtocolName] && typeof data.modelProtocolRegistry[selectedVideoProtocolName] === `object` ? data.modelProtocolRegistry[selectedVideoProtocolName] : {},
+      inferredVideoParameterMode = wanjuanResolveVideoParameterMode(selectedVideoProtocol),
+      videoParameterMode = isSeedanceOrWanxiang ? `ratio-quality` : data.videoParameterMode || inferredVideoParameterMode,
+      videoParameterModeOptions = [
+        { value: `ratio-quality`, label: `比例与清晰度` },
+        { value: `exact-resolution`, label: `精确分辨率` },
+      ],
+      videoQualityOptions = (Array.isArray(selectedVideoProtocol?.parameterOptions?.qualities) ? selectedVideoProtocol.parameterOptions.qualities : [`480P`, `720P`, `1080P`]).map((quality) => ({ label: String(quality), value: String(quality) })),
+      qualityModelVariants = selectedVideoProtocol?.qualityModelVariants && typeof selectedVideoProtocol.qualityModelVariants === `object` ? selectedVideoProtocol.qualityModelVariants : {},
+      videoResolutionOptions = data.videoResolutions ?
       parseSeedanceList(data.videoResolutions).map((value) => ({
         label: value,
         value: value,
@@ -808,15 +820,17 @@ export const WanJuanVideoNode = reactMemo(({
         data.onShowToast?.(`请输入提示词或连接参考节点`);
         return;
       }
+      let requestResolution = isSeedanceOrWanxiang ? String(size || `16:9`).trim() || `16:9` : videoParameterMode === `exact-resolution` ? String(size || `1280x720`).trim() : selectedVideoQuality || String(size || `1280x720`).trim(),
+        requestAspectRatio = isSeedanceOrWanxiang ? String(size || `16:9`).trim() || `16:9` : selectedAspectRatio;
       data.onGenerateVideo?.(
         nodeId,
         prompt,
-        isSeedanceOrWanxiang ? String(size || `16:9`).trim() || `16:9` : String(size || `1280x720`).trim(),
+        requestResolution,
         selectedModel,
         String(selectedSeconds || firstVideoDuration).split(/[\s,，、]+/)[0]?.trim() ||
         firstVideoDuration,
         isSeedanceOrWanxiang && seedanceModeValue !== `tianji` ? seedanceApiConfigId || void 0 : void 0,
-        isSeedanceOrWanxiang ? String(size || `16:9`).trim() || `16:9` : selectedAspectRatio,
+        requestAspectRatio,
       );
     };
     let addSeedanceVirtualPortraitToNode = (portrait, index = 0) => {
@@ -1562,31 +1576,15 @@ export const WanJuanVideoNode = reactMemo(({
                   jsxs(`div`, {
                     className: `flex items-start gap-2`,
                     children: [
-                      contextResources.images.length === 0 &&
-                      !(isSeedanceOrWanxiang && !isTongyiWanxiang) &&
-                      jsxs(`div`, {
-                        className: `w-10 h-10 rounded-md border border-dashed border-[#444] flex flex-col items-center justify-center text-gray-600 bg-[#151515] hover:bg-[#222] hover:border-blue-500 hover:text-blue-500 cursor-pointer transition-colors flex-shrink-0 wanjuan-node-upload-trigger`,
-                        onClick: () => fileInputRef.current?.click(),
-                        title: `上传参考图`,
-                        children: [
-                          jsx(Upload, {
-                            size: 12
-                          }),
-                          jsx(`span`, {
-                            className: `text-[8px] scale-90`,
-                            children: `上传`,
-                          }),
-                        ],
-                      }),
 	                      jsxs(`div`, {
 	                        className: `flex-1 nodrag relative flex flex-col`,
 	                        children: [
 	                          seedanceModeToggle,
 	                          jsx(`textarea`, {
 	                            className: `block w-full h-20 bg-transparent text-[15px] text-gray-200 resize-y min-h-[80px] outline-none leading-relaxed placeholder-gray-600 font-sans custom-scrollbar nodrag wanjuan-video-prompt-textarea`,
-                            placeholder: isSeedanceOrWanxiang ?
+                            placeholder: isSeedanceOrWanxiang && !isTongyiWanxiang ?
                               `描述视频，可输入 @图片1 / @视频1 / @音频1 调用多参...` :
-                              `描述你想要的视频内容 (输入 @ 调出素材)...`,
+                              `输入提示词以开展你的任务`,
 		                            value: prompt,
 		                            onChange: (event) => {
 	                              let value = event.target.value;
@@ -1856,7 +1854,7 @@ export const WanJuanVideoNode = reactMemo(({
 	                            onClick: (event) => {
 	                              (event.stopPropagation(), setSeedanceApiMenuOpen(!1), setIsMentionPickerOpen(!1), T(!1), j(!1), setSeedancePortraitPickerOpen(!1), setMenuOpen(!menuOpen));
 	                            },
-                            title: isSeedanceOrWanxiang ? `选择比例和时长` : `选择分辨率和时长`,
+	                            title: isSeedanceOrWanxiang ? `选择比例和时长` : `${wanjuanVideoParameterModeLabel(videoParameterMode)}参数`,
                             children: [
                               jsx(Square, {
                                 size: 12,
@@ -1864,7 +1862,7 @@ export const WanJuanVideoNode = reactMemo(({
                               }),
                               jsxs(`span`, {
                                 className: `truncate`,
-                                children: isSeedanceOrWanxiang ?
+	                                children: isSeedanceOrWanxiang ?
                                   [
                                     size || `16:9`,
                                     ` · `,
@@ -1874,12 +1872,13 @@ export const WanJuanVideoNode = reactMemo(({
                                     String(selectedSeconds || firstVideoDuration).trim().toLowerCase() === `auto` ?
                                     `auto` :
                                     `${selectedSeconds || firstVideoDuration}s`,
-                                  ] :
-                                  [
-                                    String(size || `1280x720`).trim(),
-                                    ` · `,
-                                    selectedAspectRatio,
-                                    ` · `,
+	                                  ] : videoParameterMode === `ratio-quality` ?
+	                                  [selectedAspectRatio, ` · `, selectedVideoQuality, ` · `, `${selectedSeconds || firstVideoDuration}s`] :
+	                                  videoParameterMode === `follow-source` ?
+	                                  [wanjuanVideoParameterModeLabel(videoParameterMode), Object.keys(qualityModelVariants).length ? ` · ${selectedVideoQuality}` : ``, ` · ${selectedSeconds || firstVideoDuration}s`] :
+	                                  [
+	                                    String(size || `1280x720`).trim(),
+	                                    ` · `,
                                     String(selectedSeconds || firstVideoDuration).trim().toLowerCase() === `auto` ?
                                     `auto` :
                                     `${selectedSeconds || firstVideoDuration}s`,
@@ -1894,12 +1893,26 @@ export const WanJuanVideoNode = reactMemo(({
 	                              zIndex: 13000
 	                            },
 	                            onClick: (event) => event.stopPropagation(),
-                            children: [
-                              isTongyiWanxiang &&
-                              jsxs(`div`, {
-                                children: [
-                                  jsx(`div`, {
-                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
+	                            children: [
+	                              !isSeedanceOrWanxiang &&
+	                              jsxs(`div`, {
+	                                children: [
+	                                  jsx(`div`, { className: `text-[10px] text-gray-500 mb-2 px-1`, children: `参数方式` }),
+	                                  jsx(`div`, {
+	                                    className: `grid grid-cols-1 gap-1.5`,
+	                                    children: videoParameterModeOptions.map((modeOption) => jsx(`button`, {
+	                                      className: `px-3 py-1.5 text-[11px] rounded-md border transition-colors wanjuan-node-popover-option ${videoParameterMode === modeOption.value ? `bg-blue-600 border-blue-400 text-white wanjuan-node-popover-option-active` : `bg-[#1c1c1c] border-[#333] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
+	                                      onClick: () => updateNodeData(nodeId, { videoParameterMode: modeOption.value }),
+	                                      children: modeOption.label,
+	                                    }, modeOption.value)),
+	                                  }),
+	                                ],
+	                              }),
+	                              isTongyiWanxiang &&
+	                              jsxs(`div`, {
+	                                children: [
+	                                  jsx(`div`, {
+	                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
                                     children: `模式`,
                                   }),
                                   jsx(`div`, {
@@ -1938,11 +1951,11 @@ export const WanJuanVideoNode = reactMemo(({
                                   }),
                                 ],
                               }),
-                              jsxs(`div`, {
-                                children: [
-                                  jsx(`div`, {
-                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
-                                    children: isSeedanceOrWanxiang ? `比例` : `分辨率`,
+	                              (isSeedanceOrWanxiang || videoParameterMode === `exact-resolution`) && jsxs(`div`, {
+	                                children: [
+	                                  jsx(`div`, {
+	                                    className: `text-[10px] text-gray-500 mb-2 px-1`,
+		                                    children: isSeedanceOrWanxiang ? `比例` : `精确分辨率`,
                                   }),
                                   jsx(`div`, {
                                     className: `flex flex-wrap gap-1.5`,
@@ -1965,7 +1978,7 @@ export const WanJuanVideoNode = reactMemo(({
                                   }),
                                 ],
                               }),
-                              !isSeedanceOrWanxiang &&
+	                              !isSeedanceOrWanxiang && videoParameterMode === `ratio-quality` &&
                               videoAspectRatioOptions.length > 0 &&
                               jsxs(`div`, {
                                 children: [
@@ -1996,7 +2009,26 @@ export const WanJuanVideoNode = reactMemo(({
                                   }),
                                 ],
                               }),
-                              isSeedanceOrWanxiang &&
+	                              !isSeedanceOrWanxiang && (videoParameterMode === `ratio-quality` || (videoParameterMode === `follow-source` && Object.keys(qualityModelVariants).length > 0)) &&
+	                              videoQualityOptions.length > 0 && jsxs(`div`, {
+	                                children: [
+	                                  jsx(`div`, { className: `text-[10px] text-gray-500 mb-2 px-1`, children: `清晰度` }),
+	                                  jsx(`div`, {
+	                                    className: `flex flex-wrap gap-1.5`,
+	                                    children: videoQualityOptions.map((qualityOption) => jsx(`button`, {
+	                                      className: `px-3 py-1.5 text-[11px] rounded-md transition-colors wanjuan-node-popover-option ${selectedVideoQuality === qualityOption.value ? `bg-blue-600 border border-blue-400 text-white wanjuan-node-popover-option-active` : `bg-[#1c1c1c] text-gray-400 hover:bg-[#2a2a2a] hover:text-gray-200`}`,
+	                                      onClick: () => {
+	                                        let variantModel = qualityModelVariants[qualityOption.value];
+	                                        setSelectedVideoQuality(qualityOption.value);
+	                                        variantModel && (_(variantModel), (wanjuanModelManualRef.current = true));
+	                                        updateNodeData(nodeId, { selectedVideoQuality: qualityOption.value, ...(variantModel ? { selectedModel: variantModel, wanjuanModelManual: true, wanjuanModelAuto: false } : {}) });
+	                                      },
+	                                      children: qualityOption.label,
+	                                    }, qualityOption.value)),
+	                                  }),
+	                                ],
+	                              }),
+	                              isSeedanceOrWanxiang &&
                               seedanceResolutionOptions.length > 0 &&
                               jsxs(`div`, {
                                 children: [
@@ -2347,9 +2379,17 @@ export const WanJuanVideoNode = reactMemo(({
 		                                      border: WanJuanNormalizeModelId(selectedModel || data.selectedModel) === WanJuanNormalizeModelId(model) ? `1px solid currentColor` : `1px solid transparent`,
 	                                    },
 	                                    onClick: () => {
-	                                      (_(model),
+	                                      let modelProtocolName = data.videoModelProtocolBindings?.[model] || ``,
+	                                        modelProtocol = modelProtocolName && data.modelProtocolRegistry?.[modelProtocolName] && typeof data.modelProtocolRegistry[modelProtocolName] === `object` ? data.modelProtocolRegistry[modelProtocolName] : {},
+	                                        modelParameterMode = wanjuanResolveVideoParameterMode(modelProtocol),
+	                                        modelQualityVariants = modelProtocol?.qualityModelVariants && typeof modelProtocol.qualityModelVariants === `object` ? modelProtocol.qualityModelVariants : {},
+	                                        matchedQuality = Object.entries(modelQualityVariants).find(([, variantModel]) => WanJuanSameModelId(String(variantModel || ``), model))?.[0] || ``;
+	                                      (matchedQuality && setSelectedVideoQuality(matchedQuality),
+	                                        _(model),
 	                                        updateNodeData(nodeId, {
 	                                          selectedModel: model,
+	                                          videoParameterMode: modelParameterMode,
+	                                          ...(matchedQuality ? { selectedVideoQuality: matchedQuality } : {}),
 	                                          ...(isSeedanceOrWanxiang && !isTongyiWanxiang && seedanceModeValue === `tianji` ? {
 	                                            tianjiSelectedModel: model,
 	                                            tianjiModelManual: !0

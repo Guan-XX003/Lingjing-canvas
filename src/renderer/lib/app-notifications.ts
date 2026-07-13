@@ -50,9 +50,9 @@ export function WanJuanCompareVersions(left: any, right: any) {
 
 export function WanJuanGetAppVersion() {
   try {
-    return chrome?.runtime?.getManifest?.()?.version || `1.3.6`;
+    return chrome?.runtime?.getManifest?.()?.version || `1.3.7`;
   } catch {
-    return `1.3.6`;
+    return `1.3.7`;
   }
 }
 
@@ -199,4 +199,3 @@ export async function WanJuanFetchAppNotifications() {
     return WanJuanNormalizeAppNotifications(await WanJuanFetchAppNotificationJson(WANJUAN_APP_NOTIFICATION_API_FALLBACK_URL));
   }
 }
-
