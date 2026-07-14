@@ -1,8 +1,17 @@
 // 桌面环境补丁域：注入 Chrome shim、项目重命名/切换器、画布压力计、性能档位面板、生成结果自动下载、即梦官方图标与即梦天玑(Tianji)设置面板等渲染进程 DOM 补丁。
 const { ipcRenderer } = require("./runtime.cjs");
 const { PERFORMANCE_PROFILE_STORAGE_KEY, PERFORMANCE_PROFILE_PRESETS } = require("./constants.cjs");
+const { showWanjuanInputDialog } = require("./input-dialog.cjs");
 
 const WANJUAN_OFFICIAL_SITE_URL = "https://lingjing.guancn.uk";
+
+const workspaceTeamBridge = Object.freeze({
+  status: () => ipcRenderer.invoke("wanjuan:workspace-team-status"),
+  start: (payload = {}) => ipcRenderer.invoke("wanjuan:workspace-team-start", payload),
+  stop: () => ipcRenderer.invoke("wanjuan:workspace-team-stop"),
+  updateTemplates: (payload = {}) => ipcRenderer.invoke("wanjuan:workspace-team-update-templates", payload),
+  fetchMember: (payload = {}) => ipcRenderer.invoke("wanjuan:workspace-team-fetch-member", payload),
+});
 
 function installDesktopPatches() {
   if (typeof window !== "undefined") {
@@ -1377,10 +1386,13 @@ function installDesktopPatches() {
     }
   };
   const workspaceTf = (text, values = {}) => {
+    const interpolate = (value) => String(value || "").replace(/\{([A-Za-z0-9_]+)\}/g, (match, key) =>
+      Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match
+    );
     try {
-      return window.wanjuanI18nRuntime?.format?.(text, values) || workspaceT(text);
+      return interpolate(window.wanjuanI18nRuntime?.format?.(text, values) || workspaceT(text));
     } catch {
-      return workspaceT(text);
+      return interpolate(workspaceT(text));
     }
   };
   const workspaceEscapedT = (text) => workspaceEscapeHtml(workspaceT(text));
@@ -1437,7 +1449,7 @@ function installDesktopPatches() {
   };
   const workspaceSyncPublishedTemplates = async (publishedTemplates) => {
     try {
-      await window.wanjuanDesktop?.workspaceTeamUpdateTemplates?.({ templates: publishedTemplates || [] });
+      await workspaceTeamBridge.updateTemplates({ templates: publishedTemplates || [] });
     } catch (error) {
       console.warn("workspace published template sync failed", error);
     }
@@ -1446,13 +1458,13 @@ function installDesktopPatches() {
     const nextData = data || await workspaceReadAll();
     if (!nextData.teamSettings?.enabled) return null;
     try {
-      const statusResult = await Promise.resolve(window.wanjuanDesktop?.workspaceTeamStatus?.()).catch(() => null);
+      const statusResult = await workspaceTeamBridge.status().catch(() => null);
       if (statusResult?.status?.running) {
         await workspaceSyncPublishedTemplates(nextData.publishedTemplates);
         workspaceState.teamServiceError = "";
         return statusResult.status;
       }
-      const startResult = await window.wanjuanDesktop?.workspaceTeamStart?.({
+      const startResult = await workspaceTeamBridge.start({
         ...nextData.teamSettings,
         templates: nextData.publishedTemplates,
       });
@@ -1538,7 +1550,7 @@ function installDesktopPatches() {
       for (let member of members) {
         let address = typeof member === "string" ? member : member.address;
         if (!address) continue;
-        let result = await window.wanjuanDesktop?.workspaceTeamFetchMember?.({ address, timeoutMs: 12000 });
+        let result = await workspaceTeamBridge.fetchMember({ address, timeoutMs: 12000 });
         results.push({
           address,
           name: member.name || result?.manifest?.memberName || address,
@@ -1560,7 +1572,7 @@ function installDesktopPatches() {
       },
       result;
     if (enabled) {
-      result = await window.wanjuanDesktop?.workspaceTeamStart?.({
+      result = await workspaceTeamBridge.start({
         ...teamSettings,
         templates: data.publishedTemplates,
       });
@@ -1571,7 +1583,7 @@ function installDesktopPatches() {
         teamSettings.enabled = false;
       }
     } else {
-      result = await window.wanjuanDesktop?.workspaceTeamStop?.();
+      result = await workspaceTeamBridge.stop();
     }
     await workspaceStorageSet({ workspaceTeamSettings: teamSettings });
     workspaceState.status = result?.status || null;
@@ -3018,7 +3030,7 @@ function installDesktopPatches() {
       null;
     const data = await workspaceReadAll();
     const restoredStatus = workspaceState.activeSpace === "team" ? await workspaceEnsureTeamService(data) : null;
-    const statusResult = restoredStatus ? { ok: true, status: restoredStatus } : await Promise.resolve(window.wanjuanDesktop?.workspaceTeamStatus?.()).catch(() => null);
+    const statusResult = restoredStatus ? { ok: true, status: restoredStatus } : await workspaceTeamBridge.status().catch(() => null);
     if (renderSeq !== workspaceRenderSeq) return;
     workspaceState.status = statusResult?.status || workspaceState.status;
     const query = workspaceState.query.trim().toLowerCase();
@@ -3241,7 +3253,7 @@ function installDesktopPatches() {
         const group = data.groups.find((item) => item.id === groupId);
         if (!group) return;
         if (groupAction === "rename") {
-          const name = await window.wanjuanDesktop?.showInputDialog?.({
+          const name = await showWanjuanInputDialog({
             title: workspaceT("重命名分组"),
             message: workspaceT("输入新的分组名称"),
             defaultValue: group.name || workspaceT("未命名分组"),
@@ -3334,7 +3346,7 @@ function installDesktopPatches() {
         return;
       }
       if (action === "new-group") {
-        const name = await window.wanjuanDesktop?.showInputDialog?.({
+        const name = await showWanjuanInputDialog({
           title: workspaceT("新建分组"),
           message: workspaceT("输入提示词模板分组名称"),
           defaultValue: workspaceT("新分组"),

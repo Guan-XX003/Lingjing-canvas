@@ -40,8 +40,17 @@ function truncateLogValue(value, limit = 2000) {
     : value;
 }
 
+function sanitizeLogString(value) {
+  if (typeof value !== "string") return value;
+  return truncateLogValue(
+    value
+      .replace(/([?&](?:token|access_token|api_key|apikey)=)[^&#\s"']+/gi, "$1[redacted]")
+      .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+  );
+}
+
 function sanitizeLogPayload(payload) {
-  if (!payload || typeof payload !== "object") return truncateLogValue(payload);
+  if (!payload || typeof payload !== "object") return sanitizeLogString(payload);
   if (Array.isArray(payload)) return payload.map((item) => sanitizeLogPayload(item));
   return Object.fromEntries(
     Object.entries(payload).map(([key, value]) => [
