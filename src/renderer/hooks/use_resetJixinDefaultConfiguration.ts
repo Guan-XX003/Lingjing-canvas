@@ -22,7 +22,7 @@ export function use_resetJixinDefaultConfiguration(deps: UseResetJixinDefaultCon
   } = deps;
   const resetJixinDefaultConfiguration = () => {
       let confirmed = window.confirm(
-        `恢复极鑫默认配置会清空当前统一 API、模型列表、模型绑定、协议配置、配置管家和即梦天玑授权信息，需要重新填写 Key。\n\n不会删除画布项目、资源库、智能体、工作空间、下载目录和人像素材库。\n\n确定继续吗？`,
+        `恢复极鑫默认配置会清空当前统一 API、模型列表、模型绑定、协议配置、配置管家和即梦天玑授权信息，需要重新填写 Key。\n\n其他已保存的全局配置会保留，不会删除画布项目、资源库、智能体、工作空间、下载目录和人像素材库。\n\n确定继续吗？`,
       );
       if (!confirmed) return;
       let resetPatch = buildJixinDefaultResetPatch();

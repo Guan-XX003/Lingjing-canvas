@@ -58,7 +58,14 @@ export function use_buildJixinDefaultResetPatch(deps: UseBuildJixinDefaultResetP
             protocolFormat: `auto`,
           }],
         }),
-        builtinStoredConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(baseConfig);
+        builtinStoredConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(baseConfig),
+        foundBuiltinConfig = false,
+        nextStoredGlobalConfigs = (storedGlobalConfigs || []).map((config) => {
+          if (config?.id !== builtinStoredConfig.id) return config;
+          foundBuiltinConfig = true;
+          return builtinStoredConfig;
+        });
+      if (!foundBuiltinConfig) nextStoredGlobalConfigs.unshift(builtinStoredConfig);
       return {
         ...baseConfig,
         apiKey: ``,
@@ -76,7 +83,7 @@ export function use_buildJixinDefaultResetPatch(deps: UseBuildJixinDefaultResetP
         configButlerTargetCategory: `text`,
         configButlerTargetApiConfigId: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
         configButlerRepairHistory: [],
-        storedGlobalConfigs: [builtinStoredConfig],
+        storedGlobalConfigs: nextStoredGlobalConfigs,
         activeStoredGlobalConfigId: builtinStoredConfig.id,
         tianjiSeedanceConfig: wanjuanTianjiSeedanceDefaults,
         tianjiSeedanceSettingsMode: `official`,

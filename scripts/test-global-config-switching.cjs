@@ -308,6 +308,39 @@ async function run() {
     await sleep(1500);
     await assertActiveConfig("custom-preset", "custom-api", customConfig);
 
+    await evaluate(`(() => {
+      const settingsButton = [...document.querySelectorAll('button')].find((item) => item.textContent.replace(/\s+/g, ' ').trim().endsWith('设置'));
+      settingsButton?.click();
+      return !!settingsButton;
+    })()`);
+    await waitFor(`[...document.querySelectorAll('button')].some((item) => item.textContent.includes('API 配置'))`, "settings API tab after restart");
+    await evaluate(`(() => {
+      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('API 配置'));
+      button?.click();
+      return !!button;
+    })()`);
+    await waitFor(`[...document.querySelectorAll('button')].some((item) => item.textContent.includes('恢复默认配置'))`, "restore Jixin control");
+    await evaluate(`(() => {
+      window.confirm = () => true;
+      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('恢复默认配置'));
+      button?.click();
+      return !!button;
+    })()`);
+    await sleep(1000);
+    const resetSnapshot = await readStorage(["activeStoredGlobalConfigId", "storedGlobalConfigs", "apiConfigs"]);
+    if (!resetSnapshot.storedGlobalConfigs?.some((config) => config.id === "custom-preset")) {
+      throw new Error(`Jixin reset deleted the custom preset: ${JSON.stringify(resetSnapshot.storedGlobalConfigs)}`);
+    }
+    if (!resetSnapshot.storedGlobalConfigs?.some((config) => config.id === "builtin-jixin-base")) {
+      throw new Error(`Jixin reset did not preserve the built-in preset: ${JSON.stringify(resetSnapshot.storedGlobalConfigs)}`);
+    }
+    if (resetSnapshot.activeStoredGlobalConfigId !== "builtin-jixin-base") {
+      throw new Error(`Jixin reset did not activate the built-in preset: ${JSON.stringify(resetSnapshot)}`);
+    }
+    if (resetSnapshot.apiConfigs?.length !== 1 || resetSnapshot.apiConfigs[0]?.id !== "jixin-default") {
+      throw new Error(`Jixin reset did not apply the Jixin API snapshot: ${JSON.stringify(resetSnapshot.apiConfigs)}`);
+    }
+
     console.log(JSON.stringify({ ok: true, checks: [
       "custom config survives startup without Jixin model injection",
       "selecting a preset does not apply or persist it",
@@ -315,6 +348,7 @@ async function run() {
       "historical async tasks retain their original poll URL and credentials",
       "rapid consecutive switches keep the last applied config",
       "custom config survives autosave and restart without mixing",
+      "restoring Jixin keeps user-created global presets",
     ] }, null, 2));
   } finally {
     try { ws?.close(); } catch {}
