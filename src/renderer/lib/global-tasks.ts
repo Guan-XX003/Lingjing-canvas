@@ -56,6 +56,61 @@ const taskStatusRank = (task: GlobalTask) => {
 const isActiveGlobalTask = (task: GlobalTask) =>
   task?.status === `running` || task?.status === `pending`;
 
+export const applyRunScopedStateUpdate = <T>(
+  current: T,
+  update: T | ((value: T) => T),
+  isCurrentRun: boolean,
+) => {
+  if (!isCurrentRun) return current;
+  return typeof update === `function`
+    ? (update as (value: T) => T)(current)
+    : update;
+};
+
+export const updateTaskRunningProgress = (task: GlobalTask, progress: number) => {
+  if (task?.status === `completed` || task?.resultUrl) return task;
+  return {
+    ...task,
+    status: `running` as const,
+    progress,
+    errorMsg: undefined,
+  };
+};
+
+export const failGlobalTaskRefresh = (
+  tasks: GlobalTask[],
+  taskId: string,
+  errorMsg: string,
+) =>
+  (Array.isArray(tasks) ? tasks : []).map((task) =>
+    task?.id === taskId
+      ? {
+          ...task,
+          status: `failed` as const,
+          errorMsg,
+          updatedAt: Date.now(),
+        }
+      : task,
+  );
+
+export const supersedeActiveNodeTasks = (
+  tasks: GlobalTask[],
+  nodeId: string,
+  updatedAt = Date.now(),
+) =>
+  (Array.isArray(tasks) ? tasks : []).map((task) =>
+    task?.nodeId === nodeId && isActiveGlobalTask(task)
+      ? {
+          ...task,
+          status: `failed` as const,
+          progress: Number(task.progress || 0),
+          errorMsg: `已被同节点的新任务替代`,
+          supersededByNewRun: true,
+          updatedAt,
+        }
+      : task,
+  );
+
 const shouldMergeNodeTaskRecords = (previousTask: GlobalTask, nextTask: GlobalTask) => {
   let previousUpdatedAt = Number(previousTask?.updatedAt || previousTask?.createdAt || 0),
     nextUpdatedAt = Number(nextTask?.updatedAt || nextTask?.createdAt || 0),

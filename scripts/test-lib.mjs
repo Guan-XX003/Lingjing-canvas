@@ -31,6 +31,8 @@ function compile() {
       join(root, "src/renderer/lib/video-task.ts"),
       join(root, "src/renderer/lib/video-parameter-mode.ts"),
       join(root, "src/renderer/lib/global-tasks.ts"),
+      join(root, "src/renderer/lib/global-config.ts"),
+      join(root, "src/renderer/lib/model-selection.ts"),
       join(root, "src/renderer/lib/config-butler.ts"),
       join(root, "src/renderer/lib/jixin-catalog.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
@@ -61,12 +63,14 @@ async function run() {
   const { wanjuanResourceKind, wanjuanResourceSourceKind } = await import(pathToFileURL(join(outDir, "resource.js")).href);
   const { wanjuanCollectNodeReferenceMedia, wanjuanIsPublicHttpMediaUrl } = await import(pathToFileURL(join(outDir, "reference-media.js")).href);
   const { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } = await import(pathToFileURL(join(outDir, "video-aspect-ratio.js")).href);
-  const { compactGlobalTasks, indexGlobalTasks } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
+  const { applyRunScopedStateUpdate, compactGlobalTasks, failGlobalTaskRefresh, indexGlobalTasks, supersedeActiveNodeTasks, updateTaskRunningProgress } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
+  const { collectTaskCredentialConfigs, isCurrentSettingsSave, replaceGlobalConfigApiConfigs, resolveTaskApiCredential, resolveTaskPollUrl } = await import(pathToFileURL(join(outDir, "global-config.js")).href);
+  const { WanJuanShouldAutoPreferredModel } = await import(pathToFileURL(join(outDir, "model-selection.js")).href);
   const videoTask = await import(pathToFileURL(join(outDir, "video-task.js")).href);
   const videoParameterMode = await import(pathToFileURL(join(outDir, "video-parameter-mode.js")).href);
   const nodeRuntime = await import(pathToFileURL(join(outDir, "node-runtime-contract.js")).href);
   const configButler = await import(pathToFileURL(join(outDir, "config-butler.js")).href);
-  const { WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS, WANJUAN_JIXIN_BUILTIN_PROTOCOLS, WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS, wanjuanMergeJixinVideoProtocolDefaults } = await import(pathToFileURL(join(outDir, "jixin-catalog.js")).href);
+  const { WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS, WANJUAN_JIXIN_BUILTIN_PROTOCOLS, WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, wanjuanMergeJixinVideoProtocolDefaults, wanjuanSyncJixinBuiltinStoredGlobalConfig } = await import(pathToFileURL(join(outDir, "jixin-catalog.js")).href);
   const {
     WANJUAN_TIANJI_DEFAULT_BASE_URL,
     WANJUAN_TIANJI_SYNC_SOURCE_JIXIN,
@@ -236,6 +240,29 @@ async function run() {
     }
   );
   check("jixin legacy grok binding migrates", wanjuanMergeJixinVideoProtocolDefaults({ "grok-image-video": "极鑫 Grok Image Video JSON" }, WANJUAN_JIXIN_BUILTIN_VIDEO_PROTOCOL_BINDINGS)["grok-image-video"], "极鑫 Grok Image Video 兼容");
+  const customConfigBeforeJixinMigration = {
+    id: "custom-config",
+    name: "Custom Provider",
+    config: {
+      apiConfigs: [{ id: "custom-api", url: "https://custom.example.com", key: "custom-key" }],
+      videoModel: "custom-video-only",
+      videoModelApiBindings: { "custom-video-only": "custom-api" },
+    },
+  };
+  const migratedJixinSettings = wanjuanSyncJixinBuiltinStoredGlobalConfig({
+    activeStoredGlobalConfigId: "custom-config",
+    apiConfigs: customConfigBeforeJixinMigration.config.apiConfigs,
+    videoModel: "custom-video-only",
+    storedGlobalConfigs: [customConfigBeforeJixinMigration],
+  });
+  const migratedBuiltinJixin = migratedJixinSettings.storedGlobalConfigs.find(
+    (config) => config.id === WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID
+  );
+  check("jixin migration preserves active custom preset", migratedJixinSettings.activeStoredGlobalConfigId, "custom-config");
+  check("jixin migration preserves custom preset snapshot", migratedJixinSettings.storedGlobalConfigs.find((config) => config.id === "custom-config"), customConfigBeforeJixinMigration);
+  check("jixin migration does not import custom video models", String(migratedBuiltinJixin.config.videoModel).includes("custom-video-only"), false);
+  check("jixin migration does not import custom API config", migratedBuiltinJixin.config.apiConfigs.some((config) => config.id === "custom-api"), false);
+  check("jixin migration keeps the builtin API identity", migratedBuiltinJixin.config.apiConfigs[0].id, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID);
   check(
     "wan video edit aggregates video before image into one reference sequence",
     videoTask.wanjuanBuildReferenceMediaEntries([{ url: "https://cdn/image.png" }], ["https://cdn/video.mp4"], { kinds: ["image", "video"], order: "video-first" }),
@@ -412,6 +439,110 @@ async function run() {
   )[0];
   check("configButler invalid protocol disabled", invalidButlerItem.enabled, false);
 
+  check(
+    "stored global API configs replace rather than mix providers",
+    replaceGlobalConfigApiConfigs([
+      { id: "custom", name: "Custom", url: "https://custom.example.com", key: "custom-key" },
+    ]),
+    [
+      {
+        id: "custom",
+        name: "Custom",
+        url: "https://custom.example.com",
+        key: "custom-key",
+        protocolFormat: "auto",
+      },
+    ]
+  );
+  check(
+    "manual model resets when switched config no longer contains it",
+    WanJuanShouldAutoPreferredModel("jixin-video-a\njixin-video-b", "custom-video-x", { manual: true }),
+    true
+  );
+  check(
+    "manual model remains when switched config still contains it",
+    WanJuanShouldAutoPreferredModel("jixin-video-a\njixin-video-b", "jixin-video-b", { manual: true }),
+    false
+  );
+  check(
+    "task refresh does not send an old provider task with the current provider key",
+    resolveTaskApiCredential({
+      apiConfigs: [{ id: "jixin", url: "https://jixing.example.com", key: "jixin-key" }],
+      taskApiConfigId: "custom",
+      taskApiBaseUrl: "https://custom.example.com",
+      currentApiUrl: "https://jixing.example.com",
+      currentApiKey: "jixin-key",
+    }),
+    {
+      baseUrl: "https://custom.example.com",
+      key: "",
+      matchedConfig: null,
+      missingOriginalConfig: true,
+    }
+  );
+  check(
+    "task refresh may reuse the current key when the original base URL is unchanged",
+    resolveTaskApiCredential({
+      apiConfigs: [{ id: "jixin-new-id", url: "https://jixing.example.com", key: "new-key" }],
+      taskApiConfigId: "jixin-old-id",
+      taskApiBaseUrl: "https://jixing.example.com/",
+      currentApiUrl: "https://jixing.example.com",
+      currentApiKey: "new-key",
+    }),
+    {
+      baseUrl: "https://jixing.example.com",
+      key: "new-key",
+      matchedConfig: {
+        id: "jixin-new-id",
+        url: "https://jixing.example.com",
+        key: "new-key",
+      },
+      missingOriginalConfig: false,
+    }
+  );
+  check(
+    "task refresh can find credentials in an inactive stored global config",
+    collectTaskCredentialConfigs(
+      [{ id: "jixin", url: "https://jixing.example.com", key: "jixin-key" }],
+      [{
+        id: "custom-preset",
+        config: {
+          apiConfigs: [{ id: "custom", url: "https://custom.example.com", key: "custom-key" }],
+        },
+      }]
+    ).map(({ id, url, key }) => ({ id, url, key })),
+    [
+      { id: "jixin", url: "https://jixing.example.com", key: "jixin-key" },
+      { id: "custom", url: "https://custom.example.com", key: "custom-key" },
+    ]
+  );
+  check(
+    "async video refresh reuses the exact poll URL captured at submission",
+    resolveTaskPollUrl({
+      baseUrl: "https://new-active.example.com",
+      pollPath: "/v1/videos/{taskId}",
+      storedPollUrl: "https://original.example.com/jobs/remote-123",
+      taskId: "remote-123",
+    }),
+    "https://original.example.com/jobs/remote-123"
+  );
+  check("older async settings save cannot overwrite a newer config", isCurrentSettingsSave(12, 11), false);
+  check("latest async settings save may commit", isCurrentSettingsSave(12, 12), true);
+  check(
+    "task credential matching does not confuse identical API ids across presets",
+    resolveTaskApiCredential({
+      apiConfigs: [
+        { id: "default", url: "https://active.example.com", key: "active-key" },
+        { id: "default", url: "https://original.example.com", key: "original-key" },
+      ],
+      taskApiConfigId: "default",
+      taskApiBaseUrl: "https://original.example.com",
+      currentApiUrl: "https://active.example.com",
+      currentApiKey: "active-key",
+    }).key,
+    "original-key"
+  );
+
   // global task de-dupe: manual stop/status changes should not create duplicate active rows,
   // but completed results and a new generation after stop must stay visible.
   check(
@@ -511,6 +642,69 @@ async function run() {
     ]).map((task) => task.id),
     ["task-new-2", "task-stopped-1"]
   );
+  check(
+    "globalTasks supersedes an older active run on the same node",
+    supersedeActiveNodeTasks(
+      [
+        { id: "old-active", nodeId: "n1", status: "running", progress: 12 },
+        { id: "other-node", nodeId: "n2", status: "running", progress: 40 },
+        { id: "old-done", nodeId: "n1", status: "completed", progress: 100 },
+      ],
+      "n1",
+      5000
+    ).map((task) => ({
+      id: task.id,
+      status: task.status,
+      progress: task.progress,
+      errorMsg: task.errorMsg,
+      supersededByNewRun: task.supersededByNewRun,
+      updatedAt: task.updatedAt,
+    })),
+    [
+      {
+        id: "old-active",
+        status: "failed",
+        progress: 12,
+        errorMsg: "已被同节点的新任务替代",
+        supersededByNewRun: true,
+        updatedAt: 5000,
+      },
+      {
+        id: "other-node",
+        status: "running",
+        progress: 40,
+      },
+      {
+        id: "old-done",
+        status: "completed",
+        progress: 100,
+      },
+    ]
+  );
+  check(
+    "stale video run cannot restore progress after being superseded",
+    applyRunScopedStateUpdate(
+      [{ id: "old-active", status: "failed", progress: 12, supersededByNewRun: true }],
+      (tasks) => tasks.map((task) => ({ ...task, status: "running", progress: 40 })),
+      false
+    ),
+    [{ id: "old-active", status: "failed", progress: 12, supersededByNewRun: true }]
+  );
+  check(
+    "running task progress clears an earlier error message",
+    updateTaskRunningProgress(
+      { id: "retrying", status: "failed", progress: 0, errorMsg: "old provider error" },
+      12
+    ),
+    { id: "retrying", status: "running", progress: 12, errorMsg: undefined }
+  );
+  const refreshFailureTasks = failGlobalTaskRefresh(
+    [{ id: "remote-video", status: "running", progress: 87 }],
+    "remote-video",
+    "任务查询认证失败（401）"
+  );
+  check("401 refresh failure stops automatic task polling", refreshFailureTasks[0].status, "failed");
+  check("401 refresh failure replaces stale progress error", refreshFailureTasks[0].errorMsg, "任务查询认证失败（401）");
   const indexedTasks = Array.from({ length: 1200 }, (_, index) => ({
     id: `indexed-task-${index}`,
     projectId: `p${index % 3}`,

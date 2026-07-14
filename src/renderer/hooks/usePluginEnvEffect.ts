@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { ApiBindings, ProtocolBindings, Ref, SetAny, SetState, StoredGlobalConfig, Toast, TransitResource, WjEdge } from "../lib/app-types";
-import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
+import { WANJUAN_BUILTIN_AGENT_ITEMS, WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_DOC_URL, wanjuanApplyJixinBuiltinProtocolPatch, wanjuanApplySeedanceOptionDefaults, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig, wanjuanCloneBuiltinAgentConversations, wanjuanCloneBuiltinAgentItems, wanjuanHasUserAgentConfiguration, wanjuanHasUserModelConfiguration, wanjuanIsLegacyJixinDocUrl, wanjuanMergeModelText, wanjuanSyncJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { WanJuanNormalizePerformanceProfile } from "../lib/performance-profile";
 import { compactGlobalTasks } from "../lib/app-root-helpers";
 import { normalizeThemeMode } from "../lib/app-utils";
@@ -548,7 +548,8 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                   Object.keys(jixinDocUrlStoragePatch).length > 0 &&
                     typeof chrome < `u` &&
                     chrome.storage?.local?.set(jixinDocUrlStoragePatch);
-	                  let storedAdvancedSettingsUnlocked = true;
+	                  let storedAdvancedSettingsUnlocked = true,
+	                    hasSetting = (key) => Object.prototype.hasOwnProperty.call(settings, key);
                   (Array.isArray(settings.apiConfigs) &&
                     (() => {
                       let normalizedApiConfigs = normalizeUnifiedApiConfigs(settings.apiConfigs);
@@ -559,11 +560,11 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                         });
                     })(),
 
-                    settings.textApiConfigId && setTextApiConfigId(settings.textApiConfigId),
+	                    hasSetting(`textApiConfigId`) && setTextApiConfigId(settings.textApiConfigId || ``),
                     storedAdvancedSettingsUnlocked && setAdvancedSettingsUnlocked(true),
-                    settings.imageApiConfigId && setImageApiConfigId(settings.imageApiConfigId),
-                    settings.videoApiConfigId && setVideoApiConfigId(settings.videoApiConfigId),
-                    settings.audioApiConfigId && setAudioApiConfigId(settings.audioApiConfigId),
+                    hasSetting(`imageApiConfigId`) && setImageApiConfigId(settings.imageApiConfigId || ``),
+                    hasSetting(`videoApiConfigId`) && setVideoApiConfigId(settings.videoApiConfigId || ``),
+                    hasSetting(`audioApiConfigId`) && setAudioApiConfigId(settings.audioApiConfigId || ``),
                     settings.globalPollingInterval !== undefined &&
                     setPollingInterval(settings.globalPollingInterval),
                     settings.globalMaxPollingDuration !== undefined &&
@@ -578,22 +579,22 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     ),
                     settings.wanjuanPerformanceProfile &&
                     setPerformanceProfile(WanJuanNormalizePerformanceProfile(settings.wanjuanPerformanceProfile)),
-                    settings.textApiUrl ? setTextApiUrl(settings.textApiUrl) : settings.apiUrl && setTextApiUrl(settings.apiUrl),
-                    settings.textApiKey ? setTextApiKey(settings.textApiKey) : settings.apiKey && setTextApiKey(settings.apiKey),
-                    settings.imageApiUrl ?
-                    setImageApiUrl(settings.imageApiUrl) :
+                    hasSetting(`textApiUrl`) ? setTextApiUrl(settings.textApiUrl || ``) : settings.apiUrl && setTextApiUrl(settings.apiUrl),
+                    hasSetting(`textApiKey`) ? setTextApiKey(settings.textApiKey || ``) : settings.apiKey && setTextApiKey(settings.apiKey),
+                    hasSetting(`imageApiUrl`) ?
+                    setImageApiUrl(settings.imageApiUrl || ``) :
                     settings.apiUrl && setImageApiUrl(settings.apiUrl),
-                    settings.imageApiKey ?
-                    setImageApiKey(settings.imageApiKey) :
+                    hasSetting(`imageApiKey`) ?
+                    setImageApiKey(settings.imageApiKey || ``) :
                     settings.apiKey && setImageApiKey(settings.apiKey),
-                    settings.videoApiUrl && setVideoApiUrl(settings.videoApiUrl),
-                    settings.videoApiKey && setVideoApiKey(settings.videoApiKey),
-                    settings.audioApiUrl && setAudioApiUrl(settings.audioApiUrl),
-                    settings.audioApiKey && setAudioApiKey(settings.audioApiKey),
-                    settings.textModel && _e(settings.textModel),
-	                    settings.drawingModel && setImageModels(settings.drawingModel),
-	                    settings.imageCompatResolutions &&
-	                    setImageCompatResolutions(settings.imageCompatResolutions),
+                    hasSetting(`videoApiUrl`) && setVideoApiUrl(settings.videoApiUrl || ``),
+                    hasSetting(`videoApiKey`) && setVideoApiKey(settings.videoApiKey || ``),
+                    hasSetting(`audioApiUrl`) && setAudioApiUrl(settings.audioApiUrl || ``),
+                    hasSetting(`audioApiKey`) && setAudioApiKey(settings.audioApiKey || ``),
+                    hasSetting(`textModel`) && _e(settings.textModel || ``),
+	                    hasSetting(`drawingModel`) && setImageModels(settings.drawingModel || ``),
+	                    hasSetting(`imageCompatResolutions`) &&
+	                    setImageCompatResolutions(settings.imageCompatResolutions || ``),
 		                    (() => {
 		                      let repairedSettings = repairXSeeVeoReferenceVideoBindings(settings, settings.videoApiUrl || ``);
 		                      (repairedSettings.modelProtocolRegistry &&
@@ -654,29 +655,29 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
 	                          storedGlobalConfigs: normalizedGlobalConfigs,
 	                        }));
 	                    })(),
-                    settings.activeStoredGlobalConfigId &&
-                    setActiveStoredGlobalConfigId(settings.activeStoredGlobalConfigId),
-                    settings.videoModel && setVideoModels(wanjuanMergeModelText(settings.videoModel, WANJUAN_JIXIN_BUILTIN_UNIFIED_VIDEO_MODELS)),
-                    settings.videoDurations && setVideoDurations(settings.videoDurations),
-                    settings.videoResolutions &&
-                    setVideoResolutions(settings.videoResolutions),
-                    settings.videoAspectRatios &&
-                    setVideoAspectRatios(settings.videoAspectRatios),
-                    settings.videoModelRequestProfiles &&
+                    hasSetting(`activeStoredGlobalConfigId`) &&
+                    setActiveStoredGlobalConfigId(settings.activeStoredGlobalConfigId || ``),
+                    hasSetting(`videoModel`) && setVideoModels(settings.videoModel || ``),
+                    hasSetting(`videoDurations`) && setVideoDurations(settings.videoDurations || ``),
+                    hasSetting(`videoResolutions`) &&
+                    setVideoResolutions(settings.videoResolutions || ``),
+                    hasSetting(`videoAspectRatios`) &&
+                    setVideoAspectRatios(settings.videoAspectRatios || ``),
+                    hasSetting(`videoModelRequestProfiles`) &&
                     setVideoModelRequestProfilesText(
                       typeof settings.videoModelRequestProfiles == `string` ?
                       settings.videoModelRequestProfiles :
-                      JSON.stringify(settings.videoModelRequestProfiles, null, 2),
+                      JSON.stringify(settings.videoModelRequestProfiles || {}, null, 2),
                     ),
-                    settings.seedanceModel && setSeedanceModel(settings.seedanceModel),
-                    settings.tianjiSeedanceModel ?
-                    setTianjiSeedanceModel(settings.tianjiSeedanceModel) :
+                    hasSetting(`seedanceModel`) && setSeedanceModel(settings.seedanceModel || ``),
+                    hasSetting(`tianjiSeedanceModel`) ?
+                    setTianjiSeedanceModel(settings.tianjiSeedanceModel || ``) :
                     setTianjiSeedanceModel(wanjuanMergeModelText(WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS)),
-                    settings.seedanceDurations &&
-                    setSeedanceDurations(settings.seedanceDurations),
-                    settings.seedanceResolutions &&
-                    setSeedanceResolutions(settings.seedanceResolutions),
-                    settings.seedanceRatios && setSeedanceRatios(settings.seedanceRatios),
+                    hasSetting(`seedanceDurations`) &&
+                    setSeedanceDurations(settings.seedanceDurations || ``),
+                    hasSetting(`seedanceResolutions`) &&
+                    setSeedanceResolutions(settings.seedanceResolutions || ``),
+                    hasSetting(`seedanceRatios`) && setSeedanceRatios(settings.seedanceRatios || ``),
                     settings.seedanceGenerateAudio !== undefined &&
                     setSeedanceGenerateAudio(settings.seedanceGenerateAudio),
                     settings.seedanceWatermark !== undefined &&
@@ -693,22 +694,22 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                       `tianji` :
                       `official`,
                     ),
-                    settings.tongyiWanxiangTextModels &&
-                    setTongyiWanxiangTextModels(settings.tongyiWanxiangTextModels),
-                    settings.tongyiWanxiangReferenceImageModels &&
+                    hasSetting(`tongyiWanxiangTextModels`) &&
+                    setTongyiWanxiangTextModels(settings.tongyiWanxiangTextModels || ``),
+                    hasSetting(`tongyiWanxiangReferenceImageModels`) &&
                     setTongyiWanxiangReferenceImageModels(
-                      settings.tongyiWanxiangReferenceImageModels,
+                      settings.tongyiWanxiangReferenceImageModels || ``,
                     ),
-                    settings.tongyiWanxiangImageModels &&
-                    setTongyiWanxiangImageModels(settings.tongyiWanxiangImageModels),
-                    settings.tongyiWanxiangEditModels &&
-                    setTongyiWanxiangEditModels(settings.tongyiWanxiangEditModels),
-                    settings.tongyiWanxiangDurations &&
-                    setTongyiWanxiangDurations(settings.tongyiWanxiangDurations),
-                    settings.tongyiWanxiangResolutions &&
-                    setTongyiWanxiangResolutions(settings.tongyiWanxiangResolutions),
-                    settings.tongyiWanxiangRatios &&
-                    setTongyiWanxiangRatios(settings.tongyiWanxiangRatios),
+                    hasSetting(`tongyiWanxiangImageModels`) &&
+                    setTongyiWanxiangImageModels(settings.tongyiWanxiangImageModels || ``),
+                    hasSetting(`tongyiWanxiangEditModels`) &&
+                    setTongyiWanxiangEditModels(settings.tongyiWanxiangEditModels || ``),
+                    hasSetting(`tongyiWanxiangDurations`) &&
+                    setTongyiWanxiangDurations(settings.tongyiWanxiangDurations || ``),
+                    hasSetting(`tongyiWanxiangResolutions`) &&
+                    setTongyiWanxiangResolutions(settings.tongyiWanxiangResolutions || ``),
+                    hasSetting(`tongyiWanxiangRatios`) &&
+                    setTongyiWanxiangRatios(settings.tongyiWanxiangRatios || ``),
                     settings.seedanceUploadMode &&
                     setSeedanceUploadMode(settings.seedanceUploadMode),
                     settings.tosConfig &&
@@ -744,8 +745,8 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     Array.isArray(settings.backupExportSelection) &&
                     settings.backupExportSelection.length > 0 &&
                     setBackupExportSelection(settings.backupExportSelection),
-                    settings.audioModel && setAudioModels(settings.audioModel),
-                    settings.ttsMusicModel && setTtsMusicModel(settings.ttsMusicModel),
+                    hasSetting(`audioModel`) && setAudioModels(settings.audioModel || ``),
+                    hasSetting(`ttsMusicModel`) && setTtsMusicModel(settings.ttsMusicModel || ``),
                     Array.isArray(settings.agents) &&
                     settings.agents.length > 0 &&
                     setAgentItems(settings.agents),

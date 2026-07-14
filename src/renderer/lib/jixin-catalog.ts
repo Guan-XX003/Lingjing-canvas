@@ -1046,7 +1046,27 @@ export const wanjuanBuildJixinBuiltinStoredGlobalConfig = (config: any) => ({
 });
 export const wanjuanSyncJixinBuiltinStoredGlobalConfig = (settings: any = {}) => {
   let currentConfigs = Array.isArray(settings.storedGlobalConfigs) ? settings.storedGlobalConfigs : [],
-    builtinConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(wanjuanBuildJixinBuiltinBasePatch(settings)),
+    existingBuiltinConfig = currentConfigs.find((config) => config?.id === WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID),
+    activeJixinApiConfig = (Array.isArray(settings.apiConfigs) ? settings.apiConfigs : []).find(
+      (config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+    ),
+    storedJixinApiConfig = (Array.isArray(existingBuiltinConfig?.config?.apiConfigs) ? existingBuiltinConfig.config.apiConfigs : []).find(
+      (config) => config?.id === WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+    ),
+    builtinConfig = wanjuanBuildJixinBuiltinStoredGlobalConfig(
+      wanjuanBuildJixinBuiltinBasePatch({
+        apiConfigs: [
+          activeJixinApiConfig ||
+          storedJixinApiConfig || {
+            id: WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID,
+            name: `极鑫`,
+            url: WANJUAN_JIXIN_DEFAULT_API_URL,
+            key: ``,
+            protocolFormat: `auto`,
+          },
+        ],
+      }),
+    ),
     found = !1,
     nextConfigs = currentConfigs.map((config) => {
       if (config?.id !== WANJUAN_JIXIN_BUILTIN_GLOBAL_CONFIG_ID) return config;

@@ -14,6 +14,7 @@ import { WanJuanGetPreferredModel } from "../lib/model-favorites";
 import { wanjuanNormalizeSeedanceAssetId, wanjuanSeedanceAssetUrl } from "../lib/seedance";
 import { wanjuanRunTianjiSeedanceVideo } from "../lib/tianji-api";
 import { wanjuanBuildReferenceMediaEntries } from "../lib/video-task";
+import { applyRunScopedStateUpdate, supersedeActiveNodeTasks, updateTaskRunningProgress } from "../lib/global-tasks";
 
 interface UseVideoGenerationDeps {
   videoApiKey: any;
@@ -66,7 +67,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
     showToast,
     getNodes,
     getEdges,
-    setNodes,
+    setNodes: setNodesRaw,
     addGeneratedAsset,
     membership,
     abortControllersRef,
@@ -77,12 +78,25 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
     projectIdRef,
     qiniuConfig,
     setDailyGenerationCount,
-    setEdges,
+    setEdges: setEdgesRaw,
     timeoutSeconds,
-    updateTaskList,
+    updateTaskList: updateTaskListRaw,
   } = deps;
   const generateVideo = useCallback(
       async (nodeId, prompt, resolution = `1280x720`, modelName2, duration, apiBindingId, aspectRatioOverride) => {
+          let previousController = abortControllersRef.current.get(nodeId);
+          if (previousController && !previousController.signal?.aborted) previousController.abort();
+          abortControllersRef.current.delete(nodeId);
+          updateTaskListRaw && updateTaskListRaw((tasks) => supersedeActiveNodeTasks(tasks, nodeId));
+          let videoRunTokens = globalThis.__wanjuanVideoRunTokens || (globalThis.__wanjuanVideoRunTokens = new Map()),
+            videoRunToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            isCurrentVideoRun = () => videoRunTokens.get(nodeId) === videoRunToken;
+          videoRunTokens.set(nodeId, videoRunToken);
+          const runScopedSetState = (setter, update) =>
+              setter?.((current) => applyRunScopedStateUpdate(current, update, isCurrentVideoRun())),
+            setNodes = (update) => runScopedSetState(setNodesRaw, update),
+            setEdges = (update) => runScopedSetState(setEdgesRaw, update),
+            updateTaskList = (update) => runScopedSetState(updateTaskListRaw, update);
           let dailyLimitKey = `daily-limit-${new Date().toISOString().split(`T`)[0]}`,
             dailyCount = parseInt(localStorage.getItem(dailyLimitKey) || `0`);
           let normalizeApiBase = (rawBaseUrl) =>
@@ -940,11 +954,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     updateTaskList((nodes3) =>
                       nodes3.map((node) =>
                         node.id === taskId ?
-                        {
-                          ...node,
-                          status: `running`,
-                          progress: tongyiProgress
-                        } :
+                        updateTaskRunningProgress(node, tongyiProgress) :
                         node,
                       ),
                     ),
@@ -1888,13 +1898,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                         updateTaskList((nodes3) =>
                           nodes3.map((node) =>
                             node.id === taskId ?
-                            node.status === `completed` || node.resultUrl ?
-                            node :
-                            {
-                              ...node,
-                              status: `running`,
-                              progress: progress
-                            } :
+                            updateTaskRunningProgress(node, progress) :
                             node,
                           ),
                         ));
@@ -2763,11 +2767,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                       updateTaskList((nodes3) =>
                         nodes3.map((node) =>
                           node.id === taskId ?
-                          {
-                            ...node,
-                            status: `running`,
-                            progress: progress
-                          } :
+                          updateTaskRunningProgress(node, progress) :
                           node,
                         ),
                       ),
@@ -3288,13 +3288,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                       updateTaskList((nodes3) =>
                           nodes3.map((node) =>
                             node.id === taskId ?
-                            node.status === `completed` || node.resultUrl ?
-                            node :
-                            {
-                              ...node,
-                              status: `running`,
-                            progress: progress
-                          } :
+                            updateTaskRunningProgress(node, progress) :
                           node,
                         ),
                       ),
@@ -3326,12 +3320,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
             }
           } catch (error) {
             let shouldApplyVideoError =
-              !createdVideoTaskId ||
+              isCurrentVideoRun() && (!createdVideoTaskId ||
               (nodesRef.current || []).some(
                 (node) =>
                   node.id === nodeId &&
                   (node.data?.seedanceTaskId === createdVideoTaskId || node.data?.taskId === createdVideoTaskId),
-              );
+              ));
             (console.error(error),
               error.name !== `AbortError` &&
               (showToast(error.message || `生成失败，请检查网络或配置`),
@@ -3398,13 +3392,14 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 ))));
           } finally {
             let shouldFinalizeVideoGeneration =
-              !createdVideoTaskId ||
+              isCurrentVideoRun() && (!createdVideoTaskId ||
               (nodesRef.current || []).some(
                 (node) =>
                   node.id === nodeId &&
                   (node.data?.seedanceTaskId === createdVideoTaskId || node.data?.taskId === createdVideoTaskId),
-              );
+              ));
             (shouldFinalizeVideoGeneration && abortControllersRef.current.delete(nodeId),
+              shouldFinalizeVideoGeneration && videoRunTokens.delete(nodeId),
               shouldFinalizeVideoGeneration &&
               setEdges((edges2) =>
                 edges2.map((edge) => (edge.target === nodeId ? {
@@ -3431,7 +3426,9 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
           showToast,
           getNodes,
           getEdges,
-          setNodes,
+          setNodesRaw,
+          setEdgesRaw,
+          updateTaskListRaw,
           addGeneratedAsset,
           membership,
         ],

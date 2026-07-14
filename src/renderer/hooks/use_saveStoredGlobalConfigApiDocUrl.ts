@@ -5,6 +5,7 @@ import { useCallback, useMemo } from "react";
 import type { SetAny, StoredGlobalConfig, Toast } from "../lib/app-types";
 
 interface UseSaveStoredGlobalConfigApiDocUrlDeps {
+  activeStoredGlobalConfigId: any;
   persistStoredGlobalConfigs: any;
   setConfigButlerDocUrl: SetAny;
   showToast2: Toast;
@@ -14,6 +15,7 @@ interface UseSaveStoredGlobalConfigApiDocUrlDeps {
 
 export function use_saveStoredGlobalConfigApiDocUrl(deps: UseSaveStoredGlobalConfigApiDocUrlDeps) {
   const {
+    activeStoredGlobalConfigId,
     persistStoredGlobalConfigs,
     setConfigButlerDocUrl,
     showToast2,
@@ -39,8 +41,8 @@ export function use_saveStoredGlobalConfigApiDocUrl(deps: UseSaveStoredGlobalCon
           },
         } : config,
       );
-      (persistStoredGlobalConfigs(updatedConfigs, configId),
-        setConfigButlerDocUrl(apiDocUrl),
+      (persistStoredGlobalConfigs(updatedConfigs),
+        configId === activeStoredGlobalConfigId && setConfigButlerDocUrl(apiDocUrl),
         showToast2(apiDocUrl ? `已保存 ${targetConfig.name} 的 API 文档链接` : `已清空 ${targetConfig.name} 的 API 文档链接`));
     };
   return { saveStoredGlobalConfigApiDocUrl };

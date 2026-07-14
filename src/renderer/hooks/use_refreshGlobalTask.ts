@@ -3,12 +3,14 @@
  * refreshGlobalTask。自 bundle 抽出，逐字搬运、行为不变。
  */
 import { useCallback, useMemo } from "react";
-import type { ApiBindings, ApiConfig, Toast } from "../lib/app-types";
+import type { ApiBindings, ApiConfig, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { WanJuanSunoHeaders, WanJuanSunoTaskFailed, WanJuanSunoTaskSucceeded, WanJuanTtsMusicApiUrl, WanJuanTtsMusicExtractAudio, WanJuanTtsMusicExtractClipId, WanJuanTtsMusicExtractTaskId, WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
 import { wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
 import { wanjuanTaskUsesSeedanceSlot } from "../lib/video-task";
+import { collectTaskCredentialConfigs, resolveTaskApiCredential, resolveTaskPollUrl } from "../lib/global-config";
+import { failGlobalTaskRefresh } from "../lib/global-tasks";
 declare const chrome: any;
 
 interface UseRefreshGlobalTaskDeps {
@@ -26,6 +28,7 @@ interface UseRefreshGlobalTaskDeps {
   videoApiUrl: any;
   videoModelApiBindings: ApiBindings;
   globalTasks: any;
+  storedGlobalConfigs: StoredGlobalConfig[];
 }
 
 export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
@@ -44,9 +47,29 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
     videoApiUrl,
     videoModelApiBindings,
     globalTasks,
+    storedGlobalConfigs,
   } = deps;
   const refreshGlobalTask = async (task, manualRefreshOptions = {}) => {
 	                let notify = manualRefreshOptions?.silent === true ? () => {} : showToast2;
+	                const taskCredentialConfigs = collectTaskCredentialConfigs(apiConfigs, storedGlobalConfigs);
+	                const markRefreshFailed = (message) => {
+	                  updateGlobalTasks((tasks) => failGlobalTaskRefresh(tasks, task.id, message));
+	                  task.nodeId &&
+	                    Send((nodes) =>
+	                      nodes.map((node) =>
+	                        node.id === task.nodeId
+	                          ? {
+	                              ...node,
+	                              data: {
+	                                ...node.data,
+	                                loading: false,
+	                                errorMessage: message,
+	                              },
+	                            }
+	                          : node,
+	                      ),
+	                    );
+	                };
 	                try {
                     if (task.type === `audio` || task.customOutputType === `audio`) {
                       let audioUrl = WanJuanTtsMusicTaskAudioUrl(task);
@@ -102,8 +125,18 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           apiConfigs.find((config) => /zhichuang|智创|聚合|suno|lconai/i.test(`${config?.id || ``} ${config?.name || ``} ${config?.url || ``}`)) ||
                           apiConfigs.find((config) => config?.id === `default`) ||
                           null,
-                          sunoApiUrl = task.apiBaseUrl || matchedAudioConfig?.url || audioApiUrl,
-                          sunoApiKey = matchedAudioConfig?.key || audioApiKey;
+                          audioTaskCredential = resolveTaskApiCredential({
+                            apiConfigs: taskCredentialConfigs,
+                            taskApiConfigId: task.apiConfigId,
+                            taskApiBaseUrl: task.apiBaseUrl,
+                            boundApiConfigId: matchedAudioConfig?.id,
+                            currentApiUrl: audioApiUrl,
+                            currentApiKey: audioApiKey,
+                          }),
+                          sunoApiUrl = audioTaskCredential.baseUrl,
+                          sunoApiKey = audioTaskCredential.key;
+                        if (audioTaskCredential.missingOriginalConfig)
+                          throw Error(`任务原始 API 配置已不存在，无法安全刷新；请恢复对应全局配置后重试`);
                         if (looksLikeSunoTask && sunoApiUrl && sunoApiKey) {
                           let response = await fetch(WanJuanTtsMusicApiUrl(sunoApiUrl, `/suno/fetch/${encodeURIComponent(task.remoteTaskId)}`), {
                             method: `GET`,
@@ -436,14 +469,24 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                         imageBaseMatchedConfig = task.apiBaseUrl ?
                         apiConfigs.find((apiConfig) => normalizeImageBaseUrl(apiConfig.url) === normalizeImageBaseUrl(task.apiBaseUrl)) :
                         null,
-                        imageTaskKey = imageTaskConfig?.key || imageBaseMatchedConfig?.key || imageApiKey,
-                        imageTaskBaseUrl = (task.apiBaseUrl || imageTaskConfig?.url || imageBaseMatchedConfig?.url || imageApiUrl || ``).replace(/\s+/g, ``).replace(/\/$/, ``),
+                        imageTaskCredential = resolveTaskApiCredential({
+                          apiConfigs: taskCredentialConfigs,
+                          taskApiConfigId: task.apiConfigId,
+                          taskApiBaseUrl: task.apiBaseUrl,
+                          boundApiConfigId: imageTaskConfig?.id || imageBaseMatchedConfig?.id,
+                          currentApiUrl: imageApiUrl,
+                          currentApiKey: imageApiKey,
+                        }),
+                        imageTaskKey = imageTaskCredential.key,
+                        imageTaskBaseUrl = imageTaskCredential.baseUrl,
                         imageRequestProfile = task.requestProfile || {},
                         isAsyncImageTask =
                         imageRequestProfile.requestType === `gpt-image-2-async` ||
                         task.remoteTaskId ||
                         /\/api\/async\/image_gpt/i.test(imageTaskBaseUrl);
 	                      if (isAsyncImageTask) {
+	                        if (imageTaskCredential.missingOriginalConfig)
+	                          throw Error(`任务原始 API 配置已不存在，无法安全刷新；请恢复对应全局配置后重试`);
 	                        if (!task.remoteTaskId) {
 	                          if (task.status === `running` || task.status === `pending`) {
 		                            notify(`图片任务正在提交或自动生成中，远端任务ID返回后可手动刷新`);
@@ -541,6 +584,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                                 ...task2,
                                 status: `running`,
                                 progress: task2.progress || task.progress || 0,
+                                errorMsg: undefined,
                               } :
                               task2,
                             ),
@@ -630,6 +674,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                               ...taskItem,
                               status: `running`,
                               progress: isNaN(progress) ? taskItem.progress || 0 : Math.min(99, Math.max(0, progress)),
+                              errorMsg: undefined,
                             } :
                             taskItem,
                           ),
@@ -647,7 +692,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           `${base}/${path2.replace(/^\/+/, ``)}` :
                           base;
                       },
-                      taskIdForRequest = task.id,
+                      taskIdForRequest = task.remoteTaskId || task.taskId || task.id,
                       replaceTaskPath = (pathTemplate, taskId) => {
                         let taskUrlTemplate = String(pathTemplate || `/v1/videos/{taskId}`);
                         return /\{(?:taskId|task_id|video_id|id)\}/.test(taskUrlTemplate) ?
@@ -673,13 +718,15 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                       apiBaseMatchedConfig = task.apiBaseUrl ?
                       apiConfigs.find((apiConfig) => normalizeApiBaseUrl(apiConfig.url) === normalizeApiBaseUrl(task.apiBaseUrl)) :
                       null,
-                      baseUrl = isSeedanceTask ?
-                      (task.apiBaseUrl ||
-                        videoTaskConfig?.url ||
-                        apiBaseMatchedConfig?.url ||
-                        seedanceConfig?.url ||
-                        ``).replace(/\s+/g, ``).replace(/\/$/, ``) :
-                      (task.apiBaseUrl || videoTaskConfig?.url || apiBaseMatchedConfig?.url || videoApiUrl).replace(/\s+/g, ``).replace(/\/$/, ``),
+                      videoTaskCredential = resolveTaskApiCredential({
+                        apiConfigs: taskCredentialConfigs,
+                        taskApiConfigId: task.apiConfigId,
+                        taskApiBaseUrl: task.apiBaseUrl,
+                        boundApiConfigId: videoTaskConfig?.id || apiBaseMatchedConfig?.id || (isSeedanceTask ? seedanceConfig?.id : ``),
+                        currentApiUrl: videoApiUrl,
+                        currentApiKey: videoApiKey,
+                      }),
+                      baseUrl = videoTaskCredential.baseUrl,
                       taskBaseUrlForRequest = baseUrl,
                       isXpclawSoraCompatTask = !isSeedanceTask &&
                       /^grok-video/i.test(task.modelName || ``) &&
@@ -687,21 +734,29 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                       contentPathTemplate =
                       requestProfile.contentPath ||
                       (isXpclawSoraCompatTask ? `/v1/videos/{taskId}/content` : ``),
-                      taskKey = isSeedanceTask ?
-                      videoTaskConfig?.key || apiBaseMatchedConfig?.key || seedanceConfig?.key || videoApiKey :
-                      videoTaskConfig?.key || apiBaseMatchedConfig?.key || videoApiKey,
-                      response = await fetch(
-                        isSeedanceTask ?
-                        `${baseUrl}/contents/generations/tasks/${task.id}` :
-                        buildApiUrl(
-                          baseUrl,
-                          replaceTaskPath(requestProfile.pollPath, task.id),
-                        ), {
-                          headers: {
-                            Authorization: `Bearer ${taskKey}`
-                          },
+                      taskKey = videoTaskCredential.key;
+                    if (videoTaskCredential.missingOriginalConfig) {
+                      let message = `任务原始 API 配置已不存在，无法安全刷新；请恢复对应全局配置和 Key 后重试`;
+                      markRefreshFailed(message);
+                      notify(message);
+                      return;
+                    }
+                    const storedPollUrl = String(requestProfile.pollUrl || ``).trim(),
+                      pollUrl = isSeedanceTask
+                        ? `${baseUrl}/contents/generations/tasks/${taskIdForRequest}`
+                        : resolveTaskPollUrl({
+                            baseUrl,
+                            pollPath: requestProfile.pollPath,
+                            storedPollUrl,
+                            taskId: taskIdForRequest,
+                          });
+                    const response = await fetch(
+                      pollUrl, {
+                        headers: {
+                          Authorization: `Bearer ${taskKey}`
                         },
-                      );
+                      },
+                    );
                     if (response.ok) {
                       let data = await response.json(),
                         isCompleted = false,
@@ -1014,8 +1069,8 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                         if (!videoUrl && contentPathTemplate)
                           try {
                             let apiUrl = buildApiUrl(
-                                (task.apiBaseUrl || videoTaskConfig?.url || videoApiUrl).replace(/\s+/g, ``).replace(/\/$/, ``),
-                                replaceTaskPath(contentPathTemplate, task.id),
+                                baseUrl,
+                                replaceTaskPath(contentPathTemplate, taskIdForRequest),
                               ),
                               response2 = await fetch(apiUrl, {
                                 headers: {
@@ -1041,6 +1096,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                             (errorMsg = errorMsg2));
                         } else
                           ((status = `running`),
+                            (errorMsg = undefined),
                             (progress =
                               data.progress !== undefined && data.progress !== null ?
                               parseInt(data.progress) :
@@ -1087,9 +1143,15 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           addResource(resultUrl, `video`, `generated`),
                           thumbnailUrl && addResource(thumbnailUrl, `image`, `generated`)),
 	                        notify(isCompleted ? resultUrl ? `任务已完成，结果已拉回` : `任务已完成，但接口没有返回视频地址` : `状态已刷新`));
+	                    } else if (response.status === 401 || response.status === 403) {
+	                      let message = `任务查询认证失败（${response.status}），请恢复提交该任务时使用的全局配置和 Key 后重试`;
+	                      markRefreshFailed(message);
+	                      notify(message);
 	                    } else notify(`刷新失败: ${response.status}`);
 	                } catch (error) {
-	                  notify(`网络错误: ${error.message}`);
+	                  let message = String(error?.message || error || `未知错误`);
+	                  /任务原始 API 配置已不存在/.test(message) && markRefreshFailed(message);
+	                  notify(`网络错误: ${message}`);
 	                }
 	              };
   return { refreshGlobalTask };

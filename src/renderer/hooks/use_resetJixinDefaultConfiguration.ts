@@ -28,6 +28,7 @@ export function use_resetJixinDefaultConfiguration(deps: UseResetJixinDefaultCon
       let resetPatch = buildJixinDefaultResetPatch();
       apiModelCloudSettingsSaveTimerRef.current &&
         clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
+      apiModelCloudSettingsSaveTimerRef.current = 0;
       applyJixinDefaultResetPatch(resetPatch);
       try {
         window.localStorage?.removeItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY);

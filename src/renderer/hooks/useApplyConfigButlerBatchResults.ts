@@ -12,6 +12,7 @@ declare const chrome: any;
 
 interface UseApplyConfigButlerBatchResultsDeps {
   _e: any;
+  apiModelCloudSettingsSaveTimerRef: any;
   captureCurrentGlobalConfig: any;
   configButlerBatchItems: any;
   configButlerDocUrl: any;
@@ -58,6 +59,7 @@ interface UseApplyConfigButlerBatchResultsDeps {
 export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatchResultsDeps) {
   const {
     _e,
+    apiModelCloudSettingsSaveTimerRef,
     captureCurrentGlobalConfig,
     configButlerBatchItems,
     configButlerDocUrl,
@@ -185,6 +187,10 @@ export function useApplyConfigButlerBatchResults(deps: UseApplyConfigButlerBatch
 	          if (!importedCount) {
 	            showToast2(rejectedItems.length ? `没有可导入的有效模型配置：${rejectedItems[0]}` : `没有可导入的有效模型配置`);
 	            return;
+	          }
+	          if (apiModelCloudSettingsSaveTimerRef?.current) {
+	            clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
+	            apiModelCloudSettingsSaveTimerRef.current = 0;
 	          }
 	          let docUrl = String(options.docUrl || configButlerDocUrl || ``).trim(),
 	            baseConfigName = String(apiConfigName || `配置管家批量配置`).trim() || `配置管家批量配置`,

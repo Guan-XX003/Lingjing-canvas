@@ -8,6 +8,8 @@
  */
 import { useState } from "react";
 import { WanJuanNormalizeModelId, WanJuanSameModelId, WanJuanParseModelList } from "./model-id";
+import { WanJuanShouldAutoPreferredModel } from "./model-selection";
+export { WanJuanShouldAutoPreferredModel } from "./model-selection";
 
 export const WanJuanFavoriteModelStoreKey = `wanjuan.favoriteModels.v1`;
 
@@ -64,13 +66,6 @@ export const WanJuanGetPreferredModel = (modelText, currentModel = ``, favorites
 	      if (rawFirstModel && !WanJuanSameModelId(currentModel, rawFirstModel)) return currentModel;
 	    }
 	    return preferredModel || currentModel || ``;
-	  };
-
-export const WanJuanShouldAutoPreferredModel = (modelText, currentModel = ``, options: any = {}) => {
-	    if (options.manual === !0) return !1;
-	    let models = Array.isArray(modelText) ? modelText.filter(Boolean) : WanJuanParseModelList(modelText),
-	      rawFirstModel = models[0] || ``;
-	    return options.auto === !0 || !currentModel || !models.some((model) => WanJuanSameModelId(model, currentModel)) || !!(rawFirstModel && WanJuanSameModelId(currentModel, rawFirstModel));
 	  };
 
 export const WanJuanUseFavoriteModels = () => {

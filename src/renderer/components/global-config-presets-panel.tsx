@@ -1,5 +1,6 @@
 /** 全局配置预设面板。自 WanJuanAppRoot 抽出，props 传入，行为不变。 */
 import { jsx, jsxs } from "react/jsx-runtime";
+import { useEffect, useState } from "react";
 declare const chrome: any;
 
 export function WanJuanGlobalConfigPresetsPanel({
@@ -12,6 +13,15 @@ export function WanJuanGlobalConfigPresetsPanel({
   setStoredGlobalConfigs,
   storedGlobalConfigs,
 }: any) {
+  const fallbackConfigId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``);
+  const [selectedConfigId, setSelectedConfigId] = useState(fallbackConfigId);
+  useEffect(() => {
+    setSelectedConfigId(activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``));
+  }, [activeStoredGlobalConfigId]);
+  useEffect(() => {
+    if ((storedGlobalConfigs || []).some((config) => config.id === selectedConfigId)) return;
+    setSelectedConfigId(activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``));
+  }, [storedGlobalConfigs, selectedConfigId, activeStoredGlobalConfigId]);
   return jsxs(`div`, {
                                 className: `px-4 pt-4 space-y-3 wanjuan-settings-card-body`,
                                 children: [
@@ -20,12 +30,9 @@ export function WanJuanGlobalConfigPresetsPanel({
                                     children: [
                                       jsx(`select`, {
                                         className: `w-full border rounded-lg px-3 py-2 text-xs focus:outline-none wanjuan-settings-control wanjuan-settings-select`,
-                                        value: activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                        value: selectedConfigId,
                                         onChange: (event) => {
-                                          let selectedId = event.target.value,
-                                            selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === selectedId);
-                                          setActiveStoredGlobalConfigId(selectedId);
-                                          selectedConfig && setConfigButlerDocUrl(String(selectedConfig.apiDocUrl || selectedConfig.config?.apiDocUrl || selectedConfig.config?.configButlerDocUrl || ``));
+                                          setSelectedConfigId(event.target.value);
                                         },
                                         children: (storedGlobalConfigs || []).length ?
                                         (storedGlobalConfigs || []).map((config) =>
@@ -44,7 +51,7 @@ export function WanJuanGlobalConfigPresetsPanel({
                                       }),
                                       jsx(`button`, {
                                         type: `button`,
-                                        onClick: () => applyStoredGlobalConfig(activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``)),
+                                        onClick: () => applyStoredGlobalConfig(selectedConfigId),
                                         disabled: !(storedGlobalConfigs || []).length,
                                         className: `px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors wanjuan-settings-save-button wanjuan-stored-global-config-apply`,
                                         children: `应用配置`,
@@ -57,14 +64,19 @@ export function WanJuanGlobalConfigPresetsPanel({
                                       jsx(`input`, {
                                         className: `w-full border rounded-lg px-3 py-2 text-xs focus:outline-none wanjuan-settings-control`,
                                         value: (() => {
-                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                          let configId = selectedConfigId,
                                             selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
-                                          return String(selectedConfig?.apiDocUrl || selectedConfig?.config?.apiDocUrl || selectedConfig?.config?.configButlerDocUrl || configButlerDocUrl || ``);
+                                          return String(
+                                            selectedConfig?.apiDocUrl ??
+                                            selectedConfig?.config?.apiDocUrl ??
+                                            selectedConfig?.config?.configButlerDocUrl ??
+                                            (configId === activeStoredGlobalConfigId ? configButlerDocUrl : ``) ??
+                                            ``,
+                                          );
                                         })(),
                                         onChange: (event) => {
-                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                          let configId = selectedConfigId,
                                             newValue = String(event.target.value || ``);
-                                          setConfigButlerDocUrl(newValue);
                                           setStoredGlobalConfigs((prev) =>
                                             (prev || []).map((config) =>
                                               config.id === configId ? {
@@ -84,9 +96,16 @@ export function WanJuanGlobalConfigPresetsPanel({
                                       jsx(`button`, {
                                         type: `button`,
                                         onClick: () => {
-                                          let configId = activeStoredGlobalConfigId || ((storedGlobalConfigs || [])[0]?.id || ``),
+                                          let configId = selectedConfigId,
                                             selectedConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
-                                          saveStoredGlobalConfigApiDocUrl(configId, selectedConfig?.apiDocUrl || selectedConfig?.config?.apiDocUrl || selectedConfig?.config?.configButlerDocUrl || configButlerDocUrl || ``);
+                                          saveStoredGlobalConfigApiDocUrl(
+                                            configId,
+                                            selectedConfig?.apiDocUrl ??
+                                              selectedConfig?.config?.apiDocUrl ??
+                                              selectedConfig?.config?.configButlerDocUrl ??
+                                              (configId === activeStoredGlobalConfigId ? configButlerDocUrl : ``) ??
+                                              ``,
+                                          );
                                         },
                                         disabled: !(storedGlobalConfigs || []).length,
                                         className: `px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors wanjuan-settings-button`,

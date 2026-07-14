@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.8 - 2026-07-14
+
+- Isolated the built-in Jixin preset from user-created global batch configurations so APIs, models, bindings, and empty categories are replaced as complete snapshots instead of being merged.
+- Separated preset selection from activation and protected rapid configuration switches from stale asynchronous saves overwriting the latest choice.
+- Preserved each asynchronous task's original polling URL and matching credentials across configuration switches, preventing historical video tasks from incorrectly refreshing with the currently active provider key.
+- Prevented superseded video generations from writing stale progress or results back to the same node, and cleared obsolete error state when a task resumes running.
+- Added targeted regression coverage for startup restoration, preset independence, empty-category replacement, rapid switching, restart persistence, and historical task refresh.
+
 ## 1.3.7 - 2026-07-13
 
 - Improved large-canvas responsiveness with adaptive full, lightweight, and shell node rendering, stable viewport transitions, and lighter inactive media handling.

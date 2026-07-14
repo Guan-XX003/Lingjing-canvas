@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.3.7：优化大画布渲染和媒体节点稳定性，新增底部节点创建栏，完善视频参数、参考上传与配置管家协议识别，并将天玑设置迁移为原生组件。`),
+				                                          children: wanjuanT(`1.3.8：修复全局批量配置与极鑫默认配置串供，确保配置切换完整隔离，并增强异步视频任务凭据恢复和状态一致性。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-				                                          children: `1.3.7`,
+				                                          children: `1.3.8`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

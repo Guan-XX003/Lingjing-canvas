@@ -50,9 +50,9 @@ export function WanJuanCompareVersions(left: any, right: any) {
 
 export function WanJuanGetAppVersion() {
   try {
-    return chrome?.runtime?.getManifest?.()?.version || `1.3.7`;
+    return chrome?.runtime?.getManifest?.()?.version || `1.3.8`;
   } catch {
-    return `1.3.7`;
+    return `1.3.8`;
   }
 }
 

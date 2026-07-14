@@ -447,3 +447,9 @@ html.wanjuan-theme-transitioning *:not(#wanjuan-theme-transition-capture):not(#w
     display: none !important;
   }
 }
+
+/* Keep inactive top-level pages mounted without making Chromium lay out their
+   resource grids, media players, settings forms, and canvas on every click. */
+#root > div > .flex-1.relative.overflow-hidden > .invisible {
+  display: none !important;
+}

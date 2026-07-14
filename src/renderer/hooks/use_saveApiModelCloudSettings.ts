@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, wanjuanMergeModelText } from "../lib/jixin-catalog";
+import { isCurrentSettingsSave } from "../lib/global-config";
 declare const chrome: any;
 
 interface UseSaveApiModelCloudSettingsDeps {
@@ -156,6 +157,7 @@ export function use_saveApiModelCloudSettings(deps: UseSaveApiModelCloudSettings
       apiModelCloudSettingsSaveTimerRef.current &&
         clearTimeout(apiModelCloudSettingsSaveTimerRef.current),
         (apiModelCloudSettingsSaveTimerRef.current = setTimeout(async () => {
+          const scheduledSaveId = apiModelCloudSettingsSaveTimerRef.current;
           let settingsPatch = {
             textApiUrl: textApiUrl,
             textApiKey: textApiKey,
@@ -237,7 +239,9 @@ export function use_saveApiModelCloudSettings(deps: UseSaveApiModelCloudSettings
           } catch (error) {
             console.warn(`Auto sync Tianji config from Jixin API failed`, error);
           }
+          if (!isCurrentSettingsSave(apiModelCloudSettingsSaveTimerRef.current, scheduledSaveId)) return;
           chrome.storage.local.set(settingsPatch);
+          apiModelCloudSettingsSaveTimerRef.current = 0;
         }, 250));
     };
   return { saveApiModelCloudSettings };

@@ -1,28 +1,14 @@
-/**
- * mergeStoredGlobalApiConfigs。自 bundle 抽出，逐字搬运、行为不变。
- */
-import { useCallback, useMemo } from "react";
+/** Stored global configurations replace the active API snapshot in full. */
 import type { ApiConfig } from "../lib/app-types";
-import { cloneBackupValue } from "../lib/backup";
-import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
+import { replaceGlobalConfigApiConfigs } from "../lib/global-config";
 
 interface UseMergeStoredGlobalApiConfigsDeps {
   apiConfigs: ApiConfig[];
 }
 
-export function use_mergeStoredGlobalApiConfigs(deps: UseMergeStoredGlobalApiConfigsDeps) {
-  const {
-    apiConfigs,
-  } = deps;
+export function use_mergeStoredGlobalApiConfigs(_deps: UseMergeStoredGlobalApiConfigsDeps) {
   const mergeStoredGlobalApiConfigs = (value) => {
-      let backupList = Array.isArray(value) ? cloneBackupValue(normalizeUnifiedApiConfigs(value)) : [],
-        firstBackup = backupList[0],
-        allBackups = Array.isArray(apiConfigs) ? cloneBackupValue(normalizeUnifiedApiConfigs(apiConfigs)) : [];
-      if (!firstBackup) return allBackups;
-      return [
-        firstBackup,
-        ...allBackups.slice(1).filter((backup) => backup && backup.id !== firstBackup.id),
-      ];
+      return replaceGlobalConfigApiConfigs(value);
     };
   return { mergeStoredGlobalApiConfigs };
 }

@@ -134,6 +134,18 @@ async function run() {
       throw new Error("Canvas debug API was not installed");
     };
     await waitForDebugApi();
+    const inactivePageRendering = await evaluate(`(() => {
+      const contentRoot = document.querySelector('#root > div > .flex-1.relative.overflow-hidden');
+      return [...(contentRoot?.children || [])]
+        .filter((element) => element.classList.contains('invisible'))
+        .map((element) => ({
+          className: element.className,
+          display: getComputedStyle(element).display,
+        }));
+    })()`);
+    if (inactivePageRendering.length < 2 || inactivePageRendering.some((page) => page.display !== "none")) {
+      throw new Error(`Inactive top-level pages still participate in rendering: ${JSON.stringify(inactivePageRendering)}`);
+    }
     let largeImageResult = null;
     const largeImagePath = String(process.env.WANJUAN_PERF_LARGE_IMAGE || "").trim();
     if (largeImagePath && fs.existsSync(largeImagePath)) {
@@ -279,7 +291,7 @@ async function run() {
     }
     const largeImageSummary = largeImageResult ? { ...largeImageResult } : null;
     if (largeImageSummary?.value) largeImageSummary.value = `[${largeImageSummary.valueFormat || `asset`} omitted]`;
-    console.log(JSON.stringify({ ok: true, largeImageResult: largeImageSummary, idleMutations, idleTaskUtilization, idleSnapshot, results, renderModeTransitions: { compactModeSnapshot, expandedModeSnapshot } }, null, 2));
+    console.log(JSON.stringify({ ok: true, largeImageResult: largeImageSummary, inactivePageRendering, idleMutations, idleTaskUtilization, idleSnapshot, results, renderModeTransitions: { compactModeSnapshot, expandedModeSnapshot } }, null, 2));
   } finally {
     try { ws?.close(); } catch {}
     child.kill("SIGTERM");
