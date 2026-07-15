@@ -267,6 +267,53 @@ export function wanjuanCollectResourceSignatures(resource: any) {
   });
   return signatures;
 }
+export function wanjuanTransitResourceProjectId(resource: any, fallbackProjectId: any = `default`) {
+  let explicitProjectId = String(resource?.projectId || resource?.projectAssetBinding?.projectId || ``).trim();
+  if (explicitProjectId) return explicitProjectId;
+  let pageUrl = String(resource?.pageUrl || ``).trim(),
+    canvasMatch = pageUrl.match(/^canvas:(.+)$/i);
+  return String(canvasMatch?.[1] || fallbackProjectId || `default`).trim() || `default`;
+}
+export function wanjuanTransitResourceNeedsPersistence(resource: any) {
+  if (!resource || wanjuanResourceKind(resource) === `text` || wanjuanResourceSourceKind(resource) !== `generated`) return !1;
+  let mediaUrl = wanjuanResourceMediaUrl(resource),
+    localPath = String(resource?.localPath || resource?.projectAssetBinding?.localPath || ``).trim();
+  return !localPath && /^https?:\/\//i.test(mediaUrl);
+}
+export function wanjuanApplyPersistedTransitResource(resource: any, persisted: any) {
+  let localPath = String(persisted?.localPath || ``).trim();
+  if (!resource || !localPath) return null;
+  let localUrl = buildProjectMediaFileUrl(localPath),
+    kind = wanjuanResourceKind(resource),
+    sourceUrl = wanjuanResourceMediaUrl(resource),
+    nextResource = {
+      ...resource,
+      url: localUrl,
+      localPath,
+      originalUrl: resource.originalUrl || (/^https?:\/\//i.test(sourceUrl) ? sourceUrl : undefined),
+      projectAssetBinding: {
+        ok: true,
+        assetId: persisted.assetId,
+        localPath,
+        filename: persisted.filename,
+        mime: persisted.mime,
+        size: persisted.size,
+        sha256: persisted.sha256,
+        projectId: persisted.projectId,
+        nodeId: persisted.nodeId,
+        field: persisted.field,
+        kind: persisted.kind,
+        savedAt: persisted.savedAt,
+        sourceOrigin: resource.sourceOrigin || resource.source || `generated`,
+        sourceSignature: sourceUrl,
+        valueFormat: `file-url`,
+      },
+    };
+  kind === `video` ? (nextResource.videoUrl = localUrl) :
+  kind === `audio` ? (nextResource.audioUrl = localUrl) :
+  kind === `image` && (nextResource.imageUrl = localUrl);
+  return nextResource;
+}
 export function wanjuanExtractVideoUrlFromValue(value: any) {
   if (!value) return ``;
   if (typeof value == `string`) {
@@ -339,7 +386,10 @@ export function wanjuanBuildGeneratedVideoResourcesFromNodes(nodes: any, existin
       (nodeData.mediaKind === `video` ? wanjuanExtractVideoUrlFromValue(nodeData.imageUrl) : ``);
     if (!videoUrl || existingSignatures.has(videoUrl) || generatedSignatures.has(videoUrl)) return;
     generatedSignatures.add(videoUrl);
-    let posterUrl = String(nodeData.thumbnailUrl || nodeData.posterUrl || nodeData.coverUrl || nodeData.previewImageUrl || ``).trim(),
+    let videoBinding = nodeData.projectAssetBindings?.videoUrl,
+      bindingLocalPath = videoBinding?.ok !== false && videoBinding?.missing !== true ? String(videoBinding?.localPath || ``).trim() : ``,
+      playableVideoUrl = bindingLocalPath ? buildProjectMediaFileUrl(bindingLocalPath) : videoUrl,
+      posterUrl = String(nodeData.thumbnailUrl || nodeData.posterUrl || nodeData.coverUrl || nodeData.previewImageUrl || ``).trim(),
       resourceName = String(
         nodeData.videoName ||
         nodeData.originalName ||
@@ -349,8 +399,13 @@ export function wanjuanBuildGeneratedVideoResourcesFromNodes(nodes: any, existin
       ).trim();
     generatedResources.push({
       id: `generated-video-${node?.id || `node`}-${wanjuanStableResourceIdPart(videoUrl)}`,
-      url: videoUrl,
-      videoUrl: videoUrl,
+      url: playableVideoUrl,
+      videoUrl: playableVideoUrl,
+      ...(bindingLocalPath ? {
+        localPath: bindingLocalPath,
+        originalUrl: videoUrl,
+        projectAssetBinding: { ...videoBinding },
+      } : {}),
       thumbnailUrl: posterUrl,
       type: `video/mp4`,
       timestamp: Date.now(),

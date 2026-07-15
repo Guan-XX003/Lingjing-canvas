@@ -10,9 +10,9 @@ const {
 
 const APP_VERSION = (() => {
   try {
-    return require("../../package.json").version || "1.3.8";
+    return require("../../package.json").version || "1.3.9";
   } catch {
-    return "1.3.8";
+    return "1.3.9";
   }
 })();
 

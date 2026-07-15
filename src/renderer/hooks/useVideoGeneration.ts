@@ -15,6 +15,7 @@ import { wanjuanNormalizeSeedanceAssetId, wanjuanSeedanceAssetUrl } from "../lib
 import { wanjuanRunTianjiSeedanceVideo } from "../lib/tianji-api";
 import { wanjuanBuildReferenceMediaEntries } from "../lib/video-task";
 import { applyRunScopedStateUpdate, supersedeActiveNodeTasks, updateTaskRunningProgress } from "../lib/global-tasks";
+import { wanjuanResolveArkTrustedAssetReference } from "../lib/ark-trusted-assets";
 
 interface UseVideoGenerationDeps {
   videoApiKey: any;
@@ -29,6 +30,8 @@ interface UseVideoGenerationDeps {
   seedanceUploadMode: any;
   tosConfig: any;
   customPublicUploadConfig: any;
+  arkTrustedAssetConfig: any;
+  handleArkTrustedAssetReview: any;
   planLimits: any;
   showToast: Toast;
   getNodes: () => WjNode[];
@@ -63,6 +66,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
     seedanceUploadMode,
     tosConfig,
     customPublicUploadConfig,
+    arkTrustedAssetConfig,
+    handleArkTrustedAssetReview,
     planLimits,
     showToast,
     getNodes,
@@ -355,6 +360,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     seedanceMeta.seedanceAssetId || seedanceMeta.assetId,
                   ),
                   tianjiPortraitAssetId = String(seedanceMeta.tianjiPortraitAssetId || ``).trim(),
+                  arkTrustedAssetId = String(seedanceMeta.arkTrustedAssetId || ``).replace(/^asset:\/\//i, ``).trim(),
                   entry = assetId ?
                   {
                     ...seedanceMeta,
@@ -369,14 +375,21 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     kind: `image`,
                     tianjiPortraitAssetId,
                   } :
+                  arkTrustedAssetId || Object.keys(seedanceMeta).length > 0 ?
+                  {
+                    ...seedanceMeta,
+                    url: value,
+                    kind: `image`,
+                    arkTrustedAssetId: arkTrustedAssetId || undefined,
+                  } :
                   value;
-                if (!value && !assetId && !tianjiPortraitAssetId) return;
+                if (!value && !assetId && !tianjiPortraitAssetId && !arkTrustedAssetId) return;
                 let existingIndex = imageReferences.findIndex((reference) => (typeof reference == `string` ? reference : reference?.url || ``) === value);
                 if (existingIndex >= 0) {
-                  (assetId || tianjiPortraitAssetId) && (imageReferences[existingIndex] = entry);
+                  (assetId || tianjiPortraitAssetId || arkTrustedAssetId || Object.keys(seedanceMeta).length > 0) && (imageReferences[existingIndex] = entry);
                   return;
                 }
-                let seenKey = assetId ? `image:asset:${assetId}` : tianjiPortraitAssetId ? `image:tianji-asset:${tianjiPortraitAssetId}` : `image:${value}`;
+                let seenKey = assetId ? `image:asset:${assetId}` : tianjiPortraitAssetId ? `image:tianji-asset:${tianjiPortraitAssetId}` : arkTrustedAssetId ? `image:ark-asset:${arkTrustedAssetId}` : `image:${value}`;
                 if (wanjuanVideoReferenceSeen.has(seenKey)) return;
                 wanjuanVideoReferenceSeen.add(seenKey);
                 imageReferences.push(entry);
@@ -400,7 +413,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               };
             incomingEdges.forEach((edge) => {
               let sourceNode = nodes2.find((node) => node.id === edge.source);
-              if ([`reviewing`, `pending`, `failed`].includes(sourceNode?.data?.tianjiPortraitBindingStatus)) {
+              if (seedanceSourceNode?.data?.seedanceMode === `tianji` && [`reviewing`, `pending`, `failed`].includes(sourceNode?.data?.tianjiPortraitBindingStatus)) {
                 let fallbackMessage =
                   sourceNode?.data?.tianjiPortraitBindingStatus === `reviewing` ?
                   `天玑人像正在审核中，请等待审核完成后再生成` :
@@ -423,7 +436,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   images: images,
                   videos: videos
                 } = wanjuanCollectNodeReferenceMedia(sourceNode, edge.sourceHandle);
-                (images || []).forEach(addVideoReferenceImage);
+                ![`imageNode`, `promptNode`, `gridMergeNode`].includes(sourceNode.type) &&
+                  (images || []).forEach(addVideoReferenceImage);
                 (videos || []).forEach(addVideoReferenceVideo);
               }
               if (
@@ -433,7 +447,18 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   sourceNode.type === `gridMergeNode`) &&
                 (sourceNode.data.imageUrl || sourceNode.data.seedanceAssetId)
               ) {
-                let imageUrl = sourceNode.data.imageUrl || ``;
+                let imageUrl = sourceNode.data.imageUrl || ``,
+                  arkReferenceMeta = {
+                    arkTrustedAssetId: sourceNode.data.arkTrustedAssetId,
+                    arkTrustedAssetGroupId: sourceNode.data.arkTrustedAssetGroupId,
+                    arkTrustedAssetContentHash: sourceNode.data.arkTrustedAssetContentHash,
+                    arkTrustedAssetSourceUrl: sourceNode.data.arkTrustedAssetSourceUrl,
+                    arkTrustedAssetStatus: sourceNode.data.arkTrustedAssetStatus,
+                    nodeId: sourceNode.id,
+                    label: sourceNode.data.label,
+                    localPath: sourceNode.data.localPath || sourceNode.data.filePath,
+                    filename: sourceNode.data.originalName,
+                  };
                 sourceNode.data.seedanceAssetId ?
                   addVideoReferenceImage(wanjuanSeedanceAssetUrl(sourceNode.data.seedanceAssetId), {
                     seedanceAssetId: sourceNode.data.seedanceAssetId,
@@ -443,6 +468,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   }) :
                   sourceNode.data.tianjiPortraitAssetId ?
                   addVideoReferenceImage(imageUrl, {
+                    ...arkReferenceMeta,
                     tianjiPortraitAssetId: sourceNode.data.tianjiPortraitAssetId,
                     tianjiPortraitGroupType: sourceNode.data.tianjiPortraitGroupType,
                     isTianjiPortrait: true,
@@ -451,6 +477,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   imageUrl.startsWith(`data:image/`) ||
                   /\.(jpg|jpeg|png|webp|gif)($|\?)/i.test(imageUrl) ?
                   addVideoReferenceImage(imageUrl, {
+                    ...arkReferenceMeta,
                     seedanceAssetId: sourceNode.data.seedanceAssetId,
                     virtualPortraitId: sourceNode.data.virtualPortraitId,
                     isSeedanceVirtualPortrait: sourceNode.data.isSeedanceVirtualPortrait,
@@ -1301,6 +1328,21 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                       let url = entry.url.trim();
                       if (!url) return ``;
                       if (/^asset:\/\//i.test(url)) return url;
+                      if (kind === `image`) {
+                        let arkReference = await wanjuanResolveArkTrustedAssetReference({
+                          config: arkTrustedAssetConfig,
+                          entry,
+                          reviewAsset: (reviewUrl, reviewEntry) => handleArkTrustedAssetReview(reviewUrl, {
+                            nodeId: reviewEntry.nodeId,
+                            label: reviewEntry.label || `即梦参考图`,
+                            localPath: reviewEntry.localPath || reviewEntry.filePath,
+                            filename: reviewEntry.filename || reviewEntry.originalName,
+                            silent: true,
+                          }),
+                        });
+                        if (/^asset:\/\//i.test(arkReference.url || ``)) return arkReference.url;
+                        url = String(arkReference.url || url).trim();
+                      }
                       if (!/^https?:\/\//i.test(url)) url = await seedanceUploadPublicMedia(url, kind);
                       if (!seedanceIsArkMediaRef(url)) url = await seedanceUploadPublicMedia(url, kind);
                       if (!url || !seedanceIsArkMediaRef(url))
@@ -3422,6 +3464,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
           seedanceUploadMode,
           tosConfig,
           customPublicUploadConfig,
+          arkTrustedAssetConfig,
+          handleArkTrustedAssetReview,
           planLimits,
           showToast,
           getNodes,

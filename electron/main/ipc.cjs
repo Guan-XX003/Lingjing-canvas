@@ -76,6 +76,7 @@ const {
 } = require("./tools/external-tools.cjs");
 const { uploadToAnonymousHosts, validatePublicMediaUrl } = require("./uploaders/anonymous-hosts.cjs");
 const { uploadToTos, uploadToQiniuS3 } = require("./uploaders/cloud-storage.cjs");
+const { getDefaultArkTrustedAssetService } = require("./uploaders/ark-trusted-assets.cjs");
 const { uploadToCustomPublicHost } = require("./uploaders/custom-host.cjs");
 const { checkForUpdates } = require("./update-checker.cjs");
 const {
@@ -446,6 +447,40 @@ function registerDesktopIpc() {
       console.error("upload-tos-media failed", error);
       return { ok: false, error: String(error?.message || error) };
     }
+  });
+
+  ipcMain.handle("wanjuan:ark-trusted-asset-register", async (event, payload) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:ark-trusted-asset-register");
+    if (blocked) return blocked;
+    try {
+      return await getDefaultArkTrustedAssetService().register(payload || {});
+    } catch (error) {
+      console.error("ark-trusted-asset-register failed", formatErrorMessage(error));
+      return { ok: false, error: formatErrorMessage(error) };
+    }
+  });
+
+  ipcMain.handle("wanjuan:ark-trusted-asset-ensure-group", async (event, payload) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:ark-trusted-asset-ensure-group");
+    if (blocked) return blocked;
+    try {
+      return await getDefaultArkTrustedAssetService().ensureGroup(payload || {});
+    } catch (error) {
+      console.error("ark-trusted-asset-ensure-group failed", formatErrorMessage(error));
+      return { ok: false, error: formatErrorMessage(error) };
+    }
+  });
+
+  ipcMain.handle("wanjuan:ark-trusted-asset-cancel", async (event, requestId) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:ark-trusted-asset-cancel");
+    if (blocked) return blocked;
+    return getDefaultArkTrustedAssetService().cancel(requestId);
+  });
+
+  ipcMain.handle("wanjuan:ark-trusted-asset-clear-cache", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:ark-trusted-asset-clear-cache");
+    if (blocked) return blocked;
+    return getDefaultArkTrustedAssetService().clearCache();
   });
 
   ipcMain.handle("wanjuan:upload-qiniu-media", async (event, payload) => {

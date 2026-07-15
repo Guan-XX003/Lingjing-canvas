@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.9 - 2026-07-15
+
+- Added direct Volcengine Ark trusted-asset review for Seedance official/compatible mode, including manual review, automatic review during generation, caching, and `asset://` reference delivery.
+- Kept Seedance generation provider selection driven by unified API configurations and model bindings; Ark credentials are used only for trusted-asset review.
+- Added a custom blank global configuration that clears API and model identity while preserving saved presets and model parameters.
+- Fixed generated video resources remaining on expiring provider URLs by inheriting existing local bindings, retrying local persistence, and switching both playback URL fields to the saved local file.
+- Added regression coverage for Ark signing/review/cache behavior, global configuration switching, generated-resource persistence, and storage compatibility.
+
 ## 1.3.8 - 2026-07-14
 
 - Isolated the built-in Jixin preset from user-created global batch configurations so APIs, models, bindings, and empty categories are replaced as complete snapshots instead of being merged.

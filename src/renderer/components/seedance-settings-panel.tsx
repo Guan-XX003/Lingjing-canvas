@@ -4,6 +4,7 @@ import { useState } from "react";
 import { wanjuanUseBrokenResourceImage } from "../lib/resource-tabs";
 import { wanjuanSeedanceAssetUrl } from "../lib/seedance";
 import { WanJuanTianjiSettingsNative } from "./tianji-settings-native";
+import { WanJuanArkTrustedAssetsSettingsPanel } from "./ark-trusted-assets-settings-panel";
 declare const chrome: any;
 
 let tianjiPointsUnlockClickCount = 0;
@@ -11,6 +12,7 @@ let tianjiPointsActionsUnlocked = false;
 
 export function WanJuanSeedanceSettingsPanel({
   apiConfigs,
+  arkTrustedAssetConfig,
   applyTianjiSeedanceSettingsMode,
   editSeedancePortrait,
   handleSeedancePortraitFile,
@@ -38,11 +40,14 @@ export function WanJuanSeedanceSettingsPanel({
   setSeedanceRatios,
   setSeedanceResolutions,
   setSeedanceWatermark,
+  setArkTrustedAssetConfig,
   setTianjiSeedanceModel,
   setVideoModelApiBindings,
   tianjiSeedanceModel,
   tianjiSeedanceSettingsMode,
+  tosConfig,
   videoModelApiBindings,
+  showToast2,
 }: any) {
   const [, forceUnlockRender] = useState(0);
   const selectTianjiMode = () => {
@@ -205,6 +210,13 @@ export function WanJuanSeedanceSettingsPanel({
                                         children: `普通模式建议为每个即梦模型选择可调用它的 API 配置；节点里也可以再单独覆盖。`,
                                       }),
                                     ],
+                                  }),
+                                  tianjiSeedanceSettingsMode !== `tianji` &&
+                                  jsx(WanJuanArkTrustedAssetsSettingsPanel, {
+                                    arkTrustedAssetConfig,
+                                    setArkTrustedAssetConfig,
+                                    showToast2,
+                                    tosConfig,
                                   }),
                                   jsxs(`div`, {
                                     className: `grid grid-cols-1 md:grid-cols-3 gap-3`,

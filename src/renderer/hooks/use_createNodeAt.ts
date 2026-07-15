@@ -21,6 +21,7 @@ interface UseCreateNodeAtDeps {
   handleAIAssist: any;
   handleCrop: any;
   handleGenerateCustom: any;
+  handleArkTrustedAssetReview: any;
   handleSplit: any;
   handleSplitOne: any;
   handleTianjiPortraitReview: any;
@@ -36,6 +37,7 @@ interface UseCreateNodeAtDeps {
   addCustomNode: any;
   addGeneratedAsset: any;
   apiConfigs: ApiConfig[];
+  arkTrustedAssetConfig: any;
   audioApiKey: any;
   audioApiUrl: any;
   audioModel: any;
@@ -93,6 +95,7 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
     handleAIAssist,
     handleCrop,
     handleGenerateCustom,
+    handleArkTrustedAssetReview,
     handleSplit,
     handleSplitOne,
     handleTianjiPortraitReview,
@@ -108,6 +111,7 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
     addCustomNode,
     addGeneratedAsset,
     apiConfigs,
+    arkTrustedAssetConfig,
     audioApiKey,
     audioApiUrl,
     audioModel,
@@ -254,6 +258,8 @@ export function use_createNodeAt(deps: UseCreateNodeAtDeps) {
             presetPrompts: presetPrompts,
             onSendToActiveTab: nodeType === `promptNode` || nodeType === `imageNode` ? sendToActiveTab : undefined,
             onTianjiPortraitReview: nodeType === `promptNode` || nodeType === `imageNode` ? handleTianjiPortraitReview : undefined,
+            onArkTrustedAssetReview: nodeType === `promptNode` || nodeType === `imageNode` ? handleArkTrustedAssetReview : undefined,
+            arkTrustedAssetEnabled: nodeType === `promptNode` || nodeType === `imageNode` ? arkTrustedAssetConfig?.enabled === true : undefined,
             seedanceNode: nodeType === `seedanceNode` ? true : undefined,
             tongyiWanxiangNode: nodeType === `tongyiWanxiangNode` ? true : undefined,
             tongyiWanxiangMode: nodeType === `tongyiWanxiangNode` ? `text-to-video` : undefined,

@@ -1,68 +1,49 @@
 /**
- * persistTransitResource。自 bundle 抽出，逐字搬运、行为不变。
+ * 把资源页中的远端生成结果保存到项目媒体库，并统一切换为本地播放地址。
  */
-import { useCallback, useMemo } from "react";
-import { buildProjectMediaFileUrl } from "../lib/resource";
+import { useCallback } from "react";
+import {
+  wanjuanApplyPersistedTransitResource,
+  wanjuanResourceKind,
+  wanjuanResourceMediaUrl,
+  wanjuanTransitResourceProjectId,
+} from "../lib/resource";
 
 interface UsePersistTransitResourceDeps {}
 
 export function use_persistTransitResource(deps: UsePersistTransitResourceDeps) {
   const {} = deps;
-  const persistTransitResource = async (resource) => {
+  const persistTransitResource = useCallback(async (resource) => {
+    let resourceUrl = wanjuanResourceMediaUrl(resource),
+      resourceKind = wanjuanResourceKind(resource);
     if (
       !resource ||
       !window.wanjuanDesktop?.persistProjectAsset ||
-      typeof resource.url != `string` ||
-      !resource.url ||
-      /^file:\/\//i.test(resource.url) ||
-      resource.type === `text`
+      !resourceUrl ||
+      /^file:\/\//i.test(resourceUrl) ||
+      resourceKind === `text`
     )
       return null;
     try {
-      let kind = resource.type?.startsWith(`video`) ?
-          `video` :
-          resource.type?.startsWith(`audio`) ?
-          `audio` :
-          resource.type?.startsWith(`image`) ?
-          `image` :
-          ``,
-        persisted = await window.wanjuanDesktop.persistProjectAsset({
-          url: resource.url,
-          projectId: (typeof globalThis !== `undefined` && globalThis.__wanjuanCurrentProjectId) || document.documentElement.dataset.wanjuanProjectId || `default`,
+      let persisted = await window.wanjuanDesktop.persistProjectAsset({
+          url: resourceUrl,
+          projectId: wanjuanTransitResourceProjectId(
+            resource,
+            (typeof globalThis !== `undefined` && globalThis.__wanjuanCurrentProjectId) || document.documentElement.dataset.wanjuanProjectId || `default`,
+          ),
           nodeId: `transit-resource`,
           field: `url`,
-          kind: kind || `asset`,
-          filename: resource.originalName || resource.pageTitle || `${kind || `asset`}-${Date.now()}`,
+          kind: resourceKind || `asset`,
+          filename: resource.originalName || resource.pageTitle || `${resourceKind || `asset`}-${Date.now()}`,
           mime: resource.type,
           directory: ``,
         });
       if (!persisted?.ok || !persisted.localPath) return null;
-      let localUrl = buildProjectMediaFileUrl(persisted.localPath);
-      return {
-        ...resource,
-        url: localUrl,
-        localPath: persisted.localPath,
-        originalUrl: resource.originalUrl || resource.url,
-        projectAssetBinding: {
-          ok: true,
-          assetId: persisted.assetId,
-          localPath: persisted.localPath,
-          filename: persisted.filename,
-          mime: persisted.mime,
-          size: persisted.size,
-          sha256: persisted.sha256,
-          projectId: persisted.projectId,
-          nodeId: persisted.nodeId,
-          field: persisted.field,
-          kind: persisted.kind,
-          savedAt: persisted.savedAt,
-          sourceOrigin: resource.sourceOrigin || resource.source || `generated`,
-        },
-      };
+      return wanjuanApplyPersistedTransitResource(resource, persisted);
     } catch (error) {
       console.warn(`transit resource persist skipped`, error);
       return null;
     }
-  };
+  }, []);
   return { persistTransitResource };
 }

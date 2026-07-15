@@ -11,6 +11,7 @@ import { normalizeThemeMode } from "../lib/app-utils";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 import { wanjuanCheckForUpdate, wanjuanChildWindowRefs, wanjuanGetOrCreateDeviceId, wanjuanVerifyActivationCode } from "../lib/collaboration";
 import { wanjuanNormalizeSeedanceVirtualPortraits } from "../lib/seedance";
+import { wanjuanNormalizeArkTrustedAssetConfig } from "../lib/ark-trusted-assets";
 declare const chrome: any;
 
 interface UsePluginEnvEffectDeps {
@@ -26,6 +27,7 @@ interface UsePluginEnvEffectDeps {
   setAgentConversations: SetAny;
   setAgentItems: SetAny;
   setApiConfigs: SetAny;
+  setArkTrustedAssetConfig: SetAny;
   setAppLanguage: SetAny;
   setAudioApiConfigId: SetAny;
   setAudioApiKey: SetAny;
@@ -135,6 +137,7 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
     setAgentConversations,
     setAgentItems,
     setApiConfigs,
+    setArkTrustedAssetConfig,
     setAppLanguage,
     setAudioApiConfigId,
     setAudioApiKey,
@@ -393,6 +396,14 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                   `seedanceWatermark`,
                   `seedanceEnableWebSearch`,
                   `seedanceVirtualPortraits`,
+                  `arkTrustedAssetConfig`,
+                  `tongyiWanxiangTextModels`,
+                  `tongyiWanxiangReferenceImageModels`,
+                  `tongyiWanxiangImageModels`,
+                  `tongyiWanxiangEditModels`,
+                  `tongyiWanxiangDurations`,
+                  `tongyiWanxiangResolutions`,
+                  `tongyiWanxiangRatios`,
                   `tianjiSeedanceSettingsMode`,
                   `seedanceUploadMode`,
                   `tosConfig`,
@@ -637,11 +648,11 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     setConfigButlerTargetCategory(
                       settings.configButlerTargetCategory,
                     ),
-	                    settings.configButlerTargetApiConfigId &&
+	                    hasSetting(`configButlerTargetApiConfigId`) &&
 	                    setConfigButlerTargetApiConfigId(
 	                      settings.configButlerTargetApiConfigId === `vectorengine` ?
 	                      `default` :
-	                      settings.configButlerTargetApiConfigId,
+	                      settings.configButlerTargetApiConfigId || ``,
 	                    ),
 	                    Array.isArray(settings.configButlerRepairHistory) &&
 	                    setConfigButlerRepairHistory(settings.configButlerRepairHistory.slice(0, 50)),
@@ -688,6 +699,8 @@ export function usePluginEnvEffect(deps: UsePluginEnvEffectDeps) {
                     setSeedanceVirtualPortraits(
                       wanjuanNormalizeSeedanceVirtualPortraits(settings.seedanceVirtualPortraits),
                     ),
+                    hasSetting(`arkTrustedAssetConfig`) &&
+                    setArkTrustedAssetConfig(wanjuanNormalizeArkTrustedAssetConfig(settings.arkTrustedAssetConfig)),
                     settings.tianjiSeedanceSettingsMode !== undefined &&
                     setTianjiSeedanceSettingsMode(
                       storedAdvancedSettingsUnlocked && settings.tianjiSeedanceSettingsMode === `tianji` ?

@@ -5,6 +5,7 @@ import { useCallback, useMemo } from "react";
 import type { ApiConfig, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, WANJUAN_JIXIN_DEFAULT_API_URL, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { wanjuanTianjiSeedanceDefaults } from "../lib/tianji-api";
+import { WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG } from "../lib/ark-trusted-assets";
 
 interface UseBuildJixinDefaultResetPatchDeps {
   WANJUAN_JIXIN_DOC_URL: any;
@@ -85,6 +86,7 @@ export function use_buildJixinDefaultResetPatch(deps: UseBuildJixinDefaultResetP
         configButlerRepairHistory: [],
         storedGlobalConfigs: nextStoredGlobalConfigs,
         activeStoredGlobalConfigId: builtinStoredConfig.id,
+        arkTrustedAssetConfig: { ...WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG },
         tianjiSeedanceConfig: wanjuanTianjiSeedanceDefaults,
         tianjiSeedanceSettingsMode: `official`,
         jixinBuiltinBaseConfigVersion: WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION,

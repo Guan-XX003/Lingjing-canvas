@@ -29,10 +29,12 @@ interface UseNodeSyncEffectDeps {
   handleCrop: any;
   handleExtractFrames: any;
   handleGenerateCustom: any;
+  handleArkTrustedAssetReview: any;
   handleNoop: any;
   handleSplit: any;
   handleSplitOne: any;
   handleTianjiPortraitReview: any;
+  arkTrustedAssetConfig: any;
   imageCompatResolutions: any;
   imageModelApiBindings: ApiBindings;
   imageModelProtocolBindings: ProtocolBindings;
@@ -101,10 +103,12 @@ export function useNodeSyncEffect(deps: UseNodeSyncEffectDeps) {
     handleCrop,
     handleExtractFrames,
     handleGenerateCustom,
+    handleArkTrustedAssetReview,
     handleNoop,
     handleSplit,
     handleSplitOne,
     handleTianjiPortraitReview,
+    arkTrustedAssetConfig,
     imageCompatResolutions,
     imageModelApiBindings,
     imageModelProtocolBindings,
@@ -478,6 +482,12 @@ export function useNodeSyncEffect(deps: UseNodeSyncEffectDeps) {
           (node.type === `promptNode` || node.type === `imageNode`) &&
           nodeData.onTianjiPortraitReview !== handleTianjiPortraitReview &&
           ((nodeData.onTianjiPortraitReview = handleTianjiPortraitReview), (hasChanged = true)),
+          (node.type === `promptNode` || node.type === `imageNode`) &&
+          nodeData.onArkTrustedAssetReview !== handleArkTrustedAssetReview &&
+          ((nodeData.onArkTrustedAssetReview = handleArkTrustedAssetReview), (hasChanged = true)),
+          (node.type === `promptNode` || node.type === `imageNode`) &&
+          nodeData.arkTrustedAssetEnabled !== (arkTrustedAssetConfig?.enabled === true) &&
+          ((nodeData.arkTrustedAssetEnabled = arkTrustedAssetConfig?.enabled === true), (hasChanged = true)),
           hasChanged ? {
             ...node,
             data: nodeData
@@ -527,5 +537,7 @@ export function useNodeSyncEffect(deps: UseNodeSyncEffectDeps) {
     tosConfig,
     customPublicUploadConfig,
     qiniuConfig,
+    arkTrustedAssetConfig,
+    handleArkTrustedAssetReview,
   ]);
 }

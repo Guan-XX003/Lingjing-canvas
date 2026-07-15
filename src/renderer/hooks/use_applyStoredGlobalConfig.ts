@@ -4,6 +4,9 @@
 import { useCallback, useMemo } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny, StoredGlobalConfig, Toast } from "../lib/app-types";
 import { cloneBackupValue } from "../lib/backup";
+import { buildCustomEmptyGlobalConfigPatch, WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID } from "../lib/global-config";
+import { WANJUAN_TIANJI_CONFIG_MIRROR_KEY } from "../lib/tianji-api";
+import { wanjuanNormalizeArkTrustedAssetConfig } from "../lib/ark-trusted-assets";
 import { wanjuanNormalizeSeedanceVirtualPortraits } from "../lib/seedance";
 declare const chrome: any;
 
@@ -18,15 +21,21 @@ interface UseApplyStoredGlobalConfigDeps {
   normalizeStoredGlobalConfigBackup: any;
   setActiveStoredGlobalConfigId: SetAny;
   setApiConfigs: SetAny;
+  setArkTrustedAssetConfig: SetAny;
   setAudioApiConfigId: SetAny;
   setAudioApiKey: SetAny;
   setAudioApiUrl: SetAny;
   setAudioModelApiBindings: SetAny;
   setAudioModelProtocolBindings: SetAny;
   setAudioModels: SetAny;
+  setConfigButlerApiKey: SetAny;
+  setConfigButlerApiUrl: SetAny;
   setConfigButlerDocUrl: SetAny;
+  setConfigButlerModel: SetAny;
   setConfigButlerMode: SetAny;
   setConfigButlerTargetApiConfigId: SetAny;
+  setConfigButlerTargetApiKey: SetAny;
+  setConfigButlerTargetApiUrl: SetAny;
   setConfigButlerTargetCategory: SetAny;
   setImageApiConfigId: SetAny;
   setImageApiKey: SetAny;
@@ -132,15 +141,21 @@ export function use_applyStoredGlobalConfig(deps: UseApplyStoredGlobalConfigDeps
     normalizeStoredGlobalConfigBackup,
     setActiveStoredGlobalConfigId,
     setApiConfigs,
+    setArkTrustedAssetConfig,
     setAudioApiConfigId,
     setAudioApiKey,
     setAudioApiUrl,
     setAudioModelApiBindings,
     setAudioModelProtocolBindings,
     setAudioModels,
+    setConfigButlerApiKey,
+    setConfigButlerApiUrl,
     setConfigButlerDocUrl,
+    setConfigButlerModel,
     setConfigButlerMode,
     setConfigButlerTargetApiConfigId,
+    setConfigButlerTargetApiKey,
+    setConfigButlerTargetApiUrl,
     setConfigButlerTargetCategory,
     setImageApiConfigId,
     setImageApiKey,
@@ -234,6 +249,71 @@ export function use_applyStoredGlobalConfig(deps: UseApplyStoredGlobalConfigDeps
     videoResolutions,
   } = deps;
   const applyStoredGlobalConfig = (configId) => {
+      if (configId === WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID) {
+        let confirmed = window.confirm(
+          `进入自定义配置模式会清空当前 API、Key、模型名称、模型绑定和协议配置。\n\n其他已保存的全局配置不会删除，比例、分辨率、时长、上传设置和人像素材等模型参数会保留。\n\n确定继续吗？`,
+        );
+        if (!confirmed) return;
+        if (apiModelCloudSettingsSaveTimerRef?.current) {
+          clearTimeout(apiModelCloudSettingsSaveTimerRef.current);
+          apiModelCloudSettingsSaveTimerRef.current = 0;
+        }
+        let patch = buildCustomEmptyGlobalConfigPatch();
+        (setApiConfigs([]),
+          setTextApiConfigId(``),
+          setImageApiConfigId(``),
+          setVideoApiConfigId(``),
+          setAudioApiConfigId(``),
+          setTextApiUrl(``),
+          setTextApiKey(``),
+          setImageApiUrl(``),
+          setImageApiKey(``),
+          setVideoApiUrl(``),
+          setVideoApiKey(``),
+          setAudioApiUrl(``),
+          setAudioApiKey(``),
+          _e(``),
+          setImageModels(``),
+          setVideoModels(``),
+          setAudioModels(``),
+          setTtsMusicModel(``),
+          setSeedanceModel(``),
+          setTianjiSeedanceModel(``),
+          setTongyiWanxiangTextModels(``),
+          setTongyiWanxiangReferenceImageModels(``),
+          setTongyiWanxiangImageModels(``),
+          setTongyiWanxiangEditModels(``),
+          setModelProtocolRegistry({}),
+          setTextModelApiBindings({}),
+          setTextModelProtocolBindings({}),
+          setImageModelApiBindings({}),
+          setImageModelProtocolBindings({}),
+          setVideoModelApiBindings({}),
+          setVideoModelProtocolBindings({}),
+          setAudioModelApiBindings({}),
+          setAudioModelProtocolBindings({}),
+          setVideoModelRequestProfilesText(`{}`),
+          setConfigButlerApiUrl(``),
+          setConfigButlerApiKey(``),
+          setConfigButlerModel(``),
+          setConfigButlerDocUrl(``),
+          setConfigButlerTargetApiConfigId(``),
+          setConfigButlerTargetApiUrl(``),
+          setConfigButlerTargetApiKey(``),
+          setActiveStoredGlobalConfigId(WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID));
+        try {
+          window.localStorage?.removeItem(WANJUAN_TIANJI_CONFIG_MIRROR_KEY);
+        } catch {}
+        if (typeof chrome < `u` && chrome.storage?.local) {
+          chrome.storage.local.remove?.(`tianjiSeedanceConfig`);
+          chrome.storage.local.set({
+            ...patch,
+            storedGlobalConfigs: storedGlobalConfigs || [],
+          });
+        }
+        showToast2(`已进入自定义配置（空白）`);
+        return;
+      }
       let storedConfig = (storedGlobalConfigs || []).find((config) => config.id === configId);
       if (!storedConfig?.config) {
         showToast2(`请选择一个已存储配置`);
@@ -247,6 +327,7 @@ export function use_applyStoredGlobalConfig(deps: UseApplyStoredGlobalConfigDeps
 	        mergedApiConfigs = mergeStoredGlobalApiConfigs(repairedConfig.apiConfigs),
 	        hasConfigValue = (key) => Object.prototype.hasOwnProperty.call(repairedConfig, key);
       (Array.isArray(repairedConfig.apiConfigs) && setApiConfigs(mergedApiConfigs),
+        hasConfigValue(`arkTrustedAssetConfig`) && setArkTrustedAssetConfig(wanjuanNormalizeArkTrustedAssetConfig(repairedConfig.arkTrustedAssetConfig)),
         hasConfigValue(`textApiConfigId`) && setTextApiConfigId(repairedConfig.textApiConfigId || ``),
         hasConfigValue(`imageApiConfigId`) && setImageApiConfigId(repairedConfig.imageApiConfigId || ``),
         hasConfigValue(`videoApiConfigId`) && setVideoApiConfigId(repairedConfig.videoApiConfigId || ``),

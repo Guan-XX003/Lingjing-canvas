@@ -14,6 +14,7 @@ interface UseApplyJixinDefaultResetPatchDeps {
   setActiveProtocolName: SetAny;
   setActiveStoredGlobalConfigId: SetAny;
   setApiConfigs: SetAny;
+  setArkTrustedAssetConfig: SetAny;
   setAudioApiConfigId: SetAny;
   setAudioApiKey: SetAny;
   setAudioApiUrl: SetAny;
@@ -121,6 +122,7 @@ export function use_applyJixinDefaultResetPatch(deps: UseApplyJixinDefaultResetP
     setActiveProtocolName,
     setActiveStoredGlobalConfigId,
     setApiConfigs,
+    setArkTrustedAssetConfig,
     setAudioApiConfigId,
     setAudioApiKey,
     setAudioApiUrl,
@@ -222,6 +224,7 @@ export function use_applyJixinDefaultResetPatch(deps: UseApplyJixinDefaultResetP
   const applyJixinDefaultResetPatch = (patch) => {
       let normalizedApiConfigs = normalizeUnifiedApiConfigs(patch.apiConfigs);
       (setApiConfigs(normalizedApiConfigs),
+        setArkTrustedAssetConfig(patch.arkTrustedAssetConfig),
         setTextApiConfigId(patch.textApiConfigId),
         setImageApiConfigId(patch.imageApiConfigId),
         setVideoApiConfigId(patch.videoApiConfigId),

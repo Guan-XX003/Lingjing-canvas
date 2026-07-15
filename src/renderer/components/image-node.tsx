@@ -5,12 +5,13 @@
 import { memo as reactMemo, useEffect, useMemo, useRef } from "react";
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { NodeResizer, Position, useReactFlow } from "@xyflow/react";
-import { Crop, Download, FileText, Film, Image, Music, PenLine, ZoomIn } from "lucide-react";
+import { Crop, Download, FileText, Film, Image, Music, PenLine, ShieldCheck, ZoomIn } from "lucide-react";
 import { WanJuanReplaceImageIcon, WanJuanTianjiPortraitReviewIcon } from "../components/icons";
 import { WanJuanNodeHandle } from "../components/render-mode";
 import { wanjuanBuildProjectAssetBinding, wanjuanGetDroppedFilePath, wanjuanMediaKindFromFile, wanjuanMimeFromMediaKind } from "../lib/project-asset-binding";
 import { buildProjectMediaFileUrl, wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanBrokenResourceImage } from "../lib/resource-tabs";
+import { wanjuanArkAssetBindingMatchesImage, wanjuanResetArkTrustedAssetBindingForImage } from "../lib/ark-trusted-assets";
 
 /** chrome 扩展运行时（仅在浏览器扩展环境存在）。 */
 declare const chrome: any;
@@ -70,6 +71,7 @@ export const WanJuanImageNode = reactMemo(({
           if (cancelled || !result?.ok || !result.localPath) return;
           let fileUrl = buildProjectMediaFileUrl(result.localPath);
           updateNodeData(nodeId, {
+            ...wanjuanResetArkTrustedAssetBindingForImage(data, fileUrl),
             imageUrl: fileUrl,
             thumbnailUrl: data.thumbnailUrl || (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl),
             localPath: result.localPath,
@@ -116,6 +118,24 @@ export const WanJuanImageNode = reactMemo(({
         title: data.tianjiPortraitBindingMessage || tianjiBindingState.label,
         children: tianjiBindingState.label,
       }) :
+      null,
+      arkBindingSourceUrl = String(data.arkTrustedAssetSourceUrl || ``).trim(),
+      arkBindingMatchesImage = !arkBindingSourceUrl || arkBindingSourceUrl === String(imageUrl || ``).trim(),
+      arkBindingStatus = arkBindingMatchesImage ? (wanjuanArkAssetBindingMatchesImage(data, imageUrl) ? `ready` : String(data.arkTrustedAssetStatus || ``).trim()) : ``,
+      arkBindingState =
+      arkBindingStatus === `reviewing` ?
+      { label: `Ark 审核中`, className: `border-sky-400/40 bg-sky-500/15 text-sky-100` } :
+      arkBindingStatus === `ready` ?
+      { label: `Ark 可信素材`, className: `border-emerald-400/45 bg-emerald-500/15 text-emerald-100` } :
+      arkBindingStatus === `failed` ?
+      { label: `Ark 审核失败`, className: `border-red-400/45 bg-red-500/15 text-red-100` } :
+      null,
+      arkBindingBadge = arkBindingState ?
+      jsx(`div`, {
+        className: `absolute right-2 bottom-2 z-20 max-w-[calc(50%-12px)] truncate rounded-md border px-2 py-1 text-[10px] font-medium leading-tight shadow-lg backdrop-blur-md pointer-events-none ${arkBindingState.className}`,
+        title: data.arkTrustedAssetMessage || arkBindingState.label,
+        children: arkBindingState.label,
+      }) :
       null;
     return jsxs(`div`, {
       className: `relative group/node w-full h-full min-w-[120px] min-h-[80px]`,
@@ -156,6 +176,7 @@ export const WanJuanImageNode = reactMemo(({
               stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
               applySelectedMedia = (mediaUrl) => {
                 updateNodeData(nodeId, {
+                  ...wanjuanResetArkTrustedAssetBindingForImage(data, mediaUrl),
                   imageUrl: mediaUrl,
                   label: file.name,
                   mediaKind,
@@ -196,6 +217,7 @@ export const WanJuanImageNode = reactMemo(({
                 if (!result?.ok || !result.localPath) return;
                 let fileUrl = buildProjectMediaFileUrl(result.localPath);
                 updateNodeData(nodeId, {
+                  ...wanjuanResetArkTrustedAssetBindingForImage(data, fileUrl),
                   imageUrl: fileUrl,
                   thumbnailUrl: mediaKind === `image` ?
                     (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl) :
@@ -296,6 +318,23 @@ export const WanJuanImageNode = reactMemo(({
                 children: jsx(WanJuanTianjiPortraitReviewIcon, {
                   size: 14
                 }),
+              }),
+              mediaType === `image` && data.arkTrustedAssetEnabled === true &&
+              jsx(`button`, {
+                className: `p-1.5 text-gray-400 hover:text-emerald-300 hover:bg-[#333] rounded-md disabled:cursor-wait disabled:opacity-60`,
+                title: arkBindingStatus === `ready` ? `重新进行 Ark 可信素材审核` : `Ark 可信素材审核`,
+                disabled: arkBindingStatus === `reviewing`,
+                onClick: (event) => {
+                  event.stopPropagation();
+                  let review = data.onArkTrustedAssetReview && imageUrl && data.onArkTrustedAssetReview(imageUrl, {
+                    nodeId,
+                    label: label || data.name || `可信参考图`,
+                    localPath: data.localPath || data.filePath,
+                    filename: data.originalName || label,
+                  });
+                  review?.catch?.(() => {});
+                },
+                children: jsx(ShieldCheck, { size: 14 }),
               }),
               jsx(`button`, {
                 className: `p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded-md`,
@@ -451,6 +490,7 @@ export const WanJuanImageNode = reactMemo(({
                   }),
                 }),
                 tianjiBindingBadge,
+                arkBindingBadge,
               ],
             }),
             jsx(WanJuanNodeHandle, {

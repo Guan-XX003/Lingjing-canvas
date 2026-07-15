@@ -65,6 +65,7 @@ export const WANJUAN_RUNTIME_NODE_DATA_KEYS = new Set([
   `tosConfig`,
   `customPublicUploadConfig`,
   `qiniuConfig`,
+  `arkTrustedAssetEnabled`,
 ]);
 
 export const wanjuanStripRuntimeNodeData = <T>(data: T): T => {

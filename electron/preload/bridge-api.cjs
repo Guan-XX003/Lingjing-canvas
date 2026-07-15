@@ -242,8 +242,18 @@ exposeGlobal("wanjuanDesktop", {
 		  },
 			  uploadTosMedia: async (payload = {}) => {
 			    const nextPayload = await uploadPayloadWithReadableBytes(payload);
-			    return ipcRenderer.invoke("wanjuan:upload-tos-media", nextPayload);
-			  },
+		    return ipcRenderer.invoke("wanjuan:upload-tos-media", nextPayload);
+		  },
+			  registerArkTrustedAsset: async (payload = {}) => {
+			    const nextPayload = await uploadPayloadWithReadableBytes(payload);
+		    return ipcRenderer.invoke("wanjuan:ark-trusted-asset-register", nextPayload);
+		  },
+			  ensureArkTrustedAssetGroup: async (payload = {}) =>
+		    ipcRenderer.invoke("wanjuan:ark-trusted-asset-ensure-group", payload),
+			  cancelArkTrustedAssetReview: async (requestId) =>
+		    ipcRenderer.invoke("wanjuan:ark-trusted-asset-cancel", String(requestId || "")),
+			  clearArkTrustedAssetCache: async () =>
+		    ipcRenderer.invoke("wanjuan:ark-trusted-asset-clear-cache"),
 			  uploadQiniuMedia: async (payload = {}) => {
 			    const nextPayload = await uploadPayloadWithReadableBytes(payload);
 			    return ipcRenderer.invoke("wanjuan:upload-qiniu-media", nextPayload);

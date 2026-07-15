@@ -197,7 +197,7 @@ async function run() {
       }
     };
     const selectConfig = (configId) => evaluate(`(() => {
-      const select = document.querySelector('.wanjuan-stored-global-config-apply')?.parentElement?.querySelector('select');
+      const select = document.querySelector('.wanjuan-global-config-presets-panel select');
       if (!select) return false;
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
       setter.call(select, ${JSON.stringify(configId)});
@@ -341,6 +341,145 @@ async function run() {
       throw new Error(`Jixin reset did not apply the Jixin API snapshot: ${JSON.stringify(resetSnapshot.apiConfigs)}`);
     }
 
+    const preservedParameterKeys = [
+      "imageCompatResolutions",
+      "videoDurations",
+      "videoResolutions",
+      "videoAspectRatios",
+      "seedanceDurations",
+      "seedanceResolutions",
+      "seedanceRatios",
+      "tongyiWanxiangDurations",
+      "tongyiWanxiangResolutions",
+      "tongyiWanxiangRatios",
+      "customPublicUploadConfig",
+      "seedanceUploadMode",
+      "seedanceVirtualPortraits",
+    ];
+    const explicitUserParameters = {
+      imageCompatResolutions: "1111x777\n777x1111",
+      videoDurations: "7\n13",
+      videoResolutions: "1111x777\n777x1111",
+      videoAspectRatios: "7:5\n5:7",
+      seedanceDurations: "6\n12",
+      seedanceResolutions: "540p\n900p",
+      seedanceRatios: "4:3\n3:4",
+      tongyiWanxiangDurations: "3\n9",
+      tongyiWanxiangResolutions: "540P\n900P",
+      tongyiWanxiangRatios: "4:3\n3:4",
+      customPublicUploadConfig: { enabled: true, provider: "test-preserved-upload" },
+      seedanceUploadMode: "custom-public",
+      seedanceVirtualPortraits: [{ id: "preserved-portrait", name: "保留人像", assetId: "asset-preserved" }],
+    };
+    await evaluate(`new Promise(resolve => chrome.storage.local.set(${JSON.stringify(explicitUserParameters)}, resolve))`, true);
+    await send("Page.reload", { ignoreCache: true });
+    await waitFor(`document.body && document.body.innerText.includes('设置')`, "custom parameter hydration");
+    await sleep(1500);
+    const parametersBeforeEmptyMode = await readStorage(preservedParameterKeys);
+    await evaluate(`(() => {
+      const settingsButton = [...document.querySelectorAll('button')].find((item) => item.textContent.replace(/\s+/g, ' ').trim().endsWith('设置'));
+      settingsButton?.click();
+      return !!settingsButton;
+    })()`);
+    await waitFor(`[...document.querySelectorAll('button')].some((item) => item.textContent.includes('API 配置'))`, "settings API tab before custom empty mode");
+    await evaluate(`(() => {
+      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('API 配置'));
+      button?.click();
+      return !!button;
+    })()`);
+    await waitFor(`!!document.querySelector('.wanjuan-stored-global-config-apply')`, "custom empty mode control");
+    await evaluate(`window.confirm = () => true`);
+    await evaluate(`document.querySelector('.wanjuan-custom-empty-config-button')?.click() || true`);
+    await sleep(1200);
+    const emptyModeKeys = [
+      "activeStoredGlobalConfigId",
+      "storedGlobalConfigs",
+      "apiConfigs",
+      "textApiConfigId",
+      "imageApiConfigId",
+      "videoApiConfigId",
+      "audioApiConfigId",
+      "textApiUrl",
+      "textApiKey",
+      "imageApiUrl",
+      "imageApiKey",
+      "videoApiUrl",
+      "videoApiKey",
+      "audioApiUrl",
+      "audioApiKey",
+      "textModel",
+      "drawingModel",
+      "videoModel",
+      "audioModel",
+      "ttsMusicModel",
+      "seedanceModel",
+      "tianjiSeedanceModel",
+      "tongyiWanxiangTextModels",
+      "tongyiWanxiangReferenceImageModels",
+      "tongyiWanxiangImageModels",
+      "tongyiWanxiangEditModels",
+      "modelProtocolRegistry",
+      "textModelApiBindings",
+      "textModelProtocolBindings",
+      "imageModelApiBindings",
+      "imageModelProtocolBindings",
+      "videoModelApiBindings",
+      "videoModelProtocolBindings",
+      "audioModelApiBindings",
+      "audioModelProtocolBindings",
+      "configButlerApiUrl",
+      "configButlerApiKey",
+      "configButlerModel",
+      "configButlerDocUrl",
+      "configButlerTargetApiConfigId",
+      "tianjiSeedanceConfig",
+      ...preservedParameterKeys,
+    ];
+    const assertEmptyCustomMode = (snapshot, label) => {
+      if (snapshot.activeStoredGlobalConfigId !== "custom-empty") {
+        throw new Error(`${label}: custom empty mode was not active: ${JSON.stringify(snapshot.activeStoredGlobalConfigId)}`);
+      }
+      if (!Array.isArray(snapshot.apiConfigs) || snapshot.apiConfigs.length !== 0) {
+        throw new Error(`${label}: API configs were not empty: ${JSON.stringify(snapshot.apiConfigs)}`);
+      }
+      const emptyStringKeys = [
+        "textApiConfigId", "imageApiConfigId", "videoApiConfigId", "audioApiConfigId",
+        "textApiUrl", "textApiKey", "imageApiUrl", "imageApiKey", "videoApiUrl", "videoApiKey", "audioApiUrl", "audioApiKey",
+        "textModel", "drawingModel", "videoModel", "audioModel", "ttsMusicModel", "seedanceModel", "tianjiSeedanceModel",
+        "tongyiWanxiangTextModels", "tongyiWanxiangReferenceImageModels", "tongyiWanxiangImageModels", "tongyiWanxiangEditModels",
+        "configButlerApiUrl", "configButlerApiKey", "configButlerModel", "configButlerDocUrl", "configButlerTargetApiConfigId",
+      ];
+      for (const key of emptyStringKeys) {
+        if (snapshot[key] !== "") throw new Error(`${label}: ${key} was not empty: ${JSON.stringify(snapshot[key])}`);
+      }
+      const emptyObjectKeys = [
+        "modelProtocolRegistry", "textModelApiBindings", "textModelProtocolBindings",
+        "imageModelApiBindings", "imageModelProtocolBindings", "videoModelApiBindings",
+        "videoModelProtocolBindings", "audioModelApiBindings", "audioModelProtocolBindings",
+      ];
+      for (const key of emptyObjectKeys) {
+        if (JSON.stringify(snapshot[key] || {}) !== "{}") throw new Error(`${label}: ${key} was not empty: ${JSON.stringify(snapshot[key])}`);
+      }
+      if (snapshot.tianjiSeedanceConfig !== undefined) {
+        throw new Error(`${label}: Tianji authorization config was not removed: ${JSON.stringify(snapshot.tianjiSeedanceConfig)}`);
+      }
+      if (!snapshot.storedGlobalConfigs?.some((config) => config.id === "custom-preset") ||
+          !snapshot.storedGlobalConfigs?.some((config) => config.id === "builtin-jixin-base")) {
+        throw new Error(`${label}: saved global presets were removed: ${JSON.stringify(snapshot.storedGlobalConfigs)}`);
+      }
+      for (const key of preservedParameterKeys) {
+        if (JSON.stringify(snapshot[key]) !== JSON.stringify(parametersBeforeEmptyMode[key])) {
+          throw new Error(`${label}: model parameter ${key} changed: ${JSON.stringify({ before: parametersBeforeEmptyMode[key], after: snapshot[key] })}`);
+        }
+      }
+    };
+    assertEmptyCustomMode(await readStorage(emptyModeKeys), "after applying custom empty mode");
+
+    await send("Page.reload", { ignoreCache: true });
+    await waitFor(`document.body && document.body.innerText.includes('设置')`, "custom empty mode reload");
+    await sleep(1500);
+    assertEmptyCustomMode(await readStorage(emptyModeKeys), "after reloading custom empty mode");
+
     console.log(JSON.stringify({ ok: true, checks: [
       "custom config survives startup without Jixin model injection",
       "selecting a preset does not apply or persist it",
@@ -349,6 +488,8 @@ async function run() {
       "rapid consecutive switches keep the last applied config",
       "custom config survives autosave and restart without mixing",
       "restoring Jixin keeps user-created global presets",
+      "custom empty mode clears API/model identity while preserving presets and model parameters",
+      "custom empty mode survives restart without reseeding Jixin",
     ] }, null, 2));
   } finally {
     try { ws?.close(); } catch {}

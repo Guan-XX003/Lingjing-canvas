@@ -2,6 +2,7 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { useState } from "react";
 import { extractJsonBlock, formatExtensionToolError, formatStorageBytes, normalizeThemeMode } from "../lib/app-utils";
+import { WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID } from "../lib/global-config";
 import { WANJUAN_JIXIN_DEFAULT_API_URL } from "../lib/jixin-catalog";
 import { WanJuanAudioModelSettingsPanel } from "../components/audio-model-settings-panel";
 import { WanJuanConfigButlerBatchModal } from "../components/config-butler-batch-modal";
@@ -63,6 +64,7 @@ export function WanJuanSettingsSectionB(props: any) {
     BACKUP_MODULE_LABELS,
     _e,
     apiConfigs,
+    arkTrustedAssetConfig,
     appLanguage,
     applyConfigButlerBatchResults,
     applyConfigButlerResult,
@@ -153,6 +155,7 @@ export function WanJuanSettingsSectionB(props: any) {
     seedanceWatermark,
     setActiveStoredGlobalConfigId,
     setApiConfigs,
+    setArkTrustedAssetConfig,
     setAppLanguage,
     setAudioModelApiBindings,
     setAudioModels,
@@ -627,7 +630,9 @@ export function WanJuanSettingsSectionB(props: any) {
                                       }),
                                       jsx(`p`, {
                                         className: `text-[11px] text-gray-500 mt-1 wanjuan-settings-help truncate`,
-                                        children: activeStoredGlobalConfigId &&
+                                        children: activeStoredGlobalConfigId === WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID ?
+                                          `当前：自定义配置（空白）` :
+                                          activeStoredGlobalConfigId &&
                                           (storedGlobalConfigs || []).find((config) => config.id === activeStoredGlobalConfigId) ?
                                           `当前：${(storedGlobalConfigs || []).find((config) => config.id === activeStoredGlobalConfigId)?.name || ``}` :
                                           `保存并切换整套模型列表、API 绑定、协议配置和接口文档链接。`,
@@ -895,6 +900,7 @@ export function WanJuanSettingsSectionB(props: any) {
                               seedanceSettingsExpanded &&
 	                              jsx(WanJuanSeedanceSettingsPanel, {
   apiConfigs,
+  arkTrustedAssetConfig,
   applyTianjiSeedanceSettingsMode,
   editSeedancePortrait,
   handleSeedancePortraitFile,
@@ -922,11 +928,14 @@ export function WanJuanSettingsSectionB(props: any) {
   setSeedanceRatios,
   setSeedanceResolutions,
   setSeedanceWatermark,
+  setArkTrustedAssetConfig,
   setTianjiSeedanceModel,
   setVideoModelApiBindings,
   tianjiSeedanceModel,
   tianjiSeedanceSettingsMode,
+  tosConfig,
   videoModelApiBindings,
+  showToast2,
 }),
                             ],
                           }),

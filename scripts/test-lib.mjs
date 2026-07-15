@@ -37,6 +37,7 @@ function compile() {
       join(root, "src/renderer/lib/jixin-catalog.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
       join(root, "src/renderer/lib/tianji-portrait.ts"),
+      join(root, "src/renderer/lib/ark-trusted-assets.ts"),
       join(root, "src/renderer/lib/suno-music-api.ts"),
     ],
     { cwd: root, stdio: "inherit" }
@@ -60,7 +61,7 @@ async function run() {
   console.log("编译工具库...");
   compile();
 
-  const { wanjuanResourceKind, wanjuanResourceSourceKind } = await import(pathToFileURL(join(outDir, "resource.js")).href);
+  const { wanjuanApplyPersistedTransitResource, wanjuanBuildGeneratedVideoResourcesFromNodes, wanjuanResourceKind, wanjuanResourceSourceKind, wanjuanTransitResourceNeedsPersistence } = await import(pathToFileURL(join(outDir, "resource.js")).href);
   const { wanjuanCollectNodeReferenceMedia, wanjuanIsPublicHttpMediaUrl } = await import(pathToFileURL(join(outDir, "reference-media.js")).href);
   const { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } = await import(pathToFileURL(join(outDir, "video-aspect-ratio.js")).href);
   const { applyRunScopedStateUpdate, compactGlobalTasks, failGlobalTaskRefresh, indexGlobalTasks, supersedeActiveNodeTasks, updateTaskRunningProgress } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
@@ -80,6 +81,7 @@ async function run() {
     wanjuanNormalizeTianjiSeedanceConfig
   } = await import(pathToFileURL(join(outDir, "tianji-api.js")).href);
   const { wanjuanResetTianjiPortraitBindingForImage } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
+  const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
 
   console.log("运行用例...");
   check(
@@ -91,6 +93,135 @@ async function run() {
     "tianji image binding clears for new result",
     wanjuanResetTianjiPortraitBindingForImage({ imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready", tianjiPortraitBindingMessage: "bound", isTianjiPortrait: true, sourceOrigin: "tianji-portrait" }, "https://cdn/b.png"),
     { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated" }
+  );
+  check(
+    "ark binding survives the same image",
+    arkTrustedAssets.wanjuanResetArkTrustedAssetBindingForImage({ imageUrl: "https://cdn/a.png", arkTrustedAssetId: "ark-a", arkTrustedAssetSourceUrl: "https://cdn/a.png", arkTrustedAssetStatus: "ready" }, "https://cdn/a.png"),
+    { imageUrl: "https://cdn/a.png", arkTrustedAssetId: "ark-a", arkTrustedAssetSourceUrl: "https://cdn/a.png", arkTrustedAssetStatus: "ready" }
+  );
+  check(
+    "ark binding clears when the image changes",
+    arkTrustedAssets.wanjuanResetArkTrustedAssetBindingForImage({ imageUrl: "https://cdn/a.png", arkTrustedAssetId: "ark-a", arkTrustedAssetGroupId: "group-a", arkTrustedAssetContentHash: "hash-a", arkTrustedAssetSourceUrl: "https://cdn/a.png", arkTrustedAssetStatus: "ready", arkTrustedAssetMessage: "ready", arkTrustedAssetReviewedAt: 1 }, "https://cdn/b.png"),
+    { imageUrl: "https://cdn/a.png", arkTrustedAssetId: undefined, arkTrustedAssetGroupId: undefined, arkTrustedAssetContentHash: undefined, arkTrustedAssetSourceUrl: undefined, arkTrustedAssetStatus: undefined, arkTrustedAssetMessage: undefined, arkTrustedAssetReviewedAt: undefined }
+  );
+  check(
+    "ark ready binding resolves without changing the generation API",
+    await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({
+      config: { enabled: true, reviewMode: "auto" },
+      entry: { url: "https://cdn/a.png", arkTrustedAssetId: "ark-a", arkTrustedAssetSourceUrl: "https://cdn/a.png", arkTrustedAssetStatus: "ready", tianjiPortraitAssetId: "tianji-stays" },
+      reviewAsset: () => { throw new Error("should not review"); }
+    }),
+    { url: "asset://ark-a", assetId: "ark-a", groupId: "", reviewed: false, cached: true }
+  );
+  let arkAutoReviewCalls = 0;
+  check(
+    "ark auto mode reviews and returns asset URL",
+    await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({
+      config: { enabled: true, reviewMode: "auto" },
+      entry: { url: "file:///tmp/a.png", nodeId: "image-1" },
+      reviewAsset: async () => { arkAutoReviewCalls++; return { ok: true, assetId: "ark-new", groupId: "group-a" }; }
+    }),
+    { ok: true, assetId: "ark-new", groupId: "group-a", url: "asset://ark-new", reviewed: true }
+  );
+  check("ark auto review runs once", arkAutoReviewCalls, 1);
+  check(
+    "ark manual mode leaves unreviewed reference unchanged",
+    await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({
+      config: { enabled: true, reviewMode: "manual" },
+      entry: { url: "https://cdn/a.png", tianjiPortraitAssetId: "tianji-stays" },
+      reviewAsset: () => { throw new Error("should not review"); }
+    }),
+    { url: "https://cdn/a.png", reviewed: false }
+  );
+  check(
+    "ark reviewed reference remains usable with a relay generation configuration",
+    await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({
+      config: { enabled: true, reviewMode: "manual" },
+      entry: { url: "https://cdn/a.png", arkTrustedAssetId: "ark-relay", arkTrustedAssetSourceUrl: "https://cdn/a.png", arkTrustedAssetStatus: "ready" },
+      reviewAsset: () => { throw new Error("should not review"); }
+    }),
+    { url: "asset://ark-relay", assetId: "ark-relay", groupId: "", reviewed: false, cached: true }
+  );
+  check(
+    "resource backfill prefers an existing local video binding over an expiring remote URL",
+    (() => {
+      const resource = wanjuanBuildGeneratedVideoResourcesFromNodes([
+        {
+          id: "video-node-local",
+          type: "videoNode",
+          data: {
+            label: "已生成视频",
+            videoUrl: "https://temporary.example.com/result.mp4",
+            projectAssetBindings: {
+              videoUrl: {
+                ok: true,
+                missing: false,
+                localPath: "/Users/test/media/result.mp4",
+                sourceSignature: "https://temporary.example.com/result.mp4",
+                mime: "video/mp4",
+                size: 2048,
+              },
+            },
+          },
+        },
+      ], [], "project-a")[0];
+      return {
+        url: resource?.url,
+        videoUrl: resource?.videoUrl,
+        localPath: resource?.localPath,
+        originalUrl: resource?.originalUrl,
+        bindingPath: resource?.projectAssetBinding?.localPath,
+      };
+    })(),
+    {
+      url: "file:///Users/test/media/result.mp4",
+      videoUrl: "file:///Users/test/media/result.mp4",
+      localPath: "/Users/test/media/result.mp4",
+      originalUrl: "https://temporary.example.com/result.mp4",
+      bindingPath: "/Users/test/media/result.mp4",
+    }
+  );
+  const expiringVideoResource = {
+    id: "video-expiring",
+    url: "https://temporary.example.com/result.mp4",
+    videoUrl: "https://temporary.example.com/result.mp4",
+    type: "video/mp4",
+    source: "generated",
+    pageUrl: "canvas:project-a",
+  };
+  check("generated remote video requires local persistence", wanjuanTransitResourceNeedsPersistence(expiringVideoResource), true);
+  check(
+    "persisted video rewrites both url and videoUrl to the local file",
+    (() => {
+      const resource = wanjuanApplyPersistedTransitResource(expiringVideoResource, {
+        ok: true,
+        assetId: "asset-video",
+        localPath: "/Users/test/media/persisted.mp4",
+        filename: "persisted.mp4",
+        mime: "video/mp4",
+        size: 4096,
+        sha256: "abc",
+        projectId: "project-a",
+        nodeId: "transit-resource",
+        field: "url",
+        kind: "video",
+        savedAt: "2026-07-15T00:00:00.000Z",
+      });
+      return {
+        url: resource?.url,
+        videoUrl: resource?.videoUrl,
+        localPath: resource?.localPath,
+        originalUrl: resource?.originalUrl,
+        bindingPath: resource?.projectAssetBinding?.localPath,
+      };
+    })(),
+    {
+      url: "file:///Users/test/media/persisted.mp4",
+      videoUrl: "file:///Users/test/media/persisted.mp4",
+      localPath: "/Users/test/media/persisted.mp4",
+      originalUrl: "https://temporary.example.com/result.mp4",
+      bindingPath: "/Users/test/media/persisted.mp4",
+    }
   );
   // wanjuanResourceKind
   check("kind text", wanjuanResourceKind({ type: "text" }), "text");
@@ -190,6 +321,7 @@ async function run() {
     modelProtocolRegistry: { runtime: true },
     wanjuanRenderMode: "lite",
     wanjuanRenderZoom: 0.5,
+    arkTrustedAssetEnabled: true,
   };
   check(
     "runtime strip preserves generated results and model parameters",

@@ -250,7 +250,8 @@ function buildTosPresignedPutUrl({
   endpointHost,
   encodedKey,
   useTos4SecretPrefix = false,
-  expires = 900
+  expires = 900,
+  acl = ""
 }) {
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
@@ -258,13 +259,15 @@ function buildTosPresignedPutUrl({
   const service = "tos";
   const credentialScope = `${dateStamp}/${region}/${service}/request`;
   const payloadHash = "UNSIGNED-PAYLOAD";
+  const signedHeaders = acl ? "host;x-tos-acl" : "host";
+  const canonicalHeaders = acl ? `host:${endpointHost}\nx-tos-acl:${acl}\n` : `host:${endpointHost}\n`;
   const query = new URLSearchParams({
     "X-Tos-Algorithm": "TOS4-HMAC-SHA256",
     "X-Tos-Content-Sha256": payloadHash,
     "X-Tos-Credential": `${accessKeyId}/${credentialScope}`,
     "X-Tos-Date": amzDate,
     "X-Tos-Expires": String(Math.max(1, Math.min(Number(expires) || 900, 604800))),
-    "X-Tos-SignedHeaders": "host"
+    "X-Tos-SignedHeaders": signedHeaders
   });
   const canonicalQuery = [...query.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -274,8 +277,8 @@ function buildTosPresignedPutUrl({
     "PUT",
     `/${encodedKey}`,
     canonicalQuery,
-    `host:${endpointHost}\n`,
-    "host",
+    canonicalHeaders,
+    signedHeaders,
     payloadHash
   ].join("\n");
   const stringToSign = [
@@ -299,6 +302,7 @@ async function uploadToTos(payload) {
   const endpointHost = normalizeTosEndpoint(config.endpoint || "tos-cn-beijing.volces.com", bucket);
   const prefix = String(config.prefix || "wanjuan/seedance/").replace(/^\/+|\/+$/g, "");
   const publicBaseUrl = normalizePublicBaseUrl(config.publicBaseUrl || "");
+  const publicRead = payload?.publicRead === true || config.publicRead === true;
   if (!accessKeyId || !secretAccessKey || !bucket) {
     throw new Error("TOS 配置不完整：需要 AccessKey、SecretKey 和 Bucket");
   }
@@ -318,9 +322,12 @@ async function uploadToTos(payload) {
   const canonicalHeaders =
     `content-type:${contentType}\n` +
     `host:${endpointHost}\n` +
+    (publicRead ? `x-tos-acl:public-read\n` : "") +
     `x-tos-content-sha256:${payloadHash}\n` +
     `x-tos-date:${amzDate}\n`;
-  const signedHeaders = "content-type;host;x-tos-content-sha256;x-tos-date";
+  const signedHeaders = publicRead
+    ? "content-type;host;x-tos-acl;x-tos-content-sha256;x-tos-date"
+    : "content-type;host;x-tos-content-sha256;x-tos-date";
   const canonicalRequest = [
     "PUT",
     `/${encodedKey}`,
@@ -346,11 +353,13 @@ async function uploadToTos(payload) {
       region,
       endpointHost,
       encodedKey,
-      useTos4SecretPrefix
+      useTos4SecretPrefix,
+      acl: publicRead ? "public-read" : ""
     }), {
       method: "PUT",
       headers: {
-        "Content-Type": contentType
+        "Content-Type": contentType,
+        ...(publicRead ? { "x-tos-acl": "public-read" } : {})
       },
       body: buffer
     });
@@ -377,6 +386,7 @@ async function uploadToTos(payload) {
         headers: {
           Authorization: authorization,
           "Content-Type": contentType,
+          ...(publicRead ? { "x-tos-acl": "public-read" } : {}),
           "x-tos-content-sha256": payloadHash,
           "x-tos-date": amzDate
         },
@@ -409,8 +419,10 @@ async function uploadToTos(payload) {
   } catch {
     parsedPublicBase = null;
   }
-  const signedGet = !parsedPublicBase || isTosHost(parsedPublicBase.hostname);
-  const url = !signedGet
+  const signedGet = !publicRead && (!parsedPublicBase || isTosHost(parsedPublicBase.hostname));
+  const url = publicRead
+    ? `${publicBaseUrl || `https://${endpointHost}`}/${encodedKey}`
+    : !signedGet
     ? `${publicBaseUrl}/${encodedKey}`
     : buildTosPresignedGetUrl({
         accessKeyId,

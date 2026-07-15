@@ -1,4 +1,57 @@
 import { normalizeUnifiedApiConfigs } from "./unified-api-config";
+import { WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG } from "./ark-trusted-assets";
+
+export const WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID = `custom-empty`;
+
+/**
+ * Clear provider/model identity while deliberately omitting model parameter fields.
+ * Applying this patch therefore preserves duration, resolution, ratio and upload settings.
+ */
+export const buildCustomEmptyGlobalConfigPatch = () => ({
+  apiUrl: ``,
+  apiKey: ``,
+  apiConfigs: [],
+  arkTrustedAssetConfig: { ...WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG },
+  textApiConfigId: ``,
+  imageApiConfigId: ``,
+  videoApiConfigId: ``,
+  audioApiConfigId: ``,
+  textApiUrl: ``,
+  textApiKey: ``,
+  imageApiUrl: ``,
+  imageApiKey: ``,
+  videoApiUrl: ``,
+  videoApiKey: ``,
+  audioApiUrl: ``,
+  audioApiKey: ``,
+  textModel: ``,
+  drawingModel: ``,
+  videoModel: ``,
+  audioModel: ``,
+  ttsMusicModel: ``,
+  seedanceModel: ``,
+  tianjiSeedanceModel: ``,
+  tongyiWanxiangTextModels: ``,
+  tongyiWanxiangReferenceImageModels: ``,
+  tongyiWanxiangImageModels: ``,
+  tongyiWanxiangEditModels: ``,
+  modelProtocolRegistry: {},
+  textModelApiBindings: {},
+  textModelProtocolBindings: {},
+  imageModelApiBindings: {},
+  imageModelProtocolBindings: {},
+  videoModelApiBindings: {},
+  videoModelProtocolBindings: {},
+  audioModelApiBindings: {},
+  audioModelProtocolBindings: {},
+  videoModelRequestProfiles: `{}`,
+  configButlerApiUrl: ``,
+  configButlerApiKey: ``,
+  configButlerModel: ``,
+  configButlerDocUrl: ``,
+  configButlerTargetApiConfigId: ``,
+  activeStoredGlobalConfigId: WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID,
+});
 
 const cloneConfigValue = <T>(value: T): T => {
   if (typeof structuredClone === "function") return structuredClone(value);

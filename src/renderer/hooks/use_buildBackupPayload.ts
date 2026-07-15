@@ -12,7 +12,7 @@ export function use_buildBackupPayload(deps: UseBuildBackupPayloadDeps) {
     buildBackupModules,
   } = deps;
   const buildBackupPayload = async (chromeStorage, userData, moduleSelection, backupOptions = {}) => ({
-			                            version: `1.3.8`,
+			                            version: `1.3.9`,
                             backupFormat: `4`,
                             exportedAt: new Date().toISOString(),
                             modules: await buildBackupModules(chromeStorage, userData, moduleSelection, backupOptions),

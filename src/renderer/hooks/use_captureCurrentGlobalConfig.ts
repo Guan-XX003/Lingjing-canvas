@@ -8,6 +8,7 @@ import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
 
 interface UseCaptureCurrentGlobalConfigDeps {
   apiConfigs: ApiConfig[];
+  arkTrustedAssetConfig: any;
   audioApiConfigId: any;
   audioApiKey: any;
   audioApiUrl: any;
@@ -64,6 +65,7 @@ interface UseCaptureCurrentGlobalConfigDeps {
 export function use_captureCurrentGlobalConfig(deps: UseCaptureCurrentGlobalConfigDeps) {
   const {
     apiConfigs,
+    arkTrustedAssetConfig,
     audioApiConfigId,
     audioApiKey,
     audioApiUrl,
@@ -118,6 +120,7 @@ export function use_captureCurrentGlobalConfig(deps: UseCaptureCurrentGlobalConf
   } = deps;
   const captureCurrentGlobalConfig = () => ({
       apiConfigs: cloneBackupValue(normalizeUnifiedApiConfigs(apiConfigs)),
+      arkTrustedAssetConfig: cloneBackupValue(arkTrustedAssetConfig),
       textApiConfigId: textApiConfigId,
       imageApiConfigId: imageApiConfigId,
       videoApiConfigId: videoApiConfigId,

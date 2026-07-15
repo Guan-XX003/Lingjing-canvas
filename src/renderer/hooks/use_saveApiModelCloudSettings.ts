@@ -10,6 +10,7 @@ declare const chrome: any;
 
 interface UseSaveApiModelCloudSettingsDeps {
   activeStoredGlobalConfigId: any;
+  arkTrustedAssetConfig: any;
   apiConfigs: ApiConfig[];
   apiModelCloudSettingsSaveTimerRef: Ref;
   audioApiConfigId: any;
@@ -80,6 +81,7 @@ interface UseSaveApiModelCloudSettingsDeps {
 export function use_saveApiModelCloudSettings(deps: UseSaveApiModelCloudSettingsDeps) {
   const {
     activeStoredGlobalConfigId,
+    arkTrustedAssetConfig,
     apiConfigs,
     apiModelCloudSettingsSaveTimerRef,
     audioApiConfigId,
@@ -183,6 +185,7 @@ export function use_saveApiModelCloudSettings(deps: UseSaveApiModelCloudSettings
             seedanceWatermark: seedanceWatermark,
             seedanceEnableWebSearch: seedanceEnableWebSearch,
             seedanceVirtualPortraits: seedanceVirtualPortraits,
+	            arkTrustedAssetConfig: arkTrustedAssetConfig,
 	            tianjiSeedanceSettingsMode: tianjiSeedanceSettingsMode,
             tongyiWanxiangTextModels: tongyiWanxiangTextModels,
             tongyiWanxiangReferenceImageModels: tongyiWanxiangReferenceImageModels,

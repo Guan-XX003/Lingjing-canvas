@@ -5,6 +5,8 @@
  * 并把单个归一化人像转换为编辑器内部使用的资源对象(resource)。
  */
 
+import { wanjuanResetArkTrustedAssetBindingForImage } from "./ark-trusted-assets";
+
 /** 归一化后的天玑人像素材结构。 */
 interface TianjiPortraitAsset {
   id: string;
@@ -24,7 +26,7 @@ export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUr
   const normalizedNextImageUrl = String(nextImageUrl || ``).trim();
   if (!normalizedNextImageUrl || normalizedNextImageUrl === currentImageUrl) return { ...(data || {}) };
   return {
-    ...(data || {}),
+    ...wanjuanResetArkTrustedAssetBindingForImage(data, nextImageUrl),
     tianjiPortraitAssetId: undefined,
     tianjiPortraitGroupType: undefined,
     tianjiPortraitPreviewUrl: undefined,

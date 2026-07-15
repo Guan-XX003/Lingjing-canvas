@@ -7,7 +7,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import { parseSeedanceList } from "../lib/model-binding";
 import localforage from "localforage";
 import { NodeResizer, Position, useNodeConnections, useNodesData, useNodesState, useReactFlow } from "@xyflow/react";
-import { ArrowUp, CircleAlert, Crop, Download, PenLine, RefreshCw, Square, Type, Upload, ZoomIn } from "lucide-react";
+import { ArrowUp, CircleAlert, Crop, Download, PenLine, RefreshCw, ShieldCheck, Square, Type, Upload, ZoomIn } from "lucide-react";
 import { WanJuanTianjiPortraitReviewIcon } from "../components/icons";
 import { WanJuanNodeHandle } from "../components/render-mode";
 import { wanjuanRenderResourcePickerHeader, wanjuanRenderResourcePreview } from "../components/resource-picker";
@@ -16,6 +16,7 @@ import { WanJuanGetPreferredModel, WanJuanShouldAutoPreferredModel, WanJuanUseFa
 import { WanJuanParseModelList, WanJuanSameModelId } from "../lib/model-id";
 import { wanjuanResourceInList, wanjuanResourceKind, wanjuanResourceMatchesFilter } from "../lib/resource";
 import { wanjuanUseBrokenResourceImage } from "../lib/resource-tabs";
+import { wanjuanArkAssetBindingMatchesImage } from "../lib/ark-trusted-assets";
 
 /** chrome 扩展运行时（仅在浏览器扩展环境存在）。 */
 declare const chrome: any;
@@ -254,6 +255,24 @@ export const WanJuanPromptNode = reactMemo(({
         title: data.tianjiPortraitBindingMessage || tianjiBindingState.label,
         children: tianjiBindingState.label,
       }) :
+      null,
+      arkBindingSourceUrl = String(data.arkTrustedAssetSourceUrl || ``).trim(),
+      arkBindingMatchesImage = !arkBindingSourceUrl || arkBindingSourceUrl === String(imageUrl || ``).trim(),
+      arkBindingStatus = arkBindingMatchesImage ? (wanjuanArkAssetBindingMatchesImage(data, imageUrl) ? `ready` : String(data.arkTrustedAssetStatus || ``).trim()) : ``,
+      arkBindingState =
+      arkBindingStatus === `reviewing` ?
+      { label: `Ark 审核中`, className: `border-sky-400/40 bg-sky-500/15 text-sky-100` } :
+      arkBindingStatus === `ready` ?
+      { label: `Ark 可信素材`, className: `border-emerald-400/45 bg-emerald-500/15 text-emerald-100` } :
+      arkBindingStatus === `failed` ?
+      { label: `Ark 审核失败`, className: `border-red-400/45 bg-red-500/15 text-red-100` } :
+      null,
+      arkBindingBadge = arkBindingState ?
+      jsx(`div`, {
+        className: `absolute right-2 bottom-2 z-20 max-w-[calc(50%-12px)] truncate rounded-md border px-2 py-1 text-[10px] font-medium leading-tight shadow-lg backdrop-blur-md pointer-events-none ${arkBindingState.className}`,
+        title: data.arkTrustedAssetMessage || arkBindingState.label,
+        children: arkBindingState.label,
+      }) :
       null;
     return jsxs(`div`, {
       className: `flex flex-col items-center group/node transition-all w-full h-full min-w-[160px] min-h-[160px] ${selected ? `z-50` : `z-10`}`,
@@ -337,6 +356,22 @@ export const WanJuanPromptNode = reactMemo(({
                   children: jsx(WanJuanTianjiPortraitReviewIcon, {
                     size: 14
                   }),
+                }),
+                data.arkTrustedAssetEnabled === true &&
+                jsx(`button`, {
+                  className: `p-1.5 text-gray-300 hover:text-emerald-300 hover:bg-white/10 rounded-md transition-colors disabled:cursor-wait disabled:opacity-60`,
+                  title: arkBindingStatus === `ready` ? `重新进行 Ark 可信素材审核` : `Ark 可信素材审核`,
+                  disabled: arkBindingStatus === `reviewing`,
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    let review = data.onArkTrustedAssetReview && data.onArkTrustedAssetReview(imageUrl, {
+                      nodeId,
+                      label: data.label || `生图结果`,
+                      localPath: data.localPath || data.filePath,
+                    });
+                    review?.catch?.(() => {});
+                  },
+                  children: jsx(ShieldCheck, { size: 14 }),
                 }),
                 jsx(`button`, {
                   className: `p-1.5 text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-colors`,
@@ -479,6 +514,7 @@ export const WanJuanPromptNode = reactMemo(({
                   ],
                 }),
                 tianjiBindingBadge,
+                arkBindingBadge,
                 jsx(`div`, {
                   className: `absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100 pointer-events-none`,
                 }),

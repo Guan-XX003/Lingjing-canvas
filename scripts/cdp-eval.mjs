@@ -6,7 +6,9 @@ const expr = process.argv[2];
 if (!expr) { console.error("用法: node cdp-eval.mjs '<js>'"); process.exit(1); }
 
 const list = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json();
-const page = list.find((p) => p.type === "page" && p.webSocketDebuggerUrl);
+const page =
+  list.find((p) => p.type === "page" && /index\.html(?:$|[?#])/.test(String(p.url || "")) && p.webSocketDebuggerUrl) ||
+  list.find((p) => p.type === "page" && p.webSocketDebuggerUrl);
 if (!page) { console.error("找不到渲染进程页面"); process.exit(1); }
 
 const ws = new WebSocket(page.webSocketDebuggerUrl);
