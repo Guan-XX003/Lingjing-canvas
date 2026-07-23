@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.4.0：新增邮箱账号、本机安全凭据存储、企业局域网网关和成员配额管理；完善全局配置切换与卸载清理，并修复主网关管理态丢失和应用内版本显示不一致。`),
+				                                          children: wanjuanT(`1.4.1：修复重新登录后本机主网关管理面板丢失、错误进入接管流程的问题，并统一应用内版本显示与安装包版本。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-				                                          children: `1.4.0`,
+				                                          children: `1.4.1`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,
