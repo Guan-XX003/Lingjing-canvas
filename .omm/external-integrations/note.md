@@ -1,1 +1,1 @@
-The main-process proxy performs URL and header validation and supports cancellation. Upload integrations convert local media into public URLs only when the target provider requires them.
+The account client uses WANJUAN_ACCOUNT_API_URL for cloud identity and accepts private-network HTTP only for enterprise gateways. The renderer never receives account or workspace tokens.

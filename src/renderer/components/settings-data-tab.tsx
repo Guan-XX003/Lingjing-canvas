@@ -1,7 +1,7 @@
 /** 设置-数据管理 标签页。自 WanJuanAppRoot 抽出，props 传入，行为不变。 */
 import { jsx, jsxs } from "react/jsx-runtime";
 import { WanJuanStorageOptimizationPanel } from "./storage-optimization-panel";
-import { Download, Upload } from "lucide-react";
+import { Download, ShieldAlert, Trash2, Upload } from "lucide-react";
 declare const chrome: any;
 
 export function WanJuanSettingsDataTab({
@@ -31,6 +31,26 @@ export function WanJuanSettingsDataTab({
   storageOptimizationPaused,
   storageOptimizationStatus,
 }: any) {
+  const handleRemoveLocalUserData = async () => {
+    const confirmed = window.confirm(
+      `这会永久删除本机上的画布项目、资源索引、API 配置、智能体、工作空间、本地账号会话和应用缓存。\n\n不会删除云端账号，也不会删除下载目录中的导出文件。此操作不可恢复，确定继续吗？`,
+    );
+    if (!confirmed) return;
+    const phrase = await window.wanjuanDesktop?.showInputDialog?.({
+      title: `清除本机数据并退出`,
+      message: `请输入“删除本机数据”以确认。应用随后会自动退出。`,
+      defaultValue: ``,
+    });
+    if (String(phrase || ``).trim() !== `删除本机数据`) {
+      phrase !== null && showToast2(`确认文字不正确，未删除任何数据`);
+      return;
+    }
+    const result = await window.wanjuanDesktop?.removeLocalUserData?.({
+      confirmation: `DELETE_WANJUAN_LOCAL_DATA`,
+    });
+    if (!result?.ok) showToast2(result?.error || `无法安排本机数据清理`);
+  };
+
   return jsx(`div`, {
                         className: `space-y-6 wanjuan-settings-section`,
                         children: jsxs(`div`, {
@@ -229,9 +249,45 @@ export function WanJuanSettingsDataTab({
 		                            }),
 		                          ],
 		                        }),
-	                                  ],
-	                                }),
+		                      ],
+		                    }),
+		                    jsxs(`div`, {
+		                      className: `mt-7 rounded-xl border border-red-500/30 bg-red-500/5 p-4 wanjuan-settings-subcard`,
+		                      children: [
+		                        jsxs(`div`, {
+		                          className: `flex items-start gap-3`,
+		                          children: [
+		                            jsx(`div`, {
+		                              className: `mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 text-red-400`,
+		                              children: jsx(ShieldAlert, { size: 17 }),
+		                            }),
+		                            jsxs(`div`, {
+		                              className: `min-w-0 flex-1`,
+		                              children: [
 		                                jsx(`div`, {
+		                                  className: `text-sm font-bold text-gray-200 wanjuan-settings-card-title`,
+		                                  children: `卸载与本机数据`,
+		                                }),
+		                                jsx(`p`, {
+		                                  className: `mt-1 text-xs leading-5 text-gray-500 wanjuan-settings-copy`,
+		                                  children: `Windows 从系统卸载时会自动清除本机应用数据。macOS 直接把 App 拖进废纸篓无法触发清理，请先使用下方按钮。云端账号和下载目录中的导出文件不会被删除。`,
+		                                }),
+		                              ],
+		                            }),
+		                          ],
+		                        }),
+		                        jsxs(`button`, {
+		                          type: `button`,
+		                          onClick: handleRemoveLocalUserData,
+		                          className: `mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/20 hover:text-red-200 wanjuan-settings-button wanjuan-settings-button-block`,
+		                          children: [
+		                            jsx(Trash2, { size: 16 }),
+		                            jsx(`span`, { children: `清除本机数据并退出` }),
+		                          ],
+		                        }),
+		                      ],
+		                    }),
+			                                jsx(`div`, {
 		                                  id: `wanjuan-project-safety-center`,
 		                                  className: `overflow-hidden`,
 		                                  style: {

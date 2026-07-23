@@ -1,14 +1,15 @@
-/** Stored global configurations replace the active API snapshot in full. */
+/** Stored global configurations switch bindings without deleting unrelated APIs. */
 import type { ApiConfig } from "../lib/app-types";
-import { replaceGlobalConfigApiConfigs } from "../lib/global-config";
+import { mergeGlobalConfigApiConfigs } from "../lib/global-config";
 
 interface UseMergeStoredGlobalApiConfigsDeps {
   apiConfigs: ApiConfig[];
 }
 
-export function use_mergeStoredGlobalApiConfigs(_deps: UseMergeStoredGlobalApiConfigsDeps) {
+export function use_mergeStoredGlobalApiConfigs(deps: UseMergeStoredGlobalApiConfigsDeps) {
+  const { apiConfigs } = deps;
   const mergeStoredGlobalApiConfigs = (value) => {
-      return replaceGlobalConfigApiConfigs(value);
+      return mergeGlobalConfigApiConfigs(apiConfigs, value);
     };
   return { mergeStoredGlobalApiConfigs };
 }

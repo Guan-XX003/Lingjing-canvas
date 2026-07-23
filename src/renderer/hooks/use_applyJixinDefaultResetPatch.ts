@@ -6,6 +6,7 @@ import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, SetAny
 import { WANJUAN_JIXIN_BUILTIN_TIANJI_SEEDANCE_MODELS, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, wanjuanMergeModelText } from "../lib/jixin-catalog";
 import { cloneBackupValue } from "../lib/backup";
 import { normalizeUnifiedApiConfigs } from "../lib/unified-api-config";
+import { mergeGlobalConfigApiConfigs } from "../lib/global-config";
 
 interface UseApplyJixinDefaultResetPatchDeps {
   WANJUAN_JIXIN_DOC_URL: any;
@@ -222,7 +223,7 @@ export function use_applyJixinDefaultResetPatch(deps: UseApplyJixinDefaultResetP
     videoResolutions,
   } = deps;
   const applyJixinDefaultResetPatch = (patch) => {
-      let normalizedApiConfigs = normalizeUnifiedApiConfigs(patch.apiConfigs);
+      let normalizedApiConfigs = normalizeUnifiedApiConfigs(mergeGlobalConfigApiConfigs(apiConfigs, patch.apiConfigs));
       (setApiConfigs(normalizedApiConfigs),
         setArkTrustedAssetConfig(patch.arkTrustedAssetConfig),
         setTextApiConfigId(patch.textApiConfigId),

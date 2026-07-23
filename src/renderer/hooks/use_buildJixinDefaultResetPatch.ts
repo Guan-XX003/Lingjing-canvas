@@ -6,6 +6,7 @@ import type { ApiConfig, StoredGlobalConfig } from "../lib/app-types";
 import { WANJUAN_JIXIN_BUILTIN_BASE_CONFIG_VERSION, WANJUAN_JIXIN_DEFAULT_API_CONFIG_ID, WANJUAN_JIXIN_DEFAULT_API_URL, wanjuanBuildJixinBuiltinBasePatch, wanjuanBuildJixinBuiltinStoredGlobalConfig } from "../lib/jixin-catalog";
 import { wanjuanTianjiSeedanceDefaults } from "../lib/tianji-api";
 import { WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG } from "../lib/ark-trusted-assets";
+import { mergeGlobalConfigApiConfigs } from "../lib/global-config";
 
 interface UseBuildJixinDefaultResetPatchDeps {
   WANJUAN_JIXIN_DOC_URL: any;
@@ -69,6 +70,7 @@ export function use_buildJixinDefaultResetPatch(deps: UseBuildJixinDefaultResetP
       if (!foundBuiltinConfig) nextStoredGlobalConfigs.unshift(builtinStoredConfig);
       return {
         ...baseConfig,
+        apiConfigs: mergeGlobalConfigApiConfigs(apiConfigs, baseConfig.apiConfigs),
         apiKey: ``,
         apiUrl: WANJUAN_JIXIN_DEFAULT_API_URL,
         textApiKey: ``,

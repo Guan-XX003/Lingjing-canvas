@@ -1,0 +1,1130 @@
+.wanjuan-account-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  color: var(--wj-text, #f8fafc);
+  background: color-mix(in srgb, var(--wj-bg, #111827) 94%, #000 6%);
+  font-family: inherit;
+  -webkit-app-region: no-drag;
+}
+
+.wanjuan-account-overlay.is-dialog {
+  background: color-mix(in srgb, #000 68%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.wanjuan-account-loading-state {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--wj-text, #f8fafc);
+}
+
+.wanjuan-account-loading-state strong,
+.wanjuan-account-loading-state span {
+  display: block;
+}
+
+.wanjuan-account-loading-state strong {
+  font-size: 14px;
+}
+
+.wanjuan-account-loading-state span {
+  margin-top: 4px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.wanjuan-account-auth-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, .78fr);
+  width: min(980px, 94vw);
+  max-height: min(720px, 92vh);
+  overflow: hidden;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 8px;
+  background: var(--wj-surface, #1f242b);
+  box-shadow: 0 24px 72px color-mix(in srgb, var(--wanjuan-theme-shadow, #000) 76%, transparent);
+}
+
+.wanjuan-account-auth-modal {
+  width: min(900px, 92vw);
+}
+
+.wanjuan-account-auth-intro,
+.wanjuan-account-auth-form-panel {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 38px;
+}
+
+.wanjuan-account-auth-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-right: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+}
+
+.wanjuan-account-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent, #38bdf8) 62%, var(--wj-border) 38%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wj-accent, #38bdf8) 15%, var(--wj-surface) 85%);
+  color: var(--wj-accent, #38bdf8);
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.wanjuan-account-mark svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+.wanjuan-account-kicker {
+  margin-bottom: 8px;
+  color: var(--wj-accent, #38bdf8);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wanjuan-account-auth-intro h1 {
+  margin: 0;
+  max-width: 520px;
+  color: var(--wj-text, #f8fafc);
+  font-size: 27px;
+  line-height: 1.35;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.wanjuan-account-auth-intro p,
+.wanjuan-account-local-copy {
+  margin: 10px 0 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.wanjuan-account-benefits {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.wanjuan-account-benefits > div,
+.wanjuan-account-private-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: color-mix(in srgb, var(--wj-text) 86%, var(--wj-muted) 14%);
+  font-size: 13px;
+}
+
+.wanjuan-account-benefits svg,
+.wanjuan-account-private-note svg {
+  flex: 0 0 auto;
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-account-private-note {
+  align-items: flex-start;
+  margin-top: auto;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 26%, var(--wj-border) 74%);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--wj-accent) 7%, var(--wj-surface) 93%);
+  color: var(--wj-muted, #94a3b8);
+  line-height: 1.55;
+}
+
+.wanjuan-account-auth-form-panel {
+  background: var(--wj-surface, #1f242b);
+}
+
+.wanjuan-account-auth-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-muted, #94a3b8);
+  cursor: pointer;
+}
+
+.wanjuan-account-auth-close:hover {
+  color: var(--wj-text, #f8fafc);
+  background: var(--wj-surface-3, #303744);
+}
+
+.wanjuan-account-auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  background: var(--wj-bg, #111827);
+}
+
+.wanjuan-account-auth-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.wanjuan-account-auth-tabs button.is-active {
+  background: var(--wj-control-selected-bg, var(--wj-accent, #38bdf8));
+  color: var(--wj-control-selected-text, #111827);
+}
+
+.wanjuan-account-form-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 24px 0 20px;
+}
+
+.wanjuan-account-form-heading svg {
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-account-form-heading strong,
+.wanjuan-account-form-heading span {
+  display: block;
+}
+
+.wanjuan-account-form-heading strong {
+  color: var(--wj-text, #f8fafc);
+  font-size: 15px;
+}
+
+.wanjuan-account-form-heading span {
+  margin-top: 3px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.wanjuan-account-service-warning,
+.wanjuan-account-inline-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, #f59e0b 36%, var(--wj-border) 64%);
+  border-radius: 7px;
+  background: color-mix(in srgb, #f59e0b 8%, var(--wj-surface) 92%);
+  color: color-mix(in srgb, #f59e0b 72%, var(--wj-text) 28%);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.wanjuan-account-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.wanjuan-account-form label,
+.wanjuan-enterprise-connect-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.wanjuan-account-form input,
+.wanjuan-enterprise-connect-form input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  outline: none;
+  background: var(--wj-bg, #111827);
+  color: var(--wj-text, #f8fafc);
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.wanjuan-account-form input:focus,
+.wanjuan-enterprise-connect-form input:focus {
+  border-color: var(--wj-accent, #38bdf8);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wj-accent) 15%, transparent);
+}
+
+.wanjuan-account-code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 8px;
+}
+
+.wanjuan-account-input-with-icon {
+  position: relative;
+}
+
+.wanjuan-account-input-with-icon svg {
+  position: absolute;
+  top: 12px;
+  left: 11px;
+  color: var(--wj-muted, #94a3b8);
+  pointer-events: none;
+}
+
+.wanjuan-account-input-with-icon input {
+  padding-left: 36px;
+}
+
+.wanjuan-account-primary-button,
+.wanjuan-account-primary-inline,
+.wanjuan-account-secondary-button,
+.wanjuan-account-outline-button,
+.wanjuan-account-local-button,
+.wanjuan-account-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wanjuan-account-primary-button,
+.wanjuan-account-primary-inline {
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 76%, var(--wj-border) 24%);
+  background: var(--wj-control-selected-bg, var(--wj-accent, #38bdf8));
+  color: var(--wj-control-selected-text, #111827);
+}
+
+.wanjuan-account-primary-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 3px;
+}
+
+.wanjuan-account-secondary-button,
+.wanjuan-account-outline-button,
+.wanjuan-account-local-button {
+  border: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-text, #f8fafc);
+}
+
+.wanjuan-account-local-button {
+  width: 100%;
+}
+
+.wanjuan-account-danger-button {
+  border: 1px solid color-mix(in srgb, #ef4444 44%, var(--wj-border) 56%);
+  background: transparent;
+  color: #f87171;
+  padding: 0 12px;
+}
+
+.wanjuan-account-primary-button:disabled,
+.wanjuan-account-primary-inline:disabled,
+.wanjuan-account-secondary-button:disabled,
+.wanjuan-account-outline-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.wanjuan-account-local-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 12px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.wanjuan-account-local-divider::before,
+.wanjuan-account-local-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--wj-border, #4b5563);
+}
+
+.wanjuan-account-local-copy {
+  margin-top: 9px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.wanjuan-account-form-error,
+.wanjuan-account-form-success {
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.wanjuan-account-form-error {
+  border: 1px solid color-mix(in srgb, #ef4444 36%, var(--wj-border) 64%);
+  background: color-mix(in srgb, #ef4444 8%, var(--wj-surface) 92%);
+  color: #f87171;
+}
+
+.wanjuan-account-form-success {
+  border: 1px solid color-mix(in srgb, #22c55e 36%, var(--wj-border) 64%);
+  background: color-mix(in srgb, #22c55e 8%, var(--wj-surface) 92%);
+  color: #4ade80;
+}
+
+.wanjuan-account-settings-page {
+  display: grid;
+  gap: 16px;
+}
+
+.wanjuan-account-settings-hero,
+.wanjuan-account-settings-band {
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 8px;
+  background: var(--wj-surface, #1f242b);
+}
+
+.wanjuan-account-settings-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+}
+
+.wanjuan-account-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 46%, var(--wj-border) 54%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wj-accent) 10%, var(--wj-surface-2) 90%);
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-account-settings-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.wanjuan-account-settings-title-row h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wj-text, #f8fafc);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wanjuan-account-settings-hero p {
+  margin: 5px 0 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.wanjuan-account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 999px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wanjuan-account-pill.is-success {
+  border-color: color-mix(in srgb, #22c55e 36%, var(--wj-border) 64%);
+  color: #4ade80;
+}
+
+.wanjuan-account-pill.is-warning {
+  border-color: color-mix(in srgb, #f59e0b 36%, var(--wj-border) 64%);
+  color: #fbbf24;
+}
+
+.wanjuan-account-inline-notice {
+  color: var(--wj-muted, #94a3b8);
+}
+
+.wanjuan-account-inline-notice strong,
+.wanjuan-account-inline-notice span {
+  display: block;
+}
+
+.wanjuan-account-inline-notice strong {
+  color: color-mix(in srgb, #f59e0b 72%, var(--wj-text) 28%);
+}
+
+.wanjuan-account-inline-notice span {
+  margin-top: 2px;
+}
+
+.wanjuan-account-settings-band {
+  padding: 18px;
+}
+
+.wanjuan-account-band-heading,
+.wanjuan-account-band-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wanjuan-account-band-heading.with-action {
+  justify-content: space-between;
+}
+
+.wanjuan-account-band-heading > svg,
+.wanjuan-account-band-title > svg {
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-account-band-heading strong,
+.wanjuan-account-band-heading span,
+.wanjuan-account-band-title strong,
+.wanjuan-account-band-title span {
+  display: block;
+}
+
+.wanjuan-account-band-heading strong,
+.wanjuan-account-band-title strong {
+  color: var(--wj-text, #f8fafc);
+  font-size: 13px;
+}
+
+.wanjuan-account-band-heading span,
+.wanjuan-account-band-title span {
+  margin-top: 2px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.wanjuan-account-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 15px;
+  overflow: hidden;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  background: var(--wj-border, #4b5563);
+}
+
+.wanjuan-account-metrics > div {
+  min-width: 0;
+  padding: 13px;
+  background: var(--wj-surface-2, #252a32);
+}
+
+.wanjuan-account-metrics span,
+.wanjuan-account-metrics strong {
+  display: block;
+}
+
+.wanjuan-account-metrics span {
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.wanjuan-account-metrics strong {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--wj-text, #f8fafc);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wanjuan-account-band-note {
+  margin: 11px 0 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.wanjuan-account-security-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--wj-border) 62%, transparent);
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.wanjuan-account-security-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.wanjuan-account-security-row > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wanjuan-account-security-row strong {
+  color: var(--wj-text, #f8fafc);
+  font-size: 11px;
+}
+
+.wanjuan-account-security-row .is-ok { color: #4ade80; }
+.wanjuan-account-security-row .is-warning { color: #fbbf24; }
+
+.wanjuan-enterprise-empty,
+.wanjuan-enterprise-connected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  padding: 14px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-muted, #94a3b8);
+}
+
+.wanjuan-enterprise-empty > svg {
+  flex: 0 0 auto;
+  color: var(--wj-muted, #94a3b8);
+}
+
+.wanjuan-enterprise-empty strong,
+.wanjuan-enterprise-empty span,
+.wanjuan-enterprise-connected strong,
+.wanjuan-enterprise-connected span {
+  display: block;
+}
+
+.wanjuan-enterprise-empty strong,
+.wanjuan-enterprise-connected strong {
+  color: var(--wj-text, #f8fafc);
+  font-size: 12px;
+}
+
+.wanjuan-enterprise-empty span,
+.wanjuan-enterprise-connected span {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.wanjuan-enterprise-state-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 7px;
+  background: color-mix(in srgb, #22c55e 12%, var(--wj-surface) 88%);
+  color: #4ade80;
+}
+
+.wanjuan-enterprise-state-icon.is-offline {
+  background: color-mix(in srgb, var(--wj-muted) 10%, var(--wj-surface) 90%);
+  color: var(--wj-muted, #94a3b8);
+}
+
+.wanjuan-enterprise-heading-actions,
+.wanjuan-enterprise-host-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wanjuan-enterprise-host-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.wanjuan-settings-nav-item-managed {
+  color: var(--wj-muted, #94a3b8) !important;
+  cursor: pointer;
+}
+
+.wanjuan-settings-managed-lock {
+  margin-left: auto;
+  font-size: 10px;
+  filter: grayscale(1);
+  opacity: .72;
+}
+
+.wanjuan-enterprise-managed-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483250;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in srgb, #000 66%, transparent);
+  backdrop-filter: blur(9px);
+}
+
+.wanjuan-enterprise-managed-dialog {
+  display: grid;
+  justify-items: center;
+  width: min(390px, 90vw);
+  padding: 24px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 8px;
+  background: var(--wj-surface, #1f242b);
+  color: var(--wj-text, #f8fafc);
+  text-align: center;
+  box-shadow: 0 20px 64px color-mix(in srgb, var(--wanjuan-theme-shadow, #000) 76%, transparent);
+}
+
+.wanjuan-enterprise-managed-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 38%, var(--wj-border) 62%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wj-accent) 9%, var(--wj-surface-2) 91%);
+  filter: grayscale(1);
+}
+
+.wanjuan-enterprise-managed-dialog strong { margin-top: 13px; font-size: 14px; }
+.wanjuan-enterprise-managed-dialog p { margin: 7px 0 16px; color: var(--wj-muted, #94a3b8); font-size: 10px; line-height: 1.65; }
+.wanjuan-enterprise-managed-dialog button {
+  min-width: 96px;
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 70%, var(--wj-border) 30%);
+  border-radius: 6px;
+  background: var(--wj-control-selected-bg, var(--wj-accent, #38bdf8));
+  color: var(--wj-control-selected-text, #111827);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wanjuan-enterprise-host-details {
+  margin-top: 10px;
+  padding-top: 13px;
+  border-top: 1px solid color-mix(in srgb, var(--wj-border) 64%, transparent);
+}
+
+.wanjuan-enterprise-host-metrics {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(110px, .45fr) minmax(110px, .55fr);
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.wanjuan-enterprise-host-metrics > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border-right: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+}
+
+.wanjuan-enterprise-host-metrics > div:last-child { border-right: 0; }
+.wanjuan-enterprise-host-metrics span,
+.wanjuan-enterprise-host-metrics strong { display: block; }
+.wanjuan-enterprise-host-metrics span { color: var(--wj-muted, #94a3b8); font-size: 10px; }
+.wanjuan-enterprise-host-metrics strong { margin-top: 4px; overflow: hidden; color: var(--wj-text, #f8fafc); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.wanjuan-enterprise-host-actions { justify-content: flex-end; margin-top: 10px; }
+
+.wanjuan-enterprise-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, #000 68%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-app-region: no-drag;
+}
+
+.wanjuan-enterprise-create-dialog {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(780px, 94vw);
+  max-height: min(780px, 92vh);
+  overflow: hidden;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 8px;
+  background: var(--wj-surface, #1f242b);
+  color: var(--wj-text, #f8fafc);
+  box-shadow: 0 24px 76px color-mix(in srgb, var(--wanjuan-theme-shadow, #000) 78%, transparent);
+}
+
+.wanjuan-enterprise-dialog-header,
+.wanjuan-enterprise-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.wanjuan-enterprise-dialog-header { border-bottom: 1px solid var(--wj-border, #4b5563); }
+.wanjuan-enterprise-dialog-footer { border-top: 1px solid var(--wj-border, #4b5563); }
+.wanjuan-enterprise-dialog-header strong,
+.wanjuan-enterprise-dialog-header span { display: block; }
+.wanjuan-enterprise-dialog-header strong { font-size: 14px; }
+.wanjuan-enterprise-dialog-header span { margin-top: 3px; color: var(--wj-muted, #94a3b8); font-size: 10px; }
+.wanjuan-enterprise-dialog-header > button,
+.wanjuan-enterprise-result-list button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-muted, #94a3b8);
+  cursor: pointer;
+}
+
+.wanjuan-enterprise-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+}
+
+.wanjuan-enterprise-steps > div {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.wanjuan-enterprise-steps > div:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: min(36px, 28%);
+  height: 1px;
+  background: var(--wj-border, #4b5563);
+}
+
+.wanjuan-enterprise-steps span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  background: var(--wj-surface, #1f242b);
+}
+
+.wanjuan-enterprise-steps .is-active { color: var(--wj-text, #f8fafc); }
+.wanjuan-enterprise-steps .is-active span {
+  border-color: color-mix(in srgb, var(--wj-accent) 65%, var(--wj-border) 35%);
+  background: color-mix(in srgb, var(--wj-accent) 14%, var(--wj-surface) 86%);
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-enterprise-dialog-body {
+  min-height: 350px;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.wanjuan-enterprise-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.wanjuan-enterprise-form-grid > label:not(.wanjuan-enterprise-toggle-row) {
+  display: grid;
+  gap: 7px;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.wanjuan-enterprise-form-grid input:not([type="checkbox"]),
+.wanjuan-enterprise-form-grid select,
+.wanjuan-enterprise-quota-table input[type="number"] {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  outline: none;
+  background: var(--wj-bg, #111827);
+  color: var(--wj-text, #f8fafc);
+  padding: 0 11px;
+  font: inherit;
+}
+
+.wanjuan-enterprise-toggle-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  background: var(--wj-surface-2, #252a32);
+}
+
+.wanjuan-enterprise-toggle-row input { margin-top: 2px; accent-color: var(--wj-accent, #38bdf8); }
+.wanjuan-enterprise-toggle-row strong,
+.wanjuan-enterprise-toggle-row small { display: block; }
+.wanjuan-enterprise-toggle-row strong { font-size: 11px; }
+.wanjuan-enterprise-toggle-row small { margin-top: 3px; color: var(--wj-muted, #94a3b8); font-size: 10px; line-height: 1.5; }
+
+.wanjuan-enterprise-secure-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--wj-accent) 30%, var(--wj-border) 70%);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--wj-accent) 7%, var(--wj-surface) 93%);
+}
+
+.wanjuan-enterprise-secure-note > svg { flex: 0 0 auto; color: var(--wj-accent, #38bdf8); }
+.wanjuan-enterprise-secure-note.is-warning {
+  border-color: color-mix(in srgb, var(--wj-warning, #f59e0b) 38%, var(--wj-border) 62%);
+  background: color-mix(in srgb, var(--wj-warning, #f59e0b) 8%, var(--wj-surface) 92%);
+}
+.wanjuan-enterprise-secure-note.is-warning > svg { color: var(--wj-warning, #f59e0b); }
+.wanjuan-enterprise-secure-note strong,
+.wanjuan-enterprise-secure-note span { display: block; }
+.wanjuan-enterprise-secure-note strong { font-size: 12px; }
+.wanjuan-enterprise-secure-note span { margin-top: 3px; color: var(--wj-muted, #94a3b8); font-size: 10px; line-height: 1.55; }
+
+.wanjuan-enterprise-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+  background: var(--wj-border, #4b5563);
+}
+
+.wanjuan-enterprise-summary-grid > div { padding: 12px; background: var(--wj-surface-2, #252a32); }
+.wanjuan-enterprise-summary-grid span,
+.wanjuan-enterprise-summary-grid strong { display: block; }
+.wanjuan-enterprise-summary-grid span { color: var(--wj-muted, #94a3b8); font-size: 10px; }
+.wanjuan-enterprise-summary-grid strong { margin-top: 4px; font-size: 15px; }
+.wanjuan-enterprise-config-review > button { margin-top: 12px; }
+
+.wanjuan-enterprise-warning-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  color: color-mix(in srgb, #f59e0b 74%, var(--wj-text) 26%);
+  font-size: 10px;
+}
+
+.wanjuan-enterprise-warning-list > div::before { content: "!"; display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 6px; border: 1px solid currentColor; border-radius: 50%; font-weight: 800; }
+.wanjuan-enterprise-quota-section > p { margin: 0 0 12px; color: var(--wj-muted, #94a3b8); font-size: 10px; line-height: 1.6; }
+
+.wanjuan-enterprise-quota-table {
+  overflow: hidden;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 7px;
+}
+
+.wanjuan-enterprise-quota-table > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 76px 110px minmax(110px, .8fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+  font-size: 10px;
+}
+
+.wanjuan-enterprise-quota-table > div:last-child { border-bottom: 0; }
+.wanjuan-enterprise-quota-table > .is-header { min-height: 34px; background: var(--wj-bg, #111827); color: var(--wj-muted, #94a3b8); font-weight: 700; }
+.wanjuan-enterprise-quota-table label { display: flex; align-items: center; gap: 5px; color: var(--wj-muted, #94a3b8); }
+.wanjuan-enterprise-quota-table input[type="checkbox"] { accent-color: var(--wj-accent, #38bdf8); }
+.wanjuan-enterprise-quota-table input[type="number"] { height: 30px; }
+.wanjuan-enterprise-quota-table input:disabled { opacity: .38; }
+
+.wanjuan-enterprise-created-state {
+  display: grid;
+  justify-items: center;
+  padding: 12px 0 2px;
+  text-align: center;
+}
+
+.wanjuan-enterprise-created-state > svg { color: #4ade80; }
+.wanjuan-enterprise-created-state > strong { margin-top: 10px; font-size: 15px; }
+.wanjuan-enterprise-created-state > span,
+.wanjuan-enterprise-created-state > p { margin-top: 5px; color: var(--wj-muted, #94a3b8); font-size: 10px; line-height: 1.55; }
+
+.wanjuan-enterprise-result-list {
+  width: 100%;
+  margin-top: 17px;
+  border-top: 1px solid var(--wj-border, #4b5563);
+}
+
+.wanjuan-enterprise-result-list > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+  min-height: 45px;
+  border-bottom: 1px solid var(--wj-border, #4b5563);
+  text-align: left;
+}
+
+.wanjuan-enterprise-result-list span { color: var(--wj-muted, #94a3b8); font-size: 10px; }
+.wanjuan-enterprise-result-list strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.wanjuan-enterprise-result-list button { width: 28px; height: 28px; }
+
+.is-spinning { animation: wanjuan-account-spin .8s linear infinite; }
+@keyframes wanjuan-account-spin { to { transform: rotate(360deg); } }
+
+.wanjuan-enterprise-connect-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(180px, .65fr);
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--wj-border, #4b5563);
+}
+
+.wanjuan-enterprise-connect-form > .wanjuan-account-form-error,
+.wanjuan-enterprise-form-actions {
+  grid-column: 1 / -1;
+}
+
+.wanjuan-enterprise-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wanjuan-enterprise-management { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--wj-border, #4b5563); }
+.wanjuan-enterprise-management-loading { padding: 16px 0; color: var(--wj-muted, #94a3b8); font-size: 11px; }
+.wanjuan-enterprise-management-heading,
+.wanjuan-enterprise-management-heading > div,
+.wanjuan-enterprise-management-heading span { display: flex; align-items: center; }
+.wanjuan-enterprise-management-heading { justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.wanjuan-enterprise-management-heading > div { gap: 8px; }
+.wanjuan-enterprise-management-heading span { align-items: flex-start; flex-direction: column; }
+.wanjuan-enterprise-management-heading strong { font-size: 12px; }
+.wanjuan-enterprise-management-heading small { margin-top: 2px; color: var(--wj-muted, #94a3b8); font-size: 9px; }
+
+.wanjuan-enterprise-member-table { overflow: hidden; border: 1px solid var(--wj-border, #4b5563); border-radius: 7px; }
+.wanjuan-enterprise-member-table > div {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 110px 90px 36px;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--wj-border, #4b5563);
+  background: var(--wj-surface-2, #252a32);
+}
+.wanjuan-enterprise-member-table > div:last-child { border-bottom: 0; }
+.wanjuan-enterprise-member-table > .is-header { min-height: 32px; background: var(--wj-bg, #111827); color: var(--wj-muted, #94a3b8); font-size: 9px; font-weight: 700; }
+.wanjuan-enterprise-member-table span strong,
+.wanjuan-enterprise-member-table span small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wanjuan-enterprise-member-table span strong { font-size: 10px; }
+.wanjuan-enterprise-member-table span small { margin-top: 2px; color: var(--wj-muted, #94a3b8); font-size: 9px; }
+.wanjuan-enterprise-member-table select,
+.wanjuan-enterprise-member-table button,
+.wanjuan-enterprise-default-quota-table input,
+.wanjuan-enterprise-member-quota-editor select,
+.wanjuan-enterprise-member-quota-editor input {
+  height: 30px;
+  box-sizing: border-box;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  background: var(--wj-bg, #111827);
+  color: var(--wj-text, #f8fafc);
+  font-size: 9px;
+}
+.wanjuan-enterprise-member-table button.is-active { color: color-mix(in srgb, #4ade80 78%, var(--wj-text) 22%); }
+.wanjuan-enterprise-member-table button.is-disabled { color: color-mix(in srgb, #f87171 78%, var(--wj-text) 22%); }
+.wanjuan-enterprise-icon-button { display: grid; place-items: center; width: 30px; padding: 0; color: var(--wj-muted, #94a3b8); cursor: pointer; }
+.wanjuan-enterprise-icon-button:disabled { opacity: .35; cursor: default; }
+
+.wanjuan-enterprise-subheading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 15px 0 7px; }
+.wanjuan-enterprise-subheading strong { font-size: 10px; }
+.wanjuan-enterprise-subheading span { color: var(--wj-muted, #94a3b8); font-size: 9px; }
+.wanjuan-enterprise-default-quota-table { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--wj-border, #4b5563); border-radius: 7px; }
+.wanjuan-enterprise-default-quota-table > div { display: grid; grid-template-columns: minmax(70px, 1fr) 72px 30px; align-items: center; gap: 6px; padding: 8px; border-right: 1px solid var(--wj-border, #4b5563); border-bottom: 1px solid var(--wj-border, #4b5563); background: var(--wj-surface-2, #252a32); font-size: 9px; }
+.wanjuan-enterprise-default-quota-table > div:nth-child(3n) { border-right: 0; }
+.wanjuan-enterprise-default-quota-table > div:nth-last-child(-n+3) { border-bottom: 0; }
+.wanjuan-enterprise-default-quota-table input { width: 100%; padding: 0 7px; }
+.wanjuan-enterprise-default-quota-table button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--wj-border, #4b5563); border-radius: 6px; background: var(--wj-bg, #111827); color: var(--wj-muted, #94a3b8); }
+.wanjuan-enterprise-member-quota-editor > div:last-child { display: grid; grid-template-columns: minmax(130px, 1.2fr) minmax(110px, 1fr) 100px 80px auto; gap: 7px; }
+.wanjuan-enterprise-member-quota-editor select,
+.wanjuan-enterprise-member-quota-editor input { width: 100%; padding: 0 8px; }
+.wanjuan-enterprise-member-quota-editor input:disabled { opacity: .38; }
+
+@media (max-width: 800px) {
+  .wanjuan-account-overlay { padding: 14px; }
+  .wanjuan-account-auth-shell { grid-template-columns: 1fr; max-height: 94vh; }
+  .wanjuan-account-auth-intro { display: none; }
+  .wanjuan-account-auth-form-panel { padding: 28px 22px; }
+  .wanjuan-account-metrics { grid-template-columns: 1fr; }
+  .wanjuan-account-settings-hero { align-items: flex-start; flex-wrap: wrap; }
+  .wanjuan-account-settings-hero > button { width: 100%; }
+  .wanjuan-enterprise-connect-form { grid-template-columns: 1fr; }
+  .wanjuan-account-band-heading.with-action { align-items: flex-start; gap: 12px; }
+  .wanjuan-enterprise-heading-actions { align-items: stretch; flex-direction: column; }
+  .wanjuan-enterprise-host-metrics { grid-template-columns: 1fr; }
+  .wanjuan-enterprise-host-metrics > div { border-right: 0; border-bottom: 1px solid var(--wj-border, #4b5563); }
+  .wanjuan-enterprise-host-metrics > div:last-child { border-bottom: 0; }
+  .wanjuan-enterprise-dialog-backdrop { padding: 10px; }
+  .wanjuan-enterprise-steps strong { display: none; }
+  .wanjuan-enterprise-steps > div { justify-content: center; }
+  .wanjuan-enterprise-steps > div::after { display: none; }
+  .wanjuan-enterprise-form-grid,
+  .wanjuan-enterprise-summary-grid { grid-template-columns: 1fr; }
+  .wanjuan-enterprise-quota-table { overflow-x: auto; }
+  .wanjuan-enterprise-quota-table > div { min-width: 570px; }
+  .wanjuan-enterprise-member-table { overflow-x: auto; }
+  .wanjuan-enterprise-member-table > div { min-width: 520px; }
+  .wanjuan-enterprise-default-quota-table { grid-template-columns: 1fr; }
+  .wanjuan-enterprise-default-quota-table > div { border-right: 0; }
+  .wanjuan-enterprise-default-quota-table > div:nth-last-child(-n+3) { border-bottom: 1px solid var(--wj-border, #4b5563); }
+  .wanjuan-enterprise-default-quota-table > div:last-child { border-bottom: 0; }
+  .wanjuan-enterprise-member-quota-editor > div:last-child { grid-template-columns: 1fr 1fr; }
+}

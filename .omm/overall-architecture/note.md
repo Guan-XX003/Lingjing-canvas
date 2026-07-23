@@ -1,1 +1,1 @@
-The installed application is built from dist plus electron modules. The source tree, installed App bundle, and cloud branch can differ even when their visible version number is identical.
+Account onboarding and enterprise identity are optional overlays; local projects remain usable without login, while enterprise provider credentials stay behind the LAN gateway.

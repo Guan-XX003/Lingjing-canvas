@@ -65,7 +65,7 @@ async function run() {
   const { wanjuanCollectNodeReferenceMedia, wanjuanIsPublicHttpMediaUrl } = await import(pathToFileURL(join(outDir, "reference-media.js")).href);
   const { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } = await import(pathToFileURL(join(outDir, "video-aspect-ratio.js")).href);
   const { applyRunScopedStateUpdate, compactGlobalTasks, failGlobalTaskRefresh, indexGlobalTasks, supersedeActiveNodeTasks, updateTaskRunningProgress } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
-  const { collectTaskCredentialConfigs, isCurrentSettingsSave, replaceGlobalConfigApiConfigs, resolveTaskApiCredential, resolveTaskPollUrl } = await import(pathToFileURL(join(outDir, "global-config.js")).href);
+  const { collectTaskCredentialConfigs, isCurrentSettingsSave, mergeGlobalConfigApiConfigs, replaceGlobalConfigApiConfigs, resolveTaskApiCredential, resolveTaskPollUrl } = await import(pathToFileURL(join(outDir, "global-config.js")).href);
   const { WanJuanShouldAutoPreferredModel } = await import(pathToFileURL(join(outDir, "model-selection.js")).href);
   const videoTask = await import(pathToFileURL(join(outDir, "video-task.js")).href);
   const videoParameterMode = await import(pathToFileURL(join(outDir, "video-parameter-mode.js")).href);
@@ -585,6 +585,24 @@ async function run() {
         protocolFormat: "auto",
       },
     ]
+  );
+  check(
+    "switching stored global config preserves unrelated API entries",
+    mergeGlobalConfigApiConfigs(
+      [
+        { id: "primary", name: "Old Primary", url: "https://old.example.com", key: "old-key" },
+        { id: "utility", name: "Utility", url: "https://utility.example.com", key: "utility-key" },
+      ],
+      [
+        { id: "primary", name: "New Primary", url: "https://new.example.com", key: "new-key" },
+        { id: "batch", name: "Batch", url: "https://batch.example.com", key: "batch-key" },
+      ],
+    ),
+    [
+      { id: "primary", name: "New Primary", url: "https://new.example.com", key: "new-key", protocolFormat: "auto" },
+      { id: "utility", name: "Utility", url: "https://utility.example.com", key: "utility-key", protocolFormat: "auto" },
+      { id: "batch", name: "Batch", url: "https://batch.example.com", key: "batch-key", protocolFormat: "auto" },
+    ],
   );
   check(
     "manual model resets when switched config no longer contains it",

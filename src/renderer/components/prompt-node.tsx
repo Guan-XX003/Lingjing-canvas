@@ -269,7 +269,7 @@ export const WanJuanPromptNode = reactMemo(({
       null,
       arkBindingBadge = arkBindingState ?
       jsx(`div`, {
-        className: `absolute right-2 bottom-2 z-20 max-w-[calc(50%-12px)] truncate rounded-md border px-2 py-1 text-[10px] font-medium leading-tight shadow-lg backdrop-blur-md pointer-events-none ${arkBindingState.className}`,
+        className: `absolute right-2 top-2 z-20 max-w-[calc(50%-12px)] truncate rounded-md border px-2 py-1 text-[10px] font-medium leading-tight shadow-lg backdrop-blur-md pointer-events-none transition-opacity group-hover/image:opacity-0 ${arkBindingState.className}`,
         title: data.arkTrustedAssetMessage || arkBindingState.label,
         children: arkBindingState.label,
       }) :

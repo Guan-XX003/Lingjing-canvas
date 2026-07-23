@@ -1,1 +1,1 @@
-API keys and tokens must remain local and must never be written into diagrams, logs, commits, or release notes. Requests must preserve each upstream provider's documented schema.
+Personal API keys and tokens must remain local and must never be written into diagrams, logs, commits, or release notes. Account refresh tokens and enterprise workspace tokens stay encrypted in the Electron main process. Enterprise provider keys remain on the LAN gateway and must never be returned to the App. Requests must preserve each upstream provider's documented schema.

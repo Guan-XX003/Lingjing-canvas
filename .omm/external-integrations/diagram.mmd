@@ -8,6 +8,8 @@ graph LR
     custom-providers["Custom OpenAI-Compatible Providers\nUser configuration"]
     upload-services["Public Media Upload Services\nTOS, Qiniu, custom host, temporary host"]
     admin-services["WanJuan Admin Services\nNotifications and activation"]
+    account-cloud["WanJuan Account Service\nIdentity, membership, devices, wallet"]
+    enterprise-gateway["Enterprise LAN Gateway\nMembership check and model proxy"]
     update-service["GitHub Release Update Feed\nDesktop updater"]
     local-tools["Local Tool Runtime\nFFmpeg, Real-ESRGAN, deface, Qwen TTS"]
     renderer-adapters -->|"sends protected requests through desktop gateway"| proxy-security
@@ -18,7 +20,10 @@ graph LR
     proxy-security -->|"user-defined endpoints and protocol mappings"| custom-providers
     renderer-adapters -->|"converts local references to public URLs"| upload-services
     renderer-adapters -->|"fetches published notifications and activation state"| admin-services
+    renderer-adapters -->|"requests sanitized account actions through IPC"| account-cloud
+    account-cloud -->|"signed user identity"| enterprise-gateway
+    renderer-adapters -->|"short-lived workspace session only"| enterprise-gateway
     proxy-security -->|"checks release metadata"| update-service
     renderer-adapters -->|"invokes local processing through IPC"| local-tools
     classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
-    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,update-service external
+    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,account-cloud,enterprise-gateway,update-service external

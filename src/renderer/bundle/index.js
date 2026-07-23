@@ -352,6 +352,7 @@ import { WanJuanSettingsSectionD } from "../components/WanJuanSettingsSectionD";
 import { WanJuanSettingsSectionC } from "../components/WanJuanSettingsSectionC";
 import { WanJuanSettingsSectionB } from "../components/WanJuanSettingsSectionB";
 import { WanJuanSettingsSectionA } from "../components/WanJuanSettingsSectionA";
+import { WanJuanAccountGate } from "../components/account-gate";
 import { use_redo } from "../hooks/use_redo";
 import { use_handleCopySelected } from "../hooks/use_handleCopySelected";
 import { use_addResource } from "../hooks/use_addResource";
@@ -4242,6 +4243,7 @@ Suno 音乐生成`,
           className: `absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-full text-sm z-50 animate-fade-in pointer-events-none wanjuan-toast`,
           children: toastMessage,
         }),
+        jsx(WanJuanAccountGate, {}),
       ],
     }) :
     jsx(`div`, {

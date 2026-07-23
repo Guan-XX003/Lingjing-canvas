@@ -1,6 +1,6 @@
 /** WanJuanSettingsSectionB：自 WanJuanAppRoot render 抽出的 JSX 段，props 传入，行为不变。 */
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { extractJsonBlock, formatExtensionToolError, formatStorageBytes, normalizeThemeMode } from "../lib/app-utils";
 import { WANJUAN_CUSTOM_EMPTY_GLOBAL_CONFIG_ID } from "../lib/global-config";
 import { WANJUAN_JIXIN_DEFAULT_API_URL } from "../lib/jixin-catalog";
@@ -11,6 +11,7 @@ import { WanJuanGlobalConfigPresetsPanel } from "../components/global-config-pre
 import { WanJuanImageModelSettingsPanel } from "../components/image-model-settings-panel";
 import { WanJuanSeedanceSettingsPanel } from "../components/seedance-settings-panel";
 import { WanJuanSettingsApiConfigSection } from "../components/settings-api-config-section";
+import { WanJuanSettingsAccountTab } from "../components/settings-account-tab";
 import { WanJuanSettingsBasicTab } from "../components/settings-basic-tab";
 import { WanJuanSettingsCloudTab } from "../components/settings-cloud-tab";
 import { WanJuanSettingsDataTab } from "../components/settings-data-tab";
@@ -19,6 +20,7 @@ import { WanJuanSettingsGenerationTab } from "../components/settings-generation-
 import { WanJuanTextModelSettingsPanel } from "../components/text-model-settings-panel";
 import { WanJuanTtsMusicSettingsPanel } from "../components/tts-music-settings-panel";
 import { WanJuanVideoModelSettingsPanel } from "../components/video-model-settings-panel";
+import { getAccountState, subscribeAccount } from "../lib/account";
 
 const WANJUAN_ONE_STOP_CENTER_URL_KEY = `wanjuan.oneStopCenterUrl.v1`;
 
@@ -35,6 +37,9 @@ function normalizeOneStopCenterUrl(value: unknown) {
 }
 
 export function WanJuanSettingsSectionB(props: any) {
+  const account = useSyncExternalStore(subscribeAccount, getAccountState, getAccountState);
+  const enterpriseSettingsManaged = account.enterprise?.connected === true && account.enterprise?.mode !== "host";
+  const [managedLockNotice, setManagedLockNotice] = useState("");
   const [oneStopCenterUrl, setOneStopCenterUrl] = useState(() => {
     try {
       return normalizeOneStopCenterUrl(window.localStorage?.getItem(WANJUAN_ONE_STOP_CENTER_URL_KEY)) || WANJUAN_JIXIN_DEFAULT_API_URL;
@@ -283,6 +288,18 @@ export function WanJuanSettingsSectionB(props: any) {
     updateInfo,
     videoModelSettingsExpanded,
   } = props;
+  const selectSettingsTab = (tab: string) => {
+    if (enterpriseSettingsManaged && [`api`, `models`, `cloud`].includes(tab)) {
+      setManagedLockNotice(tab === `api` ? `API 配置` : tab === `models` ? `模型配置` : `上传与直链`);
+      return;
+    }
+    setActiveSettingsTab(tab);
+  };
+  useEffect(() => {
+    if (enterpriseSettingsManaged && [`api`, `models`, `cloud`].includes(activeSettingsTab)) {
+      setActiveSettingsTab(`account`);
+    }
+  }, [activeSettingsTab, enterpriseSettingsManaged, setActiveSettingsTab]);
   return jsxs(`div`, {
               className: `absolute inset-0 flex bg-[#121212] overflow-hidden wanjuan-settings-page ${activeView === `settings` ? `visible z-10` : `invisible -z-10`}`,
               children: [
@@ -295,12 +312,27 @@ export function WanJuanSettingsSectionB(props: any) {
                     }),
                     jsx(`div`, {
                       className: `text-[10px] text-gray-600 font-semibold px-3 pt-1 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
+                      children: `账号`,
+                    }),
+                    jsxs(`button`, {
+                      onClick: () => setActiveSettingsTab(`account`),
+                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${activeSettingsTab === `account` ? `wanjuan-settings-nav-item-active bg-[#252525] text-sky-300 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
+                      children: [
+                        jsx(`span`, {
+                          className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-account`,
+                          children: `👤`,
+                        }),
+                        ` 我的账号`,
+                      ],
+                    }),
+                    jsx(`div`, {
+                      className: `text-[10px] text-gray-600 font-semibold px-3 pt-2 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
                       children: `模型服务`,
                     }),
                     jsxs(`button`, {
                       onClick: () => setActiveSettingsTab(`oneStop`),
                       className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${activeSettingsTab === `oneStop` ? `wanjuan-settings-nav-item-active bg-[#252525] text-emerald-300 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
-                      children: [
+	                    children: [
                         jsx(`span`, {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-one-stop`,
                           children: `🌐`,
@@ -309,34 +341,39 @@ export function WanJuanSettingsSectionB(props: any) {
                       ],
                     }),
                     jsxs(`button`, {
-                      onClick: () => setActiveSettingsTab(`api`),
-                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${activeSettingsTab === `api` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-300 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
+                      onClick: () => selectSettingsTab(`api`),
+                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `api` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-300 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [
                         jsx(`span`, {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-api`,
                           children: `🔐`,
                         }),
 	                        ` API 配置`,
+                        enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` }),
                       ],
                     }),
                     jsxs(`button`, {
-                      onClick: () => setActiveSettingsTab(`models`),
-                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${activeSettingsTab === `models` ? `wanjuan-settings-nav-item-active bg-[#252525] text-purple-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
+                      onClick: () => selectSettingsTab(`models`),
+                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `models` ? `wanjuan-settings-nav-item-active bg-[#252525] text-purple-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [
                         jsx(`span`, {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-models`,
                           children: `🧠`,
                         }),
 	                        ` 模型配置`,
+                        enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` }),
                       ],
                     }),
                     jsxs(`button`, {
-                      onClick: () => setActiveSettingsTab(`cloud`),
-                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${activeSettingsTab === `cloud` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
+                      onClick: () => selectSettingsTab(`cloud`),
+                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `cloud` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [jsx(`span`, {
                         className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-cloud`,
                         children: `☁️`
-	                      }), ` 上传与直链`],
+	                      }), ` 上传与直链`, enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` })],
                     }),
 	                    jsx(`div`, {
 	                      className: `text-[10px] text-gray-600 font-semibold px-3 pt-3 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
@@ -389,7 +426,7 @@ export function WanJuanSettingsSectionB(props: any) {
 		                  children: jsxs(`div`, {
 		                    className: `${activeSettingsTab === `oneStop` ? `max-w-none` : `max-w-4xl mx-auto`} flex flex-col gap-6 wanjuan-settings-content-inner`,
 		                    children: [
-	                      updateInfo?.hasUpdate &&
+                      updateInfo?.hasUpdate &&
                       jsxs(`div`, {
                         className: `bg-gradient-to-r from-blue-900/30 to-indigo-900/30 p-4 rounded-xl border border-blue-500/30 mb-4 flex justify-between items-center shadow-lg`,
                         children: [
@@ -414,6 +451,7 @@ export function WanJuanSettingsSectionB(props: any) {
                           }),
                         ],
                       }),
+                      activeSettingsTab === `account` && jsx(WanJuanSettingsAccountTab, {}),
                       activeSettingsTab === `basic` &&
                       jsx(WanJuanSettingsBasicTab, {
   $e,
@@ -1050,6 +1088,21 @@ export function WanJuanSettingsSectionB(props: any) {
 }),
                     ],
                   }),
+                }),
+                managedLockNotice && jsxs(`div`, {
+                  className: `wanjuan-enterprise-managed-dialog-backdrop`,
+                  onMouseDown: (event) => event.target === event.currentTarget && setManagedLockNotice(``),
+                  children: [
+                    jsxs(`div`, {
+                      className: `wanjuan-enterprise-managed-dialog`,
+                      children: [
+                        jsx(`span`, { className: `wanjuan-enterprise-managed-dialog-icon`, children: `🔒` }),
+                        jsx(`strong`, { children: `${managedLockNotice}由企业网关管理` }),
+                        jsx(`p`, { children: `当前配置来自企业网关。断开企业网关后，将恢复绑定前的个人配置。` }),
+                        jsx(`button`, { type: `button`, onClick: () => setManagedLockNotice(``), children: `知道了` }),
+                      ],
+                    }),
+                  ],
                 }),
               ],
             });

@@ -8,9 +8,32 @@ const {
   PERFORMANCE_PROFILE_CUSTOM_KEY,
   PERFORMANCE_PROFILE_PRESETS,
 } = require("./constants.cjs");
+const { ipcRenderer } = require("./runtime.cjs");
 
 let storageDbPromise = null;
 let legacyStorageMigrationPromise = null;
+let enterpriseOverlayPromise = null;
+
+function readEnterpriseStorageOverlay() {
+  if (!enterpriseOverlayPromise) {
+    enterpriseOverlayPromise = ipcRenderer.invoke("wanjuan:account-enterprise-storage-overlay")
+      .then((value) => value?.ok && value.active && value.settings && typeof value.settings === "object" ? value : { active: false, settings: {} })
+      .catch(() => ({ active: false, settings: {} }));
+  }
+  return enterpriseOverlayPromise;
+}
+
+function overlayStorageResult(keys, stored, overlay) {
+  if (!overlay?.active) return stored;
+  const combined = { ...(stored || {}), ...(overlay.settings || {}) };
+  return keys == null ? combined : pickStorage(keys, combined);
+}
+
+function filterEnterpriseManagedWrites(items, overlay) {
+  if (!overlay?.active) return items || {};
+  const managedKeys = new Set(Object.keys(overlay.settings || {}));
+  return Object.fromEntries(Object.entries(items || {}).filter(([key]) => !managedKeys.has(key)));
+}
 
 function clampPerformanceNumber(value, fallback, min = 1, max = 20) {
   const numeric = Number(value);
@@ -207,7 +230,8 @@ async function readDesktopStorageAsync() {
 }
 
 async function getDesktopStorageItems(keys) {
-  if (keys === null || keys === undefined) return readDesktopStorageAsync();
+  const overlay = await readEnterpriseStorageOverlay();
+  if (keys === null || keys === undefined) return overlayStorageResult(keys, await readDesktopStorageAsync(), overlay);
   const keyList = Array.isArray(keys)
     ? keys
     : typeof keys === "string"
@@ -219,26 +243,29 @@ async function getDesktopStorageItems(keys) {
     await migrateLegacyDesktopStorage();
     const stored = await getIndexedDesktopStorageItems(keyList);
     if (keys && typeof keys === "object" && !Array.isArray(keys)) {
-      return { ...keys, ...stored };
+      return overlayStorageResult(keys, { ...keys, ...stored }, overlay);
     }
-    return stored;
+    return overlayStorageResult(keys, stored, overlay);
   } catch (error) {
     console.warn("desktop storage keyed read fallback", error);
-    return pickStorage(keys, readDesktopStorage());
+    return overlayStorageResult(keys, pickStorage(keys, readDesktopStorage()), overlay);
   }
 }
 
 async function setDesktopStorageItems(items) {
+  const overlay = await readEnterpriseStorageOverlay();
+  const writableItems = filterEnterpriseManagedWrites(items, overlay);
+  if (!Object.keys(writableItems).length) return;
   try {
     await migrateLegacyDesktopStorage();
-    await setIndexedDesktopStorageItems(items || {});
-    mirrorBootThemeFromStore(items);
+    await setIndexedDesktopStorageItems(writableItems);
+    mirrorBootThemeFromStore(writableItems);
   } catch (error) {
     console.warn("desktop storage set fallback", error);
     try {
-      const next = { ...readDesktopStorage(), ...(items || {}) };
+      const next = { ...readDesktopStorage(), ...writableItems };
       writeDesktopStorage(next);
-      mirrorBootThemeFromStore(items);
+      mirrorBootThemeFromStore(writableItems);
     } catch (fallbackError) {
       console.warn("desktop localStorage fallback skipped", fallbackError);
     }
@@ -246,13 +273,17 @@ async function setDesktopStorageItems(items) {
 }
 
 async function removeDesktopStorageItems(keys) {
+  const overlay = await readEnterpriseStorageOverlay();
+  const managedKeys = overlay?.active ? new Set(Object.keys(overlay.settings || {})) : null;
+  const writableKeys = (Array.isArray(keys) ? keys : [keys]).filter((key) => !managedKeys?.has(key));
+  if (!writableKeys.length) return;
   try {
     await migrateLegacyDesktopStorage();
-    await removeIndexedDesktopStorageItems(keys);
+    await removeIndexedDesktopStorageItems(writableKeys);
   } catch (error) {
     console.warn("desktop storage remove fallback", error);
     const store = readDesktopStorage();
-    for (const key of Array.isArray(keys) ? keys : [keys]) delete store[key];
+    for (const key of writableKeys) delete store[key];
     writeDesktopStorage(store);
   }
 }

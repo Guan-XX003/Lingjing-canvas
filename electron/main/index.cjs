@@ -20,6 +20,7 @@ const { installFileAccessFilter } = require("./net/file-access-filter.cjs");
 const { registerDesktopIpc } = require("./ipc.cjs");
 const { createMainWindow } = require("./window.cjs");
 const { installApplicationMenu, scheduleAutomaticUpdateCheck } = require("./update-checker.cjs");
+const { restoreEnterpriseGatewayOnLaunch } = require("./enterprise-gateway.cjs");
 
 // 应用标识与用户数据目录（保持与原 app 一致，沿用同一 userData，迁移用户无感）。
 try {
@@ -98,6 +99,7 @@ app.whenReady().then(async () => {
   // IPC 注册放在 baseUrl 就绪之后，确保 isTrustedIpcEvent 始终有校验依据；
   // 注册仍先于 createMainWindow，渲染进程调用时 handler 均已就位。
   registerDesktopIpc();
+  await restoreEnterpriseGatewayOnLaunch();
   appendDesktopLog("test-build-info", {
     name: TEST_BUILD_NAME,
     userData: app.getPath("userData"),

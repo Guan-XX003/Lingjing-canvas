@@ -50,6 +50,20 @@ const jixinApi = {
   key: "jixin-key",
   protocolFormat: "auto",
 };
+const utilityApi = {
+  id: "utility-api",
+  name: "用户保留 API 2",
+  url: "https://utility.example.com",
+  key: "utility-key",
+  protocolFormat: "auto",
+};
+const backupApi = {
+  id: "backup-api",
+  name: "用户保留 API 3",
+  url: "https://backup.example.com",
+  key: "backup-key",
+  protocolFormat: "auto",
+};
 const makeConfig = ({ api, textModel, imageModel = "", videoModel, audioModel = "" }) => ({
   apiConfigs: [api],
   textApiConfigId: api.id,
@@ -182,7 +196,10 @@ async function run() {
         "audioModelApiBindings",
       ]);
       if (snapshot.activeStoredGlobalConfigId !== expectedId) throw new Error(`Active config mismatch: ${JSON.stringify(snapshot)}`);
-      if (snapshot.apiConfigs?.length !== 1 || snapshot.apiConfigs[0]?.id !== expectedApiId) throw new Error(`API configs mixed: ${JSON.stringify(snapshot.apiConfigs)}`);
+      const apiIds = new Set((snapshot.apiConfigs || []).map((config) => config?.id));
+      for (const requiredId of [expectedApiId, "custom-api", "utility-api", "backup-api"]) {
+        if (!apiIds.has(requiredId)) throw new Error(`API config ${requiredId} was deleted: ${JSON.stringify(snapshot.apiConfigs)}`);
+      }
       if (snapshot.drawingModel !== expectedConfig.drawingModel) throw new Error(`Image models mixed: ${JSON.stringify(snapshot.drawingModel)}`);
       if (snapshot.videoModel !== expectedConfig.videoModel) throw new Error(`Video models mixed: ${JSON.stringify(snapshot.videoModel)}`);
       if (snapshot.audioModel !== expectedConfig.audioModel) throw new Error(`Audio models mixed: ${JSON.stringify(snapshot.audioModel)}`);
@@ -211,6 +228,7 @@ async function run() {
     await sleep(1200);
     await evaluate(`new Promise(resolve => chrome.storage.local.set(${JSON.stringify({
       ...customConfig,
+      apiConfigs: [customApi, utilityApi, backupApi],
       storedGlobalConfigs,
       globalTasks: [historicalVideoTask],
       activeStoredGlobalConfigId: "custom-preset",
@@ -337,8 +355,11 @@ async function run() {
     if (resetSnapshot.activeStoredGlobalConfigId !== "builtin-jixin-base") {
       throw new Error(`Jixin reset did not activate the built-in preset: ${JSON.stringify(resetSnapshot)}`);
     }
-    if (resetSnapshot.apiConfigs?.length !== 1 || resetSnapshot.apiConfigs[0]?.id !== "jixin-default") {
-      throw new Error(`Jixin reset did not apply the Jixin API snapshot: ${JSON.stringify(resetSnapshot.apiConfigs)}`);
+    const resetApiIds = new Set((resetSnapshot.apiConfigs || []).map((config) => config?.id));
+    for (const requiredId of ["jixin-default", "custom-api", "utility-api", "backup-api"]) {
+      if (!resetApiIds.has(requiredId)) {
+        throw new Error(`Jixin reset deleted API config ${requiredId}: ${JSON.stringify(resetSnapshot.apiConfigs)}`);
+      }
     }
 
     const preservedParameterKeys = [
@@ -483,7 +504,7 @@ async function run() {
     console.log(JSON.stringify({ ok: true, checks: [
       "custom config survives startup without Jixin model injection",
       "selecting a preset does not apply or persist it",
-      "Jixin and custom presets replace API/model/binding state in full",
+      "Jixin and custom presets switch model/binding state while preserving unrelated APIs",
       "historical async tasks retain their original poll URL and credentials",
       "rapid consecutive switches keep the last applied config",
       "custom config survives autosave and restart without mixing",

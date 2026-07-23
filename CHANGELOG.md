@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 - 2026-07-23
+
+- Added production email registration and login, refresh-token rotation, secure local credential storage, account/device management, and an account-aware startup gate.
+- Added self-hosted enterprise LAN gateways with signed gateway identity, local configuration mirroring, request proxying, member management, successful-task quotas, usage reporting, takeover, and release workflows.
+- Kept enterprise API keys and configuration payloads on the gateway owner's computer while the cloud control plane stores only organization, membership, quota, and gateway identity metadata.
+- Fixed global batch configuration switching so model bindings can change without deleting unrelated secondary API configurations; restoring the Jixin preset now switches presets without removing saved custom configurations.
+- Moved the Ark trusted-asset badge to the image top-right and retained automatic trusted-asset review for Seedance compatible generation.
+- Added uninstall-time local user-data cleanup support and regression coverage for account, secret storage, enterprise gateway, configuration switching, Ark assets, storage, and cross-platform paths.
+
 ## 1.3.9 - 2026-07-15
 
 - Added direct Volcengine Ark trusted-asset review for Seedance official/compatible mode, including manual review, automatic review during generation, caching, and `asset://` reference delivery.

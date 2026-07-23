@@ -7,11 +7,14 @@ graph LR
     generation-system["Generation and Task System\nsrc/renderer/hooks + lib"]
     storage-assets["Storage and Project Assets\nelectron/main/assets + preload/storage"]
     network-upload["Network and Upload Gateway\nelectron/main/net + uploaders"]
+    account-identity["Account and Enterprise Identity\nmain/account-service + renderer account UI"]
     external-tools["Local Extension Tools\nelectron/main/tools"]
     external-services["Model and Platform Services\nExternal APIs"]
     desktop-entry -->|"starts static server and window"| main-process
     main-process -->|"exposes trusted IPC capabilities"| preload-bridge
     preload-bridge -->|"publishes wanjuanDesktop and compatibility APIs"| renderer-app
+    main-process -->|"encrypts refresh and workspace sessions"| account-identity
+    account-identity -->|"sanitized user, membership, and organization state"| preload-bridge
     renderer-app -->|"mounts React Flow and node registry"| canvas-system
     canvas-system -->|"dispatches generation workflows"| generation-system
     generation-system -->|"persists outputs and references"| storage-assets
@@ -24,4 +27,5 @@ graph LR
     classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
     class desktop-entry entry
     class storage-assets store
+    class account-identity store
     class external-services external

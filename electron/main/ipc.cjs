@@ -86,6 +86,37 @@ const {
   updateWorkspaceTeamPublishedTemplates,
   fetchWorkspaceTeamMember,
 } = require("./workspace-team.cjs");
+const {
+  bootstrapAccount,
+  connectEnterpriseWorkspace,
+  continueWithLocalMode,
+  createEnterpriseGateway,
+  disconnectEnterpriseWorkspace,
+  getCurrentAccount,
+  getEnterpriseManagement,
+  getEnterpriseStorageOverlay,
+  loginAccount,
+  logoutAccount,
+  publishEnterpriseGatewayConfig,
+  proxyEnterpriseRequest,
+  proxyEnterpriseUpload,
+  releaseCreatedEnterpriseGateway,
+  refreshEnterpriseWorkspaceConfig,
+  refreshAccountSession,
+  resetAccountOnboarding,
+  removeEnterpriseMember,
+  sendAccountCode,
+  startCreatedEnterpriseGateway,
+  stopCreatedEnterpriseGateway,
+  takeOverEnterpriseGateway,
+  updateEnterpriseMember,
+  updateEnterpriseMemberQuota,
+  updateEnterpriseQuotaDefault,
+} = require("./account-service.cjs");
+const {
+  LOCAL_DATA_REMOVAL_CONFIRMATION,
+  scheduleManagedLocalDataRemoval,
+} = require("./local-data-cleanup.cjs");
 
 function getIpcSenderUrl(event) {
   return String(event?.senderFrame?.url || event?.sender?.getURL?.() || "");
@@ -104,6 +135,15 @@ function rejectUntrustedIpc(event, channel) {
   const senderUrl = getIpcSenderUrl(event);
   appendDesktopLog("untrusted-ipc-blocked", { channel, senderUrl });
   return { ok: false, error: "Blocked untrusted desktop IPC caller" };
+}
+
+function accountErrorResult(error) {
+  return {
+    ok: false,
+    error: formatErrorMessage(error),
+    code: String(error?.code || ""),
+    status: Number(error?.status || 0),
+  };
 }
 
 function registerDesktopIpc() {
@@ -163,6 +203,213 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:workspace-team-fetch-member");
     if (blocked) return blocked;
     return fetchWorkspaceTeamMember(payload?.address || "", payload?.timeoutMs || 8000);
+  });
+
+  ipcMain.handle("wanjuan:account-bootstrap", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-bootstrap");
+    if (blocked) return blocked;
+    return bootstrapAccount();
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-storage-overlay", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-storage-overlay");
+    if (blocked) return blocked;
+    return { ok: true, ...getEnterpriseStorageOverlay() };
+  });
+
+  ipcMain.handle("wanjuan:account-send-code", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-send-code");
+    if (blocked) return blocked;
+    try {
+      return { ok: true, ...(await sendAccountCode(payload)) };
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-login", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-login");
+    if (blocked) return blocked;
+    try {
+      return await loginAccount(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-refresh", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-refresh");
+    if (blocked) return blocked;
+    try {
+      return await refreshAccountSession();
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-me", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-me");
+    if (blocked) return blocked;
+    try {
+      return await getCurrentAccount();
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-local-mode", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-local-mode");
+    if (blocked) return blocked;
+    return continueWithLocalMode();
+  });
+
+  ipcMain.handle("wanjuan:account-logout", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-logout");
+    if (blocked) return blocked;
+    return logoutAccount();
+  });
+
+  ipcMain.handle("wanjuan:remove-local-user-data", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:remove-local-user-data");
+    if (blocked) return blocked;
+    if (String(payload?.confirmation || "") !== LOCAL_DATA_REMOVAL_CONFIRMATION) {
+      return { ok: false, error: "确认信息不正确，未清除任何数据" };
+    }
+    try {
+      // Revoke the current server session when possible. Cleanup still proceeds
+      // offline because the local encrypted token is removed with userData.
+      try {
+        await Promise.race([
+          logoutAccount(),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
+      } catch {}
+      return scheduleManagedLocalDataRemoval();
+    } catch (error) {
+      return { ok: false, error: formatErrorMessage(error) };
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-connect-enterprise", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-connect-enterprise");
+    if (blocked) return blocked;
+    try {
+      return await connectEnterpriseWorkspace(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-create-enterprise-gateway", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-create-enterprise-gateway");
+    if (blocked) return blocked;
+    try {
+      return await createEnterpriseGateway(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-takeover-enterprise-gateway", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-takeover-enterprise-gateway");
+    if (blocked) return blocked;
+    try {
+      return await takeOverEnterpriseGateway(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-release-enterprise-gateway", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-release-enterprise-gateway");
+    if (blocked) return blocked;
+    try {
+      return await releaseCreatedEnterpriseGateway(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-publish-enterprise-config", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-publish-enterprise-config");
+    if (blocked) return blocked;
+    try {
+      return await publishEnterpriseGatewayConfig(payload);
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-refresh-enterprise-config", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-refresh-enterprise-config");
+    if (blocked) return blocked;
+    try {
+      return await refreshEnterpriseWorkspaceConfig();
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-management", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-management");
+    if (blocked) return blocked;
+    try { return await getEnterpriseManagement(); } catch (error) { return accountErrorResult(error); }
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-member-update", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-member-update");
+    if (blocked) return blocked;
+    try { return await updateEnterpriseMember(payload); } catch (error) { return accountErrorResult(error); }
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-member-remove", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-member-remove");
+    if (blocked) return blocked;
+    try { return await removeEnterpriseMember(payload); } catch (error) { return accountErrorResult(error); }
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-quota-default-update", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-quota-default-update");
+    if (blocked) return blocked;
+    try { return await updateEnterpriseQuotaDefault(payload); } catch (error) { return accountErrorResult(error); }
+  });
+
+  ipcMain.handle("wanjuan:account-enterprise-quota-member-update", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-enterprise-quota-member-update");
+    if (blocked) return blocked;
+    try { return await updateEnterpriseMemberQuota(payload); } catch (error) { return accountErrorResult(error); }
+  });
+
+  ipcMain.handle("wanjuan:enterprise-gateway-start", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:enterprise-gateway-start");
+    if (blocked) return blocked;
+    try {
+      return await startCreatedEnterpriseGateway();
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:enterprise-gateway-stop", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:enterprise-gateway-stop");
+    if (blocked) return blocked;
+    try {
+      return await stopCreatedEnterpriseGateway();
+    } catch (error) {
+      return accountErrorResult(error);
+    }
+  });
+
+  ipcMain.handle("wanjuan:account-disconnect-enterprise", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-disconnect-enterprise");
+    if (blocked) return blocked;
+    return await disconnectEnterpriseWorkspace();
+  });
+
+  ipcMain.handle("wanjuan:account-reset-onboarding", async (event) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:account-reset-onboarding");
+    if (blocked) return blocked;
+    return resetAccountOnboarding();
   });
 
   ipcMain.handle("wanjuan:capture-window-frame", async (event) => {
@@ -426,6 +673,8 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:upload-public-media");
     if (blocked) return blocked;
     try {
+      const enterpriseResult = await proxyEnterpriseUpload("public", payload || {});
+      if (enterpriseResult.handled) return enterpriseResult.response;
       const { buffer, mime, filename: rawFilename } = await bufferFromMediaPayload(payload || {});
       let filename = sanitizeFilename(payload?.filename || rawFilename || `seedance-reference-${Date.now()}${extensionFromMime(mime) || ".mp4"}`);
       const ext = extensionFromMime(mime);
@@ -442,6 +691,8 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:upload-tos-media");
     if (blocked) return blocked;
     try {
+      const enterpriseResult = await proxyEnterpriseUpload("tos", payload || {});
+      if (enterpriseResult.handled) return enterpriseResult.response;
       return await uploadToTos(payload || {});
     } catch (error) {
       console.error("upload-tos-media failed", error);
@@ -487,6 +738,8 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:upload-qiniu-media");
     if (blocked) return blocked;
     try {
+      const enterpriseResult = await proxyEnterpriseUpload("qiniu", payload || {});
+      if (enterpriseResult.handled) return enterpriseResult.response;
       return await uploadToQiniuS3(payload || {});
     } catch (error) {
       console.error("upload-qiniu-media failed", error);
@@ -498,6 +751,8 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:upload-custom-public-media");
     if (blocked) return blocked;
     try {
+      const enterpriseResult = await proxyEnterpriseUpload("custom", payload || {});
+      if (enterpriseResult.handled) return enterpriseResult.response;
       return await uploadToCustomPublicHost(payload || {});
     } catch (error) {
       console.error("upload-custom-public-media failed", error);
@@ -506,6 +761,7 @@ function registerDesktopIpc() {
         kind: payload?.kind || "",
         endpoint: payload?.customUpload?.endpoint || ""
       });
+      if (error?.enterpriseManaged) return { ok: false, error: formatErrorMessage(error), code: String(error?.code || "ENTERPRISE_UPLOAD_FAILED") };
       try {
         const { buffer, mime, filename: rawFilename } = await bufferFromMediaPayload(payload || {});
         let filename = sanitizeFilename(payload?.filename || rawFilename || `seedance-reference-${Date.now()}${extensionFromMime(mime) || ".mp4"}`);
@@ -785,25 +1041,29 @@ function registerDesktopIpc() {
     if (!requestId) {
       return { ok: false, error: "Invalid proxy fetch payload" };
     }
-    try {
-      assertPublicHttpUrl(url, "Proxy URL");
-    } catch (error) {
-      return { ok: false, error: error?.message || "Invalid proxy fetch payload" };
-    }
-
     const controller = new AbortController();
     desktopProxyFetchControllers.set(requestId, { controller, cancel: null });
     try {
       const method = String(payload?.method || "GET").toUpperCase();
       const headers = sanitizeProxyFetchHeaders(payload?.headers);
       const body = payload?.bodyBase64 ? Buffer.from(String(payload.bodyBase64), "base64") : undefined;
-      const runProxyRequest = () => proxyHttpRequest(url, {
-        method,
-        headers,
-        body,
-        signal: controller.signal,
-        requestTimeout: Number(payload?.requestTimeout || 180000)
-      });
+      const runProxyRequest = async () => {
+        const enterpriseResult = await proxyEnterpriseRequest({
+          ...payload,
+          url,
+          method,
+          headers,
+        }, { signal: controller.signal });
+        if (enterpriseResult.handled) return enterpriseResult.response;
+        assertPublicHttpUrl(url, "Proxy URL");
+        return proxyHttpRequest(url, {
+          method,
+          headers,
+          body,
+          signal: controller.signal,
+          requestTimeout: Number(payload?.requestTimeout || 180000)
+        });
+      };
       const rule = classifyDesktopProxyFetch(payload);
       const response = rule
         ? await enqueueDesktopProxyFetch(rule, requestId, controller.signal, runProxyRequest)

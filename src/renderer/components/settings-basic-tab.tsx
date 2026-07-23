@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.3.9：新增即梦官方兼容模式的火山 Ark 可信素材审核，支持手动与生成时自动审核；新增自定义空白配置，并修复生成视频资源未及时本地持久化导致远端链接过期失效的问题。`),
+				                                          children: wanjuanT(`1.4.0：新增邮箱账号与本机安全凭据存储、企业局域网网关和成员配额管理；完善全局批量配置切换，保留用户其他 API 配置，并支持卸载时清理本地用户数据。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-				                                          children: `1.3.9`,
+				                                          children: `1.4.0`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

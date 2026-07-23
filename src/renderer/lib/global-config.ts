@@ -58,9 +58,33 @@ const cloneConfigValue = <T>(value: T): T => {
   return JSON.parse(JSON.stringify(value));
 };
 
-/** A stored global configuration is an isolated snapshot, not an API overlay. */
+/** Build a normalized API-only snapshot for explicit empty/reset operations. */
 export const replaceGlobalConfigApiConfigs = (value: unknown) =>
   Array.isArray(value) ? cloneConfigValue(normalizeUnifiedApiConfigs(value)) : [];
+
+/**
+ * Applying a stored model configuration must not delete unrelated user API
+ * entries. Incoming entries update matching ids and append new ids; the
+ * selected preset still replaces model bindings and protocol relationships.
+ */
+export const mergeGlobalConfigApiConfigs = (currentValue: unknown, incomingValue: unknown) => {
+  const current = Array.isArray(currentValue) ? normalizeUnifiedApiConfigs(currentValue) : [];
+  const incoming = Array.isArray(incomingValue) ? normalizeUnifiedApiConfigs(incomingValue) : [];
+  const incomingById = new Map(incoming.map((config) => [String(config?.id || ``), config]));
+  const seen = new Set<string>();
+  const merged = current.map((config) => {
+    const id = String(config?.id || ``);
+    seen.add(id);
+    return incomingById.has(id) ? incomingById.get(id) : config;
+  });
+  for (const config of incoming) {
+    const id = String(config?.id || ``);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    merged.push(config);
+  }
+  return cloneConfigValue(merged);
+};
 
 export const isCurrentSettingsSave = (currentSaveId: unknown, scheduledSaveId: unknown) =>
   currentSaveId === scheduledSaveId;
