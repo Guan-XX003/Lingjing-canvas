@@ -8,6 +8,8 @@
 - Fixed global batch configuration switching so model bindings can change without deleting unrelated secondary API configurations; restoring the Jixin preset now switches presets without removing saved custom configurations.
 - Moved the Ark trusted-asset badge to the image top-right and retained automatic trusted-asset review for Seedance compatible generation.
 - Added uninstall-time local user-data cleanup support and regression coverage for account, secret storage, enterprise gateway, configuration switching, Ark assets, storage, and cross-platform paths.
+- Restored the local gateway-owner management state after account sessions are cleared or users sign in again, while rejecting stale local identities after another computer takes over.
+- Made the in-app navigation version read directly from the packaged manifest and added a release consistency test so visible and packaged versions cannot drift apart again.
 
 ## 1.3.9 - 2026-07-15
 

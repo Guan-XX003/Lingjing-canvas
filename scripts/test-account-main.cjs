@@ -259,6 +259,30 @@ async function run() {
   assert.equal(calls.some((call) => call.pathname === "/organizations/org_self/quota-defaults" && call.body.limitValue === 12), true);
   assert.equal(calls.some((call) => call.pathname === "/organizations/org_self/quota-overrides" && call.body.userId === "member_test"), true);
 
+  // The gateway identity is stored separately from the account session. Logging out
+  // must not make the same owner/device look like an unbound takeover candidate.
+  await service.logoutAccount();
+  await service.loginAccount({ identifier: "tester@example.com", code: "123456" });
+  const recoveredGatewayOwner = await service.getCurrentAccount();
+  assert.equal(recoveredGatewayOwner.gatewayHost.initialized, true);
+  assert.equal(recoveredGatewayOwner.enterprise?.mode, "host");
+  assert.equal(recoveredGatewayOwner.enterprise?.organization?.id, "org_self");
+  assert.equal(recoveredGatewayOwner.enterprise?.connected, true);
+  assert.equal(recoveredGatewayOwner.ownedEnterprise?.id, "org_self");
+
+  activeGatewayId = "gw_taken_over_elsewhere";
+  await service.logoutAccount();
+  await service.loginAccount({ identifier: "tester@example.com", code: "123456" });
+  const staleLocalGateway = await service.getCurrentAccount();
+  assert.equal(staleLocalGateway.gatewayHost.initialized, true);
+  assert.equal(staleLocalGateway.enterprise, null);
+  assert.equal(staleLocalGateway.ownedEnterprise?.gatewayId, "gw_taken_over_elsewhere");
+
+  activeGatewayId = "gw_self";
+  const matchedGatewayAgain = await service.getCurrentAccount();
+  assert.equal(matchedGatewayAgain.enterprise?.mode, "host");
+  assert.equal(matchedGatewayAgain.enterprise?.gatewayId, "gw_self");
+
   const releasedEnterprise = await service.releaseCreatedEnterpriseGateway({
     organizationId: "org_self",
     gatewayId: "gw_self",

@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.4.0：新增邮箱账号与本机安全凭据存储、企业局域网网关和成员配额管理；完善全局批量配置切换，保留用户其他 API 配置，并支持卸载时清理本地用户数据。`),
+				                                          children: wanjuanT(`1.4.0：新增邮箱账号、本机安全凭据存储、企业局域网网关和成员配额管理；完善全局配置切换与卸载清理，并修复主网关管理态丢失和应用内版本显示不一致。`),
 	                                        }),
 	                                      ],
 	                                    }),

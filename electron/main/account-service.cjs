@@ -157,9 +157,11 @@ function sanitizeAccountState(state = readAccountState(), extra = {}) {
   const now = Date.now();
   const authenticated = !!state.user && (!!accessToken || !!state.session?.refreshTokenEncrypted);
   const offlineGraceUntil = Number(state.lastVerifiedAt || 0) + DEFAULT_OFFLINE_GRACE_MS;
-  const ownedEnterprise = accountOrganizationsCache.find((item) =>
+  const gatewayHost = getEnterpriseGatewayStatus();
+  const ownedEnterprises = accountOrganizationsCache.filter((item) =>
     item.role === "owner" && item.organizationType === "self_hosted" && item.membershipStatus === "active"
-  ) || null;
+  );
+  const ownedEnterprise = ownedEnterprises.find((item) => item.id === gatewayHost.organizationId) || ownedEnterprises[0] || null;
   return {
     ok: true,
     serviceConfigured: !!accountApiUrl(),
@@ -185,17 +187,65 @@ function sanitizeAccountState(state = readAccountState(), extra = {}) {
       connectedAt: state.enterprise.connectedAt || 0,
       lastVerifiedAt: state.enterprise.lastVerifiedAt || 0,
       expiresAt: Number(state.enterprise.expiresAt || 0),
-      connected: state.enterprise.mode === "host" ? getEnterpriseGatewayStatus().initialized :
+      connected: state.enterprise.mode === "host" ? gatewayHost.initialized :
         !!state.enterprise.workspaceTokenEncrypted && Number(state.enterprise.expiresAt || 0) > now,
     } : null,
     enterpriseSnapshot: state.enterprise?.mode === "member" ? readEnterpriseSnapshotCache()?.snapshot || null : null,
-    gatewayHost: getEnterpriseGatewayStatus(),
+    gatewayHost,
     ownedEnterprise,
     requiresLogin: extra.requiresLogin === true,
     error: extra.error || "",
     errorCode: extra.errorCode || "",
     errorStatus: Number(extra.errorStatus || 0),
   };
+}
+
+function reconcileLocalGatewayHostState(state = readAccountState()) {
+  const gatewayHost = getEnterpriseGatewayStatus();
+  if (!gatewayHost.initialized || !gatewayHost.organizationId || !gatewayHost.gatewayId) return state;
+
+  const ownedEnterprise = accountOrganizationsCache.find((item) =>
+    item.id === gatewayHost.organizationId &&
+    item.role === "owner" &&
+    item.organizationType === "self_hosted" &&
+    item.membershipStatus === "active"
+  );
+  if (!ownedEnterprise) return state;
+
+  // Never revive a stale local identity after another computer has taken over.
+  if (ownedEnterprise.gatewayId && ownedEnterprise.gatewayId !== gatewayHost.gatewayId) return state;
+  if (
+    ownedEnterprise.certificateFingerprint &&
+    gatewayHost.certificateFingerprint &&
+    ownedEnterprise.certificateFingerprint !== gatewayHost.certificateFingerprint
+  ) return state;
+
+  const current = state.enterprise;
+  const alreadyCurrent =
+    current?.mode === "host" &&
+    String(current.organization?.id || "") === gatewayHost.organizationId &&
+    String(current.gatewayId || "") === gatewayHost.gatewayId;
+  if (alreadyCurrent) return state;
+
+  // An explicitly connected membership for another organization remains authoritative.
+  const activeMemberConnection =
+    current?.mode === "member" &&
+    String(current.organization?.id || "") !== gatewayHost.organizationId &&
+    !!current.workspaceTokenEncrypted &&
+    Number(current.expiresAt || 0) > Date.now();
+  if (activeMemberConnection) return state;
+
+  return writeAccountState({
+    enterprise: {
+      mode: "host",
+      organization: { ...ownedEnterprise, role: "owner" },
+      gatewayId: gatewayHost.gatewayId,
+      gatewayUrl: gatewayHost.preferredUrl,
+      connectedAt: Number(current?.connectedAt || gatewayHost.createdAt || Date.now()),
+      lastVerifiedAt: Date.now(),
+      expiresAt: 0,
+    },
+  });
 }
 
 async function requestJson(baseUrl, pathname, options = {}) {
@@ -367,9 +417,9 @@ async function getCurrentAccount() {
   if (!baseUrl || (!accessToken && !readAccountState().session?.refreshTokenEncrypted)) return sanitizeAccountState();
   try {
     const payload = await requestWithAccountAuth(baseUrl, "/me");
-    const next = applyAccountPayload(payload);
+    applyAccountPayload(payload);
     await refreshAccountOrganizations();
-    return sanitizeAccountState(next);
+    return sanitizeAccountState(reconcileLocalGatewayHostState());
   } catch (error) {
     if (isSessionInvalidError(error)) return clearInvalidAccountSession(error);
     throw error;
@@ -440,9 +490,9 @@ async function loginAccount(payload = {}) {
       platform: device.platform,
     },
   });
-  const next = applyAccountPayload(result);
+  applyAccountPayload(result);
   await refreshAccountOrganizations();
-  return sanitizeAccountState(next);
+  return sanitizeAccountState(reconcileLocalGatewayHostState());
 }
 
 function continueWithLocalMode() {

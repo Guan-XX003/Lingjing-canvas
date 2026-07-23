@@ -41,6 +41,7 @@
     "test:enterprise-gateway": "node scripts/test-enterprise-gateway.cjs",
     "test:local-secret-storage": "node scripts/test-local-secret-storage.cjs",
     "test:local-data-cleanup": "node scripts/test-local-data-cleanup.cjs",
+    "test:version": "node scripts/test-version-consistency.cjs",
     "arch:status": "omm status",
     "arch:validate": "omm validate",
     "arch:view": "omm view --port 3030"

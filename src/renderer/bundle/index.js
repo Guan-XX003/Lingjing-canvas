@@ -4117,7 +4117,7 @@ Suno 音乐生成`,
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-				                  children: `v1.3.9`,
+                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.0`}`,
                 }),
               ],
             }),
