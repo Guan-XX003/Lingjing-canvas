@@ -17,6 +17,7 @@ const {
 } = require("./media-utils.cjs");
 const { getDesktopStorageItems, getPerformanceSettings, persistPerformanceProfile } = require("./storage.cjs");
 const { showWanjuanInputDialog } = require("./input-dialog.cjs");
+const { defaultCloudPromptStore } = require("./cloud-prompt-store.cjs");
 const {
   beforeProjectCanvasSave,
   listProjectSafetySnapshots,
@@ -112,13 +113,27 @@ exposeGlobal("wanjuanDesktop", {
     ipcRenderer.invoke("wanjuan:workspace-team-update-templates", payload),
   workspaceTeamFetchMember: async (payload = {}) =>
     ipcRenderer.invoke("wanjuan:workspace-team-fetch-member", payload),
+  cloudPrompts: async (payload = {}) => ipcRenderer.invoke("wanjuan:cloud-prompts", payload),
   accountBootstrap: async () => ipcRenderer.invoke("wanjuan:account-bootstrap"),
   accountSendCode: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-send-code", payload),
-  accountLogin: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-login", payload),
+  accountLogin: async (payload = {}) => {
+    const result = await ipcRenderer.invoke("wanjuan:account-login", payload);
+    if (result?.ok !== false) window.dispatchEvent(new CustomEvent("wanjuan:account-session-changed"));
+    return result;
+  },
   accountRefresh: async () => ipcRenderer.invoke("wanjuan:account-refresh"),
   accountMe: async () => ipcRenderer.invoke("wanjuan:account-me"),
-  accountContinueLocal: async () => ipcRenderer.invoke("wanjuan:account-local-mode"),
-  accountLogout: async () => ipcRenderer.invoke("wanjuan:account-logout"),
+  accountContinueLocal: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-local-mode");
+    window.dispatchEvent(new CustomEvent("wanjuan:account-session-changed"));
+    return result;
+  },
+  accountLogout: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-logout");
+    await defaultCloudPromptStore.clearAll().catch(() => {});
+    window.dispatchEvent(new CustomEvent("wanjuan:account-session-changed"));
+    return result;
+  },
   accountConnectEnterprise: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-connect-enterprise", payload),
   accountCreateEnterpriseGateway: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-create-enterprise-gateway", payload),
   accountTakeoverEnterpriseGateway: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-takeover-enterprise-gateway", payload),

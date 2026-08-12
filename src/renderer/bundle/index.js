@@ -258,6 +258,12 @@ import {
   wanjuanRunTianjiSeedanceVideo,
 } from "../lib/tianji-api";
 import {
+  wanjuanAutomationFileUrl,
+  wanjuanAutomationMediaField,
+  wanjuanAutomationMediaMime,
+  wanjuanExtractAutomationMedia,
+} from "../lib/automation-result";
+import {
   wanjuanBrokenResourceImage,
   wanjuanUseBrokenResourceImage,
   wanjuanCanFallbackImageToVideo,
@@ -1664,6 +1670,135 @@ function WanJuanAppCanvas({
             [stopGeneration],
           );
   useNodeSyncEffect({ addCustomNode, addGeneratedAsset, apiConfigs, arkTrustedAssetConfig, audioApiKey, audioApiUrl, audioModel, audioModelApiBindings, audioModelProtocolBindings, createImageNode, customPublicUploadConfig, drawingModel, generateImage, generateText, generateVideo, handleAIAssist, handleCancel2, handleCrop, handleExtractFrames, handleGenerateCustom, handleArkTrustedAssetReview, handleNoop, handleSplit, handleSplitOne, handleTianjiPortraitReview, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, modelProtocolRegistry, openImageEditor, openImagePreview, openVideoEditor, presetPrompts, projectIdRef, qiniuConfig, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, sendToActiveTab, setNodes, shouldFitView, showToast, stopGeneration, textModel, textModelApiBindings, textModelProtocolBindings, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, tosConfig, ttsMusicModel, updateTaskList, videoAspectRatios, videoDurations, videoModel, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfiles, videoResolutions });
+
+  const automationJobsRef = useRef(new Map());
+  const automationResultCacheRef = useRef(new Map());
+  // CLI/MCP 自动化桥：只暴露任务控制，不暴露 API Key 或完整配置。
+  useEffect(() => {
+    const cleanTask = (task, stableResultUrl = "") => ({
+      id: task?.id || "", type: task?.type || "", nodeId: task?.nodeId || "", projectId: task?.projectId || "",
+      status: task?.status || "", progress: task?.progress ?? 0, modelName: task?.modelName || "", prompt: task?.prompt || "",
+      resultUrl: stableResultUrl || task?.resultUrl || task?.videoUrl || task?.imageUrl || wanjuanExtractAutomationMedia(task?.customResultData, task?.type) || "",
+      stableResultUrl: stableResultUrl || "", thumbnailUrl: task?.thumbnailUrl || task?.posterUrl || "",
+      errorMsg: task?.errorMsg || "", createdAt: task?.createdAt || 0, updatedAt: task?.updatedAt || 0,
+    });
+    const cleanTasks = (items) => (Array.isArray(items) ? items : []).map((task) => cleanTask(task));
+    const materializeAutomationTask = async (task) => {
+      if (!task || task.status !== "completed") return cleanTask(task);
+      const current = task.resultUrl || task.videoUrl || task.imageUrl || wanjuanExtractAutomationMedia(task.customResultData, task.type);
+      const cacheKey = String(task.id || task.nodeId || "");
+      const cached = cacheKey ? automationResultCacheRef.current.get(cacheKey) : "";
+      if (cached) return cleanTask(task, cached);
+      if (!current || /^file:\/\//i.test(current)) return cleanTask(task, current);
+      try {
+        const persisted = await globalThis.wanjuanDesktop?.persistProjectAsset?.({
+          url: current, projectId: task.projectId || "default", nodeId: task.nodeId || task.id || "automation-result",
+          field: wanjuanAutomationMediaField(task.type), kind: task.type || "image",
+          filename: `${task.type || "result"}-${task.id || Date.now()}`, mime: wanjuanAutomationMediaMime(task.type),
+        });
+        if (persisted?.ok && persisted.localPath) {
+          const stable = wanjuanAutomationFileUrl(persisted.localPath);
+          if (cacheKey) automationResultCacheRef.current.set(cacheKey, stable);
+          return cleanTask(task, stable);
+        }
+      } catch (error) { console.warn("automation result persistence skipped", error); }
+      // 持久化失败时仍返回远端 URL；blob/data URL 不直接泄漏给 CLI。
+      return cleanTask(task, /^(blob:|data:)/i.test(current) ? "" : current);
+    };
+    const allAutomationTasks = async (materialize = false) => {
+      const sourceTasks = Array.isArray(GlobalTasks) ? GlobalTasks : [];
+      const tasks = cleanTasks(sourceTasks);
+      const knownIds = new Set(tasks.flatMap((task) => [task.id, task.nodeId]).filter(Boolean));
+      const now = Date.now();
+      for (const [nodeId, job] of automationJobsRef.current.entries()) {
+        if (knownIds.has(nodeId) || knownIds.has(job.id)) automationJobsRef.current.delete(nodeId);
+        else if (now - Number(job.updatedAt || job.createdAt || now) > 24 * 60 * 60 * 1000) automationJobsRef.current.delete(nodeId);
+      }
+      const combined = [...sourceTasks, ...automationJobsRef.current.values()];
+      return materialize ? Promise.all(combined.map(materializeAutomationTask)) : combined.map((task) => cleanTask(task));
+    };
+    const findAutomationTask = async (id, materialize = false) => (await allAutomationTasks(materialize)).filter((task) => task.id === String(id || "") || task.nodeId === String(id || "")).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0] || null;
+    const setAutomationJob = (nodeId, patch) => {
+      const previous = automationJobsRef.current.get(nodeId) || { id: nodeId, nodeId, createdAt: Date.now(), progress: 0 };
+      automationJobsRef.current.set(nodeId, { ...previous, ...patch, updatedAt: Date.now() });
+    };
+    const runAutomationGeneration = (nodeId, type, run) => {
+      setAutomationJob(nodeId, { type, status: "submitting", errorMsg: "" });
+      void Promise.resolve().then(run).then(() => {
+        const node = getNodes().find((item) => item.id === nodeId);
+        const createdTaskId = node?.data?.taskId || node?.data?.seedanceTaskId || "";
+        if (createdTaskId) setAutomationJob(nodeId, { id: createdTaskId, status: "pending" });
+        else setAutomationJob(nodeId, { status: "failed", errorMsg: "任务未创建；请检查应用内模型、接口配置和输入参数" });
+      }).catch(() => {
+        setAutomationJob(nodeId, { status: "failed", errorMsg: "任务提交失败；请在万卷灵境任务列表查看详情" });
+      });
+    };
+    const waitForCanvasState = () => new Promise((resolve) => setTimeout(resolve, 80));
+    const automation = {
+      status: async () => ({ ok: true, app: "万卷灵境", version: globalThis.chrome?.runtime?.getManifest?.()?.version || "", ready: true, activeTasks: (await allAutomationTasks()).filter((task) => ["pending", "submitting", "running"].includes(task.status)).length }),
+      models: async () => ({ ok: true, image: WanJuanParseModelList(drawingModel || ""), video: WanJuanParseModelList(videoModel || ""), text: WanJuanParseModelList(textModel || "") }),
+      tasks: async ({ materialize = false } = {}) => ({ ok: true, tasks: await allAutomationTasks(materialize === true) }),
+      task: async ({ id, materialize = true } = {}) => ({ ok: true, task: await findAutomationTask(id, materialize !== false) }),
+      cancel: async ({ id } = {}) => {
+        const task = await findAutomationTask(id);
+        if (!task) return { ok: false, error: "任务不存在" };
+        if (task.nodeId) {
+          stopGeneration(task.nodeId);
+          setAutomationJob(task.nodeId, { id: task.id || task.nodeId, type: task.type, status: "cancelled", errorMsg: "已取消" });
+        }
+        return { ok: true, taskId: task.id, nodeId: task.nodeId };
+      },
+      generateImage: async ({ prompt = "", model = "", size = "1024x1024", referenceImage = "" } = {}) => {
+        const nodeId = `automation-image-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        setNodes((current) => [...current, { id: nodeId, type: "promptNode", position: { x: 0, y: 0 }, data: { prompt: String(prompt), imageUrl: String(referenceImage || ""), mediaKind: referenceImage ? "image" : undefined } }]);
+        await waitForCanvasState();
+        runAutomationGeneration(nodeId, "image", () => generateImage(nodeId, String(prompt), String(size || "1024x1024"), String(model || "")));
+        return { ok: true, accepted: true, nodeId };
+      },
+      generateVideo: async ({ prompt = "", model = "", resolution = "1280x720", duration = "", aspectRatio = "", referenceImage = "" } = {}) => {
+        const nodeId = `automation-video-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const sourceId = referenceImage ? `${nodeId}-source` : "";
+        setNodes((current) => [...current, ...(sourceId ? [{ id: sourceId, type: "imageNode", position: { x: -360, y: 0 }, data: { imageUrl: String(referenceImage), mediaKind: "image" } }] : []), { id: nodeId, type: "videoNode", position: { x: 0, y: 0 }, data: { prompt: String(prompt), aspectRatio: String(aspectRatio || ""), imageResolution: String(resolution || "") } }]);
+        if (sourceId) setEdges((current) => [...current, { id: `automation-edge-${nodeId}`, source: sourceId, target: nodeId, type: "custom" }]);
+        await waitForCanvasState();
+        runAutomationGeneration(nodeId, "video", () => generateVideo(nodeId, String(prompt), String(resolution || "1280x720"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "")));
+        return { ok: true, accepted: true, nodeId, sourceNodeId: sourceId || undefined };
+      },
+      generateTianjiVideo: async ({ prompt = "", model = "", resolution = "720p", duration = "5", aspectRatio = "16:9", mode = "text-to-video", images = [], videos = [], audios = [] } = {}) => {
+        const nodeId = `automation-tianji-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const sources = [];
+        const edges = [];
+        const addSources = (items, kind) => (Array.isArray(items) ? items : []).forEach((url, index) => {
+          const sourceId = `${nodeId}-${kind}-${index + 1}`;
+          const sourceType = kind === "image" ? "imageNode" : kind === "audio" ? "audioNode" : "videoNode";
+          const sourceData = kind === "image" ? { imageUrl: String(url), mediaKind: "image" } : kind === "audio" ? { audioUrl: String(url), mediaKind: "audio" } : { videoUrl: String(url), mediaKind: "video" };
+          sources.push({ id: sourceId, type: sourceType, position: { x: -420, y: index * 100 }, data: sourceData });
+          edges.push({ id: `automation-edge-${sourceId}`, source: sourceId, target: nodeId, type: "custom" });
+        });
+        addSources(images, "image"); addSources(videos, "video"); addSources(audios, "audio");
+        setNodes((current) => [...current, ...sources, { id: nodeId, type: "seedanceNode", position: { x: 0, y: 0 }, data: {
+          prompt: String(prompt), seedanceNode: true, seedanceMode: "tianji", tianjiSeedanceGenerationMode: String(mode || "text-to-video"),
+          tianjiSelectedModel: String(model || ""), selectedResolution: String(resolution || "720p"), selectedSeconds: String(duration || "5"), size: String(aspectRatio || "16:9"),
+        } }]);
+        if (edges.length) setEdges((current) => [...current, ...edges]);
+        await waitForCanvasState();
+        runAutomationGeneration(nodeId, "video", () => generateVideo(nodeId, String(prompt), String(resolution || "720p"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "16:9")));
+        return { ok: true, accepted: true, nodeId, sourceNodeIds: sources.map((item) => item.id), mode: String(mode || "text-to-video") };
+      },
+      materializeTestResult: async ({ kind = "image", dataUrl = "", directory = "" } = {}) => {
+        if (!String(dataUrl).startsWith(`data:${kind}/`) || !directory) throw new Error("无效的隔离媒体持久化测试参数");
+        const persisted = await globalThis.wanjuanDesktop?.persistProjectAsset?.({
+          url: dataUrl, projectId: "TEST_AUTOMATION_MEDIA", nodeId: "TEST_AUTOMATION_NODE",
+          field: wanjuanAutomationMediaField(kind), kind, filename: `TEST_AUTOMATION_RESULT_${Date.now()}`,
+          mime: wanjuanAutomationMediaMime(kind), directory: String(directory),
+        });
+        if (!persisted?.ok || !persisted.localPath) throw new Error(persisted?.error || "隔离媒体持久化失败");
+        return { ok: true, resultUrl: wanjuanAutomationFileUrl(persisted.localPath), localPath: persisted.localPath };
+      },
+    };
+    globalThis.__wanjuanAutomation = automation;
+    return () => { if (globalThis.__wanjuanAutomation === automation) delete globalThis.__wanjuanAutomation; };
+  }, [drawingModel, videoModel, textModel, GlobalTasks, generateImage, generateVideo, getNodes, setNodes, setEdges, stopGeneration]);
 		  let onDeleteEdge = useCallback(
 	    (event, edge) => {
 	      (event.stopPropagation(), setEdges((edges2) => edges2.filter((edge2) => edge2.id !== edge.id)));
@@ -1968,7 +2103,7 @@ function WanJuanAppRoot() {
   [transitGridCols, setTransitGridCols] = useState(4),
   [currentPage, setCurrentPage] = useState(1),
   [activeView, setActiveView] = useState(`canvas`),
-  [activeSettingsTab, setActiveSettingsTab] = useState(`oneStop`),
+  [activeSettingsTab, setActiveSettingsTab] = useState(`account`),
   [advancedSettingsUnlocked, setAdvancedSettingsUnlocked] = useState(true),
   [settingsNavUnlockClicks, setSettingsNavUnlockClicks] = useState(0),
   [isAddingAccount, setIsAddingAccount] = useState(false),
@@ -2674,6 +2809,7 @@ Suno 音乐生成`,
     (Array.isArray(configs) ? configs : []).filter((config) => !isJixinDefaultApiConfig(config)).length,
   unlockAdvancedSettings = use_unlockAdvancedSettings({ setAdvancedSettingsUnlocked, setSettingsNavUnlockClicks, showToast2, advancedSettingsUnlocked }).unlockAdvancedSettings,
   handleSettingsNavClick = () => {
+	      if (activeView !== `settings`) setActiveSettingsTab(`account`);
 	      setActiveView(`settings`);
 	      setSettingsNavUnlockClicks(0);
 	    },

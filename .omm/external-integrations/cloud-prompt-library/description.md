@@ -1,0 +1,1 @@
+The prompt workspace API stores personal and organization prompt templates. Electron account-service attaches bearer authorization in the main process; POST requests use idempotency keys and template updates/deletes use revision plus If-Match. The renderer receives only normalized templates, permissions, cursors, tombstones, and sanitized conflict versions.

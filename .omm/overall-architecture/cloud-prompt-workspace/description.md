@@ -1,0 +1,1 @@
+The cloud prompt workspace treats a single safe prompt template as the synchronization unit. The preload owns account-scoped IndexedDB stores for templates, pending operations, and cursors; the main process owns API routing and account authorization. Canvas extraction is allowlisted and excludes credentials, media, local paths, result URLs, project IDs, node IDs, and task IDs.

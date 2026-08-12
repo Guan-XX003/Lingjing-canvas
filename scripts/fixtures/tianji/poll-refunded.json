@@ -1,0 +1,8 @@
+{
+  "code": 200,
+  "message": "异步查询成功",
+  "data": {
+    "status": "refunded",
+    "message": "内容审核未通过，积分已退款"
+  }
+}

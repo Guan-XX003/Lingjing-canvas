@@ -93,8 +93,8 @@ const emptyState: AccountState = {
   loading: true,
   serviceConfigured: false,
   secureStorageAvailable: false,
-  onboardingComplete: false,
-  localMode: false,
+  onboardingComplete: true,
+  localMode: true,
   authenticated: false,
   offline: false,
   offlineGraceActive: false,
@@ -144,7 +144,8 @@ function applyDesktopState(result: any, extra: Partial<AccountState> = {}) {
   const next = patchState({
     ...result,
     ...extra,
-    authOpen: extra.authOpen ?? (result.requiresLogin === true ? true : state.authOpen),
+    // 会话失效只更新账号状态；登录界面必须由用户在“我的账号”主动打开。
+    authOpen: extra.authOpen ?? state.authOpen,
     loading: false,
     error: String(extra.error || result.error || ""),
     errorCode: String((extra as any).errorCode || result.errorCode || ""),

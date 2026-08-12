@@ -1,0 +1,94 @@
+{
+  "account": {
+    "id": "mock-user-wanjuan",
+    "displayName": "万卷测试用户"
+  },
+  "workspaces": [
+    {
+      "id": "mock-personal",
+      "name": "我的云提示词",
+      "kind": "personal",
+      "role": "owner",
+      "revision": 1,
+      "permissions": {
+        "canRead": true,
+        "canCreate": true,
+        "canEdit": true,
+        "canDelete": true,
+        "canShare": true,
+        "canFavorite": true
+      }
+    },
+    {
+      "id": "mock-organization",
+      "name": "万卷创作团队",
+      "kind": "organization",
+      "organizationId": "mock-org",
+      "role": "editor",
+      "revision": 1,
+      "permissions": {
+        "canRead": true,
+        "canCreate": true,
+        "canEdit": true,
+        "canDelete": false,
+        "canShare": true,
+        "canFavorite": true
+      }
+    }
+  ],
+  "templates": [
+    {
+      "id": "mock-template-image",
+      "workspaceId": "mock-personal",
+      "revision": 3,
+      "title": "电影感主视觉",
+      "content": "一位编导在明亮的创作工作室中使用 AI 自动生成分镜脚本，电影感灯光，清晰的工作流界面，16:9",
+      "description": "用于影视创作工具的主视觉提示词",
+      "type": "image",
+      "tags": ["编导", "AI", "主视觉"],
+      "providerHint": "image",
+      "modelHint": "",
+      "generationMode": "text-to-image",
+      "parameters": {
+        "aspectRatio": "16:9",
+        "resolution": "2K"
+      },
+      "favorite": true,
+      "status": "active",
+      "createdBy": {
+        "id": "mock-user-wanjuan",
+        "displayName": "万卷测试用户"
+      },
+      "createdAt": "2026-08-01T00:00:00.000Z",
+      "updatedAt": "2026-08-10T00:00:00.000Z"
+    },
+    {
+      "id": "mock-template-video",
+      "workspaceId": "mock-organization",
+      "revision": 2,
+      "title": "镜头脚本转动态分镜",
+      "content": "把输入脚本拆分为连续镜头，保持人物一致性，节奏清晰，镜头语言专业，适合导演预演",
+      "description": "团队共享的视频生成模板",
+      "type": "video",
+      "tags": ["分镜", "视频"],
+      "providerHint": "seedance",
+      "modelHint": "",
+      "generationMode": "text-to-video",
+      "parameters": {
+        "aspectRatio": "16:9",
+        "resolution": "1080p",
+        "durationSeconds": 5,
+        "generateAudio": false,
+        "watermark": false
+      },
+      "favorite": false,
+      "status": "active",
+      "createdBy": {
+        "id": "mock-team-editor",
+        "displayName": "团队编导"
+      },
+      "createdAt": "2026-08-02T00:00:00.000Z",
+      "updatedAt": "2026-08-09T00:00:00.000Z"
+    }
+  ]
+}

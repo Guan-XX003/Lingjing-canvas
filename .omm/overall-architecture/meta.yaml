@@ -1,9 +1,11 @@
 created: 2026-07-10T15:52:05.838Z
-updated: 2026-07-21T03:54:25.709Z
-update_count: 4
-last_field: note
+updated: 2026-08-13T00:00:00.000Z
+update_count: 7
+last_field: description
 children:
+  - automation-clients
   - canvas-system
+  - cloud-prompt-workspace
   - desktop-entry
   - external-tools
   - generation-system

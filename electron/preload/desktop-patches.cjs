@@ -2,6 +2,7 @@
 const { ipcRenderer } = require("./runtime.cjs");
 const { PERFORMANCE_PROFILE_STORAGE_KEY, PERFORMANCE_PROFILE_PRESETS } = require("./constants.cjs");
 const { showWanjuanInputDialog } = require("./input-dialog.cjs");
+const { createCloudPromptWorkspaceController } = require("./cloud-prompt-workspace.cjs");
 
 const WANJUAN_OFFICIAL_SITE_URL = "https://lingjing.guancn.uk";
 
@@ -1312,7 +1313,8 @@ function installDesktopPatches() {
   const autoClickLabels = ["开发模式：模拟进入", "模拟进入"];
   let autoClicked = false;
   let projectNameSynced = false;
-  const TIANJI_DEFAULT_BASE_URL = "https://jixing.guancn.uk";
+  const TIANJI_JIXIN_BASE_URL = "https://jixing.guancn.uk";
+  const TIANJI_DEFAULT_BASE_URL = TIANJI_JIXIN_BASE_URL;
   const TIANJI_SYNC_SOURCE_JIXIN = "jixin-default";
   const TIANJI_SYNC_SOURCE_MANUAL = "manual";
   const TIANJI_CONFIG_MIRROR_KEY = "wanjuan.tianjiSeedanceConfig.v1";
@@ -1341,6 +1343,9 @@ function installDesktopPatches() {
   let tianjiAssetTotalsState = { LivenessFace: 0, AIGC: 0 };
   const TIANJI_ASSET_PAGE_SIZE = 10;
   let tianjiGroupsState = {};
+  let tianjiGroupNameState = "";
+  let tianjiPortraitTaskIdState = "";
+  let tianjiPortraitBytedTokenState = "";
   let tianjiPointsLogsDialog = null;
   let tianjiSettingsStorageListener = null;
   let tianjiSettingsModeListener = null;
@@ -1530,12 +1535,38 @@ function installDesktopPatches() {
     canvasTab?.click?.();
     document.documentElement.classList.remove("wanjuan-workspace-open");
   };
+  const workspacePostCanvasEvent = (type, detail = {}) => {
+    window.postMessage({
+      source: "wanjuan-desktop-preload",
+      type: String(type || ""),
+      detail,
+    }, "*");
+  };
+  const cloudPromptWorkspace = createCloudPromptWorkspaceController({
+    invoke: (payload = {}) => ipcRenderer.invoke("wanjuan:cloud-prompts", payload),
+    escapeHtml: workspaceEscapeHtml,
+    t: workspaceT,
+    toast: workspaceToast,
+    requestRender: () => renderWorkspacePanel(),
+    captureSelectedNode: () => {
+      workspaceOpenCanvas();
+      window.setTimeout(() => {
+        workspacePostCanvasEvent("wanjuan:workspace-save-node-template", { target: "cloud" });
+      }, 120);
+    },
+    createCanvasNode: (template) => {
+      workspaceOpenCanvas();
+      window.setTimeout(() => {
+        workspacePostCanvasEvent("wanjuan:workspace-create-cloud-node", { template });
+      }, 120);
+    },
+  });
   const workspaceUseTemplate = (template) => {
     workspaceOpenCanvas();
     window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("wanjuan:workspace-create-seedance-node", {
-        detail: { template: workspaceNormalizeTemplate(template) }
-      }));
+      workspacePostCanvasEvent("wanjuan:workspace-create-seedance-node", {
+        template: workspaceNormalizeTemplate(template),
+      });
     }, 120);
   };
   const workspaceRefreshTeamMembers = async () => {
@@ -1669,24 +1700,28 @@ function installDesktopPatches() {
       .replace(/'/g, "&#39;");
   const tianjiBrokenAssetImage = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="8" fill="#111827"/><rect x="17" y="21" width="62" height="38" rx="5" fill="#1f2937" stroke="#374151"/><circle cx="35" cy="36" r="5" fill="#4b5563"/><path d="M24 55l14-14 9 9 7-8 18 13H24z" fill="#334155"/><text x="48" y="78" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" fill="#9ca3af">素材失效</text></svg>`)}`;
 
-  const tianjiNormalizeConfig = (value = {}) => ({
+  const tianjiNormalizeConfig = (value = {}) => {
+    let baseUrl = String(Object.prototype.hasOwnProperty.call(value || {}, "baseUrl") ? value?.baseUrl : TIANJI_DEFAULT_BASE_URL).replace(/\s+/g, "").replace(/\/+$/, "");
+    if (/^https?:\/\/(?:ai\.)?kulunli\.cn(?::\d+)?$/i.test(baseUrl) || /^https?:\/\/aiuse\.phad\.cn(?::\d+)?$/i.test(baseUrl)) baseUrl = TIANJI_DEFAULT_BASE_URL;
+    return {
     ...TIANJI_DEFAULT_CONFIG,
     ...(value && typeof value === "object" ? value : {}),
-    baseUrl: String(Object.prototype.hasOwnProperty.call(value || {}, "baseUrl") ? value?.baseUrl : TIANJI_DEFAULT_BASE_URL).replace(/\s+/g, "").replace(/\/+$/, ""),
+    baseUrl,
     token: String(value?.token || "").trim(),
     syncSource: value?.syncSource === TIANJI_SYNC_SOURCE_MANUAL ? TIANJI_SYNC_SOURCE_MANUAL : TIANJI_SYNC_SOURCE_JIXIN,
     sassId: String(value?.sassId || "1").trim() || "1",
     platform: String(value?.platform || "web").trim() || "web",
     generateAudio: value?.generateAudio !== false,
     watermark: value?.watermark === true
-  });
+    };
+  };
 
   const tianjiNormalizeApiBaseUrl = (value) =>
     String(value || "").replace(/\s+/g, "").replace(/\/+$/, "");
 
   const tianjiIsJixinApiConfig = (config) =>
     config?.id === "jixin-default" ||
-    tianjiNormalizeApiBaseUrl(config?.url) === tianjiNormalizeApiBaseUrl(TIANJI_DEFAULT_BASE_URL);
+    tianjiNormalizeApiBaseUrl(config?.url) === tianjiNormalizeApiBaseUrl(TIANJI_JIXIN_BASE_URL);
 
   const tianjiFindLegacyJixinApiKey = (storage = {}) =>
     ["apiKey", "textApiKey", "imageApiKey", "videoApiKey", "audioApiKey"]
@@ -1699,7 +1734,7 @@ function installDesktopPatches() {
     const sourceConfig = candidateConfig || storedJixinConfig;
     const legacyKey = tianjiFindLegacyJixinApiKey(storage);
     if (!sourceConfig && !legacyKey) return null;
-    const sourceBaseUrl = tianjiNormalizeApiBaseUrl(sourceConfig?.url || storedJixinConfig?.url || TIANJI_DEFAULT_BASE_URL) || TIANJI_DEFAULT_BASE_URL;
+    const sourceBaseUrl = tianjiNormalizeApiBaseUrl(sourceConfig?.url || storedJixinConfig?.url || TIANJI_JIXIN_BASE_URL) || TIANJI_JIXIN_BASE_URL;
     const sourceKey = String(sourceConfig?.key || "").trim() || String(storedJixinConfig?.key || "").trim() || legacyKey;
     return {
       ...(storedJixinConfig && typeof storedJixinConfig === "object" ? storedJixinConfig : {}),
@@ -1712,7 +1747,7 @@ function installDesktopPatches() {
   };
 
   const tianjiBuildSyncedConfigFromJixin = (currentConfig = {}, jixinConfig = null, { force = false } = {}) => {
-    const jixinBaseUrl = tianjiNormalizeApiBaseUrl(jixinConfig?.url || TIANJI_DEFAULT_BASE_URL) || TIANJI_DEFAULT_BASE_URL;
+    const jixinBaseUrl = tianjiNormalizeApiBaseUrl(jixinConfig?.url || TIANJI_JIXIN_BASE_URL) || TIANJI_JIXIN_BASE_URL;
     const jixinToken = String(jixinConfig?.key || "").trim();
     const rawCurrentBaseUrl = tianjiNormalizeApiBaseUrl(currentConfig?.baseUrl || "");
     const hasExplicitSyncSource = Object.prototype.hasOwnProperty.call(currentConfig || {}, "syncSource");
@@ -1842,11 +1877,16 @@ function installDesktopPatches() {
       statuses: "Active",
       PageNumber: String(page),
       PageSize: String(size),
-      page: String(page),
-      page_size: String(size),
       SortBy: "CreateTime",
       SortOrder: "Desc"
     };
+  };
+
+  const tianjiPortraitAssetIdFromItem = (item) => {
+    const explicit = [item?.portrait_asset_id, item?.portraitAssetId, item?.PortraitAssetId, item?.asset_id, item?.assetId, item?.AssetId, item?.assetID, item?.material_id, item?.materialId, item?.MaterialId, item?.assets_id, item?.assetsId, item?.AssetsId, item?.portrait_id, item?.portraitId, item?.PortraitId].map((value) => String(value || "").trim()).find((value) => value && !/^local-/i.test(value));
+    if (explicit) return explicit;
+    const generic = String(item?.id || item?.Id || item?.ID || "").trim();
+    return generic && !/^local-/i.test(generic) && !/group/i.test(generic) ? generic : "";
   };
 
   const tianjiAssetPagination = (result, fallbackPage = 1, fallbackPageSize = TIANJI_ASSET_PAGE_SIZE) => {
@@ -1858,6 +1898,23 @@ function installDesktopPatches() {
 
   const tianjiErrorMessageFromResult = (json, fallback) =>
     json?.message || json?.msg || json?.Message || json?.error?.message || json?.error?.msg || json?.Error?.Message || fallback;
+
+  const tianjiBalancePoints = (result) => {
+    const candidates = [result?.data?.points, result?.msg?.points, result?.message?.points, result?.points];
+    const value = candidates.find((item) => item !== undefined && item !== null && String(item).trim() !== "");
+    return value === undefined ? null : value;
+  };
+
+  const tianjiAuthHeaders = (token, sassId = "1", platform = "web") => {
+    const rawToken = String(token || "").trim().replace(/^Bearer\s+/i, "").trim();
+    if (!rawToken) throw new Error("请先填写即梦天玑 Authorization Token");
+    return {
+      "X-API-Key": rawToken,
+      Authorization: `Bearer ${rawToken}`,
+      "Xx-Sass-Id": String(sassId || "1").trim() || "1",
+      "Xx-Platform": String(platform || "web").trim() || "web"
+    };
+  };
 
   const tianjiPadNumber = (value) => String(value).padStart(2, "0");
 
@@ -2156,18 +2213,58 @@ function installDesktopPatches() {
     }, { total: 0, active: 0, processing: 0, failed: 0 });
   };
 
-  const tianjiSyncGroups = async (panel, preferredType = "") => {
-    const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/seedance-portrait-auth-status");
-    tianjiGroupsState = tianjiExtractGroups(result, {
-      LivenessFace: panel.querySelector("[data-tianji-field='liveGroupId']")?.value || tianjiGroupsState.LivenessFace || "",
-      AIGC: panel.querySelector("[data-tianji-field='aigcGroupId']")?.value || tianjiGroupsState.AIGC || ""
-    }, preferredType);
+  const tianjiPortraitTaskId = (result) => tianjiFindDeepValue(result, ["task_id", "taskId", "execute_id", "executeId"]);
+  const tianjiDefaultPortraitGroupName = (now = Date.now()) => { const date = new Date(now); const pad = (value) => String(value).padStart(2, "0"); return `万卷灵境-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`; };
+  const tianjiPortraitTaskParams = (taskId) => {
+    const id = String(taskId || "").trim();
+    if (!id) throw new Error("请填写人像任务 ID");
+    return { task_id: id, execute_id: id };
+  };
+  const tianjiApplyPortraitGroups = async (panel, result, preferredType = "") => {
+    const taskId = tianjiPortraitTaskId(result);
+    if (taskId) {
+      tianjiPortraitTaskIdState = taskId;
+      const taskInput = panel.querySelector("[data-tianji-field='portraitTaskId']");
+      if (taskInput) taskInput.value = taskId;
+      await tianjiStorageSet({ tianjiSeedancePortraitTaskId: taskId });
+    }
+    const next = tianjiExtractGroups(result, tianjiGroupsState, preferredType);
+    tianjiGroupsState = next;
     const liveInput = panel.querySelector("[data-tianji-field='liveGroupId']");
     const aigcInput = panel.querySelector("[data-tianji-field='aigcGroupId']");
-    if (liveInput) liveInput.value = tianjiGroupsState.LivenessFace;
-    if (aigcInput) aigcInput.value = tianjiGroupsState.AIGC;
-    await tianjiStorageSet({ tianjiSeedanceGroups: tianjiGroupsState });
-    return tianjiGroupsState;
+    if (liveInput) liveInput.value = next.LivenessFace;
+    if (aigcInput) aigcInput.value = next.AIGC;
+    await tianjiStorageSet({ tianjiSeedanceGroups: next });
+    return { taskId, groups: next };
+  };
+  const tianjiCreatePortraitGroup = async (panel, type) => {
+    const endpoint = type === "LivenessFace" ? "/api/cut/model/real_authentication" : "/api/cut/model/virtal_authentication";
+    const callbackUrl = panel.querySelector("[data-tianji-field='callbackUrl']")?.value?.trim() || "";
+    if (type === "LivenessFace" && !/^https?:\/\//i.test(callbackUrl)) throw new Error("创建真人认证需要填写可公网访问的 callback_url");
+    const nameInput = panel.querySelector("[data-tianji-field='portraitGroupName']");
+    const name = String(nameInput?.value || "").trim() || tianjiDefaultPortraitGroupName();
+    if (nameInput) nameInput.value = name;
+    await tianjiStorageSet({ tianjiSeedancePortraitGroupName: name });
+    const result = await tianjiRequest(tianjiSettingsState, endpoint, { params: type === "LivenessFace" ? { callback_url: callbackUrl, name } : { name } });
+    return tianjiApplyPortraitGroups(panel, result, type);
+  };
+  const tianjiQueryPortraitTask = async (panel) => {
+    const bytedToken = panel.querySelector("[data-tianji-field='bytedToken']")?.value?.trim() || "";
+    const taskId = panel.querySelector("[data-tianji-field='portraitTaskId']")?.value?.trim() || "";
+    if (!bytedToken && !taskId) throw new Error("请先填写人像任务 ID，或粘贴真人认证回调返回的 BytedToken");
+    if (bytedToken) await tianjiStorageSet({ tianjiSeedancePortraitBytedToken: bytedToken });
+    let result;
+    if (bytedToken) {
+      result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-visual-date-result", { params: { bytedToken } });
+    } else {
+      result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-task-info", { params: tianjiPortraitTaskParams(taskId) });
+    }
+    const applied = await tianjiApplyPortraitGroups(panel, result, panel.querySelector("[data-tianji-upload-type]")?.value || "AIGC");
+    if (!applied.groups.LivenessFace && !applied.groups.AIGC && (taskId || applied.taskId)) {
+      const synced = await tianjiRequest(tianjiSettingsState, "/api/cut/model/sync-get-asset-id", { params: tianjiPortraitTaskParams(taskId || applied.taskId) });
+      return tianjiApplyPortraitGroups(panel, synced, panel.querySelector("[data-tianji-upload-type]")?.value || "AIGC");
+    }
+    return applied;
   };
 
   const tianjiEnsureGroups = async (panel, preferredType = "AIGC") => {
@@ -2177,9 +2274,9 @@ function installDesktopPatches() {
       AIGC: panel?.querySelector("[data-tianji-field='aigcGroupId']")?.value || tianjiGroupsState.AIGC || ""
     };
     if (currentGroups[targetKey]) return currentGroups;
-    const nextGroups = await tianjiSyncGroups(panel, preferredType);
-    if (!nextGroups[targetKey]) throw new Error(`天玑未返回${preferredType === "LivenessFace" ? "真人" : "虚拟"}人像组 ID，请确认极鑫令牌权限后重试`);
-    return nextGroups;
+    throw new Error(preferredType === "LivenessFace"
+      ? "尚未配置真人人像组 ID；请先创建真人认证，完成认证后查询任务并同步组 ID"
+      : "尚未配置虚拟人像组 ID；请先创建虚拟组，再查询任务并同步组 ID");
   };
 
   const tianjiRequest = async (config, path, { method = "POST", params = {}, query = {} } = {}) => {
@@ -2189,21 +2286,11 @@ function installDesktopPatches() {
     Object.entries(query || {}).forEach(([key, value]) => {
       if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key, String(value));
     });
-    const headers = {
-      Authorization: nextConfig.token,
-      "Xx-Sass-Id": nextConfig.sassId,
-      "Xx-Platform": nextConfig.platform
-    };
+    const headers = tianjiAuthHeaders(nextConfig.token, nextConfig.sassId, nextConfig.platform);
     let body = "";
     if (method !== "GET") {
-      const form = new URLSearchParams();
-      Object.entries(params || {}).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === "") return;
-        if (Array.isArray(value)) value.forEach((item) => item !== undefined && item !== null && item !== "" && form.append(key, String(item)));
-        else form.append(key, String(value));
-      });
-      body = form.toString();
-      headers["Content-Type"] = "application/x-www-form-urlencoded";
+      body = JSON.stringify(params || {});
+      headers["Content-Type"] = "application/json";
     }
     let response;
     if (typeof ipcRenderer?.invoke === "function") {
@@ -2215,7 +2302,7 @@ function installDesktopPatches() {
         bodyBase64: body ? tianjiEncodeBody(body) : "",
         requestTimeout: 180000
       });
-      if (!bridged?.ok) throw new Error(bridged?.error || "即梦天玑请求失败");
+      if (!bridged?.ok) throw new Error(`天玑网络请求失败：${bridged?.error || "桌面代理不可用"}`);
       response = {
         ok: bridged.status >= 200 && bridged.status < 300,
         status: bridged.status,
@@ -2232,8 +2319,16 @@ function installDesktopPatches() {
     } catch {
       json = { raw: text };
     }
-    if (!response.ok) throw new Error(tianjiErrorMessageFromResult(json, `即梦天玑请求失败: ${response.status} ${response.statusText}`));
-    if (json && json.code && json.code !== 200) throw new Error(tianjiErrorMessageFromResult(json, `即梦天玑返回错误: ${json.code}`));
+    if (!response.ok) {
+      const detail = tianjiErrorMessageFromResult(json, "");
+      if (response.status === 401 || response.status === 403) throw new Error(`天玑鉴权失败：${detail || "请检查极鑫用户 Token"}`);
+      throw new Error(`天玑上游请求失败：${detail || `${response.status} ${response.statusText}`}`);
+    }
+    if (json?.code !== undefined && Number(json.code) !== 200) {
+      const detail = tianjiErrorMessageFromResult(json, "");
+      if ([401, 403].includes(Number(json.code))) throw new Error(`天玑鉴权失败：${detail || "请检查极鑫用户 Token"}`);
+      throw new Error(`天玑业务失败：${detail || `接口返回错误码 ${json.code}`}`);
+    }
     return json;
   };
 
@@ -2305,7 +2400,7 @@ function installDesktopPatches() {
       const body = assets.length
         ? pageAssets.map((item) => {
             const isLocalPending = item?.localUploaded === true;
-            const id = item.portrait_asset_id || item.asset_id || item.assetId || item.id || item.Id || item.AssetId || "";
+            const id = tianjiPortraitAssetIdFromItem(item);
             const name = item.name || item.Name || id || "未命名素材";
             const img = item.image_url || item.imageUrl || item.cover_url || item.preview_url || item.url || item.URL || "";
             const status = isLocalPending ? "待天玑素材库返回" : item.status || item.Status || "";
@@ -2314,7 +2409,7 @@ function installDesktopPatches() {
               ${isLocalPending ? `<div class="wanjuan-tianji-asset-badge">待刷新</div>` : ``}
               <div class="wanjuan-tianji-asset-name">${tianjiEscapeHtml(name)}</div>
               <div class="wanjuan-tianji-asset-status">${tianjiEscapeHtml(status || id).slice(0, 24)}</div>
-              ${id && !isLocalPending ? `<div class="wanjuan-tianji-asset-actions"><button data-tianji-info="${tianjiEscapeHtml(id)}">详情</button><button class="danger" data-tianji-delete="${tianjiEscapeHtml(id)}" title="删除" aria-label="删除素材">删除</button></div>` : ``}
+              ${!isLocalPending ? id ? `<div class="wanjuan-tianji-asset-actions"><button data-tianji-info="${tianjiEscapeHtml(id)}">详情</button><button class="danger" data-tianji-delete="${tianjiEscapeHtml(id)}" title="删除" aria-label="删除素材">删除</button></div>` : `<div class="wanjuan-tianji-asset-status">旧素材缺少可删除 ID，请刷新列表</div>` : ``}
             </div>`;
           }).join("")
         : `<div class="wanjuan-tianji-empty">暂无素材，刷新列表或上传人像后查看。</div>`;
@@ -2378,15 +2473,24 @@ function installDesktopPatches() {
         event.preventDefault();
         event.stopPropagation();
         const id = button.getAttribute("data-tianji-delete");
-        if (!id || !window.confirm(`删除素材 ${id}？`)) return;
-        await tianjiRequest(tianjiSettingsState, "/api/cut/model/delete-portrait", {
-          params: { portrait_asset_id: id }
-        });
+        if (!id) {
+          status("该旧素材未返回明确的资产 ID，暂不能安全删除；请先刷新素材列表");
+          return;
+        }
+        if (!window.confirm(`删除素材 ${id}？`)) return;
+        try {
+          await tianjiRequest(tianjiSettingsState, "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id } });
+        } catch (error) {
+          console.error("Tianji portrait delete failed", error);
+          status(`素材删除失败：${error?.message || String(error)}`);
+          return;
+        }
         for (const type of ["LivenessFace", "AIGC"]) {
-          tianjiAssetsState[type] = (tianjiAssetsState[type] || []).filter((item) => String(item.portrait_asset_id || item.asset_id || item.assetId || item.id || item.AssetId || "") !== id);
+          tianjiAssetsState[type] = (tianjiAssetsState[type] || []).filter((item) => tianjiPortraitAssetIdFromItem(item) !== id);
         }
         await tianjiStorageSet({ tianjiSeedanceAssets: tianjiAssetsState });
         tianjiRenderAssetList(panel);
+        status(`素材已删除：${id}`);
       });
     });
   };
@@ -2494,13 +2598,16 @@ function installDesktopPatches() {
     const seedanceCard = tianjiModeHost?.closest?.(".wanjuan-settings-card") || seedanceHeader?.closest?.(".wanjuan-settings-card") || null;
     if (!tianjiModeHost && !tianjiHost && (!seedanceCard || seedanceCard.parentElement?.querySelector(".wanjuan-tianji-settings-card"))) return;
     seedanceCard?.classList?.add("wanjuan-seedance-settings-card");
-    const stored = await tianjiStorageGet(["tianjiSeedanceAssets", "tianjiSeedanceGroups", "tianjiSeedanceSettingsMode"]);
+    const stored = await tianjiStorageGet(["tianjiSeedanceAssets", "tianjiSeedanceGroups", "tianjiSeedanceSettingsMode", "tianjiSeedancePortraitTaskId", "tianjiSeedancePortraitBytedToken", "tianjiSeedancePortraitGroupName"]);
     tianjiSettingsState = await tianjiGetSyncedConfigFromJixin();
     tianjiAssetsState = {
       LivenessFace: tianjiMergeLocalAssets(stored.tianjiSeedanceAssets?.LivenessFace || tianjiAssetsState.LivenessFace),
       AIGC: tianjiMergeLocalAssets(stored.tianjiSeedanceAssets?.AIGC || tianjiAssetsState.AIGC)
     };
     tianjiGroupsState = stored.tianjiSeedanceGroups || tianjiGroupsState;
+    tianjiGroupNameState = String(stored.tianjiSeedancePortraitGroupName || "").trim() || tianjiDefaultPortraitGroupName();
+    tianjiPortraitTaskIdState = String(stored.tianjiSeedancePortraitTaskId || "").trim();
+    tianjiPortraitBytedTokenState = String(stored.tianjiSeedancePortraitBytedToken || "").trim();
     const selectedMode = document.querySelector("[data-tianji-mode][aria-pressed='true']")?.getAttribute("data-tianji-mode");
     const tianjiSettingsPanelMode = selectedMode === "tianji" || (!selectedMode && stored.tianjiSeedanceSettingsMode === "tianji")
       ? "tianji"
@@ -2607,7 +2714,9 @@ function installDesktopPatches() {
         <div class="wanjuan-tianji-actions">
           <button data-tianji-points-action data-tianji-action="balance" ${tianjiPointsActionsUnlocked ? "" : "hidden"}>查询积分</button>
           <button data-tianji-points-action data-tianji-action="pointsLogs" ${tianjiPointsActionsUnlocked ? "" : "hidden"}>积分明细</button>
-          <button data-tianji-action="groups">获取组 ID</button>
+          <button data-tianji-action="createVirtual">创建虚拟组</button>
+          <button data-tianji-action="createReal">创建真人认证</button>
+          <button data-tianji-action="queryPortraitTask">查询/同步组 ID</button>
           <button data-tianji-action="refresh">刷新素材</button>
           <button data-tianji-action="syncJixin">同步极鑫配置</button>
           <button class="wanjuan-tianji-primary" data-tianji-action="save">保存</button>
@@ -2620,6 +2729,10 @@ function installDesktopPatches() {
           <label>Sass ID<input data-tianji-field="sassId" value="${tianjiSettingsState.sassId}"></label>
           <label>真人组 ID<input data-tianji-field="liveGroupId" value="${tianjiGroupsState.LivenessFace || ""}"></label>
           <label>虚拟组 ID<input data-tianji-field="aigcGroupId" value="${tianjiGroupsState.AIGC || ""}"></label>
+          <label>素材组名称<input data-tianji-field="portraitGroupName" placeholder="留空自动生成万卷灵境-时间" value="${tianjiEscapeHtml(tianjiGroupNameState || tianjiDefaultPortraitGroupName())}"></label>
+          <label>真人回调 URL<input data-tianji-field="callbackUrl" placeholder="https://.../tianji/callback"></label>
+          <label>人像任务 ID<input data-tianji-field="portraitTaskId" placeholder="创建组后自动填写；也可手动填写" value="${tianjiEscapeHtml(tianjiPortraitTaskIdState)}"></label>
+          <label>BytedToken<input data-tianji-field="bytedToken" placeholder="真人认证回调返回" value="${tianjiEscapeHtml(tianjiPortraitBytedTokenState)}"></label>
         </div>
         <div class="wanjuan-tianji-row">
           <label style="display:flex;align-items:center;gap:8px"><input data-tianji-field="generateAudio" type="checkbox" ${tianjiSettingsState.generateAudio ? "checked" : ""}>生成同步声音</label>
@@ -2737,19 +2850,33 @@ function installDesktopPatches() {
         if (action === "save") status("已保存");
         if (action === "balance") {
           const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/fetch-points-balance");
-          status(`积分余额：${result?.data?.points ?? result?.points ?? "未知"}`);
+          const points = tianjiBalancePoints(result);
+          status(points === null ? "积分余额接口返回空数据" : `积分余额：${points}`);
         }
         if (action === "pointsLogs") {
           status("正在打开积分明细...");
           await tianjiOpenPointsLogsDialog(panel, status);
         }
-        if (action === "groups") {
-          const type = panel.querySelector("[data-tianji-upload-type]")?.value || "";
-          status("正在获取真人/虚拟组 ID...");
-          await tianjiSyncGroups(panel, type);
-          const live = tianjiGroupsState.LivenessFace || "未返回";
-          const aigc = tianjiGroupsState.AIGC || "未返回";
-          status(`组 ID 已更新：真人 ${live}，虚拟 ${aigc}`);
+        if (action === "createVirtual") {
+          status("正在创建虚拟人像组...");
+          const result = await tianjiCreatePortraitGroup(panel, "AIGC");
+          const taskInput = panel.querySelector("[data-tianji-field='portraitTaskId']");
+          if (taskInput && result.taskId) taskInput.value = result.taskId;
+          status(result.groups.AIGC ? `虚拟组已创建：${result.groups.AIGC}` : result.taskId ? `虚拟组创建任务已提交：${result.taskId}` : "虚拟组创建请求已提交；请填写返回的任务 ID 后查询");
+        }
+        if (action === "createReal") {
+          status("正在创建真人认证...");
+          const result = await tianjiCreatePortraitGroup(panel, "LivenessFace");
+          const taskInput = panel.querySelector("[data-tianji-field='portraitTaskId']");
+          if (taskInput && result.taskId) taskInput.value = result.taskId;
+          status(result.taskId ? `真人认证已创建：${result.taskId}；完成认证后查询` : "真人认证已创建；完成认证后填写 BytedToken 查询结果");
+        }
+        if (action === "queryPortraitTask") {
+          status("正在查询人像任务并同步组 ID...");
+          const result = await tianjiQueryPortraitTask(panel);
+          const live = result.groups.LivenessFace || "未返回";
+          const aigc = result.groups.AIGC || "未返回";
+          status(`查询完成：真人 ${live}，虚拟 ${aigc}`);
         }
         if (action === "refresh") {
           tianjiGroupsState = {
@@ -2757,6 +2884,8 @@ function installDesktopPatches() {
             AIGC: panel.querySelector("[data-tianji-field='aigcGroupId']")?.value || ""
           };
           await tianjiStorageSet({ tianjiSeedanceGroups: tianjiGroupsState });
+          const selectedGroup = panel.querySelector("[data-tianji-upload-type]")?.value === "LivenessFace" ? tianjiGroupsState.LivenessFace : tianjiGroupsState.AIGC;
+          if (!selectedGroup) throw new Error("请先创建/查询对应人像组并保存组 ID，再刷新素材");
           status("正在从天玑素材库刷新状态...");
           const summary = await tianjiRefreshAssets(panel);
           const missing = [];
@@ -2798,7 +2927,12 @@ function installDesktopPatches() {
           if (!uploaded?.ok || !uploaded.url) throw new Error(uploaded?.error || "图片公网链接上传失败");
           status("正在提交天玑人像审核...");
           const uploadResult = await tianjiRequest(tianjiSettingsState, type === "AIGC" ? "/api/cut/model/upload-VirtralPortrait" : "/api/cut/model/upload-Portrait", {
-            params: { image_url: uploaded.url, name }
+            params: {
+              image_url: uploaded.url,
+              name,
+              ...(type === "AIGC" ? { virtual_group_id: tianjiGroupsState.AIGC } : { portrait_group_id: tianjiGroupsState.LivenessFace }),
+              type: "Image"
+            }
           });
           status("上传成功，正在刷新素材...");
           await tianjiRefreshAssets(panel).catch(() => {});
@@ -2848,7 +2982,7 @@ function installDesktopPatches() {
       .wanjuan-workspace-sidebar .wanjuan-workspace-sections button{width:100%;min-width:0;text-align:center}
       .wanjuan-workspace-tabs button.is-active,.wanjuan-workspace-sections button.is-active,.wanjuan-workspace-segment button.is-active{background:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;background-image:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;border-color:var(--wj-control-selected-border,var(--wj-accent,#3b82f6))!important;color:var(--wj-control-selected-text,var(--wj-on-accent,var(--wanjuan-theme-on-primary,#fff)))!important;box-shadow:var(--wj-control-selected-shadow,none)!important}
       .wanjuan-workspace-body{min-height:0;flex:1;display:grid;grid-template-columns:230px minmax(0,1fr);overflow:hidden}
-      .wanjuan-workspace-sidebar{border-right:1px solid var(--wj-panel-border,var(--wj-border,#2b2f36));background:var(--wj-surface-2,#14171c);padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:8px 0 18px rgba(0,0,0,.16)}
+      .wanjuan-workspace-sidebar{min-width:0;border-right:1px solid var(--wj-panel-border,var(--wj-border,#2b2f36));background:var(--wj-surface-2,#14171c);padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:8px 0 18px rgba(0,0,0,.16)}
       .wanjuan-workspace-group-list{display:grid;grid-template-columns:1fr;gap:8px;width:100%;align-items:stretch}
       .wanjuan-workspace-content{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
       .wanjuan-workspace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--wj-panel-divider,var(--wj-border,#252a31));background:var(--wj-surface-2,#111419)}
@@ -2923,6 +3057,41 @@ function installDesktopPatches() {
       .wanjuan-workspace-copy-url{height:26px;border:1px solid var(--wj-border,#303640);border-radius:7px;background:var(--wj-surface-3,#1d222a);color:var(--wj-text,#d1d5db);padding:0 8px;font-size:11px;font-weight:750;cursor:pointer}
       .wanjuan-workspace-copy-url:hover{border-color:var(--wj-control-hover-border,color-mix(in srgb,var(--wj-accent,#3b82f6) 44%,var(--wj-border,#4b5563)));background:var(--wj-control-hover-bg,color-mix(in srgb,var(--wj-surface-3,#252b35) 84%,var(--wj-accent,#3b82f6) 16%));color:var(--wj-control-hover-text,var(--wj-text,#fff))}
       .wanjuan-workspace-toast{position:fixed;right:18px;bottom:22px;z-index:2147483600;background:var(--wj-surface-2,#111827);color:var(--wj-text,#fff);border:1px solid var(--wj-border,#374151);border-radius:10px;padding:10px 13px;font-size:12px;box-shadow:var(--wj-shadow-popover,0 18px 50px rgba(0,0,0,.42))}
+      .wanjuan-cloud-workspace-block{display:grid;gap:8px;min-width:0;max-width:100%;padding:10px;border:1px solid var(--wj-border,#303640);border-radius:10px;background:var(--wj-surface,#171a1f);overflow:hidden}
+      .wanjuan-cloud-workspace-block .wanjuan-workspace-field-label{min-width:0;max-width:100%;overflow:hidden}
+      .wanjuan-cloud-workspace-select{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .wanjuan-cloud-permission-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--wj-muted,#9ca3af)}
+      .wanjuan-cloud-permission-row span:first-child{font-weight:800;color:var(--wj-text,#e5e7eb)}
+      .wanjuan-cloud-permission-row .is-offline{color:#fbbf24}
+      .wanjuan-cloud-mock-note,.wanjuan-cloud-security-note,.wanjuan-cloud-error{font-size:10px;line-height:1.55;border-radius:8px;padding:8px}
+      .wanjuan-cloud-mock-note{color:#93c5fd;background:color-mix(in srgb,#2563eb 14%,transparent);border:1px solid color-mix(in srgb,#60a5fa 28%,transparent)}
+      .wanjuan-cloud-security-note{color:var(--wj-muted,#9ca3af);background:var(--wj-surface,#171a1f);border:1px solid var(--wj-border,#303640)}
+      .wanjuan-cloud-error{color:#fca5a5;background:color-mix(in srgb,#ef4444 12%,transparent);border:1px solid color-mix(in srgb,#ef4444 28%,transparent);overflow-wrap:anywhere}
+      .wanjuan-cloud-template-card{grid-template-columns:82px minmax(0,1fr)}
+      .wanjuan-cloud-template-card.is-conflict{border-color:#f59e0b;background:color-mix(in srgb,#f59e0b 5%,var(--wj-surface,#171a1f))}
+      .wanjuan-cloud-template-kind{display:grid;place-items:center;min-height:160px;border-right:1px solid var(--wj-border,#303640);background:linear-gradient(150deg,color-mix(in srgb,var(--wj-accent,#3b82f6) 16%,transparent),transparent);color:var(--wj-text,#e5e7eb);font-size:12px;font-weight:850;letter-spacing:.12em}
+      .wanjuan-cloud-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .wanjuan-cloud-sync-state{flex:0 0 auto;border:1px solid var(--wj-border,#303640);border-radius:999px;padding:3px 7px;color:var(--wj-muted,#9ca3af);font-size:10px;font-weight:750}
+      .wanjuan-cloud-sync-state.is-conflict{border-color:#f59e0b;color:#fbbf24}
+      .wanjuan-cloud-sync-state.is-permission-denied{border-color:#ef4444;color:#fca5a5}
+      .wanjuan-cloud-sync-state.is-pending-create,.wanjuan-cloud-sync-state.is-pending-update,.wanjuan-cloud-sync-state.is-pending-delete{border-color:#60a5fa;color:#93c5fd}
+      .wanjuan-cloud-description{font-size:11px;line-height:1.55;color:var(--wj-muted,#9ca3af)}
+      .wanjuan-cloud-tags{display:flex;flex-wrap:wrap;gap:5px}
+      .wanjuan-cloud-tags span{border:1px solid var(--wj-border,#303640);border-radius:999px;padding:3px 7px;background:var(--wj-surface-2,#111419);color:var(--wj-muted,#aab2bd);font-size:10px}
+      .wanjuan-cloud-conflict{display:flex;align-items:center;gap:7px;flex-wrap:wrap;border:1px solid color-mix(in srgb,#f59e0b 48%,transparent);border-radius:9px;padding:8px;background:color-mix(in srgb,#f59e0b 9%,transparent);color:#fbbf24;font-size:11px}
+      .wanjuan-cloud-editor{margin:14px;max-width:980px;border:1px solid var(--wj-border,#303640);border-radius:12px;background:var(--wj-surface,#171a1f);padding:16px;overflow:auto}
+      .wanjuan-cloud-editor-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+      .wanjuan-cloud-editor-heading strong{font-size:15px;color:var(--wj-text,#f8fafc)}
+      .wanjuan-cloud-editor-heading span{font-size:10px;color:var(--wj-muted,#9ca3af)}
+      .wanjuan-cloud-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .wanjuan-cloud-editor-grid label{display:grid;gap:6px;font-size:11px;font-weight:700;color:var(--wj-muted,#aab2bd)}
+      .wanjuan-cloud-editor-grid label.is-wide{grid-column:1/-1}
+      .wanjuan-cloud-editor-grid input,.wanjuan-cloud-editor-grid textarea,.wanjuan-cloud-editor-grid select{width:100%;border:1px solid var(--wj-border,#303640);border-radius:8px;background:var(--wj-surface-2,#111419);color:var(--wj-text,#e5e7eb);padding:9px 10px;font:inherit;outline:none}
+      .wanjuan-cloud-editor-grid textarea{min-height:96px;resize:vertical}
+      .wanjuan-cloud-editor-grid input:focus,.wanjuan-cloud-editor-grid textarea:focus,.wanjuan-cloud-editor-grid select:focus{border-color:var(--wj-accent,#3b82f6)}
+      .wanjuan-cloud-editor-grid .wanjuan-cloud-check{display:flex;align-items:center;gap:8px;grid-template-columns:auto 1fr;align-self:end;min-height:38px}
+      .wanjuan-cloud-editor-grid .wanjuan-cloud-check input{width:16px;height:16px;padding:0}
+      .wanjuan-cloud-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
       html.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-tabs button.is-active,
       html.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-sections button.is-active,
       html.wanjuan-workspace-open .wanjuan-workspace-page .wanjuan-workspace-segment button.is-active,
@@ -2944,7 +3113,7 @@ function installDesktopPatches() {
       @media(max-width:1180px){.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:900px){.wanjuan-workspace-body{grid-template-columns:1fr}.wanjuan-workspace-sidebar{display:none}.wanjuan-workspace-toolbar{flex-wrap:wrap}.wanjuan-workspace-search{max-width:none}.wanjuan-workspace-toolbar-actions{width:100%;justify-content:flex-start}.wanjuan-workspace-toolbar-actions .wanjuan-workspace-button{flex:0 0 auto}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:720px){.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:560px){.wanjuan-workspace-header{padding:6px 12px}.wanjuan-workspace-subtitle{display:none}.wanjuan-workspace-network-warning-text{max-width:calc(100vw - 132px)}.wanjuan-workspace-list{grid-template-columns:1fr}.wanjuan-workspace-card{grid-template-columns:104px minmax(0,1fr)}.wanjuan-workspace-card-media{min-height:184px}.wanjuan-workspace-card-actions{grid-template-columns:1fr}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:1fr}.wanjuan-workspace-function-card .wanjuan-workspace-segment{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:560px){.wanjuan-workspace-header{padding:6px 12px}.wanjuan-workspace-subtitle{display:none}.wanjuan-workspace-network-warning-text{max-width:calc(100vw - 132px)}.wanjuan-workspace-list{grid-template-columns:1fr}.wanjuan-workspace-card{grid-template-columns:104px minmax(0,1fr)}.wanjuan-cloud-template-card{grid-template-columns:68px minmax(0,1fr)}.wanjuan-workspace-card-media{min-height:184px}.wanjuan-workspace-card-actions{grid-template-columns:1fr}.wanjuan-workspace-list.wanjuan-workspace-function-list{grid-template-columns:1fr}.wanjuan-workspace-function-card .wanjuan-workspace-segment{grid-template-columns:repeat(2,minmax(0,1fr))}.wanjuan-cloud-editor-grid{grid-template-columns:1fr}.wanjuan-cloud-editor-grid label.is-wide{grid-column:auto}}
     `;
     document.head.appendChild(style);
   };
@@ -3029,6 +3198,8 @@ function installDesktopPatches() {
       activeElement.selectionEnd :
       null;
     const data = await workspaceReadAll();
+    const cloudState = await cloudPromptWorkspace.prepare();
+    if (workspaceState.activeSpace === "cloud" && !cloudState.authenticated) workspaceState.activeSpace = "personal";
     const restoredStatus = workspaceState.activeSpace === "team" ? await workspaceEnsureTeamService(data) : null;
     const statusResult = restoredStatus ? { ok: true, status: restoredStatus } : await workspaceTeamBridge.status().catch(() => null);
     if (renderSeq !== workspaceRenderSeq) return;
@@ -3110,7 +3281,7 @@ function installDesktopPatches() {
       <div class="wanjuan-workspace-header">
         <div>
           <div class="wanjuan-workspace-heading">
-            <div class="wanjuan-workspace-subtitle">${workspaceEscapedT("个人提示词资产和局域网团队模板共享")}</div>
+            <div class="wanjuan-workspace-subtitle">${workspaceEscapedT("个人提示词资产、局域网团队共享与账号云提示词库")}</div>
             <button type="button" class="wanjuan-workspace-network-warning ${workspaceState.networkWarningExpanded ? "is-active" : ""}" data-workspace-action="toggle-network-warning" title="${workspaceEscapedT("点击展开网络环境提示")}" aria-expanded="${workspaceState.networkWarningExpanded ? "true" : "false"}" aria-label="${workspaceEscapedT("展开或收起网络环境提示")}">!</button>
           </div>
           ${workspaceState.networkWarningExpanded ? `<div class="wanjuan-workspace-network-warning-text">${workspaceEscapedT("更换网络环境（如更换Wi-Fi频段，更换有线网，开启VPN等情况）需要关闭团队空间后关闭软件再重新开启软件与团队空间，重新复制更换后的局域网端口。")}</div>` : ""}
@@ -3119,6 +3290,7 @@ function installDesktopPatches() {
           <div class="wanjuan-workspace-tabs">
             <button data-workspace-space="personal" class="${workspaceState.activeSpace === "personal" ? "is-active" : ""}">${workspaceEscapedT("个人空间")}</button>
             <button data-workspace-space="team" class="${workspaceState.activeSpace === "team" ? "is-active" : ""}">${workspaceEscapedT("团队空间")}</button>
+            ${cloudState.authenticated ? `<button data-workspace-space="cloud" class="${workspaceState.activeSpace === "cloud" ? "is-active" : ""}">${workspaceEscapedT("云端工作空间")}</button>` : ""}
           </div>
           <button type="button" class="wanjuan-workspace-close-button" data-workspace-action="close" title="${workspaceEscapedT("关闭工作空间")}" aria-label="${workspaceEscapedT("关闭工作空间")}">×</button>
         </div>
@@ -3134,7 +3306,7 @@ function installDesktopPatches() {
               <button class="wanjuan-workspace-button" data-workspace-action="new-group">${workspaceEscapedT("新建分组")}</button>
               <div class="wanjuan-workspace-group-list">${renderWorkspaceGroups(data.groups, data.templates)}</div>
             ` : `<button class="wanjuan-workspace-button primary" data-workspace-action="add-function-prompt">${workspaceEscapedT("新增功能提示词")}</button>`}
-          ` : `
+          ` : workspaceState.activeSpace === "cloud" ? cloudPromptWorkspace.renderSidebar() : `
             <div class="wanjuan-workspace-team-status">${teamStatusHtml}</div>
             <button class="wanjuan-workspace-button ${data.teamSettings.enabled ? "" : "primary"}" data-workspace-action="${data.teamSettings.enabled ? "stop-team" : "start-team"}">${data.teamSettings.enabled ? workspaceEscapedT("关闭团队空间") : workspaceEscapedT("开启团队空间")}</button>
             <div class="wanjuan-workspace-form">
@@ -3153,13 +3325,15 @@ function installDesktopPatches() {
         </aside>
         <main class="wanjuan-workspace-content">
           <div class="wanjuan-workspace-toolbar">
-            <input class="wanjuan-workspace-search" data-workspace-field="query" value="${workspaceEscapeHtml(workspaceState.query)}" placeholder="${workspaceEscapedT("搜索标题、提示词、模型")}">
-            <div class="wanjuan-workspace-toolbar-actions">
-              ${workspaceState.activeSpace === "personal" && workspaceState.activeSection === "functionPrompts" ? `<button class="wanjuan-workspace-button primary" data-workspace-action="add-function-prompt">${workspaceEscapedT("新增功能提示词")}</button>` : ""}
-              <button class="wanjuan-workspace-button" data-workspace-action="close">${workspaceEscapedT("返回")}</button>
-            </div>
+            ${workspaceState.activeSpace === "cloud" ? cloudPromptWorkspace.renderToolbar() : `
+              <input class="wanjuan-workspace-search" data-workspace-field="query" value="${workspaceEscapeHtml(workspaceState.query)}" placeholder="${workspaceEscapedT("搜索标题、提示词、模型")}">
+              <div class="wanjuan-workspace-toolbar-actions">
+                ${workspaceState.activeSpace === "personal" && workspaceState.activeSection === "functionPrompts" ? `<button class="wanjuan-workspace-button primary" data-workspace-action="add-function-prompt">${workspaceEscapedT("新增功能提示词")}</button>` : ""}
+                <button class="wanjuan-workspace-button" data-workspace-action="close">${workspaceEscapedT("返回")}</button>
+              </div>
+            `}
           </div>
-          ${workspaceState.activeSpace === "personal" && workspaceState.activeSection === "functionPrompts" ? `
+          ${workspaceState.activeSpace === "cloud" ? cloudPromptWorkspace.renderContent() : workspaceState.activeSpace === "personal" && workspaceState.activeSection === "functionPrompts" ? `
             <div class="wanjuan-workspace-list wanjuan-workspace-function-list">
               ${functionPrompts.length ? functionPrompts.map(({ prompt, index }) => `
                 <article class="wanjuan-workspace-function-card" data-function-prompt-index="${index}">
@@ -3232,7 +3406,11 @@ function installDesktopPatches() {
       const spaceButton = target.closest("[data-workspace-space]");
       if (spaceButton) {
         workspaceState.activeSpace = spaceButton.getAttribute("data-workspace-space") || "personal";
-        if (workspaceState.activeSpace === "team") workspaceState.activeSection = "templates";
+        if (["team", "cloud"].includes(workspaceState.activeSpace)) workspaceState.activeSection = "templates";
+        if (workspaceState.activeSpace === "cloud") {
+          await cloudPromptWorkspace.prepare();
+          await cloudPromptWorkspace.syncActiveWorkspace();
+        }
         await renderWorkspacePanel();
         return;
       }
@@ -3323,6 +3501,15 @@ function installDesktopPatches() {
       const action = actionButton.getAttribute("data-workspace-action") || "";
       const card = actionButton.closest("[data-template-id]");
       const templateId = card?.getAttribute("data-template-id") || "";
+      if (action.startsWith("cloud-")) {
+        try {
+          await cloudPromptWorkspace.handleAction(action, templateId);
+        } catch (error) {
+          workspaceToast(workspaceTf("云提示词操作失败：{message}", { message: error?.message || String(error) }));
+        }
+        if (!["cloud-use", "cloud-save-selected"].includes(action)) await renderWorkspacePanel();
+        return;
+      }
       const data = await workspaceReadAll();
       const personalTemplate = data.templates.find((item) => item.id === templateId);
       const teamTemplate = workspaceFindTeamTemplate(templateId);
@@ -3341,7 +3528,7 @@ function installDesktopPatches() {
       if (action === "save-selected-node") {
         workspaceOpenCanvas();
         window.setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("wanjuan:workspace-save-node-template"));
+          workspacePostCanvasEvent("wanjuan:workspace-save-node-template");
         }, 120);
         return;
       }
@@ -3459,6 +3646,11 @@ function installDesktopPatches() {
       if (!target.closest(".wanjuan-workspace-page")) return;
 
       const workspaceField = target.getAttribute("data-workspace-field");
+      if (workspaceField && workspaceField.startsWith("cloud")) {
+        const value = target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value;
+        await cloudPromptWorkspace.handleField(workspaceField, value);
+        return;
+      }
       if (workspaceField === "query") {
         workspaceState.query = target.value;
         workspaceScheduleRender();
@@ -3488,6 +3680,12 @@ function installDesktopPatches() {
       const target = event.target;
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) return;
       if (!target.closest(".wanjuan-workspace-page")) return;
+      const cloudField = target.getAttribute("data-workspace-field");
+      if (cloudField && cloudField.startsWith("cloud")) {
+        const value = target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value;
+        await cloudPromptWorkspace.handleField(cloudField, value);
+        return;
+      }
       if (target.hasAttribute("data-workspace-template-group")) {
         const templateId = target.closest("[data-template-id]")?.getAttribute("data-template-id") || "";
         if (!templateId) return;
@@ -3521,6 +3719,33 @@ function installDesktopPatches() {
       installWorkspacePanel();
       await renderWorkspacePanel();
       workspaceToast(workspaceT("已保存到工作空间"));
+    });
+
+    window.addEventListener("wanjuan:cloud-prompt-template-captured", async (event) => {
+      const template = event?.detail?.template;
+      if (!template) return;
+      workspaceState.activeSpace = "cloud";
+      workspaceState.activeSection = "templates";
+      document.documentElement.classList.add("wanjuan-workspace-open");
+      installWorkspacePanel();
+      await cloudPromptWorkspace.prepare({ force: true });
+      await cloudPromptWorkspace.captureTemplate(template);
+      await renderWorkspacePanel();
+    });
+
+    window.addEventListener("online", async () => {
+      const cloudState = cloudPromptWorkspace.peek();
+      if (!cloudState.authenticated) return;
+      await cloudPromptWorkspace.prepare({ force: true });
+      await cloudPromptWorkspace.syncActiveWorkspace({ force: true });
+      if (document.documentElement.classList.contains("wanjuan-workspace-open")) await renderWorkspacePanel();
+    });
+
+    window.addEventListener("wanjuan:account-session-changed", async () => {
+      cloudPromptWorkspace.reset();
+      await cloudPromptWorkspace.prepare({ force: true });
+      if (workspaceState.activeSpace === "cloud" && !cloudPromptWorkspace.peek().authenticated) workspaceState.activeSpace = "personal";
+      if (document.documentElement.classList.contains("wanjuan-workspace-open")) await renderWorkspacePanel();
     });
 
     window.addEventListener("wanjuan:workspace-open", async () => {

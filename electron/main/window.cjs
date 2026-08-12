@@ -7,6 +7,7 @@ const { TEST_PROXY_FETCH_SELFTEST, TEST_PROXY_FETCH_SELFTEST_URL } = require("./
 const { appendDesktopLog, formatErrorMessage, truncateLogValue } = require("./logging.cjs");
 const { isSafeExternalUrl } = require("./net/security.cjs");
 const { loadTextApiSelfTestConfig } = require("./self-test.cjs");
+const { setAutomationWindow } = require("./automation-server.cjs");
 
 function createMainWindow(baseUrl) {
   let isRecoveringRenderer = false;
@@ -61,6 +62,7 @@ function createMainWindow(baseUrl) {
       webviewTag: true
     }
   });
+  setAutomationWindow(win);
 
   let hasShownWindow = false;
   let hasRevealedContent = false;
@@ -178,6 +180,7 @@ function createMainWindow(baseUrl) {
     const settleMs = 420;
     let stableSince = 0;
     let lastStatus = null;
+    let rendererReady = false;
 
     while (!hasRevealedContent && !win.isDestroyed() && Date.now() - startedAt < maxWaitMs) {
       try {
@@ -222,7 +225,10 @@ function createMainWindow(baseUrl) {
 
         if (ready) {
           if (!stableSince) stableSince = Date.now();
-          if (Date.now() - stableSince >= settleMs) break;
+          if (Date.now() - stableSince >= settleMs) {
+            rendererReady = true;
+            break;
+          }
         } else {
           stableSince = 0;
         }
@@ -234,6 +240,25 @@ function createMainWindow(baseUrl) {
 
     if (hasRevealedContent || win.isDestroyed()) return;
     hasRevealedContent = true;
+    if (!rendererReady) {
+      try {
+        await win.webContents.executeJavaScript(`
+          (() => {
+            document.documentElement.dataset.wanjuanBootReady = 'error';
+            window.dispatchEvent(new CustomEvent('wanjuan:boot-failed', {
+              detail: { message: '初始化时间过长，请重新加载；本地项目不会受到影响。' }
+            }));
+          })();
+        `, true);
+      } catch {}
+      appendDesktopLog("window-reveal-timeout", {
+        reason,
+        waitMs: Date.now() - startedAt,
+        status: lastStatus
+      });
+      showWindowShell("reveal-timeout-recovery");
+      return;
+    }
     try {
       await win.webContents.executeJavaScript(`
         (() => {
@@ -372,6 +397,7 @@ function createMainWindow(baseUrl) {
     if (!blankScreenTimer) blankScreenTimer = setInterval(checkForBlankScreen, 5000);
     setTimeout(checkForBlankScreen, 6000);
   });
+  // 先显示由 preload 注入的开屏动画，真正 App 内容仍由 wanjuan-booting 遮罩。
   win.webContents.once("dom-ready", () => {
     showWindowShell("boot-dom-ready");
   });
@@ -428,14 +454,13 @@ function createMainWindow(baseUrl) {
   });
   win.setTitle(" ");
   win.once("ready-to-show", () => {
-    showWindowShell("ready-to-show");
+    showWindowShell("ready-to-show-splash");
     revealWindowWhenStable("ready-to-show").catch((error) => {
       appendDesktopLog("window-reveal-failed", { message: String(error?.message || error) });
       showWindowShell("reveal-failed");
     });
   });
   setTimeout(() => {
-    showWindowShell("fallback-timeout");
     revealWindowWhenStable("fallback-timeout").catch(() => {
       showWindowShell("reveal-fallback-failed");
     });

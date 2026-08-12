@@ -199,22 +199,14 @@ export function WanJuanAccountGate() {
     bootstrapAccount();
   }, []);
 
-  if (account.loading) {
-    return (
-      <div className="wanjuan-account-overlay is-loading" aria-live="polite">
-        <div className="wanjuan-account-loading-state">
-          <div className="wanjuan-account-mark" aria-hidden="true"><BookOpen /></div>
-          <div><strong>正在准备你的创作空间</strong><span>检查本地模式与账号会话</span></div>
-        </div>
-      </div>
-    );
-  }
-  const firstRun = !account.onboardingComplete && !account.authenticated;
-  if (!firstRun && !account.authOpen) return null;
+  // 账号状态加载不能遮挡启动开屏；新安装直接进入本地模式，只有用户
+  // 主动打开账号页或已有会话失效时才显示认证界面。
+  if (account.loading) return null;
+  if (!account.authOpen) return null;
 
   return (
-    <div className={`wanjuan-account-overlay ${firstRun ? "is-first-run" : "is-dialog"}`} role="dialog" aria-modal="true">
-      <AccountAuthSurface welcome={firstRun} />
+    <div className="wanjuan-account-overlay is-dialog" role="dialog" aria-modal="true">
+      <AccountAuthSurface welcome={false} />
     </div>
   );
 }

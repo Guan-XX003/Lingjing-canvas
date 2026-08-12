@@ -1,0 +1,12 @@
+{
+  "code": 200,
+  "message": "异步查询成功",
+  "data": {
+    "status": "completed",
+    "progress": 1,
+    "result": {
+      "video_url": "https://media.example.invalid/mock-result.mp4",
+      "cover_url": "https://media.example.invalid/mock-cover.jpg"
+    }
+  }
+}

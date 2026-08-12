@@ -53,6 +53,7 @@ class AccountRequestError extends Error {
     this.status = Number(options.status || 0);
     this.code = String(options.code || "ACCOUNT_REQUEST_FAILED");
     this.network = options.network === true;
+    this.details = options.details && typeof options.details === "object" ? options.details : null;
   }
 }
 
@@ -63,8 +64,9 @@ function accountStatePath() {
 function defaultAccountState() {
   return {
     version: ACCOUNT_STATE_VERSION,
-    onboardingComplete: false,
-    localMode: false,
+    // 新安装默认进入本地模式；账号登录必须由用户主动触发。
+    onboardingComplete: true,
+    localMode: true,
     user: null,
     subscription: null,
     entitlements: [],
@@ -84,6 +86,12 @@ function readAccountState() {
     accountStateCache = { ...defaultAccountState(), ...(parsed || {}) };
   } catch {
     accountStateCache = defaultAccountState();
+  }
+  // 旧版未登录状态曾要求 onboarding；升级后统一回到可操作本地模式，
+  // 不自动打开账号界面，也不影响已有登录会话。
+  if (!accountStateCache.user && !accountStateCache.session?.refreshTokenEncrypted) {
+    accountStateCache.onboardingComplete = true;
+    accountStateCache.localMode = true;
   }
   return accountStateCache;
 }
@@ -270,6 +278,7 @@ async function requestJson(baseUrl, pathname, options = {}) {
       throw new AccountRequestError(payload?.error || payload?.message || `请求失败 (${response.status})`, {
         status: response.status,
         code: payload?.code || `HTTP_${response.status}`,
+        details: payload?.details && typeof payload.details === "object" ? payload.details : payload,
       });
     }
     return payload || {};

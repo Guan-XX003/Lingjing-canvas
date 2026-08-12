@@ -1,10 +1,12 @@
 created: 2026-07-10T15:52:05.838Z
-updated: 2026-07-21T03:54:25.703Z
-update_count: 3
-last_field: note
+updated: 2026-08-11T12:30:00.000Z
+update_count: 5
+last_field: description
 children:
   - admin-services
+  - automation-clients
   - custom-providers
+  - cloud-prompt-library
   - jixin
   - suno
   - tianji

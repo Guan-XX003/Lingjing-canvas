@@ -21,13 +21,15 @@ const { registerDesktopIpc } = require("./ipc.cjs");
 const { createMainWindow } = require("./window.cjs");
 const { installApplicationMenu, scheduleAutomaticUpdateCheck } = require("./update-checker.cjs");
 const { restoreEnterpriseGatewayOnLaunch } = require("./enterprise-gateway.cjs");
+const { startAutomationServer, stopAutomationServer } = require("./automation-server.cjs");
 
 // 应用标识与用户数据目录（保持与原 app 一致，沿用同一 userData，迁移用户无感）。
 try {
   app.setName(TEST_BUILD_NAME);
   const stableUserDataPath = path.join(app.getPath("appData"), TEST_USER_DATA_DIR);
-  const devUserDataPath = app.isPackaged ? "" : TEST_USER_DATA_PATH;
-  app.setPath("userData", devUserDataPath || stableUserDataPath);
+  const allowPackagedTestData = app.isPackaged && process.env.WANJUAN_ALLOW_PACKAGED_TEST_USER_DATA === "1";
+  const isolatedUserDataPath = TEST_USER_DATA_PATH && (!app.isPackaged || allowPackagedTestData) ? TEST_USER_DATA_PATH : "";
+  app.setPath("userData", isolatedUserDataPath || stableUserDataPath);
 } catch {}
 
 // stdout/stderr 的 EPIPE 容错：管道提前关闭不应导致进程崩溃。
@@ -96,6 +98,7 @@ app.whenReady().then(async () => {
   installFileAccessFilter();
   const desktopBaseUrl = await createStaticServer();
   setDesktopBaseUrl(desktopBaseUrl);
+  await startAutomationServer();
   // IPC 注册放在 baseUrl 就绪之后，确保 isTrustedIpcEvent 始终有校验依据；
   // 注册仍先于 createMainWindow，渲染进程调用时 handler 均已就位。
   registerDesktopIpc();
@@ -121,3 +124,4 @@ app.whenReady().then(async () => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+app.on("will-quit", () => { stopAutomationServer().catch(() => {}); });

@@ -7,7 +7,7 @@ import type { ApiBindings, ApiConfig, StoredGlobalConfig, Toast } from "../lib/a
 import { WanJuanSunoHeaders, WanJuanSunoTaskFailed, WanJuanSunoTaskSucceeded, WanJuanTtsMusicApiUrl, WanJuanTtsMusicExtractAudio, WanJuanTtsMusicExtractClipId, WanJuanTtsMusicExtractTaskId, WanJuanTtsMusicTaskAudioUrl } from "../components/audio-nodes";
 import { wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
-import { wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
+import { wanjuanBuildTianjiTaskQuery, wanjuanGetSyncedTianjiSeedanceConfig, wanjuanTianjiErrorMessage, wanjuanTianjiFindProgress, wanjuanTianjiFindThumbUrl, wanjuanTianjiFindVideoUrl, wanjuanTianjiRequest, wanjuanTianjiStatus } from "../lib/tianji-api";
 import { wanjuanTaskUsesSeedanceSlot } from "../lib/video-task";
 import { collectTaskCredentialConfigs, resolveTaskApiCredential, resolveTaskPollUrl } from "../lib/global-config";
 import { failGlobalTaskRefresh } from "../lib/global-tasks";
@@ -597,11 +597,10 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                     }
                     if (task.provider === `tianji-seedance`) {
                       let config = await wanjuanGetSyncedTianjiSeedanceConfig(),
-                        result = await wanjuanTianjiRequest(config, `/api/cut/model/coze-run-seedance-special-history`, {
-                          method: `GET`,
-                          query: {
-                            execute_id: task.id
-                          },
+                        taskQuery = wanjuanBuildTianjiTaskQuery(task.id),
+                        result = await wanjuanTianjiRequest(config, taskQuery.endpoint, {
+                          method: taskQuery.method,
+                          params: taskQuery.params,
                         }),
                         status = wanjuanTianjiStatus(result),
                         videoUrl = wanjuanTianjiFindVideoUrl(result),
@@ -651,7 +650,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                           notify(`即梦天玑任务已完成，结果已拉回`));
                         return;
                       }
-                      if ([`failed`, `fail`, `error`, `expired`, `canceled`, `cancelled`, `rejected`].includes(status)) {
+                      if (status === `failed`) {
                         let message = wanjuanTianjiErrorMessage(result);
                         (updateGlobalTasks((tasks) =>
                             tasks.map((taskItem) =>

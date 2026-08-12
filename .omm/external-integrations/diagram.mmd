@@ -9,9 +9,12 @@ graph LR
     upload-services["Public Media Upload Services\nTOS, Qiniu, custom host, temporary host"]
     admin-services["WanJuan Admin Services\nNotifications and activation"]
     account-cloud["WanJuan Account Service\nIdentity, membership, devices, wallet"]
+    prompt-cloud["Prompt Workspace API\nPersonal and organization libraries"]
     enterprise-gateway["Enterprise LAN Gateway\nMembership check and model proxy"]
     update-service["GitHub Release Update Feed\nDesktop updater"]
     local-tools["Local Tool Runtime\nFFmpeg, Real-ESRGAN, deface, Qwen TTS"]
+    automation-clients["Local Automation Clients\nCLI and stdio MCP"]
+    automation-boundary["Loopback Automation Boundary\n127.0.0.1 + ephemeral token"]
     renderer-adapters -->|"sends protected requests through desktop gateway"| proxy-security
     proxy-security -->|"text, image, video, and audio requests"| jixin
     proxy-security -->|"Tianji task and asset operations"| tianji
@@ -21,9 +24,14 @@ graph LR
     renderer-adapters -->|"converts local references to public URLs"| upload-services
     renderer-adapters -->|"fetches published notifications and activation state"| admin-services
     renderer-adapters -->|"requests sanitized account actions through IPC"| account-cloud
+    renderer-adapters -->|"allowlisted prompt DTO through main-process auth"| prompt-cloud
+    account-cloud -->|"access token and organization membership"| prompt-cloud
     account-cloud -->|"signed user identity"| enterprise-gateway
     renderer-adapters -->|"short-lived workspace session only"| enterprise-gateway
     proxy-security -->|"checks release metadata"| update-service
     renderer-adapters -->|"invokes local processing through IPC"| local-tools
+    automation-clients -->|"status, models, tasks and generation commands"| automation-boundary
+    automation-boundary -->|"allowlisted renderer methods only"| renderer-adapters
     classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
-    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,account-cloud,enterprise-gateway,update-service external
+    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,account-cloud,prompt-cloud,enterprise-gateway,update-service external
+    class automation-clients external

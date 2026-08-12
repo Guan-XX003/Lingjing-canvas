@@ -71,6 +71,13 @@ export const WanJuanVideoNode = reactMemo(({
       tongyiWanxiangMode = data.tongyiWanxiangMode || `text-to-video`,
       seedanceUploadModeValue = data.seedanceUploadMode || WANJUAN_DEFAULT_SEEDANCE_UPLOAD_MODE,
       seedanceModeValue = data.seedanceMode === `tianji` ? `tianji` : `official`,
+      tianjiGenerationMode = data.tianjiSeedanceGenerationMode || `text-to-video`,
+      tianjiGenerationModeOptions = [
+        { value: `text-to-video`, label: `文生视频` },
+        { value: `first-frame`, label: `首帧生视频` },
+        { value: `first-last`, label: `首尾帧生视频` },
+        { value: `reference-media`, label: `参考素材生视频` },
+      ],
       parseSeedanceList = (listText) =>
       String(listText || ``)
       .split(/[\s,，、]+/)
@@ -1021,7 +1028,7 @@ export const WanJuanVideoNode = reactMemo(({
 			                        (wanjuanModelManualRef.current = modeManual),
 			                        updateNodeData(nodeId, {
 			                          seedanceMode: `tianji`,
-			                          tianjiSeedanceGenerationMode: `reference-media`,
+				                          tianjiSeedanceGenerationMode: data.tianjiSeedanceGenerationMode || `text-to-video`,
 			                          videoModel: modeModelText,
 			                          selectedModel: modeSelectedModel,
 			                          tianjiSelectedModel: modeSelectedModel,
@@ -1049,7 +1056,7 @@ export const WanJuanVideoNode = reactMemo(({
 			                      title: `天玑模式说明`,
 			                      children: jsxs(Fragment, {
 			                        children: [
-			                          `1. 天玑模式最多支持 4 张参考图片、2 个参考视频、1 个参考音频。`,
+				                          `1. 参考素材模式最多支持 9 张图片、3 个视频、3 个音频；视频/音频总时长分别不超过 15 秒。`,
 			                          jsx(`br`, {}),
 			                          `2. 使用真人图片生成时，需要先在图片节点完成天玑人像审核；如果图片中没有人物正面或脸部，可以不用审核，直接连接作为参考。`,
 			                          jsx(`br`, {}),
@@ -1578,9 +1585,16 @@ export const WanJuanVideoNode = reactMemo(({
                     children: [
 	                      jsxs(`div`, {
 	                        className: `flex-1 nodrag relative flex flex-col`,
-	                        children: [
-	                          seedanceModeToggle,
-	                          jsx(`textarea`, {
+		                        children: [
+		                          seedanceModeToggle,
+		                          seedanceModeValue === `tianji` && jsx(`select`, {
+		                            className: `mb-2 h-8 w-full rounded-md border border-[#444] bg-[#202226] px-2 text-[11px] text-gray-200 outline-none focus:border-blue-500`,
+		                            value: tianjiGenerationMode,
+		                            onChange: (event) => updateNodeData(nodeId, { tianjiSeedanceGenerationMode: event.target.value }),
+		                            onClick: (event) => event.stopPropagation(),
+		                            children: tianjiGenerationModeOptions.map((option) => jsx(`option`, { value: option.value, children: option.label }, option.value)),
+		                          }),
+		                          jsx(`textarea`, {
 	                            className: `block w-full h-20 bg-transparent text-[15px] text-gray-200 resize-y min-h-[80px] outline-none leading-relaxed placeholder-gray-600 font-sans custom-scrollbar nodrag wanjuan-video-prompt-textarea`,
                             placeholder: isSeedanceOrWanxiang && !isTongyiWanxiang ?
                               `描述视频，可输入 @图片1 / @视频1 / @音频1 调用多参...` :

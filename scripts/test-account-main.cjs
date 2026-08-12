@@ -172,6 +172,11 @@ async function run() {
   assert.equal(service.accountApiUrl(), service.WANJUAN_ACCOUNT_DEFAULT_API_URL);
   process.env.WANJUAN_ACCOUNT_API_URL = "https://api.example.com";
 
+  const fresh = service.sanitizeAccountState();
+  assert.equal(fresh.localMode, true, "fresh installs start in local mode");
+  assert.equal(fresh.onboardingComplete, true, "fresh installs do not require onboarding login");
+  assert.equal(fresh.requiresLogin, false, "fresh installs do not force the auth dialog");
+
   const firstDevice = deviceModule.readOrCreateAccountDevice(tempRoot, { platform: "darwin", hostname: "Test Mac" });
   const persistedDevice = deviceModule.readOrCreateAccountDevice(tempRoot, { platform: "darwin", hostname: "Test Mac" });
   const otherDevice = deviceModule.readOrCreateAccountDevice(secondRoot, { platform: "win32", hostname: "Test PC" });

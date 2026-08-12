@@ -5,6 +5,10 @@
   "description": "万卷灵境 - macOS AI 创作画布桌面应用",
   "author": "",
   "main": "electron/main/index.cjs",
+  "bin": {
+    "wanjuan": "bin/wanjuan.mjs",
+    "wanjuan-mcp": "bin/wanjuan-mcp.mjs"
+  },
   "type": "module",
   "scripts": {
     "build:web": "vite build --config vite.config.mjs",
@@ -38,13 +42,22 @@
     "account:dev": "node scripts/account-dev-server.cjs",
     "test:account": "node scripts/test-account-contract.cjs",
     "test:account:main": "node scripts/test-account-main.cjs",
+    "test:cloud-prompts": "node scripts/test-cloud-prompts.cjs",
+    "test:cloud-prompts:production": "electron scripts/test-cloud-prompts-production.cjs",
     "test:enterprise-gateway": "node scripts/test-enterprise-gateway.cjs",
     "test:local-secret-storage": "node scripts/test-local-secret-storage.cjs",
     "test:local-data-cleanup": "node scripts/test-local-data-cleanup.cjs",
     "test:version": "node scripts/test-version-consistency.cjs",
+    "test:automation:app": "node scripts/test-automation-app.cjs --dev",
+    "test:automation:package": "node scripts/test-automation-app.cjs --packaged",
+    "test:automation:client": "node scripts/test-automation-client.mjs",
+    "test:automation:cli": "node scripts/test-automation-cli.mjs",
+    "test:automation:mcp": "node scripts/test-automation-mcp.mjs",
     "arch:status": "omm status",
     "arch:validate": "omm validate",
-    "arch:view": "omm view --port 3030"
+    "arch:view": "omm view --port 3030",
+    "wanjuan": "node bin/wanjuan.mjs",
+    "wanjuan:mcp": "node bin/wanjuan-mcp.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.2",
@@ -79,6 +92,16 @@
     "files": [
       "dist/**/*",
       "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "wanjuan-cli"
+      },
+      {
+        "from": "docs/AUTOMATION_CLI.md",
+        "to": "wanjuan-cli/README.md"
+      }
     ],
     "afterPack": "scripts/copy-platform-tool-runtime.cjs",
     "mac": {

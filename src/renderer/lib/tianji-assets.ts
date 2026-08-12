@@ -41,8 +41,6 @@ export const wanjuanTianjiAssetListParams = (groupType, groupId, pageNumber = 1,
     statuses: `Active`,
     PageNumber: String(page),
     PageSize: String(size),
-    page: String(page),
-    page_size: String(size),
     SortBy: `CreateTime`,
     SortOrder: `Desc`,
   };
@@ -95,22 +93,20 @@ export const wanjuanTianjiEnsurePortraitGroups = async (config, preferredType = 
     currentGroups = stored.tianjiSeedanceGroups && typeof stored.tianjiSeedanceGroups == `object` ? stored.tianjiSeedanceGroups : {},
     targetKey = preferredType === `LivenessFace` ? `LivenessFace` : `AIGC`;
   if (currentGroups[targetKey]) return currentGroups;
-  let groupResult = await wanjuanTianjiRequest(config, `/api/cut/model/seedance-portrait-auth-status`),
-    nextGroups = wanjuanTianjiExtractGroups(groupResult, currentGroups, preferredType);
-  await wanjuanTianjiStorageSet({
-    tianjiSeedanceGroups: nextGroups,
-  });
-  if (!nextGroups[targetKey]) throw Error(`天玑未返回${preferredType === `LivenessFace` ? `真人` : `虚拟`}人像组 ID，请确认极鑫令牌权限后重试`);
-  return nextGroups;
+  throw Error(
+    preferredType === `LivenessFace`
+      ? `尚未配置真人人像组 ID；请先在天玑面板创建真人认证，完成认证后查询任务并同步组 ID`
+      : `尚未配置虚拟人像组 ID；请先在天玑面板创建虚拟组，再查询任务并同步组 ID`,
+  );
 };
 
-export const wanjuanTianjiCreateLocalUploadAsset = ({ name: name, imageUrl: imageUrl, result: result }) => ({
+export const wanjuanTianjiCreateLocalUploadAsset = ({ name: name, imageUrl: imageUrl, result: result, groupType = `AIGC` }) => ({
   id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
   portrait_asset_id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || ``,
   name: name || `虚拟人像素材`,
   image_url: imageUrl || ``,
   status: wanjuanTianjiFindDeep(result, [`status`, `Status`]) || `已提交`,
-  groupType: `AIGC`,
+  groupType,
   localUploaded: ![`active`, `success`, `succeeded`, `completed`, `complete`, `done`].includes(String(wanjuanTianjiFindDeep(result, [`status`, `Status`]) || ``).trim().toLowerCase()),
   createdAt: Date.now(),
 });
@@ -172,8 +168,41 @@ export const wanjuanTianjiFinalPortraitAsset = (uploadResult) => {
   };
 };
 
-export const wanjuanTianjiPortraitAssetIdFromItem = (item) =>
-  String(item?.portrait_asset_id || item?.portraitAssetId || item?.asset_id || item?.assetId || item?.id || item?.Id || item?.AssetId || ``).trim();
+/** 从新旧素材响应中提取唯一资产 ID；不把 group_id 误当成可删除素材 ID。 */
+export const wanjuanTianjiPortraitAssetIdFromItem = (item) => {
+  const explicit = [
+    item?.portrait_asset_id,
+    item?.portraitAssetId,
+    item?.PortraitAssetId,
+    item?.asset_id,
+    item?.assetId,
+    item?.AssetId,
+    item?.assetID,
+    item?.material_id,
+    item?.materialId,
+    item?.MaterialId,
+    item?.assets_id,
+    item?.assetsId,
+    item?.AssetsId,
+    item?.portrait_id,
+    item?.portraitId,
+    item?.PortraitId,
+  ].map((value) => String(value || ``).trim()).find((value) => value && !/^local-/i.test(value));
+  if (explicit) return explicit;
+  const generic = String(item?.id || item?.Id || item?.ID || ``).trim();
+  if (!generic || /^local-/i.test(generic) || /group/i.test(generic)) return ``;
+  return generic;
+};
+
+export const wanjuanTianjiPortraitDeleteDescriptor = (item, groupType = ``) => {
+  const id = wanjuanTianjiPortraitAssetIdFromItem(item);
+  return {
+    id,
+    groupType: String(item?.groupType || item?.group_type || item?.asset_type || groupType || ``).trim(),
+    groupId: String(item?.group_id || item?.groupId || item?.portrait_group_id || item?.virtual_group_id || ``).trim(),
+    canDelete: Boolean(id),
+  };
+};
 
 export const wanjuanTianjiPortraitImageUrlFromItem = (item) =>
   String(item?.image_url || item?.imageUrl || item?.cover_url || item?.coverUrl || item?.preview_url || item?.previewUrl || item?.url || item?.URL || item?.thumbnailUrl || ``).trim();
@@ -274,17 +303,7 @@ export const wanjuanTianjiRefreshPortraitAssets = async (config, {
     currentAssets = stored.tianjiSeedanceAssets && typeof stored.tianjiSeedanceAssets == `object` ? stored.tianjiSeedanceAssets : {},
     groups = stored.tianjiSeedanceGroups && typeof stored.tianjiSeedanceGroups == `object` ? stored.tianjiSeedanceGroups : {},
     sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  if (!groups.AIGC || (preferredType === `LivenessFace` && !groups.LivenessFace)) {
-    try {
-      let groupResult = await wanjuanTianjiRequest(config, `/api/cut/model/seedance-portrait-auth-status`);
-      groups = wanjuanTianjiExtractGroups(groupResult, groups, preferredType);
-      await wanjuanTianjiStorageSet({
-        tianjiSeedanceGroups: groups
-      });
-    } catch (error) {
-      console.warn(`Tianji portrait group sync failed`, error);
-    }
-  }
+
 	let normalizedPageNumber = Math.max(1, Number(pageNumber) || 1),
 	    normalizedPageSize = Math.max(1, Number(pageSize) || WANJUAN_TIANJI_ASSET_PAGE_SIZE),
 	    load = async (groupType, groupId, nextPageNumber = normalizedPageNumber) => {
@@ -371,12 +390,15 @@ export const wanjuanUploadTianjiVirtualPortrait = async (imageUrl: any, options:
       params: {
         image_url: uploaded.url,
         name: label,
+        virtual_group_id: groups.AIGC,
+        type: `Image`,
       },
     }),
     asset = wanjuanTianjiCreateLocalUploadAsset({
       name: label,
       imageUrl: uploaded.url,
       result: result,
+      groupType: `AIGC`,
     });
   await wanjuanTianjiMergeSubmittedPortraitAsset(asset);
   let refresh = null;
@@ -395,4 +417,3 @@ export const wanjuanUploadTianjiVirtualPortrait = async (imageUrl: any, options:
     groups: groups,
   };
 };
-

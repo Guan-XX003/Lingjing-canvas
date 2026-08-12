@@ -86,6 +86,7 @@ const {
   updateWorkspaceTeamPublishedTemplates,
   fetchWorkspaceTeamMember,
 } = require("./workspace-team.cjs");
+const { defaultCloudPromptService } = require("./cloud-prompt-service.cjs");
 const {
   bootstrapAccount,
   connectEnterpriseWorkspace,
@@ -203,6 +204,12 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:workspace-team-fetch-member");
     if (blocked) return blocked;
     return fetchWorkspaceTeamMember(payload?.address || "", payload?.timeoutMs || 8000);
+  });
+
+  ipcMain.handle("wanjuan:cloud-prompts", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:cloud-prompts");
+    if (blocked) return blocked;
+    return defaultCloudPromptService.invoke(payload || {});
   });
 
   ipcMain.handle("wanjuan:account-bootstrap", async (event) => {

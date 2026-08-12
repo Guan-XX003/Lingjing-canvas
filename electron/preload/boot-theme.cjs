@@ -179,6 +179,24 @@ if (typeof window !== "undefined") {
 }
 
 function installBootStabilityStyle() {
+  const showBootRecoveryError = (message = "创作空间初始化超时") => {
+    try {
+      const splash = document.getElementById("wanjuan-boot-splash");
+      if (!splash) return;
+      splash.classList.add("is-error");
+      splash.setAttribute("role", "alert");
+      splash.innerHTML = `
+        <div class="wanjuan-boot-recovery">
+          <div class="wanjuan-boot-recovery-title">万卷灵境暂未准备完成</div>
+          <div class="wanjuan-boot-recovery-message">${String(message || "请重新加载后再试").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char])}</div>
+          <button type="button" class="wanjuan-boot-retry">重新加载</button>
+        </div>`;
+      splash.querySelector(".wanjuan-boot-retry")?.addEventListener("click", () => window.location.reload());
+    } catch {}
+  };
+  window.addEventListener("wanjuan:boot-failed", (event) => {
+    showBootRecoveryError(event?.detail?.message || "创作空间初始化超时");
+  });
   const ensureSplash = async () => {
     try {
       if (!document.body) {
@@ -190,6 +208,8 @@ function installBootStabilityStyle() {
       let splash = document.getElementById("wanjuan-boot-splash");
       if (!splash) splash = document.createElement("div");
       splash.id = "wanjuan-boot-splash";
+      const splashStartedAt = Number(splash.dataset.wanjuanStartedAt || Date.now());
+      splash.dataset.wanjuanStartedAt = String(splashStartedAt);
       splash.setAttribute("aria-live", "polite");
       let activeThemeClass = splashThemeClass(initialTheme);
       Array.from(splash.classList)
@@ -267,6 +287,11 @@ function installBootStabilityStyle() {
         .catch(() => {});
       const removeWhenReady = () => {
         if (document.documentElement.classList.contains("wanjuan-booting")) return;
+        const elapsed = Date.now() - splashStartedAt;
+        if (elapsed < 720) {
+          window.setTimeout(removeWhenReady, 720 - elapsed);
+          return;
+        }
         splash.classList.add("is-leaving");
         // 正常路径也断开两个 observer，避免 transitionend 不触发时永久泄漏。
         observer.disconnect();
@@ -302,17 +327,13 @@ function installBootStabilityStyle() {
       root.classList.add("wanjuan-booting");
       const releaseBootingFallback = () => {
         try {
-          root.classList.remove("wanjuan-booting");
-          root.dataset.wanjuanBootReady = "fallback";
-          const splash = document.getElementById("wanjuan-boot-splash");
-          if (splash) {
-            splash.classList.add("is-leaving");
-            setTimeout(() => splash.remove(), 360);
-          }
+          root.dataset.wanjuanBootReady = "error";
+          showBootRecoveryError("初始化时间过长，请重新加载；本地项目不会受到影响。");
         } catch {}
       };
-      setTimeout(releaseBootingFallback, 8000);
-      window.addEventListener("load", () => setTimeout(releaseBootingFallback, 3500), { once: true });
+      // 正常路径由主进程等待 renderer/app-ready 信号后解除遮罩；
+      // 仅在极端初始化失败时用较长兜底，避免露出第二段 Loading 页面。
+      setTimeout(releaseBootingFallback, 16000);
       if (document.getElementById("wanjuan-boot-stability-style")) return;
       const style = document.createElement("style");
       style.id = "wanjuan-boot-stability-style";
@@ -356,6 +377,12 @@ function installBootStabilityStyle() {
           transform: scale(1.008);
           pointer-events: none;
         }
+        #wanjuan-boot-splash.is-error { animation: none !important; }
+        #wanjuan-boot-splash .wanjuan-boot-recovery { width:min(420px,calc(100vw - 48px));padding:28px;border:1px solid rgba(148,163,184,.3);border-radius:18px;background:rgba(15,23,42,.78);box-shadow:0 24px 80px rgba(0,0,0,.38);text-align:center;backdrop-filter:blur(18px) }
+        #wanjuan-boot-splash .wanjuan-boot-recovery-title { font-size:20px;font-weight:800;letter-spacing:.03em }
+        #wanjuan-boot-splash .wanjuan-boot-recovery-message { margin-top:10px;font-size:13px;line-height:1.6;opacity:.72 }
+        #wanjuan-boot-splash .wanjuan-boot-retry { pointer-events:auto;margin-top:20px;height:38px;padding:0 20px;border:1px solid rgba(148,163,184,.42);border-radius:10px;background:rgba(255,255,255,.12);color:inherit;font:inherit;font-weight:750;cursor:pointer }
+        #wanjuan-boot-splash .wanjuan-boot-retry:hover,#wanjuan-boot-splash .wanjuan-boot-retry:focus-visible { background:rgba(255,255,255,.2);outline:2px solid rgba(147,197,253,.72);outline-offset:2px }
 
         /* ===== GRAPHITE (default scroll) ===== */
         #wanjuan-boot-splash.boot-theme-graphite {

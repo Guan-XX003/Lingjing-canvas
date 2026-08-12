@@ -2,14 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import {
   WANJUAN_TIANJI_ASSET_PAGE_SIZE,
   wanjuanTianjiEnsurePortraitGroups,
+  wanjuanTianjiExtractGroups,
   wanjuanTianjiFindArray,
   wanjuanTianjiPortraitAssetIdFromItem,
+  wanjuanTianjiPortraitDeleteDescriptor,
   wanjuanTianjiPortraitImageUrlFromItem,
   wanjuanTianjiPortraitNameFromItem,
   wanjuanTianjiRefreshPortraitAssets,
 } from "../lib/tianji-assets";
 import {
+  WANJUAN_TIANJI_PORTRAIT_ENDPOINTS,
+  wanjuanBuildTianjiPortraitTaskParams,
+  wanjuanTianjiDefaultPortraitGroupName,
   wanjuanGetSyncedTianjiSeedanceConfig,
+  wanjuanTianjiBalancePoints,
+  wanjuanTianjiFindPortraitTaskId,
   wanjuanMarkTianjiConfigManual,
   wanjuanTianjiFindDeep,
   wanjuanTianjiRequest,
@@ -72,7 +79,7 @@ function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDele
           {pending && <i>待刷新</i>}
           <b title={wanjuanTianjiPortraitNameFromItem(asset)}>{wanjuanTianjiPortraitNameFromItem(asset) || "未命名素材"}</b>
           <small>{pending ? "待天玑素材库返回" : String(asset?.status || asset?.Status || id)}</small>
-          {id && !pending && <div><button type="button" onClick={() => onInfo(id)}>详情</button><button type="button" className="danger" onClick={() => onDelete(id)}>删除</button></div>}
+          {!pending && <div><button type="button" disabled={!id} title={id ? "查看素材详情" : "该旧素材未返回明确资产 ID"} onClick={() => id && onInfo(id)}>详情</button><button type="button" className="danger" disabled={!id} title={id ? "删除该素材" : "该旧素材未返回明确资产 ID，不能安全删除整组"} onClick={() => onDelete(asset, type)}>删除</button>{!id && <small>旧素材缺少可删除 ID，请刷新列表</small>}</div>}
         </article>;
       })}
     </div> : <div className="wanjuan-tianji-native-empty">暂无素材，刷新列表或上传人像后查看。</div>}
@@ -93,17 +100,24 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
   const [status, setStatus] = useState("");
   const [loadError, setLoadError] = useState("");
   const [pointsDialog, setPointsDialog] = useState<any>(null);
+  const [realCallbackUrl, setRealCallbackUrl] = useState("");
+  const [portraitTaskId, setPortraitTaskId] = useState("");
+  const [bytedToken, setBytedToken] = useState("");
+  const [portraitGroupName, setPortraitGroupName] = useState(() => wanjuanTianjiDefaultPortraitGroupName());
 
   const reload = useCallback(async () => {
     const [nextConfig, stored] = await Promise.all([
       wanjuanGetSyncedTianjiSeedanceConfig(),
-      wanjuanTianjiStorageGet(["tianjiSeedanceGroups", "tianjiSeedanceAssets"]),
+      wanjuanTianjiStorageGet(["tianjiSeedanceGroups", "tianjiSeedanceAssets", "tianjiSeedancePortraitTaskId", "tianjiSeedancePortraitBytedToken", "tianjiSeedancePortraitGroupName"]),
     ]);
     const nextAssets = normalizeAssets(stored.tianjiSeedanceAssets);
     setConfig(nextConfig);
     setGroups({ ...emptyGroups(), ...(stored.tianjiSeedanceGroups || {}) });
     setAssets(nextAssets);
     setTotals({ AIGC: nextAssets.AIGC.length, LivenessFace: nextAssets.LivenessFace.length });
+    setPortraitTaskId(String(stored.tianjiSeedancePortraitTaskId || ""));
+    setBytedToken(String(stored.tianjiSeedancePortraitBytedToken || ""));
+    setPortraitGroupName(String(stored.tianjiSeedancePortraitGroupName || "").trim() || wanjuanTianjiDefaultPortraitGroupName());
     if (nextConfig?.token && (stored.tianjiSeedanceGroups?.AIGC || stored.tianjiSeedanceGroups?.LivenessFace)) {
       try {
         const refreshed = await wanjuanTianjiRefreshPortraitAssets(nextConfig, {
@@ -174,7 +188,10 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     window.alert(`素材 ID：${id}\n\n${JSON.stringify(result, null, 2).slice(0, 1800)}`);
   });
 
-  const deleteAsset = (id: string) => execute(async () => {
+  const deleteAsset = (asset: any, type: AssetType) => execute(async () => {
+    const descriptor = wanjuanTianjiPortraitDeleteDescriptor(asset, type);
+    if (!descriptor.canDelete) throw new Error("该旧素材未返回明确的资产 ID，暂不能安全删除；请先刷新素材列表");
+    const id = descriptor.id;
     if (!window.confirm(`删除素材 ${id}？`)) return;
     await wanjuanTianjiRequest(await save(), "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id } });
     const nextAssets = {
@@ -183,7 +200,53 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     };
     setAssets(nextAssets);
     await wanjuanTianjiStorageSet({ tianjiSeedanceAssets: nextAssets });
-    setStatus("素材已删除");
+    setStatus(`素材已删除：${id}`);
+  });
+
+  const applyPortraitResult = useCallback(async (result: any, preferredType: AssetType) => {
+    const taskId = wanjuanTianjiFindPortraitTaskId(result);
+    if (taskId) setPortraitTaskId(taskId);
+    if (taskId) await wanjuanTianjiStorageSet({ tianjiSeedancePortraitTaskId: taskId });
+    const nextGroups = wanjuanTianjiExtractGroups(result, groups, preferredType);
+    if (nextGroups.AIGC || nextGroups.LivenessFace) {
+      setGroups(nextGroups);
+      await wanjuanTianjiStorageSet({ tianjiSeedanceGroups: nextGroups });
+    }
+    return { taskId, nextGroups };
+  }, [groups]);
+
+  const createVirtualGroup = () => execute(async () => {
+    const groupName = portraitGroupName.trim() || wanjuanTianjiDefaultPortraitGroupName();
+    setPortraitGroupName(groupName);
+    await wanjuanTianjiStorageSet({ tianjiSeedancePortraitGroupName: groupName });
+    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createVirtual, { params: { name: groupName } });
+    const { taskId, nextGroups } = await applyPortraitResult(result, "AIGC");
+    setStatus(nextGroups.AIGC ? `虚拟组已创建：${nextGroups.AIGC}` : taskId ? `虚拟组创建任务已提交：${taskId}` : "虚拟组创建请求已提交；请填写返回的任务 ID 后查询");
+  });
+
+  const createRealAuthentication = () => execute(async () => {
+    if (!/^https?:\/\//i.test(realCallbackUrl.trim())) throw new Error("创建真人认证需要填写可公网访问的 callback_url");
+    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createReal, { params: { callback_url: realCallbackUrl.trim() } });
+    const { taskId } = await applyPortraitResult(result, "LivenessFace");
+    setStatus(taskId ? `真人认证已创建：${taskId}；请在认证页面完成后查询` : "真人认证已创建；完成认证后填写 BytedToken 查询结果");
+  });
+
+  const queryPortraitTask = () => execute(async () => {
+    if (!bytedToken.trim() && !portraitTaskId.trim()) throw new Error("请先填写人像任务 ID，或粘贴真人认证回调返回的 BytedToken");
+    const activeConfig = await save();
+    if (bytedToken.trim()) await wanjuanTianjiStorageSet({ tianjiSeedancePortraitBytedToken: bytedToken.trim() });
+    const result = bytedToken.trim()
+      ? await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryRealResult, { params: { bytedToken: bytedToken.trim() } })
+      : await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryTask, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId) });
+    const preferredType: AssetType = bytedToken.trim() ? "LivenessFace" : uploadType;
+    const { taskId, nextGroups } = await applyPortraitResult(result, preferredType);
+    if (!nextGroups[preferredType] && (portraitTaskId || taskId)) {
+      const synced = await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.syncAssetId, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId || taskId) });
+      const applied = await applyPortraitResult(synced, preferredType);
+      setStatus(applied.nextGroups[preferredType] ? `组 ID 已同步：${applied.nextGroups[preferredType]}` : "任务尚未返回组 ID，请稍后重试");
+      return;
+    }
+    setStatus(nextGroups[preferredType] ? `组 ID 已更新：${nextGroups[preferredType]}` : "任务查询成功，但尚未返回组 ID");
   });
 
   const upload = () => execute(async () => {
@@ -195,7 +258,14 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     const uploaded = await (window as any).wanjuanDesktop?.uploadPublicMedia?.({ url: await fileToDataUrl(uploadFile), kind: "image", filename: `tianji-portrait-${Date.now()}` });
     if (!uploaded?.ok || !uploaded.url) throw new Error(uploaded?.error || "图片公网链接上传失败");
     setStatus("正在提交天玑人像审核...");
-    await wanjuanTianjiRequest(activeConfig, uploadType === "AIGC" ? "/api/cut/model/upload-VirtralPortrait" : "/api/cut/model/upload-Portrait", { params: { image_url: uploaded.url, name: uploadName || uploadFile.name || "人像素材" } });
+    await wanjuanTianjiRequest(activeConfig, uploadType === "AIGC" ? "/api/cut/model/upload-VirtralPortrait" : "/api/cut/model/upload-Portrait", {
+      params: {
+        image_url: uploaded.url,
+        name: uploadName || uploadFile.name || "人像素材",
+        ...(uploadType === "AIGC" ? { virtual_group_id: nextGroups.AIGC } : { portrait_group_id: nextGroups.LivenessFace }),
+        type: "Image",
+      },
+    });
     await refresh(uploadType, 1, nextGroups).catch(() => null);
     setUploadFile(null);
     setStatus("上传已提交，素材库已自动刷新");
@@ -218,10 +288,12 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
 
   return <div className="wanjuan-tianji-native-card">
     <div className="wanjuan-tianji-native-actions">
-      {pointsUnlocked && <button type="button" disabled={busy} onClick={() => execute(async () => { const result = await wanjuanTianjiRequest(await save(), "/api/cut/model/fetch-points-balance"); setStatus(`积分余额：${result?.data?.points ?? result?.points ?? "未知"}`); })}>查询积分</button>}
+      {pointsUnlocked && <button type="button" disabled={busy} onClick={() => execute(async () => { const result = await wanjuanTianjiRequest(await save(), "/api/cut/model/fetch-points-balance"); const points = wanjuanTianjiBalancePoints(result); setStatus(points === null ? "积分余额接口返回空数据" : `积分余额：${points}`); })}>查询积分</button>}
       {pointsUnlocked && <button type="button" disabled={busy} onClick={openPointsDialog}>积分明细</button>}
-      <button type="button" disabled={busy} onClick={() => execute(async () => { const next = await wanjuanTianjiEnsurePortraitGroups(await save(), uploadType); setGroups(next); setStatus(`组 ID 已更新：真人 ${next.LivenessFace || "未返回"}，虚拟 ${next.AIGC || "未返回"}`); })}>获取组 ID</button>
-      <button type="button" disabled={busy} onClick={() => execute(async () => { setStatus("正在刷新素材..."); const result = await refresh(uploadType, 1); setStatus(`刷新完成：虚拟 ${result.aigcCount} 个，真人 ${result.liveCount} 个`); })}>刷新素材</button>
+      <button type="button" disabled={busy} onClick={createVirtualGroup}>创建虚拟组</button>
+      <button type="button" disabled={busy} onClick={createRealAuthentication}>创建真人认证</button>
+      <button type="button" disabled={busy || (!bytedToken.trim() && !portraitTaskId.trim())} onClick={queryPortraitTask}>查询/同步组 ID</button>
+      <button type="button" disabled={busy || !(uploadType === "AIGC" ? groups.AIGC : groups.LivenessFace)} onClick={() => execute(async () => { if (!(uploadType === "AIGC" ? groups.AIGC : groups.LivenessFace)) throw new Error("请先创建/查询对应人像组并保存组 ID，再刷新素材"); setStatus("正在刷新素材..."); const result = await refresh(uploadType, 1); setStatus(`刷新完成：虚拟 ${result.aigcCount} 个，真人 ${result.liveCount} 个`); })}>刷新素材</button>
       <button type="button" disabled={busy} onClick={() => execute(async () => { const next = await wanjuanGetSyncedTianjiSeedanceConfig({ force: true }); setConfig(next); setStatus("已同步极鑫配置"); })}>同步极鑫配置</button>
       <button type="button" className="primary" disabled={busy} onClick={() => execute(async () => { await save(); setStatus("已保存"); })}>保存</button>
       <span>{status || (busy ? "处理中..." : "")}</span>
@@ -233,6 +305,10 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
       <label>Sass ID<input value={config.sassId || "1"} onChange={(event) => changeConfig("sassId", event.target.value)} /></label>
       <label>真人组 ID<input value={groups.LivenessFace || ""} onChange={(event) => setGroups((current: any) => ({ ...current, LivenessFace: event.target.value }))} /></label>
       <label>虚拟组 ID<input value={groups.AIGC || ""} onChange={(event) => setGroups((current: any) => ({ ...current, AIGC: event.target.value }))} /></label>
+      <label>素材组名称<input value={portraitGroupName} onChange={(event) => setPortraitGroupName(event.target.value)} placeholder="留空自动生成万卷灵境-时间" /></label>
+      <label>真人回调 URL<input value={realCallbackUrl} onChange={(event) => setRealCallbackUrl(event.target.value)} placeholder="https://.../tianji/callback" /></label>
+      <label>人像任务 ID<input value={portraitTaskId} onChange={(event) => { setPortraitTaskId(event.target.value); void wanjuanTianjiStorageSet({ tianjiSeedancePortraitTaskId: event.target.value }); }} placeholder="创建组后自动填写；也可手动填写" /></label>
+      <label>BytedToken<input value={bytedToken} onChange={(event) => { setBytedToken(event.target.value); void wanjuanTianjiStorageSet({ tianjiSeedancePortraitBytedToken: event.target.value }); }} placeholder="真人认证回调返回" /></label>
     </div>
     <div className="wanjuan-tianji-native-checks"><label><input type="checkbox" checked={config.generateAudio !== false} onChange={(event) => changeConfig("generateAudio", event.target.checked)} />生成同步声音</label><label><input type="checkbox" checked={config.watermark === true} onChange={(event) => changeConfig("watermark", event.target.checked)} />添加水印</label></div>
     <div className="wanjuan-tianji-native-fields"><label>上传类型<select value={uploadType} onChange={(event) => setUploadType(event.target.value as AssetType)}><option value="AIGC">虚拟人像</option><option value="LivenessFace">真人人像</option></select></label><label>素材名称<input value={uploadName} onChange={(event) => setUploadName(event.target.value)} placeholder="素材名称" /></label><label>图片文件<input type="file" accept="image/*" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label></div>
