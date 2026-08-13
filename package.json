@@ -10,6 +10,55 @@
     "wanjuan-mcp": "bin/wanjuan-mcp.mjs"
   },
   "type": "module",
+  "scripts": {
+    "build:web": "vite build --config vite.config.mjs",
+    "start": "electron .",
+    "start:dev": "node scripts/start-dev.cjs",
+    "debug": "cross-env WANJUAN_DEBUG=1 electron .",
+    "prepare:bundled-deface": "node scripts/prepare-bundled-deface.cjs",
+    "verify:bundled-deface": "node scripts/verify-bundled-deface.cjs",
+    "build": "vite build --config vite.config.mjs && electron-builder",
+    "build:win": "vite build --config vite.config.mjs && electron-builder --win --x64",
+    "build:win:x64": "vite build --config vite.config.mjs && electron-builder --win --x64",
+    "build:win:x86": "vite build --config vite.config.mjs && electron-builder --win --ia32",
+    "build:win:ia32": "vite build --config vite.config.mjs && electron-builder --win --ia32",
+    "typecheck": "tsc --noEmit",
+    "test:lib": "node scripts/test-lib.mjs",
+    "test:windows-paths": "node scripts/test-windows-file-url-paths.cjs",
+    "test:extension-tools": "node scripts/test-extension-tool-runtime.cjs",
+    "test:update-checker": "electron scripts/test-update-checker.cjs",
+    "test:workspace-team": "npm run build:web && node scripts/test-workspace-team.cjs",
+    "test:storage": "node scripts/test-storage-lab.mjs",
+    "test:storage:electron": "node scripts/test-storage-electron.cjs",
+    "test:storage:state": "node scripts/test-storage-state-policy.mjs",
+    "scan:storage-preview": "node scripts/scan-storage-migration-preview.mjs",
+    "test:migrate-project": "node scripts/migrate-project-media-test.mjs",
+    "test:migrated-project:electron": "electron scripts/test-migrated-project-electron.cjs",
+    "test:storage:real-project": "electron scripts/test-real-project-transaction.cjs",
+    "test:file-filter": "electron scripts/test-file-access-filter.cjs",
+    "test:canvas-perf": "node scripts/test-canvas-performance.cjs",
+    "test:global-config": "npm run build:web && node scripts/test-global-config-switching.cjs",
+    "test:ark-assets": "node scripts/test-ark-trusted-assets.cjs",
+    "account:dev": "node scripts/account-dev-server.cjs",
+    "test:account": "node scripts/test-account-contract.cjs",
+    "test:account:main": "node scripts/test-account-main.cjs",
+    "test:cloud-prompts": "node scripts/test-cloud-prompts.cjs",
+    "test:cloud-prompts:production": "electron scripts/test-cloud-prompts-production.cjs",
+    "test:enterprise-gateway": "node scripts/test-enterprise-gateway.cjs",
+    "test:local-secret-storage": "node scripts/test-local-secret-storage.cjs",
+    "test:local-data-cleanup": "node scripts/test-local-data-cleanup.cjs",
+    "test:version": "node scripts/test-version-consistency.cjs",
+    "test:automation:app": "node scripts/test-automation-app.cjs --dev",
+    "test:automation:package": "node scripts/test-automation-app.cjs --packaged",
+    "test:automation:client": "node scripts/test-automation-client.mjs",
+    "test:automation:cli": "node scripts/test-automation-cli.mjs",
+    "test:automation:mcp": "node scripts/test-automation-mcp.mjs",
+    "arch:status": "omm status",
+    "arch:validate": "omm validate",
+    "arch:view": "omm view --port 3030",
+    "wanjuan": "node bin/wanjuan.mjs",
+    "wanjuan:mcp": "node bin/wanjuan-mcp.mjs"
+  },
   "dependencies": {
     "@xyflow/react": "^12.10.2",
     "dagre": "^0.8.5",
@@ -22,6 +71,54 @@
     "selfsigned": "^5.5.0",
     "yaml": "^2.9.0",
     "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "cross-env": "^7.0.3",
+    "electron": "^39.8.5",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.16"
+  },
+  "build": {
+    "appId": "com.wanjuan.lingjing",
+    "productName": "万卷灵境",
+    "artifactName": "万卷灵境-1.4.2-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "extraResources": [
+      { "from": "bin", "to": "wanjuan-cli" },
+      { "from": "docs/AUTOMATION_CLI.md", "to": "wanjuan-cli/README.md" }
+    ],
+    "afterPack": "scripts/copy-platform-tool-runtime.cjs",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "extendInfo": {
+        "CFBundleShortVersionString": "1.4.2",
+        "CFBundleVersion": "1.4.2"
+      }
+    },
+    "win": {
+      "target": ["nsis", "zip"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "万卷灵境",
+      "deleteAppDataOnUninstall": true,
+      "include": "build/installer.nsh"
+    }
   },
   "license": "PolyForm-Noncommercial-1.0.0"
 }
