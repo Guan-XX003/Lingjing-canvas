@@ -1,4 +1,17 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const electronRuntime = require("electron");
+
+const electronApp = electronRuntime && typeof electronRuntime === "object" ? electronRuntime.app : null;
+const electronTemporaryUserData = electronApp
+  ? fs.mkdtempSync(path.join(os.tmpdir(), "wanjuan-cloud-prompt-mock-electron-"))
+  : "";
+if (electronApp) {
+  electronApp.setName("万卷灵境");
+  electronApp.setPath("userData", electronTemporaryUserData);
+}
 
 const {
   normalizePermissions,
@@ -375,6 +388,10 @@ async function testSharingContractsAndUi() {
 }
 
 async function main() {
+  if (electronApp) {
+    await electronApp.whenReady();
+    assert.equal(electronApp.getPath("userData"), electronTemporaryUserData);
+  }
   await testDtoWhitelist();
   await testCacheIsolationAndRevocation();
   await testHeadersAndOutboundBody();
@@ -389,4 +406,8 @@ async function main() {
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
+}).finally(() => {
+  if (!electronApp) return;
+  try { fs.rmSync(electronTemporaryUserData, { recursive: true, force: true }); } catch {}
+  try { electronApp.exit(Number(process.exitCode || 0)); } catch {}
 });
