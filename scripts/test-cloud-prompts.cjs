@@ -8,6 +8,7 @@ const {
   createCloudPromptStore,
   createMemoryCloudPromptAdapter,
 } = require("../electron/preload/cloud-prompt-store.cjs");
+const { createCloudPromptWorkspaceController } = require("../electron/preload/cloud-prompt-workspace.cjs");
 const {
   cloudPromptErrorResult,
   createCloudPromptService,
@@ -210,8 +211,10 @@ async function testPermissionDefaults() {
     canFavorite: true,
     canCopy: true,
   });
-  assert.equal(normalizePermissions({}, "editor").canEdit, true);
-  assert.equal(normalizePermissions({}, "admin").canDelete, true);
+  assert.equal(normalizePermissions({}, "editor").canEdit, false, "role labels must not grant edit authority");
+  assert.equal(normalizePermissions({}, "admin").canDelete, false, "role labels must not grant delete authority");
+  assert.equal(normalizePermissions({}, "owner").canShare, false, "sharing requires an explicit server permission");
+  assert.equal(normalizePermissions({ canEdit: true, canDelete: true, canShare: true }, "viewer").canShare, true);
 }
 
 async function testConflictDetailsPreserved() {
@@ -237,6 +240,140 @@ async function testConflictDetailsPreserved() {
   assert.equal(result.conflict.serverVersion.content, "server content");
 }
 
+async function testSendTargetsAndCloudCopy() {
+  const service = createCloudPromptService({ mockEnabled: true });
+  const store = createCloudPromptStore({ adapter: createMemoryCloudPromptAdapter() });
+  const controller = createCloudPromptWorkspaceController({
+    store,
+    invoke: (payload) => service.invoke(payload),
+  });
+  await controller.prepare({ force: true });
+  const targets = controller.creatableWorkspaces();
+  assert.equal(targets.some((workspace) => workspace.kind === "personal"), true);
+  assert.equal(targets.some((workspace) => workspace.kind === "organization"), true);
+  assert.equal(controller.creatableWorkspaces({ query: "企业" }).every((workspace) => workspace.kind === "organization"), true);
+
+  const personal = targets.find((workspace) => workspace.kind === "personal");
+  const organization = targets.find((workspace) => workspace.kind === "organization");
+  const unsafe = {
+    title: "发送测试",
+    content: "安全提示词正文",
+    type: "video",
+    tags: ["测试"],
+    parameters: { aspectRatio: "16:9", apiKey: "must-not-survive" },
+    resultUrl: "https://private.invalid/result.mp4",
+    localPath: "/private/result.mp4",
+    sourceProjectId: "private-project",
+    sourceNodeId: "private-node",
+    token: "must-not-survive",
+  };
+  await controller.sendTemplateToWorkspace(unsafe, personal.id);
+  const personalTemplates = await store.listTemplates("mock-user-wanjuan", personal.id, { includeArchived: true });
+  const sent = personalTemplates.find((item) => item.title === "发送测试");
+  assert.ok(sent, "sent cloud template should be cached");
+  const serialized = JSON.stringify(sent);
+  for (const forbidden of ["apiKey", "resultUrl", "localPath", "sourceProjectId", "sourceNodeId", "must-not-survive"]) {
+    assert.equal(serialized.includes(forbidden), false, `send target leaked ${forbidden}`);
+  }
+
+  const source = personalTemplates.find((item) => item.id && item.title === "发送测试");
+  await controller.copyTemplateToWorkspace(source, organization.id);
+  const organizationTemplates = await store.listTemplates("mock-user-wanjuan", organization.id, { includeArchived: true });
+  assert.equal(organizationTemplates.some((item) => item.title.startsWith("发送测试") && item.id !== source.id), true, "copy must create an independent template");
+
+  const deniedController = createCloudPromptWorkspaceController({
+    store: createCloudPromptStore({ adapter: createMemoryCloudPromptAdapter() }),
+    invoke: async (payload) => payload.operation === "bootstrap" ? {
+      ok: true,
+      authenticated: true,
+      account: { id: "denied-account", displayName: "Denied" },
+      workspaces: [{ id: "viewer", name: "只读空间", kind: "organization", role: "viewer", permissions: { canRead: true, canCreate: false } }],
+    } : { ok: false, status: 403, error: "forbidden" },
+  });
+  await deniedController.prepare({ force: true });
+  assert.deepEqual(deniedController.creatableWorkspaces(), []);
+  await assert.rejects(() => deniedController.sendTemplateToWorkspace({ title: "X", content: "X" }, "viewer"), /没有创建权限/);
+}
+
+async function testSharingContractsAndUi() {
+  const calls = [];
+  const service = createCloudPromptService({
+    getAccountContext: () => ({ authenticated: true, account: { id: "owner-user", displayName: "Owner" } }),
+    request: async (pathname, options = {}) => {
+      calls.push({ pathname, options });
+      if (pathname.endsWith("/members") && options.method === "GET") return { items: [{ userId: "member-1", displayName: "成员甲", role: "viewer", status: "active" }] };
+      if (pathname.includes("/members/") && options.method === "PATCH") return { item: { userId: "member-1", displayName: "成员甲", role: options.body.role, status: "active" } };
+      if (pathname.endsWith("/invitations") && options.method === "POST") return { item: { id: "invite-1", workspaceId: "workspace-test", workspaceName: "测试空间", role: options.body.role, status: "pending" } };
+      if (pathname === "/prompt-workspace-invitations" && options.method === "GET") return { items: [{ id: "invite-inbox", workspaceId: "shared-space", workspaceName: "共享空间", role: "editor", status: "pending" }] };
+      if (pathname.endsWith("/accept") && options.method === "POST") return { item: { id: "invite-inbox", workspaceId: "shared-space", workspaceName: "共享空间", role: "editor", status: "accepted" } };
+      if (pathname.endsWith("/copy") && options.method === "POST") return { item: { id: "copy-1", workspaceId: options.body.targetWorkspaceId, revision: 1, title: "副本", content: "正文", type: "text", tags: [], parameters: {} } };
+      return { ok: true, items: [] };
+    },
+  });
+  assert.equal((await service.invoke({ operation: "member.list", workspaceId: "workspace-test" })).items[0].role, "viewer");
+  await service.invoke({ operation: "member.update", workspaceId: "workspace-test", userId: "member-1", member: { role: "editor" } });
+  await service.invoke({ operation: "invitation.create", workspaceId: "workspace-test", invitation: { identifier: "member@example.com", role: "viewer" }, idempotencyKey: "invite-idem-1" });
+  const inbox = await service.invoke({ operation: "invitation.inbox" });
+  assert.equal(inbox.items[0].workspaceName, "共享空间");
+  assert.equal(JSON.stringify(inbox).includes("member@example.com"), false, "invitation response must not expose identifier");
+  await service.invoke({ operation: "invitation.accept", workspaceId: "workspace-test", invitationId: "invite-inbox" });
+  await service.invoke({ operation: "template.copy", workspaceId: "workspace-test", templateId: "template-1", targetWorkspaceId: "workspace-target", idempotencyKey: "copy-idem-1" });
+  const invitationCall = calls.find((call) => call.pathname.endsWith("/invitations") && call.options.method === "POST");
+  assert.equal(invitationCall.options.headers["Idempotency-Key"], "invite-idem-1");
+  assert.deepEqual(invitationCall.options.body, { identifier: "member@example.com", role: "viewer" });
+  const copyCall = calls.find((call) => call.pathname.endsWith("/copy"));
+  assert.deepEqual(copyCall.options.body, { targetWorkspaceId: "workspace-target", mode: "copy" });
+
+  const mockService = createCloudPromptService({ mockEnabled: true });
+  const controller = createCloudPromptWorkspaceController({
+    store: createCloudPromptStore({ adapter: createMemoryCloudPromptAdapter() }),
+    invoke: (payload) => mockService.invoke(payload),
+  });
+  await controller.prepare({ force: true });
+  await controller.handleAction("cloud-sharing-open");
+  const sharingHtml = controller.renderContent();
+  assert.equal(sharingHtml.includes("成员与共享"), true);
+  assert.equal(sharingHtml.includes("cloud-invite-member"), true);
+  await controller.handleField("cloudMemberIdentifier", "member@example.com");
+  await controller.handleField("cloudMemberRole", "editor");
+  await controller.handleAction("cloud-invite-member");
+  assert.equal(controller.renderContent().includes("撤销邀请"), true);
+
+  const invalidInvitation = await service.invoke({ operation: "invitation.create", workspaceId: "workspace-test", invitation: { identifier: "\u0000bad", role: "viewer" }, idempotencyKey: "bad-idem" });
+  assert.equal(invalidInvitation.ok, false);
+  assert.equal(invalidInvitation.code, "INVALID_ACCOUNT_IDENTIFIER");
+
+  const deniedService = createCloudPromptService({
+    mockEnabled: true,
+    fixture: {
+      account: { id: "viewer-user", displayName: "只读用户" },
+      workspaces: [{ id: "viewer-space", name: "只读空间", kind: "organization", role: "viewer", revision: 1, permissions: { canRead: true, canCreate: false, canEdit: false, canShare: false } }],
+      templates: [],
+      members: [],
+      invitations: [],
+    },
+  });
+  const deniedAdd = await deniedService.invoke({ operation: "member.add", workspaceId: "viewer-space", member: { userId: "member-2", role: "viewer" }, idempotencyKey: "denied-member" });
+  assert.equal(deniedAdd.ok, false);
+  assert.equal(deniedAdd.status, 403);
+  assert.equal(deniedAdd.code, "PROMPT_MEMBER_MANAGE_FORBIDDEN");
+
+  const expiredService = createCloudPromptService({
+    mockEnabled: true,
+    fixture: {
+      account: { id: "owner-user", displayName: "所有者" },
+      workspaces: [{ id: "owner-space", name: "所有者空间", kind: "personal", role: "owner", revision: 1, permissions: { canRead: true, canCreate: true, canEdit: true, canDelete: true, canShare: true } }],
+      templates: [],
+      members: [],
+      invitations: [{ id: "expired-invite", workspaceId: "owner-space", workspaceName: "所有者空间", role: "viewer", status: "pending", expiresAt: "2020-01-01T00:00:00.000Z" }],
+    },
+  });
+  const expired = await expiredService.invoke({ operation: "invitation.accept", invitationId: "expired-invite" });
+  assert.equal(expired.ok, false);
+  assert.equal(expired.status, 410);
+  assert.equal(expired.code, "PROMPT_INVITATION_EXPIRED");
+}
+
 async function main() {
   await testDtoWhitelist();
   await testCacheIsolationAndRevocation();
@@ -244,6 +381,8 @@ async function main() {
   await testMockApiAndConflict();
   await testPermissionDefaults();
   await testConflictDetailsPreserved();
+  await testSendTargetsAndCloudCopy();
+  await testSharingContractsAndUi();
   console.log("cloud prompt tests passed");
 }
 

@@ -71,16 +71,15 @@ function sanitizeSharedPromptTemplateInput(input = {}, options = {}) {
 
 function normalizePermissions(value = {}, role = "viewer") {
   const source = value && typeof value === "object" ? value : {};
-  const normalizedRole = cleanText(role, 40).toLowerCase() || "viewer";
-  const editor = ["owner", "admin", "editor"].includes(normalizedRole);
-  const administrator = ["owner", "admin"].includes(normalizedRole);
   return {
     canRead: source.canRead !== false,
-    canCreate: typeof source.canCreate === "boolean" ? source.canCreate : editor,
-    canEdit: typeof source.canEdit === "boolean" ? source.canEdit : editor,
-    canEditOwn: typeof source.canEditOwn === "boolean" ? source.canEditOwn : editor,
-    canDelete: typeof source.canDelete === "boolean" ? source.canDelete : administrator,
-    canShare: typeof source.canShare === "boolean" ? source.canShare : editor,
+    // Mutating capabilities must be explicitly granted by the server. Role
+    // labels are presentational and must never manufacture client authority.
+    canCreate: source.canCreate === true,
+    canEdit: source.canEdit === true,
+    canEditOwn: source.canEditOwn === true,
+    canDelete: source.canDelete === true,
+    canShare: source.canShare === true,
     canFavorite: source.canFavorite !== false,
     canCopy: source.canCopy !== false,
   };

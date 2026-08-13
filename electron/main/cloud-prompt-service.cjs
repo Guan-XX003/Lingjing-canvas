@@ -42,6 +42,16 @@ function safeIdempotencyKey(value) {
   return text;
 }
 
+function safeAccountIdentifier(value, label = "账号") {
+  const text = String(value || "").trim();
+  if (!text || text.length > 320 || /[\u0000-\u001f\u007f]/.test(text)) {
+    const error = new Error(`${label}无效`);
+    error.code = "INVALID_ACCOUNT_IDENTIFIER";
+    throw error;
+  }
+  return text;
+}
+
 function accountContextFromState() {
   const state = readAccountState();
   const user = state.user && typeof state.user === "object" ? state.user : null;
@@ -87,6 +97,31 @@ function normalizeTombstones(payload = {}) {
   })).filter((item) => item.id);
 }
 
+function normalizeWorkspaceMember(input = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const role = ["viewer", "editor"].includes(String(source.role || "viewer").toLowerCase()) ? String(source.role || "viewer").toLowerCase() : "viewer";
+  return {
+    userId: String(source.userId || source.user_id || "").trim(),
+    displayName: String(source.displayName || source.name || "用户").trim().slice(0, 160),
+    role,
+    status: String(source.status || "active").trim().toLowerCase(),
+    expiresAt: source.expiresAt || source.expires_at || null,
+  };
+}
+
+function normalizeWorkspaceInvitation(input = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  return {
+    id: String(source.id || source.invitationId || "").trim(),
+    workspaceId: String(source.workspaceId || source.workspace_id || "").trim(),
+    workspaceName: String(source.workspaceName || source.workspace_name || "").trim().slice(0, 160),
+    role: ["viewer", "editor"].includes(String(source.role || "viewer").toLowerCase()) ? String(source.role || "viewer").toLowerCase() : "viewer",
+    status: String(source.status || "pending").trim().toLowerCase(),
+    expiresAt: source.expiresAt || source.expires_at || null,
+    createdAt: source.createdAt || source.created_at || null,
+  };
+}
+
 function normalizeTemplateResponse(payload = {}, workspaceId = "") {
   const item = payload.item || payload.template || payload;
   const normalizedItem = normalizeSharedPromptTemplate(item, { workspaceId, requireContent: true });
@@ -127,6 +162,8 @@ function createCloudPromptMockRequest(fixtureInput) {
     templates: structuredClone(fixture.templates || []),
     tombstones: [],
     cursor: 1,
+    members: structuredClone(fixture.members || []),
+    invitations: structuredClone(fixture.invitations || []),
   };
   const fail = (message, options = {}) => {
     const error = new AccountRequestError(message, options);
@@ -134,6 +171,8 @@ function createCloudPromptMockRequest(fixtureInput) {
     throw error;
   };
   const workspaceById = (id) => state.workspaces.find((item) => String(item.id) === String(id));
+  const membersByWorkspace = (id) => state.members.filter((item) => String(item.workspaceId) === String(id));
+  const invitationsByWorkspace = (id) => state.invitations.filter((item) => String(item.workspaceId) === String(id));
   const templateById = (workspaceId, templateId) => state.templates.find((item) => item.workspaceId === workspaceId && item.id === templateId);
   const stamp = () => new Date().toISOString();
   const bumpCursor = () => String(++state.cursor);
@@ -157,9 +196,73 @@ function createCloudPromptMockRequest(fixtureInput) {
         return { item };
       }
     }
+    if (segments[0] === "prompt-workspace-invitations") {
+      if (segments.length === 1 && method === "GET") {
+        return { items: structuredClone(state.invitations.filter((item) => item.status === "pending")) };
+      }
+      const invitationId = segments[1];
+      const action = segments[2];
+      const invitation = state.invitations.find((item) => item.id === invitationId);
+      if (!invitation) fail("邀请不存在", { status: 404, code: "PROMPT_INVITATION_NOT_FOUND" });
+      if (invitation.expiresAt && new Date(invitation.expiresAt).getTime() <= Date.now()) {
+        fail("邀请已过期", { status: 410, code: "PROMPT_INVITATION_EXPIRED" });
+      }
+      if (method === "POST" && ["accept", "reject"].includes(action)) {
+        invitation.status = action === "accept" ? "accepted" : "rejected";
+        if (action === "accept") {
+          const workspace = workspaceById(invitation.workspaceId);
+          if (workspace && !membersByWorkspace(invitation.workspaceId).some((item) => item.userId === state.account.id)) {
+            state.members.push({ workspaceId: invitation.workspaceId, userId: state.account.id, displayName: state.account.displayName, role: invitation.role, status: "active", expiresAt: invitation.expiresAt || null });
+          }
+        }
+        bumpCursor();
+        return { item: structuredClone(invitation) };
+      }
+    }
+    if (segments[0] === "prompt-workspaces" && segments[1] === "shared-with-me" && method === "GET") {
+      return { items: structuredClone(state.workspaces.filter((item) => !["owner", "admin"].includes(String(item.role || "")))) };
+    }
     const workspaceId = segments[1];
     const workspace = workspaceById(workspaceId);
     if (!workspace) fail("提示词工作空间不存在", { status: 404, code: "PROMPT_WORKSPACE_NOT_FOUND" });
+    if (segments[2] === "members") {
+      if (segments.length === 3 && method === "GET") return { items: structuredClone(membersByWorkspace(workspaceId)), permissions: workspace.permissions };
+      if (segments.length === 3 && method === "POST") {
+        if (workspace.permissions?.canShare !== true) fail("当前账号没有成员管理权限", { status: 403, code: "PROMPT_MEMBER_MANAGE_FORBIDDEN" });
+        if (!options.body?.userId) fail("成员账号不能为空", { status: 400, code: "PROMPT_MEMBER_IDENTIFIER_REQUIRED" });
+        if (!options.body?.role || !["viewer", "editor"].includes(String(options.body.role))) fail("成员角色无效", { status: 400, code: "PROMPT_MEMBER_ROLE_INVALID" });
+        const role = ["viewer", "editor"].includes(String(options.body?.role || "viewer")) ? String(options.body.role) : "viewer";
+        const member = { workspaceId, userId: String(options.body?.userId || `mock-user-${crypto.randomUUID()}`), displayName: String(options.body?.displayName || "受邀用户"), role, status: "active", expiresAt: options.body?.expiresAt || null };
+        state.members.push(member); bumpCursor(); return { item: structuredClone(member) };
+      }
+      const userId = segments[3];
+      const member = membersByWorkspace(workspaceId).find((item) => item.userId === userId);
+      if (!member) fail("工作空间成员不存在", { status: 404, code: "PROMPT_MEMBER_NOT_FOUND" });
+      if (segments.length === 4 && method === "PATCH") {
+        if (workspace.permissions?.canShare !== true) fail("当前账号没有成员管理权限", { status: 403, code: "PROMPT_MEMBER_MANAGE_FORBIDDEN" });
+        if (!options.body?.role || !["viewer", "editor"].includes(String(options.body.role))) fail("成员角色无效", { status: 400, code: "PROMPT_MEMBER_ROLE_INVALID" });
+        member.role = String(options.body.role); bumpCursor(); return { item: structuredClone(member), permissions: workspace.permissions };
+      }
+      if (segments.length === 4 && method === "DELETE") {
+        if (workspace.permissions?.canShare !== true) fail("当前账号没有成员管理权限", { status: 403, code: "PROMPT_MEMBER_MANAGE_FORBIDDEN" });
+        state.members = state.members.filter((item) => item !== member); bumpCursor(); return { ok: true };
+      }
+    }
+    if (segments[2] === "invitations") {
+      if (segments.length === 3 && method === "GET") return { items: structuredClone(invitationsByWorkspace(workspaceId)) };
+      if (segments.length === 3 && method === "POST") {
+        if (workspace.permissions?.canShare !== true) fail("当前账号没有成员管理权限", { status: 403, code: "PROMPT_MEMBER_MANAGE_FORBIDDEN" });
+        if (!options.body?.identifier) fail("邀请账号不能为空", { status: 400, code: "PROMPT_INVITATION_IDENTIFIER_REQUIRED" });
+        if (!options.body?.role || !["viewer", "editor"].includes(String(options.body.role))) fail("邀请角色无效", { status: 400, code: "PROMPT_INVITATION_ROLE_INVALID" });
+        const invitation = { id: `mock-invitation-${crypto.randomUUID()}`, workspaceId, workspaceName: workspace.name, role: ["viewer", "editor"].includes(String(options.body?.role || "viewer")) ? String(options.body.role) : "viewer", status: "pending", expiresAt: options.body?.expiresAt || null, createdAt: stamp() };
+        state.invitations.push(invitation); bumpCursor(); return { item: structuredClone(invitation) };
+      }
+      const invitationId = segments[3];
+      if (segments.length === 4 && method === "DELETE") {
+        if (workspace.permissions?.canShare !== true) fail("当前账号没有成员管理权限", { status: 403, code: "PROMPT_MEMBER_MANAGE_FORBIDDEN" });
+        state.invitations = state.invitations.filter((item) => item.id !== invitationId); bumpCursor(); return { ok: true };
+      }
+    }
     if (segments.length === 2 && method === "PATCH") {
       const revision = safeRevision(options.body?.revision);
       if (revision && revision !== safeRevision(workspace.revision)) {
@@ -245,6 +348,7 @@ function createCloudPromptMockRequest(fixtureInput) {
       return { tombstone: { id: template.id, revision: deletedRevision } };
     }
     if (segments[4] === "copy" && method === "POST") {
+      if (options.body?.mode !== "copy") fail("复制模式无效", { status: 400, code: "PROMPT_COPY_MODE_REQUIRED" });
       const targetWorkspaceId = safeIdentifier(options.body?.targetWorkspaceId || workspaceId, "目标空间");
       if (!workspaceById(targetWorkspaceId)) fail("目标提示词空间不存在", { status: 404, code: "PROMPT_WORKSPACE_NOT_FOUND" });
       const item = normalizeSharedPromptTemplate({
@@ -260,7 +364,7 @@ function createCloudPromptMockRequest(fixtureInput) {
       }, { workspaceId: targetWorkspaceId });
       state.templates.push(item);
       bumpCursor();
-      return { item: structuredClone(item) };
+      return { item: structuredClone(item), copiedFromPromptId: template.id };
     }
     if (segments[4] === "favorite" && ["POST", "DELETE"].includes(method)) {
       template.favorite = method === "POST";
@@ -334,6 +438,19 @@ function createCloudPromptService(options = {}) {
       });
       return { ok: true, item: normalizePromptWorkspace(response.item || response.workspace || response) };
     }
+    if (operation === "workspace.shared-with-me") {
+      const response = await request("/prompt-workspaces/shared-with-me", { method: "GET" });
+      return { ok: true, workspaces: normalizeWorkspaceList(response), nextCursor: String(response.nextCursor || "") };
+    }
+    if (operation === "invitation.inbox") {
+      const response = await request("/prompt-workspace-invitations", { method: "GET" });
+      return { ok: true, items: (Array.isArray(response) ? response : response.items || response.invitations || []).map(normalizeWorkspaceInvitation) };
+    }
+    if (operation === "invitation.accept" || operation === "invitation.reject") {
+      const invitationId = safeIdentifier(payload.invitationId, "邀请");
+      const response = await request(`/prompt-workspace-invitations/${encodeURIComponent(invitationId)}/${operation === "invitation.accept" ? "accept" : "reject"}`, { method: "POST" });
+      return { ok: true, item: response.item ? normalizeWorkspaceInvitation(response.item) : null };
+    }
     const workspaceId = safeIdentifier(payload.workspaceId, "工作空间");
     const workspacePath = `/prompt-workspaces/${encodeURIComponent(workspaceId)}`;
     if (operation === "workspace.update") {
@@ -351,6 +468,46 @@ function createCloudPromptService(options = {}) {
         },
       });
       return { ok: true, item: normalizePromptWorkspace(response.item || response.workspace || response) };
+    }
+    if (operation === "member.list") {
+      const response = await request(`${workspacePath}/members`, { method: "GET" });
+      return { ok: true, items: (Array.isArray(response) ? response : response.items || response.members || []).map(normalizeWorkspaceMember), permissions: response.permissions || null };
+    }
+    if (operation === "member.add") {
+      const member = payload.member || {};
+      const userId = safeAccountIdentifier(member.userId, "成员账号");
+      const response = await request(`${workspacePath}/members`, {
+        method: "POST",
+        headers: { "Idempotency-Key": safeIdempotencyKey(payload.idempotencyKey) },
+        body: { userId, role: ["viewer", "editor"].includes(member.role) ? member.role : "viewer", ...(member.expiresAt ? { expiresAt: member.expiresAt } : {}) },
+      });
+      return { ok: true, item: normalizeWorkspaceMember(response.item || response.member || response) };
+    }
+    if (operation === "member.update") {
+      const userId = safeIdentifier(payload.userId, "成员");
+      const member = payload.member || {};
+      const response = await request(`${workspacePath}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: { role: ["viewer", "editor"].includes(member.role) ? member.role : "viewer", ...(member.expiresAt ? { expiresAt: member.expiresAt } : {}) } });
+      return { ok: true, item: normalizeWorkspaceMember(response.item || response.member || response) };
+    }
+    if (operation === "member.remove") {
+      const userId = safeIdentifier(payload.userId, "成员");
+      await request(`${workspacePath}/members/${encodeURIComponent(userId)}`, { method: "DELETE" });
+      return { ok: true, userId };
+    }
+    if (operation === "invitation.list") {
+      const response = await request(`${workspacePath}/invitations`, { method: "GET" });
+      return { ok: true, items: (Array.isArray(response) ? response : response.items || response.invitations || []).map(normalizeWorkspaceInvitation) };
+    }
+    if (operation === "invitation.create") {
+      const invitation = payload.invitation || {};
+      const identifier = safeAccountIdentifier(invitation.identifier, "邀请账号");
+      const response = await request(`${workspacePath}/invitations`, { method: "POST", headers: { "Idempotency-Key": safeIdempotencyKey(payload.idempotencyKey) }, body: { identifier, role: ["viewer", "editor"].includes(invitation.role) ? invitation.role : "viewer", ...(invitation.expiresAt ? { expiresAt: invitation.expiresAt } : {}) } });
+      return { ok: true, item: normalizeWorkspaceInvitation(response.item || response.invitation || response) };
+    }
+    if (operation === "invitation.cancel") {
+      const invitationId = safeIdentifier(payload.invitationId, "邀请");
+      await request(`${workspacePath}/invitations/${encodeURIComponent(invitationId)}`, { method: "DELETE" });
+      return { ok: true, invitationId };
     }
     const templatesPath = `${workspacePath}/templates`;
     if (operation === "template.list") {
@@ -437,7 +594,7 @@ function createCloudPromptService(options = {}) {
       const response = await request(`${templatePath}/copy`, {
         method: "POST",
         headers: { "Idempotency-Key": safeIdempotencyKey(payload.idempotencyKey) },
-        body: { targetWorkspaceId },
+        body: { targetWorkspaceId, mode: "copy" },
       });
       return { ok: true, ...normalizeTemplateResponse(response, targetWorkspaceId) };
     }

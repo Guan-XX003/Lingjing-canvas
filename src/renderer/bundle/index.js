@@ -2808,11 +2808,19 @@ Suno 音乐生成`,
   getCustomApiConfigCount = (configs = apiConfigs) =>
     (Array.isArray(configs) ? configs : []).filter((config) => !isJixinDefaultApiConfig(config)).length,
   unlockAdvancedSettings = use_unlockAdvancedSettings({ setAdvancedSettingsUnlocked, setSettingsNavUnlockClicks, showToast2, advancedSettingsUnlocked }).unlockAdvancedSettings,
-  handleSettingsNavClick = () => {
-	      if (activeView !== `settings`) setActiveSettingsTab(`account`);
+	  handleSettingsNavClick = () => {
+		      if (activeView !== `settings`) setActiveSettingsTab(`account`);
+		      setActiveView(`settings`);
+		      setSettingsNavUnlockClicks(0);
+		    },
+	  openAccountSettingsEffect = useEffect(() => {
+	    const handler = () => {
+	      setActiveSettingsTab(`account`);
 	      setActiveView(`settings`);
-	      setSettingsNavUnlockClicks(0);
-	    },
+	    };
+	    window.addEventListener(`wanjuan:open-account-settings`, handler);
+	    return () => window.removeEventListener(`wanjuan:open-account-settings`, handler);
+	  }, []),
   settingsHydratedRef = useRef(false),
   projectHydratedRef = useRef(false),
   nonModelSettingsSaveTimerRef = useRef(null),

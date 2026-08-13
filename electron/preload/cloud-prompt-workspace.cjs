@@ -34,6 +34,17 @@ function createCloudPromptWorkspaceController(options = {}) {
     tagFilter: "",
     editor: null,
     lastBootstrapAt: 0,
+    lastOperation: null,
+    targetPicker: null,
+    targetQuery: "",
+    targetWorkspaceId: "",
+    members: [],
+    invitations: [],
+    invitationInbox: [],
+    membersLoading: false,
+    activeSection: "templates",
+    memberIdentifier: "",
+    memberRole: "viewer",
   };
 
   const activeWorkspace = () => state.workspaces.find((item) => item.id === state.activeWorkspaceId) || null;
@@ -62,9 +73,26 @@ function createCloudPromptWorkspaceController(options = {}) {
     return true;
   };
 
+  const queueEntryAllowed = (entry) => {
+    const source = state.workspaces.find((item) => item.id === entry.workspaceId);
+    if (!source || !permissionAllows(source, entry.operation)) return false;
+    if (entry.operation === "template.copy") {
+      const target = state.workspaces.find((item) => item.id === entry.targetWorkspaceId);
+      return target?.permissions?.canCreate === true;
+    }
+    return true;
+  };
+
+  const pruneUnauthorizedQueue = async () => {
+    if (!state.account?.id) return [];
+    const queue = await store.listQueue(state.account.id);
+    const denied = queue.filter((entry) => !queueEntryAllowed(entry));
+    await Promise.all(denied.map((entry) => store.removeQueueEntry(entry.id)));
+    return denied;
+  };
+
   const executeQueueEntry = async (entry) => {
-    const workspace = state.workspaces.find((item) => item.id === entry.workspaceId);
-    if (!workspace || !permissionAllows(workspace, entry.operation)) {
+    if (!queueEntryAllowed(entry)) {
       await store.removeQueueEntry(entry.id);
       if (entry.templateId) {
         const existing = (await store.listTemplates(entry.accountId, entry.workspaceId, { includeArchived: true }))
@@ -192,18 +220,29 @@ function createCloudPromptWorkspaceController(options = {}) {
         state.activeWorkspaceId = "";
         state.templates = [];
         state.editor = null;
+        state.activeSection = "templates";
+        state.members = [];
+        state.invitations = [];
+        state.invitationInbox = [];
         return state;
       }
       await store.ensureAccountIsolation(state.account.id);
-      const remoteWorkspaces = (result.workspaces || []).map(normalizePromptWorkspace).filter((item) => item.id);
+      const remoteWorkspaces = (result.workspaces || []).map(normalizePromptWorkspace).filter((item) => item.id && item.permissions?.canRead === true);
       const cachedWorkspaces = await store.getWorkspaceCache(state.account.id);
-      state.workspaces = remoteWorkspaces.length ? remoteWorkspaces : cachedWorkspaces;
-      if (remoteWorkspaces.length) {
+      const previousWorkspaceId = state.activeWorkspaceId;
+      state.workspaces = state.offline ? cachedWorkspaces : remoteWorkspaces;
+      if (!state.offline) {
         await store.setWorkspaceCache(state.account.id, remoteWorkspaces);
         await store.pruneUnauthorizedWorkspaces(state.account.id, remoteWorkspaces.map((item) => item.id));
+        await pruneUnauthorizedQueue();
       }
       if (!state.workspaces.some((item) => item.id === state.activeWorkspaceId)) {
         state.activeWorkspaceId = personalWorkspace()?.id || state.workspaces[0]?.id || "";
+        if (previousWorkspaceId) {
+          state.activeSection = "templates";
+          state.members = [];
+          state.invitations = [];
+        }
       }
       await updateTemplates();
       if (options2.sync && state.activeWorkspaceId && !state.offline) await syncActiveWorkspace();
@@ -211,6 +250,47 @@ function createCloudPromptWorkspaceController(options = {}) {
     } finally {
       state.loading = false;
     }
+  };
+
+  const loadSharing = async (workspaceId = state.activeWorkspaceId) => {
+    if (!state.authenticated || !workspaceId) return { members: [], invitations: [] };
+    state.membersLoading = true;
+    try {
+      const workspace = state.workspaces.find((item) => item.id === workspaceId);
+      const [membersResult, invitationsResult] = await Promise.all([
+        invoke({ operation: "member.list", workspaceId }),
+        workspace?.permissions?.canShare ? invoke({ operation: "invitation.list", workspaceId }) : Promise.resolve({ ok: true, items: [] }),
+      ]);
+      state.members = membersResult?.ok ? membersResult.items || [] : [];
+      state.invitations = invitationsResult?.ok ? invitationsResult.items || [] : [];
+      const failure = !membersResult?.ok ? membersResult : !invitationsResult?.ok ? invitationsResult : null;
+      state.error = failure ? String(failure.error || "成员与共享服务暂不可用") : "";
+      return { members: state.members, invitations: state.invitations };
+    } finally {
+      state.membersLoading = false;
+    }
+  };
+  const loadInvitationInbox = async () => {
+    if (!state.authenticated) return [];
+    const result = await invoke({ operation: "invitation.inbox" });
+    state.invitationInbox = result?.ok ? result.items || [] : [];
+    if (!result?.ok) state.error = String(result.error || "邀请服务暂不可用");
+    return state.invitationInbox;
+  };
+  const mutateSharing = async (operation, payload = {}) => {
+    const workspaceId = payload.workspaceId || state.activeWorkspaceId;
+    const workspace = state.workspaces.find((item) => item.id === workspaceId);
+    if (!["invitation.accept", "invitation.reject"].includes(operation) && !workspace?.permissions?.canShare) throw new Error("当前账号没有成员管理权限");
+    const result = await invoke({ operation, workspaceId, ...payload });
+    if (!result?.ok) throw Object.assign(new Error(result.error || "共享操作失败"), { status: result.status, code: result.code });
+    if (["invitation.accept", "invitation.reject"].includes(operation)) {
+      await loadInvitationInbox();
+      await prepare({ force: true });
+    } else {
+      await loadSharing(workspaceId);
+    }
+    requestRender();
+    return result;
   };
 
   const enqueueCreate = async (template, workspaceId = state.activeWorkspaceId) => {
@@ -239,7 +319,9 @@ function createCloudPromptWorkspaceController(options = {}) {
     });
     await updateTemplates();
     if (!state.offline) await flushQueue();
-    return localTemplate;
+    const syncedTemplate = (await store.listTemplates(accountId, workspaceId, { includeArchived: true }))
+      .find((item) => item.id === localId) || null;
+    return syncedTemplate || localTemplate;
   };
 
   const enqueueUpdate = async (existing, template) => {
@@ -300,6 +382,84 @@ function createCloudPromptWorkspaceController(options = {}) {
     if (!state.offline) await flushQueue();
   };
 
+  const creatableWorkspaces = (options2 = {}) => {
+    const excluded = String(options2.excludeWorkspaceId || "");
+    const query = String(options2.query || "").trim().toLowerCase();
+    return state.workspaces.filter((workspace) => {
+      if (!workspace?.id || workspace.id === excluded || workspace.status === "archived") return false;
+      if (workspace.permissions?.canCreate !== true) return false;
+      if (!query) return true;
+      return `${workspace.name || ""} ${workspace.kind || ""} ${workspace.role || ""}`.toLowerCase().includes(query);
+    });
+  };
+
+  const sendTemplateToWorkspace = async (template, targetWorkspaceId) => {
+    const target = state.workspaces.find((workspace) => workspace.id === String(targetWorkspaceId || ""));
+    if (!state.authenticated || !state.account?.id) {
+      const error = new Error("请先登录万卷灵境账号");
+      error.code = "AUTH_REQUIRED";
+      throw error;
+    }
+    if (!target || target.permissions?.canCreate !== true) {
+      const error = new Error("目标云端工作空间没有创建权限");
+      error.code = "PROMPT_WORKSPACE_CREATE_FORBIDDEN";
+      throw error;
+    }
+    const result = await enqueueCreate(template, target.id);
+    state.lastOperation = {
+      operation: "template.create",
+      workspaceId: target.id,
+      status: result?.syncStatus || (state.offline ? "pending-create" : "synced"),
+    };
+    return result;
+  };
+
+  const copyTemplateToWorkspace = async (template, targetWorkspaceId) => {
+    const target = state.workspaces.find((workspace) => workspace.id === String(targetWorkspaceId || ""));
+    if (!state.authenticated || !state.account?.id) {
+      const error = new Error("请先登录万卷灵境账号");
+      error.code = "AUTH_REQUIRED";
+      throw error;
+    }
+    if (!template?.id || !template.workspaceId) throw new Error("源云提示词模板无效");
+    if (!target || target.permissions?.canCreate !== true) {
+      const error = new Error("目标云端工作空间没有创建权限");
+      error.code = "PROMPT_WORKSPACE_CREATE_FORBIDDEN";
+      throw error;
+    }
+    const source = state.workspaces.find((workspace) => workspace.id === template.workspaceId);
+    if (!source || source.permissions?.canRead !== true) {
+      const error = new Error("源云端工作空间没有读取权限");
+      error.code = "PROMPT_WORKSPACE_READ_FORBIDDEN";
+      throw error;
+    }
+    if (!state.workspaces.some((workspace) => workspace.id === template.workspaceId)) {
+      const error = new Error("源云端工作空间不可访问");
+      error.code = "PROMPT_WORKSPACE_READ_FORBIDDEN";
+      throw error;
+    }
+    await enqueueCopy(template, target.id);
+    state.lastOperation = {
+      operation: "template.copy",
+      workspaceId: target.id,
+      status: state.offline ? "pending-copy" : "synced",
+    };
+    return { targetWorkspaceId: target.id, queued: state.offline };
+  };
+
+  const openTargetPicker = async (template, operation = "create") => {
+    await prepare({ force: false });
+    const targets = creatableWorkspaces({ excludeWorkspaceId: operation === "copy" ? template?.workspaceId : "" });
+    state.targetPicker = {
+      operation: operation === "copy" ? "copy" : "create",
+      template: template || null,
+    };
+    state.targetQuery = "";
+    state.targetWorkspaceId = targets[0]?.id || "";
+    requestRender();
+    return targets;
+  };
+
   const openEditor = (template = null) => {
     const safe = template ? sanitizeSharedPromptTemplateInput(template) : {
       title: "",
@@ -334,12 +494,58 @@ function createCloudPromptWorkspaceController(options = {}) {
     await resolveConflictServer(template);
   };
 
-  const handleAction = async (action, templateId = "") => {
+  const handleAction = async (action, templateId = "", details = {}) => {
     const template = findTemplate(templateId);
     if (action === "cloud-refresh") {
       await prepare({ force: true });
       await syncActiveWorkspace({ force: true });
       toast(t("云提示词已刷新"));
+      return true;
+    }
+    if (action === "cloud-sharing-open") {
+      await Promise.all([loadSharing(state.activeWorkspaceId), loadInvitationInbox()]);
+      state.activeSection = "sharing";
+      requestRender();
+      return true;
+    }
+    if (action === "cloud-sharing-close") {
+      state.activeSection = "templates";
+      requestRender();
+      return true;
+    }
+    if (action === "cloud-invite-member") {
+      const identifier = String(state.memberIdentifier || "").trim();
+      if (!identifier) throw new Error("请输入要邀请的账号邮箱");
+      await mutateSharing("invitation.create", {
+        invitation: { identifier, role: state.memberRole },
+        idempotencyKey: crypto.randomUUID(),
+      });
+      state.memberIdentifier = "";
+      toast(t("邀请已发送"));
+      return true;
+    }
+    if (action === "cloud-remove-member") {
+      if (!details.userId) throw new Error("成员标识无效");
+      await mutateSharing("member.remove", { userId: details.userId });
+      toast(t("成员访问权限已撤销"));
+      return true;
+    }
+    if (action === "cloud-update-member") {
+      if (!details.userId || !["viewer", "editor"].includes(details.role)) throw new Error("成员角色无效");
+      await mutateSharing("member.update", { userId: details.userId, member: { role: details.role } });
+      toast(t("成员角色已更新"));
+      return true;
+    }
+    if (action === "cloud-cancel-invitation") {
+      if (!details.invitationId) throw new Error("邀请标识无效");
+      await mutateSharing("invitation.cancel", { invitationId: details.invitationId });
+      toast(t("邀请已撤销"));
+      return true;
+    }
+    if (["cloud-accept-invitation", "cloud-reject-invitation"].includes(action)) {
+      if (!details.invitationId) throw new Error("邀请标识无效");
+      await mutateSharing(action === "cloud-accept-invitation" ? "invitation.accept" : "invitation.reject", { invitationId: details.invitationId });
+      toast(t(action === "cloud-accept-invitation" ? "已接受邀请" : "已拒绝邀请"));
       return true;
     }
     if (action === "cloud-new") {
@@ -354,6 +560,41 @@ function createCloudPromptWorkspaceController(options = {}) {
     if (action === "cloud-cancel") {
       state.editor = null;
       requestRender();
+      return true;
+    }
+    if (action === "cloud-target-cancel") {
+      state.targetPicker = null;
+      state.targetQuery = "";
+      state.targetWorkspaceId = "";
+      requestRender();
+      return true;
+    }
+    if (action === "cloud-open-account") {
+      state.targetPicker = null;
+      requestRender();
+      globalThis.window?.dispatchEvent?.(new CustomEvent("wanjuan:open-account-settings"));
+      return true;
+    }
+    if (action === "cloud-target-submit" && state.targetPicker) {
+      const picker = state.targetPicker;
+      const targetId = state.targetWorkspaceId;
+      if (!targetId) throw new Error("请选择目标云端工作空间");
+      if (picker.operation === "copy") {
+        await copyTemplateToWorkspace(picker.template, targetId);
+        toast(state.offline ? t("复制请求已离线排队") : t("已复制到目标云端工作空间"));
+      } else {
+        await sendTemplateToWorkspace(picker.template, targetId);
+        toast(state.offline ? t("已离线保存，联网后发送") : t("已发送到目标云端工作空间"));
+      }
+      state.targetPicker = null;
+      state.targetQuery = "";
+      state.targetWorkspaceId = "";
+      requestRender();
+      return true;
+    }
+    if (action === "cloud-copy-other") {
+      if (!template) throw new Error("云提示词模板不存在");
+      await openTargetPicker(template, "copy");
       return true;
     }
     if (action === "cloud-save" && state.editor) {
@@ -396,7 +637,7 @@ function createCloudPromptWorkspaceController(options = {}) {
     if (action === "cloud-copy") {
       const target = personalWorkspace() || activeWorkspace();
       if (!target) throw new Error("没有可用的目标空间");
-      await enqueueCopy(template, target.id);
+      await copyTemplateToWorkspace(template, target.id);
       toast(state.offline ? t("复制请求已排队") : t("已复制到个人云空间"));
       requestRender();
       return true;
@@ -420,14 +661,38 @@ function createCloudPromptWorkspaceController(options = {}) {
     if (field === "cloudWorkspaceId") {
       state.activeWorkspaceId = String(value || "");
       state.editor = null;
+      state.activeSection = "templates";
+      state.members = [];
+      state.invitations = [];
       await updateTemplates();
       await syncActiveWorkspace();
       requestRender();
       return true;
     }
-    if (field === "cloudQuery") state.query = String(value || "");
-    else if (field === "cloudTypeFilter") state.typeFilter = String(value || "all");
-    else if (field === "cloudTagFilter") state.tagFilter = String(value || "");
+    if (field === "cloudMemberIdentifier") {
+      state.memberIdentifier = String(value || "");
+    } else if (field === "cloudMemberRole") {
+      state.memberRole = ["viewer", "editor"].includes(String(value)) ? String(value) : "viewer";
+    } else if (field === "cloudQuery") {
+      state.query = String(value || "");
+    } else if (field === "cloudTargetQuery") {
+      state.targetQuery = String(value || "");
+      const first = creatableWorkspaces({
+        excludeWorkspaceId: state.targetPicker?.operation === "copy" ? state.targetPicker?.template?.workspaceId : "",
+        query: state.targetQuery,
+      })[0];
+      if (first) state.targetWorkspaceId = first.id;
+      requestRender();
+      return true;
+    } else if (field === "cloudTargetWorkspaceId") {
+      state.targetWorkspaceId = String(value || "");
+      requestRender();
+      return true;
+    } else if (field === "cloudTypeFilter") {
+      state.typeFilter = String(value || "all");
+    } else if (field === "cloudTagFilter") {
+      state.tagFilter = String(value || "");
+    }
     else if (field.startsWith("cloudDraft.") && state.editor) {
       const key = field.slice("cloudDraft.".length);
       if (["durationSeconds"].includes(key)) {
@@ -490,6 +755,7 @@ function createCloudPromptWorkspaceController(options = {}) {
           </select>
         </label>
         <div class="wanjuan-cloud-permission-row"><span>${escape(workspaceRoleLabel(workspace))}</span><span class="${state.offline ? "is-offline" : ""}">${escape(queueNote)}</span></div>
+        ${workspace ? `<button class="wanjuan-workspace-button" data-workspace-action="cloud-sharing-open">${escape(t("成员与共享"))}</button>` : ""}
         ${state.mock ? `<div class="wanjuan-cloud-mock-note">${escape(t("当前使用脱敏 Mock 数据"))}</div>` : ""}
         ${state.error ? `<div class="wanjuan-cloud-error">${escape(state.error)}</div>` : ""}
       </div>
@@ -503,6 +769,15 @@ function createCloudPromptWorkspaceController(options = {}) {
       </label>
       <div class="wanjuan-cloud-security-note">${escape(t("只同步提示词和安全生成参数，不同步 API Key、素材、结果地址、项目或节点信息。"))}</div>
     `;
+  };
+  const renderSharing = () => {
+    const workspace = activeWorkspace();
+    if (!workspace) return `<div class="wanjuan-workspace-empty">${escape(t("请选择云端工作空间"))}</div>`;
+    const canShare = workspace.permissions?.canShare === true;
+    const members = Array.isArray(state.members) ? state.members : [];
+    const invitations = Array.isArray(state.invitations) ? state.invitations : [];
+    const inbox = Array.isArray(state.invitationInbox) ? state.invitationInbox : [];
+    return `<div class="wanjuan-cloud-sharing-panel"><div class="wanjuan-cloud-editor-heading"><strong>${escape(t("成员与共享"))}</strong><span>${escape(workspaceDisplayName(workspace))}</span></div><div class="wanjuan-cloud-editor-actions"><button class="wanjuan-workspace-button" data-workspace-action="cloud-sharing-close">${escape(t("返回模板"))}</button></div>${state.error ? `<div class="wanjuan-cloud-error">${escape(state.error)}</div>` : ""}${canShare ? `<div class="wanjuan-cloud-sharing-form"><input data-workspace-field="cloudMemberIdentifier" value="${escape(state.memberIdentifier)}" placeholder="${escape(t("邀请账号邮箱"))}"><select data-workspace-field="cloudMemberRole"><option value="viewer" ${state.memberRole === "viewer" ? "selected" : ""}>${escape(t("只读"))}</option><option value="editor" ${state.memberRole === "editor" ? "selected" : ""}>${escape(t("可编辑"))}</option></select><button class="wanjuan-workspace-button primary" data-workspace-action="cloud-invite-member">${escape(t("发送邀请"))}</button></div>` : `<div class="wanjuan-cloud-security-note">${escape(t("当前账号只能查看成员，不能管理共享"))}</div>`}<div class="wanjuan-cloud-sharing-list"><strong>${escape(t("成员"))}</strong>${members.length ? members.map((member) => `<div class="wanjuan-cloud-sharing-row"><span>${escape(member.displayName || "用户")}</span><select data-cloud-member-id="${escape(member.userId)}" ${canShare ? "" : "disabled"}><option value="viewer" ${member.role === "viewer" ? "selected" : ""}>${escape(t("只读"))}</option><option value="editor" ${member.role === "editor" ? "selected" : ""}>${escape(t("可编辑"))}</option></select>${canShare ? `<button class="wanjuan-workspace-button danger" data-workspace-action="cloud-remove-member" data-user-id="${escape(member.userId)}">${escape(t("撤销"))}</button>` : ""}</div>`).join("") : `<div class="wanjuan-workspace-empty">${escape(t("暂无成员"))}</div>`}</div>${invitations.length ? `<div class="wanjuan-cloud-sharing-list"><strong>${escape(t("待发邀请"))}</strong>${invitations.map((item) => `<div class="wanjuan-cloud-sharing-row"><span>${escape(item.role)} · ${escape(item.status)}</span><button class="wanjuan-workspace-button danger" data-workspace-action="cloud-cancel-invitation" data-invitation-id="${escape(item.id)}">${escape(t("撤销邀请"))}</button></div>`).join("")}</div>` : ""}${inbox.length ? `<div class="wanjuan-cloud-sharing-list"><strong>${escape(t("收到的邀请"))}</strong>${inbox.map((item) => { const expired = item.expiresAt && new Date(item.expiresAt).getTime() <= Date.now(); return `<div class="wanjuan-cloud-sharing-row"><span>${escape(item.workspaceName || item.workspaceId)} · ${escape(item.role)}${expired ? ` · ${escape(t("已过期"))}` : ""}</span>${expired ? "" : `<button class="wanjuan-workspace-button primary" data-workspace-action="cloud-accept-invitation" data-invitation-id="${escape(item.id)}">${escape(t("接受"))}</button><button class="wanjuan-workspace-button" data-workspace-action="cloud-reject-invitation" data-invitation-id="${escape(item.id)}">${escape(t("拒绝"))}</button>`}</div>`; }).join("")}</div>` : ""}</div>`;
   };
   const renderToolbar = () => `
     <input class="wanjuan-workspace-search" data-workspace-field="cloudQuery" value="${escape(state.query)}" placeholder="${escape(t("搜索云提示词、标签、模型"))}">
@@ -556,7 +831,7 @@ function createCloudPromptWorkspaceController(options = {}) {
             <button class="wanjuan-workspace-button primary" data-workspace-action="cloud-use">${escape(t("创建节点"))}</button>
             <button class="wanjuan-workspace-button" data-workspace-action="cloud-favorite" title="${escape(item.favorite ? t("取消收藏") : t("收藏"))}">${item.favorite ? "★" : "☆"} ${escape(item.favorite ? t("已收藏") : t("收藏"))}</button>
             ${!readOnly && !conflict ? `<button class="wanjuan-workspace-button" data-workspace-action="cloud-edit">${escape(t("编辑"))}</button>` : ""}
-            ${workspace?.permissions?.canCopy !== false ? `<button class="wanjuan-workspace-button" data-workspace-action="cloud-copy">${escape(t("复制到个人"))}</button>` : ""}
+            ${workspace?.permissions?.canCopy !== false ? `<button class="wanjuan-workspace-button" data-workspace-action="cloud-copy">${escape(t("复制到个人"))}</button><button class="wanjuan-workspace-button" data-workspace-action="cloud-copy-other">${escape(t("发送到其他云空间"))}</button>` : ""}
             ${workspace?.permissions?.canDelete && !conflict ? `<button class="wanjuan-workspace-button danger" data-workspace-action="cloud-archive">${escape(t("归档"))}</button>` : ""}
           </div>
         </div>
@@ -564,10 +839,22 @@ function createCloudPromptWorkspaceController(options = {}) {
     `;
   };
   const renderContent = () => {
+    if (state.targetPicker) return renderTargetPicker();
     if (state.editor) return renderEditor();
+    if (state.activeSection === "sharing") return renderSharing();
     if (state.loading && !state.templates.length) return `<div class="wanjuan-workspace-empty">${escape(t("正在加载云提示词库…"))}</div>`;
     const items = filteredTemplates();
     return `<div class="wanjuan-workspace-list wanjuan-cloud-template-list">${items.length ? items.map(renderTemplateCard).join("") : `<div class="wanjuan-workspace-empty">${escape(state.offline ? t("当前离线，缓存中没有匹配模板") : t("暂无匹配的云提示词"))}</div>`}</div>`;
+  };
+
+  const renderTargetPicker = () => {
+    if (!state.targetPicker) return "";
+    const operationLabel = state.targetPicker.operation === "copy" ? t("复制到其他云空间") : t("发送到云端工作空间");
+    const targets = creatableWorkspaces({
+      excludeWorkspaceId: state.targetPicker.operation === "copy" ? state.targetPicker.template?.workspaceId : "",
+      query: state.targetQuery,
+    });
+    return `<div class="wanjuan-cloud-target-picker" role="dialog" aria-modal="true" aria-label="${escape(operationLabel)}"><div class="wanjuan-cloud-target-picker-heading"><strong>${escape(operationLabel)}</strong><span>${escape(state.targetPicker.template?.title || "")}</span></div>${!state.authenticated ? `<div class="wanjuan-cloud-error">${escape(t("请前往‘我的账号’登录后再发送到云端"))}<button class="wanjuan-workspace-button primary" data-workspace-action="cloud-open-account">${escape(t("前往我的账号"))}</button></div>` : `<input data-workspace-field="cloudTargetQuery" value="${escape(state.targetQuery)}" placeholder="${escape(t("搜索个人/企业空间、名称或角色"))}" aria-label="${escape(t("搜索云端工作空间"))}"><div class="wanjuan-cloud-target-list" role="listbox" aria-label="${escape(t("可发送的云端工作空间"))}">${targets.length ? targets.map((workspace) => { const selected = workspace.id === state.targetWorkspaceId; const kind = workspace.kind === "personal" ? t("个人") : t("企业"); return `<button type="button" role="option" aria-selected="${selected ? "true" : "false"}" class="wanjuan-cloud-target-option ${selected ? "is-selected" : ""}" data-cloud-target-id="${escape(workspace.id)}"><span>${escape(kind)} · ${escape(workspace.name)}</span><small>${escape(workspace.role || t("成员"))}</small></button>`; }).join("") : `<div class="wanjuan-workspace-empty">${escape(state.targetQuery ? t("没有匹配且有创建权限的云端空间") : t("没有可发送的云端空间"))}</div>`}</div><div class="wanjuan-cloud-editor-actions"><button class="wanjuan-workspace-button" data-workspace-action="cloud-target-cancel">${escape(t("取消"))}</button><button class="wanjuan-workspace-button primary" data-workspace-action="cloud-target-submit" ${targets.length ? "" : "disabled"}>${escape(t("确认"))}</button></div>`}</div>`;
   };
 
   const reset = () => {
@@ -584,11 +871,24 @@ function createCloudPromptWorkspaceController(options = {}) {
       templates: [],
       editor: null,
       lastBootstrapAt: 0,
+      lastOperation: null,
+      targetPicker: null,
+      targetQuery: "",
+      targetWorkspaceId: "",
+      activeSection: "templates",
+      memberIdentifier: "",
+      memberRole: "viewer",
+      members: [],
+      invitations: [],
+      invitationInbox: [],
+      membersLoading: false,
     });
   };
 
   return {
     captureTemplate,
+    copyTemplateToWorkspace,
+    creatableWorkspaces,
     handleAction,
     handleField,
     peek: () => state,
@@ -597,6 +897,9 @@ function createCloudPromptWorkspaceController(options = {}) {
     renderSidebar,
     renderToolbar,
     reset,
+    openTargetPicker,
+    renderTargetPicker,
+    sendTemplateToWorkspace,
     syncActiveWorkspace,
   };
 }
