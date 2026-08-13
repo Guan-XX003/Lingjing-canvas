@@ -1894,8 +1894,8 @@ function installDesktopPatches() {
   const tianjiPortraitAssetIdFromItem = (item) => {
     const explicit = tianjiFindDeepValue(item, ["portrait_asset_id", "portraitAssetId", "PortraitAssetId", "protrait_asset_id", "protraitAssetId", "ProtraitAssetId", "asset_id", "assetId", "AssetId", "assetID", "material_id", "materialId", "MaterialId", "assets_id", "assetsId", "AssetsId", "portrait_id", "portraitId", "PortraitId"]);
     if (explicit) return explicit;
-    const generic = String(item?.id || item?.Id || item?.ID || "").trim();
-    return generic && !/^local-/i.test(generic) && !/group/i.test(generic) ? generic : "";
+    const generic = String(tianjiFindDeepValue(item, ["id", "Id", "ID"]) || "").trim();
+    return /^asset-[0-9a-z-]+$/i.test(generic) && !/^local-/i.test(generic) && !/group/i.test(generic) ? generic : "";
   };
 
   const tianjiPortraitImageUrlFromItem = (item) => {

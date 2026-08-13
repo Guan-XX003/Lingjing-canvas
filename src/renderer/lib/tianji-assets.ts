@@ -206,7 +206,11 @@ export const wanjuanTianjiPortraitAssetIdFromItem = (item) => {
     (value) => Boolean(String(value || ``).trim()) && !/^local-/i.test(String(value)),
   );
   if (explicit) return explicit;
-  const generic = String(item?.id || item?.Id || item?.ID || ``).trim();
+  const generic = wanjuanTianjiFindNestedValue(
+    item,
+    [`id`, `Id`, `ID`],
+    (value) => /^asset-[0-9a-z-]+$/i.test(String(value || ``).trim()),
+  );
   if (!generic || /^local-/i.test(generic) || /group/i.test(generic)) return ``;
   return generic;
 };
