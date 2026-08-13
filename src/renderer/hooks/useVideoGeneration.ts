@@ -6,7 +6,8 @@ import { useCallback } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
-import { wanjuanHasTianjiPortraitClaim, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanTianjiPortraitReferenceFromNodeData } from "../lib/tianji-portrait";
+import { wanjuanHasTianjiPortraitClaim, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData } from "../lib/tianji-portrait";
+import { wanjuanCollectTianjiManualPortraitInputs } from "../lib/tianji-manual-reference";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
 import { safeStringifyRequestForLog, serializeErrorPreview } from "../lib/log-utils";
 import { wanjuanClearProjectAssetBindingsFromData, wanjuanResourceKind } from "../lib/resource";
@@ -465,7 +466,6 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                 throw Error(sourceNode.data.tianjiPortraitBindingMessage || fallbackMessage);
               }
               if (seedanceSourceNode?.data?.seedanceMode === `tianji` && sourceNode && wanjuanHasTianjiPortraitClaim(sourceNode.data)) {
-                addVideoReferenceImage(wanjuanTianjiPortraitReferenceFromNodeData(sourceNode.data));
                 return;
               }
               if (sourceNode?.data?.seedanceAssetId) {
@@ -577,9 +577,17 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                sourceNode && sourceNode.type === `textNode` && sourceNode.data.text && promptParts.push(sourceNode.data.text);
 	            });
 	            let matchedNodeForUpdate = nodes2.find((node) => node.id === nodeId);
+	            const tianjiManualPortraitInputs = seedanceSourceNode?.data?.seedanceMode === `tianji`
+	              ? wanjuanCollectTianjiManualPortraitInputs({
+	                  nodes: nodes2,
+	                  incomingEdges,
+	                  contextResources: matchedNodeForUpdate?.data?.selectedContextResources,
+	                })
+	              : null;
 	            matchedNodeForUpdate &&
 	              matchedNodeForUpdate.data.selectedContextResources &&
-	              matchedNodeForUpdate.data.selectedContextResources.forEach((resource) => {
+	              matchedNodeForUpdate.data.selectedContextResources.forEach((resource, resourceIndex) => {
+	                if (tianjiManualPortraitInputs?.claimedContextIndexes.has(resourceIndex)) return;
 	                wanjuanResourceKind(resource) === `image` ?
 	                  addVideoReferenceImage(resource) :
 	                  wanjuanResourceKind(resource) === `video` ?
@@ -591,7 +599,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	            // Otherwise resources added from the context picker are omitted from Tianji payloads.
 	            let seedanceConnectedImageRefs = [...imageReferences],
 	              seedanceConnectedVideoRefs = [...videoReferences],
-	              seedanceConnectedAudioRefs = [...seedanceAudioRefs];
+	              seedanceConnectedAudioRefs = [...seedanceAudioRefs],
+	              seedanceConnectedPortraitAssetIds = [...(tianjiManualPortraitInputs?.portraitAssetIds || [])];
             if (seedanceSourceNode?.type === `tongyiWanxiangNode`) {
               let tongyiMode =
                   seedanceSourceNode?.data?.tongyiWanxiangMode || `text-to-video`,
@@ -1072,7 +1081,9 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   selectedSize: resolution,
                   selectedDuration: duration,
                   sourceNode: seedanceSourceNode,
-                  imageRefs: seedanceConnectedImageRefs,
+	                  imageRefs: seedanceConnectedImageRefs,
+	                  portraitAssetIds: seedanceConnectedPortraitAssetIds,
+	                  reviewedPortraitClaimCount: tianjiManualPortraitInputs?.reviewedPortraitClaimCount || 0,
                   videoRefs: seedanceConnectedVideoRefs,
                   audioRefs: seedanceConnectedAudioRefs,
                   updateNodes: setNodes,

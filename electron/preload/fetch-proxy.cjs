@@ -243,7 +243,10 @@ function buildDesktopProxyFetchBridgePayload(payload = {}) {
     method,
     headers,
     bodyBase64,
-    requestTimeout: Number(payload.requestTimeout || getDesktopProxyFetchTimeout(url, method))
+    requestTimeout: Number(payload.requestTimeout || getDesktopProxyFetchTimeout(url, method)),
+    tianjiGenerationProfile: payload.tianjiGenerationProfile && typeof payload.tianjiGenerationProfile === "object"
+      ? { reviewedPortraitCount: Math.max(0, Math.floor(Number(payload.tianjiGenerationProfile.reviewedPortraitCount || 0))) }
+      : undefined
   };
 }
 

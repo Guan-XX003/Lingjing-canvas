@@ -67,6 +67,7 @@ interface TianjiRequestOptions {
   query?: Record<string, any>;
   signal?: AbortSignal;
   encoding?: `json` | `form`;
+  reviewedPortraitCount?: number;
 }
 
 /** wanjuanRunTianjiSeedanceVideo 的运行入参（来自调用方编辑器上下文）。 */
@@ -77,6 +78,8 @@ interface RunTianjiSeedanceVideoOptions {
   selectedDuration?: string | number;
   selectedSize?: string;
   imageRefs?: any[];
+  portraitAssetIds?: string[];
+  reviewedPortraitClaimCount?: number;
   videoRefs?: any[];
   audioRefs?: any[];
   nodeId: string;
@@ -129,16 +132,29 @@ export const wanjuanBuildTianjiGenerationRequest = ({
   mode,
   common,
   imageUrls = [],
+  portraitAssetIds = [],
+  reviewedPortraitClaimCount = 0,
   videoUrls = [],
   audioUrls = [],
 }: {
   mode: any;
   common: Record<string, any>;
   imageUrls?: string[];
+  portraitAssetIds?: string[];
+  reviewedPortraitClaimCount?: number;
   videoUrls?: string[];
   audioUrls?: string[];
 }): { endpoint: string; payload: Record<string, any>; generationMode: TianjiSeedanceGenerationMode; encoding: `form` } => {
   const generationMode = wanjuanNormalizeTianjiGenerationMode(mode);
+  const normalizedPortraitAssetIds = portraitAssetIds.map((value) => String(value || ``).trim()).filter(Boolean);
+  if (normalizedPortraitAssetIds.some((value) => !/^[A-Za-z0-9][A-Za-z0-9._-]{0,511}$/.test(value)))
+    throw Error(`天玑已审核人像素材 ID 格式无效`);
+  if (imageUrls.some((value) => !/^https?:\/\//i.test(String(value || ``))))
+    throw Error(`天玑普通图片通道只允许 HTTP(S) 素材，审核人像必须使用独立素材 ID`);
+  if (reviewedPortraitClaimCount > normalizedPortraitAssetIds.length)
+    throw Error(`天玑已审核人像素材 ID 在生成前丢失，已阻止使用预览图片替代`);
+  if (generationMode !== `reference-media` && normalizedPortraitAssetIds.length)
+    throw Error(`天玑已审核人像仅支持参考素材生视频模式`);
   const payload = { ...common };
   let endpoint = `/api/cut/model/coze-seedance-text-special`;
   if (generationMode === `first-frame`) {
@@ -151,10 +167,14 @@ export const wanjuanBuildTianjiGenerationRequest = ({
     payload.first_frame = imageUrls[0];
     payload.last_frame = imageUrls[1];
   } else if (generationMode === `reference-media`) {
-    if (imageUrls.length === 0 && videoUrls.length === 0 && audioUrls.length === 0)
+    const allImageUrls = [
+      ...normalizedPortraitAssetIds.map((assetId) => `asset://${assetId}`),
+      ...imageUrls,
+    ];
+    if (allImageUrls.length === 0 && videoUrls.length === 0 && audioUrls.length === 0)
       throw Error(`天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材`);
     endpoint = `/api/cut/model/coze-seedance-video-special`;
-    if (imageUrls.length) payload[`images[]`] = imageUrls;
+    if (allImageUrls.length) payload[`images[]`] = allImageUrls;
     if (videoUrls.length) payload[`videos[]`] = videoUrls;
     if (audioUrls.length) payload[`audios[]`] = audioUrls;
   }
@@ -467,7 +487,7 @@ export const wanjuanTianjiBase64Decode = (input: any): string => {
 export const wanjuanTianjiRequest = async (
   rawConfig: any,
   path: string,
-  { method = `POST`, params = {}, query = {}, signal, encoding = `json` }: TianjiRequestOptions = {},
+  { method = `POST`, params = {}, query = {}, signal, encoding = `json`, reviewedPortraitCount = 0 }: TianjiRequestOptions = {},
 ): Promise<any> => {
   let config = wanjuanNormalizeTianjiSeedanceConfig(rawConfig);
   if (!config.token) throw Error(`请先在设置里的“即梦天玑”填写 Authorization Token`);
@@ -508,6 +528,9 @@ export const wanjuanTianjiRequest = async (
         headers,
         bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
         requestTimeout: 18e4,
+        tianjiGenerationProfile: /coze-seedance-(?:text|video|image-first|image-first-last)-special/i.test(path)
+          ? { reviewedPortraitCount: Math.max(0, Math.floor(Number(reviewedPortraitCount || 0))) }
+          : undefined,
       });
     } finally {
       signal?.removeEventListener(`abort`, abortProxyRequest);
@@ -896,6 +919,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
       return urls;
     },
     imageUrls = generationMode === `text-to-video` ? [] : await resolveMediaUrls(options.imageRefs || [], `image`),
+    portraitAssetIds = (options.portraitAssetIds || []).map((value) => String(value || ``).trim()).filter(Boolean),
     videoUrls = generationMode === `reference-media` ? await resolveMediaUrls(options.videoRefs || [], `video`) : [],
     audioUrls = generationMode === `reference-media` ? await resolveMediaUrls(options.audioRefs || [], `audio`) : [];
   if (!prompt) throw Error(`请输入天玑提示词`);
@@ -903,6 +927,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     mode: generationMode,
     common: commonPayload,
     imageUrls,
+    portraitAssetIds,
+    reviewedPortraitClaimCount: Number(options.reviewedPortraitClaimCount || 0),
     videoUrls,
     audioUrls,
   });
@@ -921,10 +947,14 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     endpoint,
     encoding,
     generationMode,
-    imageCount: imageUrls.length,
+    imageCount: imageUrls.length + portraitAssetIds.length,
+    reviewedPortraitCount: portraitAssetIds.length,
     videoCount: videoUrls.length,
     audioCount: audioUrls.length,
-    imageSchemes: referenceSchemeCounts(imageUrls),
+    imageSchemes: referenceSchemeCounts([
+      ...portraitAssetIds.map((assetId) => `asset://${assetId}`),
+      ...imageUrls,
+    ]),
     videoSchemes: referenceSchemeCounts(videoUrls),
     audioSchemes: referenceSchemeCounts(audioUrls),
   };
@@ -933,6 +963,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
   let submitResponse = await wanjuanTianjiRequest(config, endpoint, {
       params: payload,
       encoding,
+      reviewedPortraitCount: Number(options.reviewedPortraitClaimCount || 0),
       signal: abortController.signal,
     }),
     taskId = wanjuanTianjiFindTaskId(submitResponse);
