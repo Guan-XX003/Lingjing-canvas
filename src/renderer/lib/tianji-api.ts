@@ -66,6 +66,7 @@ interface TianjiRequestOptions {
   params?: Record<string, any>;
   query?: Record<string, any>;
   signal?: AbortSignal;
+  encoding?: `json` | `form`;
 }
 
 /** wanjuanRunTianjiSeedanceVideo 的运行入参（来自调用方编辑器上下文）。 */
@@ -136,7 +137,7 @@ export const wanjuanBuildTianjiGenerationRequest = ({
   imageUrls?: string[];
   videoUrls?: string[];
   audioUrls?: string[];
-}): { endpoint: string; payload: Record<string, any>; generationMode: TianjiSeedanceGenerationMode } => {
+}): { endpoint: string; payload: Record<string, any>; generationMode: TianjiSeedanceGenerationMode; encoding: `form` } => {
   const generationMode = wanjuanNormalizeTianjiGenerationMode(mode);
   const payload = { ...common };
   let endpoint = `/api/cut/model/coze-seedance-text-special`;
@@ -153,11 +154,11 @@ export const wanjuanBuildTianjiGenerationRequest = ({
     if (imageUrls.length === 0 && videoUrls.length === 0 && audioUrls.length === 0)
       throw Error(`天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材`);
     endpoint = `/api/cut/model/coze-seedance-video-special`;
-    if (imageUrls.length) payload.images = imageUrls;
-    if (videoUrls.length) payload.videos = videoUrls;
-    if (audioUrls.length) payload.audios = audioUrls;
+    if (imageUrls.length) payload[`images[]`] = imageUrls;
+    if (videoUrls.length) payload[`videos[]`] = videoUrls;
+    if (audioUrls.length) payload[`audios[]`] = audioUrls;
   }
-  return { endpoint, payload, generationMode };
+  return { endpoint, payload, generationMode, encoding: `form` };
 };
 
 export const WANJUAN_TIANJI_TASK_HISTORY_ENDPOINT = `/api/cut/model/coze-run-seedance-special-history`;
@@ -459,13 +460,14 @@ export const wanjuanTianjiBase64Decode = (input: any): string => {
 /**
  * 向即梦天玑后端发起请求。
  *
- * 非 GET 请求按天玑官网契约以 application/json 提交 params；优先走桌面端 proxyFetch 代理，
+ * 非 GET 请求默认以 application/json 提交；生成接口显式选择 form 时按官网契约编码。
+ * 优先走桌面端 proxyFetch 代理，
  * 否则回退到浏览器 fetch。统一解析返回 JSON 并对 HTTP / 业务错误码抛出异常。
  */
 export const wanjuanTianjiRequest = async (
   rawConfig: any,
   path: string,
-  { method = `POST`, params = {}, query = {}, signal }: TianjiRequestOptions = {},
+  { method = `POST`, params = {}, query = {}, signal, encoding = `json` }: TianjiRequestOptions = {},
 ): Promise<any> => {
   let config = wanjuanNormalizeTianjiSeedanceConfig(rawConfig);
   if (!config.token) throw Error(`请先在设置里的“即梦天玑”填写 Authorization Token`);
@@ -476,8 +478,19 @@ export const wanjuanTianjiRequest = async (
     let headers: Record<string, string> = wanjuanTianjiAuthHeaders(config.token, config.sassId, config.platform),
     body = ``;
   if (method !== `GET`) {
-    body = JSON.stringify(params || {});
-    headers[`Content-Type`] = `application/json`;
+    if (encoding === `form`) {
+      let form = new URLSearchParams();
+      Object.entries(params || {}).forEach(([key, value]) => {
+        if (value === void 0 || value === null) return;
+        if (Array.isArray(value)) value.forEach((item) => item !== void 0 && item !== null && form.append(key, String(item)));
+        else form.append(key, String(value));
+      });
+      body = form.toString();
+      headers[`Content-Type`] = `application/x-www-form-urlencoded`;
+    } else {
+      body = JSON.stringify(params || {});
+      headers[`Content-Type`] = `application/json`;
+    }
   }
   let response: { ok: boolean; status: number; statusText: string; text: () => Promise<string> };
   if (window.wanjuanDesktop?.proxyFetch) {
@@ -662,31 +675,15 @@ export const wanjuanTianjiFindProgress = (data: any): number => {
   return Math.min(99, Math.max(0, Math.round(progress)));
 };
 
-const wanjuanTianjiAssetUrl = (assetId: any): string => {
-  let cleanId = String(assetId || ``)
-    .trim()
-    .replace(/^asset:\/\//i, ``)
-    .replace(/\s+/g, ``);
-  return cleanId ? `asset://${cleanId}` : ``;
-};
-
-export const wanjuanTianjiPortraitAssetUrl = (media: any): string => {
-  if (!media || typeof media != `object`) return ``;
-  let isTianjiPortrait =
-      media.isTianjiPortrait === true ||
-      media.source === `tianji-portrait` ||
-      media.sourceOrigin === `tianji-portrait` ||
-      media.mediaSourceOrigin === `tianji-portrait` ||
-      media.type === `image/tianji-portrait`,
-    assetId =
-      media.tianjiPortraitAssetId ||
-      media.portraitAssetId ||
-      media.portrait_asset_id ||
-      media.assetId ||
-      media.asset_id ||
-      media.id;
-  return isTianjiPortrait ? wanjuanTianjiAssetUrl(assetId) : ``;
-};
+const wanjuanTianjiPortraitAssetId = (media: any): string =>
+  String(
+    media?.tianjiPortraitAssetId ||
+      media?.portraitAssetId ||
+      media?.portrait_asset_id ||
+      media?.assetId ||
+      media?.asset_id ||
+      ``,
+  ).trim().replace(/^asset:\/\//i, ``);
 
 const wanjuanIsTianjiPortrait = (media: any): boolean =>
   Boolean(
@@ -758,16 +755,22 @@ export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOp
     throw Error(`这张天玑人像还没有从素材库返回，请先刷新天玑素材列表后再生成`);
   let isTianjiPortrait = wanjuanIsTianjiPortrait(media),
     portraitBindingStatus = String(media?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
-    portraitAssetUrl = wanjuanTianjiPortraitAssetUrl(media);
-  if (isTianjiPortrait && (portraitBindingStatus !== `ready` || !portraitAssetUrl))
-    throw Error(media.tianjiPortraitBindingMessage || (portraitBindingStatus ? `这张天玑人像尚未完成审核和素材绑定` : `这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择`));
-  if (portraitAssetUrl) return portraitAssetUrl;
+    portraitAssetId = wanjuanTianjiPortraitAssetId(media),
+    portraitPreviewUrl = String(media?.tianjiPortraitPreviewUrl || ``).trim();
+  if (isTianjiPortrait) {
+    if (portraitBindingStatus !== `ready` || !portraitAssetId)
+      throw Error(media.tianjiPortraitBindingMessage || (portraitBindingStatus ? `这张天玑人像尚未完成审核和素材绑定` : `这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择`));
+    if (!/^https?:\/\//i.test(portraitPreviewUrl))
+      throw Error(`这张已审核天玑人像缺少可提交的 HTTPS 素材地址，请刷新人像库后重新选择`);
+    return portraitPreviewUrl;
+  }
   let raw =
     media && typeof media == `object`
       ? String(media.url || media.localPath || media.path || media.imageUrl || media.thumbnailUrl || ``).trim()
       : String(media || ``).trim();
   if (!raw) return ``;
-  if (/^asset:\/\//i.test(raw)) return wanjuanTianjiAssetUrl(raw);
+  if (/^asset:\/\//i.test(raw))
+    throw Error(`即梦天玑参考素材只接受 HTTP(S) 地址，当前素材属于其他兼容模式，不能直接用于天玑生成`);
   if (/^https?:\/\//i.test(raw)) return raw;
   if (!window.wanjuanDesktop?.uploadPublicMedia && !window.wanjuanDesktop?.uploadTosMedia && !window.wanjuanDesktop?.uploadCustomPublicMedia && !window.wanjuanDesktop?.uploadQiniuMedia)
     throw Error(`天玑模式参考${kind === `video` ? `视频` : kind === `audio` ? `音频` : `图片`}必须是公网 URL`);
@@ -893,7 +896,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     videoUrls,
     audioUrls,
   });
-  const { endpoint, payload } = generationRequest;
+  const { endpoint, payload, encoding } = generationRequest;
   generationMode = generationRequest.generationMode;
   let requestSummary = {
     endpoint,
@@ -903,15 +906,14 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     videoCount: videoUrls.length,
     audioCount: audioUrls.length,
     imageRefs: imageUrls.map((url) =>
-      /^asset:\/\//i.test(String(url || ``))
-        ? `asset://${String(url).replace(/^asset:\/\//i, ``).slice(0, 12)}...`
-        : String(url || ``).slice(0, 120),
+      String(url || ``).slice(0, 120),
     ),
-    hasTianjiAssetReference: imageUrls.some((url) => /^asset:\/\//i.test(String(url || ``))),
+    hasTianjiAssetReference: false,
   };
   options.showToast(`即梦天玑任务提交中...`);
   let submitResponse = await wanjuanTianjiRequest(config, endpoint, {
       params: payload,
+      encoding,
       signal: abortController.signal,
     }),
     taskId = wanjuanTianjiFindTaskId(submitResponse);

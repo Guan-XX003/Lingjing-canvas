@@ -98,7 +98,6 @@ async function run() {
     wanjuanTianjiStatus,
     wanjuanTianjiFindProgress,
     wanjuanTianjiErrorMessage,
-    wanjuanTianjiPortraitAssetUrl,
     wanjuanTianjiMediaUrl
   } = await import(pathToFileURL(join(outDir, "tianji-api.js")).href);
   const {
@@ -123,10 +122,13 @@ async function run() {
   const bootThemeSource = readFileSync(join(root, "electron/preload/boot-theme.cjs"), "utf8");
   const desktopWindowSource = readFileSync(join(root, "electron/main/window.cjs"), "utf8");
   const appBundleSource = readFileSync(join(root, "src/renderer/bundle/index.js"), "utf8");
+  const videoGenerationSource = readFileSync(join(root, "src/renderer/hooks/useVideoGeneration.ts"), "utf8");
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
   check("tianji panel blocks task query without task credentials", nativePanelSource.includes("!bytedToken.trim() && !portraitTaskId.trim()"), true);
   check("tianji preload persists portrait task id", preloadPanelSource.includes("tianjiSeedancePortraitTaskId"), true);
+  check("tianji preload supports explicit form encoding", preloadPanelSource.includes('encoding = "json"') && preloadPanelSource.includes('headers["Content-Type"] = "application/x-www-form-urlencoded"'), true);
+  check("tianji connection requires explicit bound HTTPS preview", videoGenerationSource.includes('sourceTianjiPortraitPreviewUrl = String(sourceNode?.data?.tianjiPortraitPreviewUrl || ``).trim()') && !videoGenerationSource.includes('tianjiPortraitPreviewUrl: sourceNode.data.tianjiPortraitPreviewUrl || imageUrl'), true);
   check("cloud workspace label uses workspace name, not account id", cloudWorkspaceSource.includes("workspace.name || t(\"未命名空间\")"), true);
   check("cloud workspace label exposes full text accessibly", cloudWorkspaceSource.includes("title=\"${escape(selectedWorkspaceLabel)}\" aria-label=\"${escape(selectedWorkspaceLabel)}\""), true);
   check("cloud workspace select allows shrinking", preloadPanelSource.includes(".wanjuan-cloud-workspace-select{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"), true);
@@ -939,29 +941,43 @@ async function run() {
   check("tianji app default base url remains jixin relay", WANJUAN_TIANJI_DEFAULT_BASE_URL, "https://jixing.guancn.uk");
   check("tianji invalid generation mode falls back to text", wanjuanNormalizeTianjiGenerationMode("legacy-unknown"), "text-to-video");
   check("tianji text generation stays on relay api namespace", wanjuanBuildTianjiGenerationRequest({ mode: "text-to-video", common: { prompt: "mock" } }).endpoint, "/api/cut/model/coze-seedance-text-special");
+  check("tianji text generation explicitly uses official form encoding", wanjuanBuildTianjiGenerationRequest({ mode: "text-to-video", common: { prompt: "mock" } }).encoding, "form");
   check("tianji first-frame generation stays on relay api namespace", wanjuanBuildTianjiGenerationRequest({ mode: "first-frame", common: { prompt: "mock" }, imageUrls: ["https://media.example.invalid/first.png"] }).endpoint, "/api/cut/model/coze-seedance-image-first-special");
   check("tianji first-last request uses official fields", wanjuanBuildTianjiGenerationRequest({ mode: "first-last", common: { prompt: "mock" }, imageUrls: ["https://media.example.invalid/first.png", "https://media.example.invalid/last.png"] }), {
     endpoint: "/api/cut/model/coze-seedance-image-first-last-special",
     payload: { prompt: "mock", first_frame: "https://media.example.invalid/first.png", last_frame: "https://media.example.invalid/last.png" },
-    generationMode: "first-last"
+    generationMode: "first-last",
+    encoding: "form"
   });
-  check("tianji reference request preserves array field names", wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" }, imageUrls: ["asset://portrait-mock"], videoUrls: ["https://media.example.invalid/reference.mp4"], audioUrls: ["https://media.example.invalid/reference.mp3"] }), {
+  check("tianji reference request preserves official bracket array fields", wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" }, imageUrls: ["https://media.example.invalid/portrait.jpg"], videoUrls: ["https://media.example.invalid/reference.mp4"], audioUrls: ["https://media.example.invalid/reference.mp3"] }), {
     endpoint: "/api/cut/model/coze-seedance-video-special",
-    payload: { prompt: "mock", images: ["asset://portrait-mock"], videos: ["https://media.example.invalid/reference.mp4"], audios: ["https://media.example.invalid/reference.mp3"] },
-    generationMode: "reference-media"
+    payload: { prompt: "mock", "images[]": ["https://media.example.invalid/portrait.jpg"], "videos[]": ["https://media.example.invalid/reference.mp4"], "audios[]": ["https://media.example.invalid/reference.mp3"] },
+    generationMode: "reference-media",
+    encoding: "form"
   });
   let emptyReferenceMessage = "";
   try { wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" } }); } catch (error) { emptyReferenceMessage = error.message; }
   check("tianji reference request rejects empty media before network", emptyReferenceMessage, "天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材");
-  check("ordinary image id is not treated as reviewed tianji portrait", wanjuanTianjiPortraitAssetUrl({ id: "ordinary-image", url: "https://media.example.invalid/plain.png" }), "");
-  check("reviewed tianji portrait uses final asset id", wanjuanTianjiPortraitAssetUrl({ isTianjiPortrait: true, tianjiPortraitAssetId: "portrait-final-001" }), "asset://portrait-final-001");
+  check("ordinary image remains an ordinary HTTPS reference", await wanjuanTianjiMediaUrl({ id: "ordinary-image", url: "https://media.example.invalid/plain.png" }), "https://media.example.invalid/plain.png");
+  let foreignAssetReferenceMessage = "";
+  try { await wanjuanTianjiMediaUrl("asset://official-compatible-only"); } catch (error) { foreignAssetReferenceMessage = error.message; }
+  check("tianji rejects foreign asset scheme references", foreignAssetReferenceMessage, "即梦天玑参考素材只接受 HTTP(S) 地址，当前素材属于其他兼容模式，不能直接用于天玑生成");
   let pendingPortraitMessage = "";
   try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "pending", url: "https://media.example.invalid/unreviewed.png" }); } catch (error) { pendingPortraitMessage = error.message; }
   check("unreviewed tianji portrait cannot fall back to ordinary image upload", pendingPortraitMessage, "这张天玑人像尚未完成审核和素材绑定");
   let unverifiedPortraitMessage = "";
   try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitAssetId: "legacy-unverified", url: "https://media.example.invalid/legacy.png" }); } catch (error) { unverifiedPortraitMessage = error.message; }
   check("legacy tianji portrait id without Active proof cannot generate", unverifiedPortraitMessage, "这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择");
-  check("verified Active tianji portrait keeps its asset reference", await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "active-verified" }), "asset://active-verified");
+  check("verified Active tianji portrait uses its HTTPS preview", await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "active-verified", tianjiPortraitPreviewUrl: "https://media.example.invalid/active-verified.jpg" }), "https://media.example.invalid/active-verified.jpg");
+  let missingPortraitPreviewMessage = "";
+  try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "active-no-preview", tianjiPortraitPreviewUrl: "asset://active-no-preview" }); } catch (error) { missingPortraitPreviewMessage = error.message; }
+  check("verified Active tianji portrait requires HTTPS preview", missingPortraitPreviewMessage, "这张已审核天玑人像缺少可提交的 HTTPS 素材地址，请刷新人像库后重新选择");
+  let missingPortraitIdMessage = "";
+  try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitPreviewUrl: "https://media.example.invalid/no-id.jpg" }); } catch (error) { missingPortraitIdMessage = error.message; }
+  check("verified Active tianji portrait requires an asset id", missingPortraitIdMessage, "这张天玑人像尚未完成审核和素材绑定");
+  let forgedPortraitMessage = "";
+  try { await wanjuanTianjiMediaUrl({ isTianjiPortrait: true, tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "forged-id", imageUrl: "https://media.example.invalid/ordinary.jpg" }); } catch (error) { forgedPortraitMessage = error.message; }
+  check("ordinary image cannot forge reviewed portrait metadata", forgedPortraitMessage, "这张已审核天玑人像缺少可提交的 HTTPS 素材地址，请刷新人像库后重新选择");
   check("tianji asset list sends only documented pagination fields", wanjuanTianjiAssetListParams("AIGC", "group-mock", 2, 20), {
     group_ids: "group-mock", group_type: "AIGC", statuses: "Active", PageNumber: "2", PageSize: "20", SortBy: "CreateTime", SortOrder: "Desc"
   });
@@ -1091,6 +1107,27 @@ async function run() {
   check("tianji bearer input keeps raw x api key", wanjuanTianjiAuthHeaders("Bearer test-token-prefixed")["X-API-Key"], "test-token-prefixed");
   check("tianji request stays on configured relay", capturedTianjiRequest.url, "https://mock.example.invalid/api/cut/model/coze-run-seedance-special-history");
   check("tianji v2 request JSON body", JSON.parse(Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8")), { task_id: "execute_mock_json", execute_id: "execute_mock_json" });
+  await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, "/api/cut/model/coze-seedance-video-special", {
+    encoding: "form",
+    params: {
+      prompt: "mock",
+      "images[]": ["https://media.example.invalid/one.jpg", "https://media.example.invalid/two.jpg"],
+      "videos[]": ["https://media.example.invalid/ref.mp4"],
+    },
+  });
+  const capturedTianjiFormBody = Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8");
+  const capturedTianjiForm = new URLSearchParams(capturedTianjiFormBody);
+  check("tianji generation request content type is official form", capturedTianjiRequest.headers["Content-Type"], "application/x-www-form-urlencoded");
+  check("tianji generation form repeats image bracket fields", capturedTianjiForm.getAll("images[]"), ["https://media.example.invalid/one.jpg", "https://media.example.invalid/two.jpg"]);
+  check("tianji generation form repeats video bracket fields", capturedTianjiForm.getAll("videos[]"), ["https://media.example.invalid/ref.mp4"]);
+  check("tianji generation form contains no asset scheme", capturedTianjiFormBody.includes("asset%3A%2F%2F") || capturedTianjiFormBody.includes("asset://"), false);
+  await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, mockTaskQuery.endpoint, {
+    method: mockTaskQuery.method,
+    params: mockTaskQuery.params,
+  });
+  check("tianji task query remains JSON after form request", capturedTianjiRequest.headers["Content-Type"], "application/json");
+  check("tianji task query JSON body remains unchanged", JSON.parse(Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8")), { task_id: "execute_mock_json", execute_id: "execute_mock_json" });
+  check("official compatible asset module remains independent", (await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({ config: { enabled: true, reviewMode: "manual" }, entry: { url: "https://cdn/official.png", arkTrustedAssetId: "official-asset", arkTrustedAssetSourceUrl: "https://cdn/official.png", arkTrustedAssetStatus: "ready" }, reviewAsset: () => { throw new Error("should not review"); } })).url, "asset://official-asset");
   await wanjuanTianjiRequest({ baseUrl: "https://jixing.guancn.uk/", token: "Bearer test-token-prefixed" }, "/api/cut/model/fetch-points-balance");
   check("tianji balance uses configured jixin api path", capturedTianjiRequest.url, "https://jixing.guancn.uk/api/cut/model/fetch-points-balance");
   check("tianji balance defaults to POST", capturedTianjiRequest.method, "POST");

@@ -2310,7 +2310,7 @@ function installDesktopPatches() {
       : "尚未配置虚拟人像组 ID；请先创建虚拟组，再查询任务并同步组 ID");
   };
 
-  const tianjiRequest = async (config, path, { method = "POST", params = {}, query = {} } = {}) => {
+  const tianjiRequest = async (config, path, { method = "POST", params = {}, query = {}, encoding = "json" } = {}) => {
     const nextConfig = tianjiNormalizeConfig(config);
     if (!nextConfig.token) throw new Error("请先填写即梦天玑 Authorization Token");
     const url = new URL(`${nextConfig.baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
@@ -2320,8 +2320,19 @@ function installDesktopPatches() {
     const headers = tianjiAuthHeaders(nextConfig.token, nextConfig.sassId, nextConfig.platform);
     let body = "";
     if (method !== "GET") {
-      body = JSON.stringify(params || {});
-      headers["Content-Type"] = "application/json";
+      if (encoding === "form") {
+        const form = new URLSearchParams();
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          if (Array.isArray(value)) value.forEach((item) => item !== undefined && item !== null && form.append(key, String(item)));
+          else form.append(key, String(value));
+        });
+        body = form.toString();
+        headers["Content-Type"] = "application/x-www-form-urlencoded";
+      } else {
+        body = JSON.stringify(params || {});
+        headers["Content-Type"] = "application/json";
+      }
     }
     let response;
     if (typeof ipcRenderer?.invoke === "function") {

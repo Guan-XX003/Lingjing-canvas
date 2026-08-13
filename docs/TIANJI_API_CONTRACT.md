@@ -9,7 +9,7 @@
 - 若本机留有旧版本写入的已知上游地址，App 会自动回落到 `https://jixing.guancn.uk`；其他合法企业中转配置保持可用。
 - 其他企业或手工中转地址仍可在设置中配置；设置中的接口地址始终是 App 实际请求地址，不会被内部上游地址覆盖。
 - 极鑫天玑请求使用 `Authorization: Bearer <用户 token>`；用户可填写带或不带 `Bearer`，App 会规范化且不会重复。`X-API-Key` 同时发送原始 token 以兼容官网 v2/中转路由。另带 `Xx-Sass-Id: 1`、`Xx-Platform: web`。
-- 官网 v2 与 production 代理统一接受 `application/json`；App 的非 GET 请求全部使用 JSON。
+- 四个视频生成接口按官网契约使用 `application/x-www-form-urlencoded`；任务查询、人像、素材和面板接口继续按各自现有契约使用 JSON。编码由调用点显式选择，不做全局猜测。
 
 ## 生成与轮询
 
@@ -18,12 +18,14 @@
 | 文生视频 | `POST /api/cut/model/coze-seedance-text-special` | 无 |
 | 首帧生视频 | `POST /api/cut/model/coze-seedance-image-first-special` | `first_frame` |
 | 首尾帧生视频 | `POST /api/cut/model/coze-seedance-image-first-last-special` | `first_frame`、`last_frame` |
-| 参考素材生视频 | `POST /api/cut/model/coze-seedance-video-special` | JSON 数组 `images`、`videos`、`audios` |
+| 参考素材生视频 | `POST /api/cut/model/coze-seedance-video-special` | 表单重复字段 `images[]`、`videos[]`、`audios[]` |
 | 任务查询 | `POST /api/cut/model/coze-run-seedance-special-history` | JSON: `task_id`、`execute_id`（同一任务 ID） |
 
 生成通用字段为 `duration`、`ratio`、`prompt`、`watermark`、`model_name`、`resolution`、`generate_audio`。文档明确的模型为 `doubao-seedance-2-0-260128` 和 `doubao-seedance-2-0-fast-260128`。
 
-参考素材限制：图片最多 9 张、单张小于 30MB；视频最多 3 个，单个 2–15 秒且小于 50MB，总时长不超过 15 秒；音频最多 3 个，单个 2–15 秒且小于 15MB，总时长不超过 15 秒；请求体小于 64MB。App 对数量以及能够从本地元数据读取到的大小/时长进行提交前校验，不再静默截断。公网 URL 和 `asset://` 人像素材不会臆测远端文件大小或时长。
+参考素材限制：图片最多 9 张、单张小于 30MB；视频最多 3 个，单个 2–15 秒且小于 50MB，总时长不超过 15 秒；音频最多 3 个，单个 2–15 秒且小于 15MB，总时长不超过 15 秒；请求体小于 64MB。App 对数量以及能够从本地元数据读取到的大小/时长进行提交前校验，不再静默截断。
+
+Active 天玑人像必须同时具备 `ready` 绑定状态、明确素材 ID 和素材列表返回的 HTTP(S) 预览/素材地址。生成时发送该 HTTPS 地址，不发送或自行拼装 `asset://`。缺少任一条件时在客户端阻止提交并提示刷新人像库；普通图片仍走既有公网 URL/上传逻辑，不能通过添加人像标记绕过审核门禁。方舟官方兼容模式的可信素材处理使用独立模块，不受天玑协议调整影响。
 
 ## 人像与素材
 
