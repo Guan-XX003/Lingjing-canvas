@@ -110,6 +110,7 @@ async function run() {
   const cloudWorkspaceSource = readFileSync(join(root, "electron/preload/cloud-prompt-workspace.cjs"), "utf8");
   const accountGateSource = readFileSync(join(root, "src/renderer/components/account-gate.tsx"), "utf8");
   const bootThemeSource = readFileSync(join(root, "electron/preload/boot-theme.cjs"), "utf8");
+  const desktopWindowSource = readFileSync(join(root, "electron/main/window.cjs"), "utf8");
   const appBundleSource = readFileSync(join(root, "src/renderer/bundle/index.js"), "utf8");
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
@@ -123,6 +124,10 @@ async function run() {
   check("fresh account gate only opens after explicit auth request", accountGateSource.includes("if (!account.authOpen) return null;"), true);
   check("boot splash has a minimum visible duration", bootThemeSource.includes("if (elapsed < 720)"), true);
   check("boot splash timeout offers recovery", bootThemeSource.includes("wanjuan-boot-retry"), true);
+  check("boot splash releases an already rendered shell", bootThemeSource.includes('root.dataset.wanjuanBootReady = "stable-shell-fallback"'), true);
+  check("main process accepts a stable bridged shell fallback", desktopWindowSource.includes('readiness: rendererReady ? "app-ready" : "stable-shell-fallback"'), true);
+  check("late first renderer response can still release a valid shell", desktopWindowSource.includes("Date.now() - startedAt >= maxWaitMs"), true);
+  check("blank or unbridged startup still reaches recovery", desktopWindowSource.includes("if (!rendererReady && !shellReadyFallback)"), true);
   check("settings defaults to account tab", appBundleSource.includes("[activeSettingsTab, setActiveSettingsTab] = useState(`account`)") , true);
   check("opening settings resets only the new session default", appBundleSource.includes("setActiveSettingsTab(`account`);\n\t      setActiveView(`settings`);"), true);
   check("automation extracts direct custom image data", automationResult.wanjuanExtractAutomationMedia("https://cdn.example.com/result.png", "image"), "https://cdn.example.com/result.png");

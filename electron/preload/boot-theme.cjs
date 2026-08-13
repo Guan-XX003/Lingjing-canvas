@@ -327,6 +327,26 @@ function installBootStabilityStyle() {
       root.classList.add("wanjuan-booting");
       const releaseBootingFallback = () => {
         try {
+          const appRoot = document.getElementById("root");
+          const text = (document.body?.innerText || "").replace(/\s+/g, " ").trim();
+          const rootRect = appRoot?.getBoundingClientRect?.();
+          const hasStableShell =
+            document.readyState === "complete" &&
+            /(灵境画布|万卷灵境)/.test(text) &&
+            /资源/.test(text) &&
+            /智能体/.test(text) &&
+            /设置/.test(text) &&
+            !/^Loading\.\.\.$/.test(text) &&
+            (appRoot?.childElementCount || 0) > 0 &&
+            (rootRect?.width || 0) > 200 &&
+            (rootRect?.height || 0) > 200 &&
+            typeof window.wanjuanDesktop?.proxyFetch === "function" &&
+            typeof window.wanjuanDesktop?.saveDownload === "function";
+          if (hasStableShell) {
+            root.classList.remove("wanjuan-booting");
+            root.dataset.wanjuanBootReady = "stable-shell-fallback";
+            return;
+          }
           root.dataset.wanjuanBootReady = "error";
           showBootRecoveryError("初始化时间过长，请重新加载；本地项目不会受到影响。");
         } catch {}

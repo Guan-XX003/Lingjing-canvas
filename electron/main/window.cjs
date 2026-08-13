@@ -179,8 +179,10 @@ function createMainWindow(baseUrl) {
     const maxWaitMs = 12000;
     const settleMs = 420;
     let stableSince = 0;
+    let shellStableSince = 0;
     let lastStatus = null;
     let rendererReady = false;
+    let shellReadyFallback = false;
 
     while (!hasRevealedContent && !win.isDestroyed() && Date.now() - startedAt < maxWaitMs) {
       try {
@@ -232,15 +234,26 @@ function createMainWindow(baseUrl) {
         } else {
           stableSince = 0;
         }
+        const desktopBridgeReady = status && Object.values(status.desktopBridge || {}).every(Boolean);
+        if (baseReady && desktopBridgeReady) {
+          if (!shellStableSince) shellStableSince = Date.now();
+          if (Date.now() - shellStableSince >= 2200 || Date.now() - startedAt >= maxWaitMs) {
+            shellReadyFallback = true;
+            break;
+          }
+        } else {
+          shellStableSince = 0;
+        }
       } catch (error) {
         stableSince = 0;
+        shellStableSince = 0;
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     if (hasRevealedContent || win.isDestroyed()) return;
     hasRevealedContent = true;
-    if (!rendererReady) {
+    if (!rendererReady && !shellReadyFallback) {
       try {
         await win.webContents.executeJavaScript(`
           (() => {
@@ -270,6 +283,7 @@ function createMainWindow(baseUrl) {
     appendDesktopLog("window-revealed", {
       reason,
       waitMs: Date.now() - startedAt,
+      readiness: rendererReady ? "app-ready" : "stable-shell-fallback",
       status: lastStatus
     });
     runProxyFetchSelfTest().catch(() => {});
