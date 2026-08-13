@@ -103,10 +103,10 @@
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [万卷灵境-1.4.2-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/%E4%B8%87%E5%8D%B7%E7%81%B5%E5%A2%83-1.4.2-arm64.dmg) |
-| Windows | x64 | [万卷灵境-1.4.2-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/%E4%B8%87%E5%8D%B7%E7%81%B5%E5%A2%83-1.4.2-x64.exe) |
+| macOS | Apple Silicon (arm64) | [wanjuan-lingjing-1.4.2-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2-assets/wanjuan-lingjing-1.4.2-arm64.dmg) |
+| Windows | x64 | [wanjuan-lingjing-1.4.2-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2-assets/wanjuan-lingjing-1.4.2-x64.exe) |
 
-CLI / MCP 独立下载：[wanjuan-cli-1.4.2.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/wanjuan-cli-1.4.2.zip)
+CLI / MCP 独立下载：[wanjuan-cli-1.4.2.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2-assets/wanjuan-cli-1.4.2.zip)
 
 ### 安装说明
 
