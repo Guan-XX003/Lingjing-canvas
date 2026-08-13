@@ -759,8 +759,8 @@ export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOp
   let isTianjiPortrait = wanjuanIsTianjiPortrait(media),
     portraitBindingStatus = String(media?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
     portraitAssetUrl = wanjuanTianjiPortraitAssetUrl(media);
-  if (isTianjiPortrait && ([`reviewing`, `pending`, `failed`].includes(portraitBindingStatus) || !portraitAssetUrl))
-    throw Error(media.tianjiPortraitBindingMessage || `这张天玑人像尚未完成审核和素材绑定`);
+  if (isTianjiPortrait && (portraitBindingStatus !== `ready` || !portraitAssetUrl))
+    throw Error(media.tianjiPortraitBindingMessage || (portraitBindingStatus ? `这张天玑人像尚未完成审核和素材绑定` : `这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择`));
   if (portraitAssetUrl) return portraitAssetUrl;
   let raw =
     media && typeof media == `object`

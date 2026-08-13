@@ -20,7 +20,7 @@ import { wanjuanResourceInList, wanjuanResourceKind, wanjuanResourceMatchesFilte
 import { wanjuanUseBrokenResourceImage } from "../lib/resource-tabs";
 import { wanjuanNormalizeSeedanceVirtualPortraits, wanjuanPortableSeedancePortraitPreview, wanjuanSeedanceAssetUrl, wanjuanSeedancePortraitToResource } from "../lib/seedance";
 import { wanjuanGetSyncedTianjiSeedanceConfig } from "../lib/tianji-api";
-import { wanjuanTianjiFlattenPortraitAssets, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData } from "../lib/tianji-assets";
+import { wanjuanTianjiFlattenPortraitAssets, wanjuanTianjiPortraitAvailabilityFromItem, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData } from "../lib/tianji-assets";
 import { wanjuanNormalizeTianjiPortraitAssets, wanjuanTianjiPortraitToResource } from "../lib/tianji-portrait";
 import { normalizeVideoAspectRatioValue } from "../lib/video-aspect-ratio";
 import { wanjuanResolveVideoParameterMode, wanjuanVideoParameterModeLabel } from "../lib/video-parameter-mode";
@@ -895,9 +895,9 @@ export const WanJuanVideoNode = reactMemo(({
         data.onShowToast?.(`这张人像还没有从天玑素材库返回，请稍后刷新素材列表后再选择`);
         return;
       }
-      let tianjiAssetStatus = String(portrait?.status || ``).trim().toLowerCase();
-      if (tianjiAssetStatus && ![`active`, `success`, `succeeded`, `completed`, `complete`, `done`].includes(tianjiAssetStatus)) {
-        data.onShowToast?.(tianjiAssetStatus === `failed` || tianjiAssetStatus === `fail` || tianjiAssetStatus === `error` ? `这张天玑人像处理失败，请在设置中查看详情或重新上传` : `这张天玑人像还在预处理，请稍后刷新素材列表`);
+      let tianjiAssetAvailability = String(portrait?.availability || wanjuanTianjiPortraitAvailabilityFromItem(portrait)).trim();
+      if (tianjiAssetAvailability !== `ready`) {
+        data.onShowToast?.(tianjiAssetAvailability === `failed` ? `这张天玑人像处理失败，请在设置中查看详情或重新上传` : tianjiAssetAvailability === `pending` ? `这张天玑人像还在预处理，请稍后刷新素材列表` : `这张天玑人像没有明确的 Active 状态，暂不能作为已审核素材使用`);
         return;
       }
       let resource = wanjuanTianjiPortraitToResource(portrait, index);
@@ -941,6 +941,8 @@ export const WanJuanVideoNode = reactMemo(({
             label: resource.name || resource.label || `天玑人像`,
             tianjiPortraitAssetId: resource.tianjiPortraitAssetId,
             tianjiPortraitGroupType: resource.groupType,
+            tianjiPortraitBindingStatus: `ready`,
+            tianjiPortraitBindingMessage: `已从天玑 Active 素材库绑定`,
             isTianjiPortrait: !0,
             sourceOrigin: `tianji-portrait`,
           },

@@ -101,8 +101,8 @@ export const wanjuanTianjiEnsurePortraitGroups = async (config, preferredType = 
 };
 
 export const wanjuanTianjiCreateLocalUploadAsset = ({ name: name, imageUrl: imageUrl, result: result, groupType = `AIGC` }) => ({
-  id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-  portrait_asset_id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || ``,
+  id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `protrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+  portrait_asset_id: wanjuanTianjiFindDeep(result, [`portrait_asset_id`, `protrait_asset_id`, `asset_id`, `assetId`, `id`, `AssetId`]) || ``,
   name: name || `虚拟人像素材`,
   image_url: imageUrl || ``,
   status: wanjuanTianjiFindDeep(result, [`status`, `Status`]) || `已提交`,
@@ -112,32 +112,18 @@ export const wanjuanTianjiCreateLocalUploadAsset = ({ name: name, imageUrl: imag
 });
 
 export const wanjuanTianjiSubmittedPortraitAssetId = (uploadResult) => {
-  let directId = String(
-    uploadResult?.asset?.portrait_asset_id ||
-      uploadResult?.asset?.asset_id ||
-      uploadResult?.asset?.assetId ||
-      wanjuanTianjiFindDeep(uploadResult?.result, [`portrait_asset_id`, `asset_id`, `assetId`, `AssetId`]) ||
-      ``,
-  ).trim();
   let uploadedUrl = String(uploadResult?.imageUrl || uploadResult?.asset?.image_url || uploadResult?.asset?.imageUrl || ``).trim(),
     label = String(uploadResult?.asset?.name || ``).trim(),
     aigcAssets = Array.isArray(uploadResult?.refresh?.assets?.AIGC) ? uploadResult.refresh.assets.AIGC : [],
     matchedAsset =
       aigcAssets.find((item) => {
-        let itemId = String(item?.portrait_asset_id || item?.asset_id || item?.assetId || item?.id || item?.AssetId || ``).trim();
-        if (!itemId || /^local-/i.test(itemId) || item?.localUploaded === !0) return !1;
-        let itemUrl = String(item?.image_url || item?.imageUrl || item?.preview_url || item?.previewUrl || item?.url || ``).trim(),
-          itemName = String(item?.name || item?.Name || item?.label || ``).trim();
+        let itemId = wanjuanTianjiPortraitAssetIdFromItem(item);
+        if (!itemId || item?.localUploaded === !0 || !wanjuanTianjiPortraitIsReady(item)) return !1;
+        let itemUrl = wanjuanTianjiPortraitImageUrlFromItem(item),
+          itemName = wanjuanTianjiPortraitNameFromItem(item);
         return (uploadedUrl && itemUrl && itemUrl === uploadedUrl) || (label && itemName && itemName === label);
-      }) ||
-      (uploadResult?.refresh?.aigcCount === 1 ?
-        aigcAssets.find((item) => {
-          let itemId = String(item?.portrait_asset_id || item?.asset_id || item?.assetId || item?.id || item?.AssetId || ``).trim();
-          return itemId && !/^local-/i.test(itemId) && item?.localUploaded !== !0;
-        }) :
-        null);
-  let refreshedId = String(matchedAsset?.portrait_asset_id || matchedAsset?.asset_id || matchedAsset?.assetId || matchedAsset?.id || matchedAsset?.AssetId || ``).trim();
-  return refreshedId || (directId && !/^local-/i.test(directId) ? directId : ``);
+      });
+  return wanjuanTianjiPortraitAssetIdFromItem(matchedAsset);
 };
 
 export const wanjuanTianjiFinalPortraitAsset = (uploadResult) => {
@@ -147,68 +133,131 @@ export const wanjuanTianjiFinalPortraitAsset = (uploadResult) => {
     assets = Array.isArray(uploadResult?.refresh?.assets?.AIGC) ? uploadResult.refresh.assets.AIGC : [],
     matchedAsset =
       assets.find((item) => {
-        let itemId = String(item?.portrait_asset_id || item?.asset_id || item?.assetId || item?.id || item?.AssetId || ``).trim();
-        if (!itemId || /^local-/i.test(itemId) || item?.localUploaded === !0) return !1;
-        let itemUrl = String(item?.image_url || item?.imageUrl || item?.preview_url || item?.previewUrl || item?.url || ``).trim(),
-          itemName = String(item?.name || item?.Name || item?.label || ``).trim();
+        let itemId = wanjuanTianjiPortraitAssetIdFromItem(item);
+        if (!itemId || item?.localUploaded === !0 || !wanjuanTianjiPortraitIsReady(item)) return !1;
+        let itemUrl = wanjuanTianjiPortraitImageUrlFromItem(item),
+          itemName = wanjuanTianjiPortraitNameFromItem(item);
         return (assetId && itemId === assetId) || (uploadedUrl && itemUrl && itemUrl === uploadedUrl) || (label && itemName && itemName === label);
-      }) ||
-      (uploadResult?.refresh?.aigcCount === 1 ?
-        assets.find((item) => {
-          let itemId = String(item?.portrait_asset_id || item?.asset_id || item?.assetId || item?.id || item?.AssetId || ``).trim();
-          return itemId && !/^local-/i.test(itemId) && item?.localUploaded !== !0;
-        }) :
-        null),
-    finalId = String(matchedAsset?.portrait_asset_id || matchedAsset?.asset_id || matchedAsset?.assetId || matchedAsset?.id || matchedAsset?.AssetId || ``).trim();
+      }),
+    finalId = wanjuanTianjiPortraitAssetIdFromItem(matchedAsset);
   return {
     assetId: finalId,
     asset: matchedAsset || null,
-    imageUrl: String(matchedAsset?.image_url || matchedAsset?.imageUrl || matchedAsset?.preview_url || matchedAsset?.previewUrl || matchedAsset?.url || uploadedUrl || ``).trim(),
-    matched: !!finalId,
+    imageUrl: wanjuanTianjiPortraitImageUrlFromItem(matchedAsset) || uploadedUrl,
+    matched: !!finalId && wanjuanTianjiPortraitIsReady(matchedAsset),
   };
+};
+
+const WANJUAN_TIANJI_PORTRAIT_ID_KEYS = [
+  `portrait_asset_id`, `portraitAssetId`, `PortraitAssetId`,
+  `protrait_asset_id`, `protraitAssetId`, `ProtraitAssetId`,
+  `asset_id`, `assetId`, `AssetId`, `assetID`,
+  `material_id`, `materialId`, `MaterialId`,
+  `assets_id`, `assetsId`, `AssetsId`,
+  `portrait_id`, `portraitId`, `PortraitId`,
+];
+
+const WANJUAN_TIANJI_PORTRAIT_PREVIEW_KEYS = [
+  `image_url`, `imageUrl`, `ImageUrl`,
+  `preview_url`, `previewUrl`, `PreviewUrl`,
+  `cover_url`, `coverUrl`, `CoverUrl`,
+  `thumbnail_url`, `thumbnailUrl`, `ThumbnailUrl`,
+  `thumb_url`, `thumbUrl`, `ThumbUrl`,
+  `avatar_url`, `avatarUrl`, `AvatarUrl`,
+  `portrait_url`, `portraitUrl`, `PortraitUrl`,
+  `oss_url`, `ossUrl`, `OssUrl`,
+  `url`, `URL`,
+];
+
+const wanjuanTianjiObjectGraph = (root, maxDepth = 8, maxObjects = 400) => {
+  if (!root || typeof root != `object`) return [];
+  let queue = [{ value: root, depth: 0 }],
+    seen = new Set(),
+    objects = [];
+  while (queue.length && objects.length < maxObjects) {
+    let next = queue.shift(),
+      value = next?.value;
+    if (!value || typeof value != `object` || seen.has(value)) continue;
+    seen.add(value);
+    if (!Array.isArray(value)) objects.push(value);
+    if ((next?.depth || 0) >= maxDepth) continue;
+    Object.values(value).forEach((child) => {
+      child && typeof child == `object` && queue.push({ value: child, depth: (next?.depth || 0) + 1 });
+    });
+  }
+  return objects;
+};
+
+const wanjuanTianjiFindNestedValue = (item, aliases, validate = (value) => Boolean(String(value || ``).trim())) => {
+  let objects = wanjuanTianjiObjectGraph(item);
+  for (let alias of aliases)
+    for (let object of objects) {
+      let value = object?.[alias];
+      if (validate(value)) return String(value).trim();
+    }
+  return ``;
 };
 
 /** 从新旧素材响应中提取唯一资产 ID；不把 group_id 误当成可删除素材 ID。 */
 export const wanjuanTianjiPortraitAssetIdFromItem = (item) => {
-  const explicit = [
-    item?.portrait_asset_id,
-    item?.portraitAssetId,
-    item?.PortraitAssetId,
-    item?.asset_id,
-    item?.assetId,
-    item?.AssetId,
-    item?.assetID,
-    item?.material_id,
-    item?.materialId,
-    item?.MaterialId,
-    item?.assets_id,
-    item?.assetsId,
-    item?.AssetsId,
-    item?.portrait_id,
-    item?.portraitId,
-    item?.PortraitId,
-  ].map((value) => String(value || ``).trim()).find((value) => value && !/^local-/i.test(value));
+  const explicit = wanjuanTianjiFindNestedValue(
+    item,
+    WANJUAN_TIANJI_PORTRAIT_ID_KEYS,
+    (value) => Boolean(String(value || ``).trim()) && !/^local-/i.test(String(value)),
+  );
   if (explicit) return explicit;
   const generic = String(item?.id || item?.Id || item?.ID || ``).trim();
   if (!generic || /^local-/i.test(generic) || /group/i.test(generic)) return ``;
   return generic;
 };
 
+export const wanjuanTianjiPortraitStatusFromItem = (item) =>
+  wanjuanTianjiFindNestedValue(item, [
+    `status`, `Status`, `asset_status`, `assetStatus`, `AssetStatus`,
+    `portrait_status`, `portraitStatus`, `PortraitStatus`,
+    `protrait_status`, `protraitStatus`, `ProtraitStatus`,
+    `review_status`, `reviewStatus`, `ReviewStatus`, `state`, `State`,
+    `__wanjuanTianjiListStatus`,
+  ]);
+
+export const wanjuanTianjiPortraitGroupTypeFromItem = (item, fallback = ``) =>
+  wanjuanTianjiFindNestedValue(item, [
+    `groupType`, `group_type`, `asset_type`, `assetType`,
+    `portrait_type`, `portraitType`, `PortraitType`,
+    `protrait_type`, `protraitType`, `ProtraitType`, `type`, `Type`,
+    `__wanjuanTianjiGroupType`,
+  ]) || String(fallback || ``).trim();
+
+export const wanjuanTianjiPortraitAvailabilityFromItem = (item) => {
+  if (item?.localUploaded === !0) return `pending`;
+  let status = wanjuanTianjiPortraitStatusFromItem(item)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, ``);
+  if ([`active`, `success`, `succeeded`, `completed`, `complete`, `done`, `approved`, `passed`, `可用`, `审核通过`, `已完成`].includes(status)) return `ready`;
+  if ([`failed`, `fail`, `error`, `rejected`, `invalid`, `审核失败`, `失败`, `已拒绝`].includes(status)) return `failed`;
+  if ([`processing`, `pending`, `reviewing`, `submitted`, `created`, `queued`, `waiting`, `inprogress`, `auditing`, `审核中`, `处理中`, `待审核`].includes(status)) return `pending`;
+  return `unknown`;
+};
+
+export const wanjuanTianjiPortraitIsReady = (item) =>
+  Boolean(wanjuanTianjiPortraitAssetIdFromItem(item)) && wanjuanTianjiPortraitAvailabilityFromItem(item) === `ready`;
+
 export const wanjuanTianjiPortraitDeleteDescriptor = (item, groupType = ``) => {
   const id = wanjuanTianjiPortraitAssetIdFromItem(item);
   return {
     id,
-    groupType: String(item?.groupType || item?.group_type || item?.asset_type || groupType || ``).trim(),
+    groupType: wanjuanTianjiPortraitGroupTypeFromItem(item, groupType),
     groupId: String(item?.group_id || item?.groupId || item?.portrait_group_id || item?.virtual_group_id || ``).trim(),
     canDelete: Boolean(id),
   };
 };
 
 export const wanjuanTianjiPortraitImageUrlFromItem = (item) =>
-  String(item?.image_url || item?.imageUrl || item?.cover_url || item?.coverUrl || item?.preview_url || item?.previewUrl || item?.url || item?.URL || item?.thumbnailUrl || ``).trim();
+  wanjuanTianjiFindNestedValue(item, WANJUAN_TIANJI_PORTRAIT_PREVIEW_KEYS, (value) => /^https?:\/\//i.test(String(value || ``).trim()));
 
 export const wanjuanTianjiPortraitNameFromItem = (item) =>
-  String(item?.name || item?.Name || item?.label || item?.pageTitle || ``).trim();
+  wanjuanTianjiFindNestedValue(item, [`name`, `Name`, `label`, `pageTitle`, `title`, `Title`]);
 
 export const wanjuanTianjiFlattenPortraitAssets = (input) => {
   let source = input?.assets || input?.tianjiSeedanceAssets || input,
@@ -244,12 +293,13 @@ export const wanjuanTianjiResolvePortraitAssetForNodeData = (nodeData: any = {},
       }) ||
       null,
     finalId = wanjuanTianjiPortraitAssetIdFromItem(matchedAsset);
-  return finalId ?
+  return finalId && wanjuanTianjiPortraitIsReady(matchedAsset) ?
     {
       assetId: finalId,
       asset: matchedAsset,
       imageUrl: wanjuanTianjiPortraitImageUrlFromItem(matchedAsset) || uploadedUrl,
-      groupType: matchedAsset?.groupType || matchedAsset?.group_type || matchedAsset?.asset_type || matchedAsset?.type || `AIGC`,
+      groupType: wanjuanTianjiPortraitGroupTypeFromItem(matchedAsset, `AIGC`),
+      availability: `ready`,
     } :
     null;
 };
@@ -312,7 +362,11 @@ export const wanjuanTianjiRefreshPortraitAssets = async (config, {
 	        params: wanjuanTianjiAssetListParams(groupType, groupId, nextPageNumber, normalizedPageSize),
 	      });
 	      return {
-	        items: wanjuanTianjiFindArray(result),
+	        items: wanjuanTianjiFindArray(result).map((item) => item && typeof item == `object` ? {
+	          ...item,
+	          __wanjuanTianjiListStatus: `Active`,
+	          __wanjuanTianjiGroupType: groupType,
+	        } : item),
 	        pagination: wanjuanTianjiAssetPagination(result, nextPageNumber, normalizedPageSize),
 	      };
 	    },

@@ -413,13 +413,17 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               };
             incomingEdges.forEach((edge) => {
               let sourceNode = nodes2.find((node) => node.id === edge.source);
-              if (seedanceSourceNode?.data?.seedanceMode === `tianji` && [`reviewing`, `pending`, `failed`].includes(sourceNode?.data?.tianjiPortraitBindingStatus)) {
+              let sourceTianjiBindingStatus = String(sourceNode?.data?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
+                sourceIsTianjiPortrait = Boolean(sourceNode?.data?.tianjiPortraitAssetId || sourceNode?.data?.isTianjiPortrait || sourceNode?.data?.sourceOrigin === `tianji-portrait`);
+              if (seedanceSourceNode?.data?.seedanceMode === `tianji` && sourceIsTianjiPortrait && sourceTianjiBindingStatus !== `ready`) {
                 let fallbackMessage =
-                  sourceNode?.data?.tianjiPortraitBindingStatus === `reviewing` ?
+                  sourceTianjiBindingStatus === `reviewing` ?
                   `天玑人像正在审核中，请等待审核完成后再生成` :
-                  sourceNode?.data?.tianjiPortraitBindingStatus === `failed` ?
+                  sourceTianjiBindingStatus === `failed` ?
                   `天玑人像绑定失败，请手动从天玑人像库选择后再生成` :
-                  `天玑人像还没有绑定素材库最终 ID，请稍后刷新天玑人像库后再生成`;
+                  sourceTianjiBindingStatus === `pending` ?
+                  `天玑人像还没有绑定素材库最终 ID，请稍后刷新天玑人像库后再生成` :
+                  `天玑人像缺少 Active 状态证明，请刷新人像库后重新选择`;
                 throw Error(sourceNode.data.tianjiPortraitBindingMessage || fallbackMessage);
               }
               if (sourceNode?.data?.seedanceAssetId) {

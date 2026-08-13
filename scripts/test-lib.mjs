@@ -101,8 +101,17 @@ async function run() {
     wanjuanTianjiPortraitAssetUrl,
     wanjuanTianjiMediaUrl
   } = await import(pathToFileURL(join(outDir, "tianji-api.js")).href);
-  const { wanjuanTianjiAssetListParams, wanjuanTianjiPortraitAssetIdFromItem, wanjuanTianjiPortraitDeleteDescriptor } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
-  const { wanjuanResetTianjiPortraitBindingForImage } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
+  const {
+    wanjuanTianjiAssetListParams,
+    wanjuanTianjiFinalPortraitAsset,
+    wanjuanTianjiPortraitAssetIdFromItem,
+    wanjuanTianjiPortraitAvailabilityFromItem,
+    wanjuanTianjiPortraitDeleteDescriptor,
+    wanjuanTianjiPortraitGroupTypeFromItem,
+    wanjuanTianjiPortraitImageUrlFromItem,
+    wanjuanTianjiResolvePortraitAssetForNodeData,
+  } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
+  const { wanjuanNormalizeTianjiPortraitAssets, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
   const automationResult = await import(pathToFileURL(join(outDir, "automation-result.js")).href);
 
@@ -949,6 +958,10 @@ async function run() {
   let pendingPortraitMessage = "";
   try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "pending", url: "https://media.example.invalid/unreviewed.png" }); } catch (error) { pendingPortraitMessage = error.message; }
   check("unreviewed tianji portrait cannot fall back to ordinary image upload", pendingPortraitMessage, "这张天玑人像尚未完成审核和素材绑定");
+  let unverifiedPortraitMessage = "";
+  try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitAssetId: "legacy-unverified", url: "https://media.example.invalid/legacy.png" }); } catch (error) { unverifiedPortraitMessage = error.message; }
+  check("legacy tianji portrait id without Active proof cannot generate", unverifiedPortraitMessage, "这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择");
+  check("verified Active tianji portrait keeps its asset reference", await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "active-verified" }), "asset://active-verified");
   check("tianji asset list sends only documented pagination fields", wanjuanTianjiAssetListParams("AIGC", "group-mock", 2, 20), {
     group_ids: "group-mock", group_type: "AIGC", statuses: "Active", PageNumber: "2", PageSize: "20", SortBy: "CreateTime", SortOrder: "Desc"
   });
@@ -979,9 +992,78 @@ async function run() {
   check("tianji portrait task params", wanjuanBuildTianjiPortraitTaskParams("portrait_mock_001"), { task_id: "portrait_mock_001", execute_id: "portrait_mock_001" });
   check("tianji portrait group default name is readable", wanjuanTianjiDefaultPortraitGroupName(new Date("2026-08-12T12:34:56").getTime()), "万卷灵境-20260812123456");
   check("tianji legacy material id aliases are supported", wanjuanTianjiPortraitAssetIdFromItem({ MaterialId: "asset-legacy-001" }), "asset-legacy-001");
+  const nestedTianjiPortrait = {
+    data: {
+      detail: {
+        protrait_asset_id: "asset-typo-001",
+        protrait_type: "AIGC",
+        status: "Active",
+        preview: { ImageUrl: "https://media.example.invalid/nested-preview.jpg" },
+        name: "嵌套虚拟人像",
+      },
+    },
+  };
+  check("tianji production typo asset id is supported recursively", wanjuanTianjiPortraitAssetIdFromItem(nestedTianjiPortrait), "asset-typo-001");
+  check("tianji production typo portrait type is supported recursively", wanjuanTianjiPortraitGroupTypeFromItem(nestedTianjiPortrait), "AIGC");
+  check("tianji nested Pascal preview URL is supported", wanjuanTianjiPortraitImageUrlFromItem(nestedTianjiPortrait), "https://media.example.invalid/nested-preview.jpg");
+  const sevenNestedPortraitAliases = [
+    ["thumbnail_url", "one"], ["thumb_url", "two"], ["PreviewUrl", "three"], ["CoverUrl", "four"],
+    ["avatar_url", "five"], ["portrait_url", "six"], ["oss_url", "seven"],
+  ].map(([previewKey, suffix], index) => ({
+    owner: { virtual_group_id: "group-mock" },
+    payload: {
+      asset: {
+        protrait_asset_id: `asset-${suffix}`,
+        protrait_type: "AIGC",
+        [previewKey]: `https://media.example.invalid/${suffix}.jpg`,
+        name: `嵌套素材${index + 1}`,
+      },
+    },
+    __wanjuanTianjiListStatus: "Active",
+  }));
+  check("tianji seven nested production preview aliases all normalize", wanjuanNormalizeTianjiPortraitAssets({ AIGC: sevenNestedPortraitAliases }).map(({ portraitAssetId, imageUrl, availability }) => ({ portraitAssetId, imageUrl, availability })), [
+    { portraitAssetId: "asset-one", imageUrl: "https://media.example.invalid/one.jpg", availability: "ready" },
+    { portraitAssetId: "asset-two", imageUrl: "https://media.example.invalid/two.jpg", availability: "ready" },
+    { portraitAssetId: "asset-three", imageUrl: "https://media.example.invalid/three.jpg", availability: "ready" },
+    { portraitAssetId: "asset-four", imageUrl: "https://media.example.invalid/four.jpg", availability: "ready" },
+    { portraitAssetId: "asset-five", imageUrl: "https://media.example.invalid/five.jpg", availability: "ready" },
+    { portraitAssetId: "asset-six", imageUrl: "https://media.example.invalid/six.jpg", availability: "ready" },
+    { portraitAssetId: "asset-seven", imageUrl: "https://media.example.invalid/seven.jpg", availability: "ready" },
+  ]);
+  check("tianji preview extractor rejects non-http values", wanjuanTianjiPortraitImageUrlFromItem({ data: { ImageUrl: "asset://not-a-preview", local: { PreviewUrl: "/tmp/private.png" } } }), "");
+  check("tianji Active item is ready", wanjuanTianjiPortraitAvailabilityFromItem(nestedTianjiPortrait), "ready");
+  check("tianji Processing item remains pending", wanjuanTianjiPortraitAvailabilityFromItem({ detail: { protrait_asset_id: "asset-processing", status: "Processing" } }), "pending");
+  check("tianji Failed item remains failed", wanjuanTianjiPortraitAvailabilityFromItem({ detail: { protrait_asset_id: "asset-failed", status: "Failed" } }), "failed");
+  check("tianji missing status is not silently treated as Active", wanjuanTianjiPortraitAvailabilityFromItem({ detail: { protrait_asset_id: "asset-unknown" } }), "unknown");
+  check("tianji group id is not found recursively as asset id", wanjuanTianjiPortraitAssetIdFromItem({ data: { group_id: "group-recursive", virtual_group_id: "group-virtual" } }), "");
+  check("tianji nested Active item resolves for node binding", wanjuanTianjiResolvePortraitAssetForNodeData({ tianjiPortraitBindingName: "嵌套虚拟人像" }, { AIGC: [nestedTianjiPortrait] }), {
+    assetId: "asset-typo-001",
+    asset: nestedTianjiPortrait,
+    imageUrl: "https://media.example.invalid/nested-preview.jpg",
+    groupType: "AIGC",
+    availability: "ready",
+  });
+  check("tianji Processing item cannot resolve for node binding", wanjuanTianjiResolvePortraitAssetForNodeData({ tianjiPortraitBindingName: "处理中" }, { AIGC: [{ name: "处理中", protrait_asset_id: "asset-processing", status: "Processing", image_url: "https://media.example.invalid/processing.jpg" }] }), null);
+  check("tianji upload typo id alone does not become final Active binding", wanjuanTianjiFinalPortraitAsset({ result: { data: { protrait_asset_id: "asset-upload-only" } }, asset: { name: "上传项", image_url: "https://media.example.invalid/upload.jpg", protrait_asset_id: "asset-upload-only" }, imageUrl: "https://media.example.invalid/upload.jpg", refresh: null }), {
+    assetId: "",
+    asset: null,
+    imageUrl: "https://media.example.invalid/upload.jpg",
+    matched: false,
+  });
+  check("tianji refresh never guesses the only unrelated Active item", wanjuanTianjiFinalPortraitAsset({ asset: { name: "上传项", image_url: "https://media.example.invalid/upload.jpg" }, imageUrl: "https://media.example.invalid/upload.jpg", refresh: { aigcCount: 1, assets: { AIGC: [{ protrait_asset_id: "asset-unrelated", status: "Active", name: "另一项", image_url: "https://media.example.invalid/unrelated.jpg" }] } } }), {
+    assetId: "",
+    asset: null,
+    imageUrl: "https://media.example.invalid/upload.jpg",
+    matched: false,
+  });
+  const normalizedNestedPortraits = wanjuanNormalizeTianjiPortraitAssets({ AIGC: [nestedTianjiPortrait] });
+  check("tianji nested portrait normalizes preview and status", normalizedNestedPortraits.map(({ portraitAssetId, imageUrl, groupType, availability }) => ({ portraitAssetId, imageUrl, groupType, availability })), [{ portraitAssetId: "asset-typo-001", imageUrl: "https://media.example.invalid/nested-preview.jpg", groupType: "AIGC", availability: "ready" }]);
+  check("tianji unknown portrait cannot become a resource", wanjuanTianjiPortraitToResource({ id: "asset-unknown", portraitAssetId: "asset-unknown", imageUrl: "https://media.example.invalid/unknown.jpg", availability: "unknown" }), null);
   check("tianji portrait id prefers explicit asset id", wanjuanTianjiPortraitAssetIdFromItem({ id: "group-a", asset_id: "asset-new-001" }), "asset-new-001");
   check("tianji group id is never treated as deletable asset id", wanjuanTianjiPortraitDeleteDescriptor({ id: "group-a", group_type: "AIGC" }, "AIGC"), { id: "", groupType: "AIGC", groupId: "", canDelete: false });
   check("tianji delete descriptor keeps group context", wanjuanTianjiPortraitDeleteDescriptor({ MaterialId: "asset-legacy-002", group_id: "group-a", group_type: "AIGC" }), { id: "asset-legacy-002", groupType: "AIGC", groupId: "group-a", canDelete: true });
+  check("tianji preload supports production typo asset id", preloadPanelSource.includes('"protrait_asset_id"'), true);
+  check("tianji preload supports recursive preview aliases", preloadPanelSource.includes('"thumbnail_url", "thumbnailUrl", "ThumbnailUrl"') && preloadPanelSource.includes('"oss_url", "ossUrl", "OssUrl"'), true);
   let capturedTianjiRequest = null;
   globalThis.window = {
     wanjuanDesktop: {

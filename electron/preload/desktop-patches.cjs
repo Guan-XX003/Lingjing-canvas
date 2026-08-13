@@ -1892,11 +1892,33 @@ function installDesktopPatches() {
   };
 
   const tianjiPortraitAssetIdFromItem = (item) => {
-    const explicit = [item?.portrait_asset_id, item?.portraitAssetId, item?.PortraitAssetId, item?.asset_id, item?.assetId, item?.AssetId, item?.assetID, item?.material_id, item?.materialId, item?.MaterialId, item?.assets_id, item?.assetsId, item?.AssetsId, item?.portrait_id, item?.portraitId, item?.PortraitId].map((value) => String(value || "").trim()).find((value) => value && !/^local-/i.test(value));
+    const explicit = tianjiFindDeepValue(item, ["portrait_asset_id", "portraitAssetId", "PortraitAssetId", "protrait_asset_id", "protraitAssetId", "ProtraitAssetId", "asset_id", "assetId", "AssetId", "assetID", "material_id", "materialId", "MaterialId", "assets_id", "assetsId", "AssetsId", "portrait_id", "portraitId", "PortraitId"]);
     if (explicit) return explicit;
     const generic = String(item?.id || item?.Id || item?.ID || "").trim();
     return generic && !/^local-/i.test(generic) && !/group/i.test(generic) ? generic : "";
   };
+
+  const tianjiPortraitImageUrlFromItem = (item) => {
+    const aliases = ["image_url", "imageUrl", "ImageUrl", "preview_url", "previewUrl", "PreviewUrl", "cover_url", "coverUrl", "CoverUrl", "thumbnail_url", "thumbnailUrl", "ThumbnailUrl", "thumb_url", "thumbUrl", "ThumbUrl", "avatar_url", "avatarUrl", "AvatarUrl", "portrait_url", "portraitUrl", "PortraitUrl", "oss_url", "ossUrl", "OssUrl", "url", "URL"];
+    for (const alias of aliases) {
+      const value = tianjiFindDeepValue(item, [alias]);
+      if (/^https?:\/\//i.test(String(value || "").trim())) return String(value).trim();
+    }
+    return "";
+  };
+
+  const tianjiPortraitStatusFromItem = (item) => tianjiFindDeepValue(item, ["status", "Status", "asset_status", "assetStatus", "AssetStatus", "portrait_status", "portraitStatus", "PortraitStatus", "protrait_status", "protraitStatus", "ProtraitStatus", "review_status", "reviewStatus", "ReviewStatus", "state", "State", "__wanjuanTianjiListStatus"]);
+
+  const tianjiPortraitAvailabilityFromItem = (item) => {
+    if (item?.localUploaded === true) return "pending";
+    const status = String(tianjiPortraitStatusFromItem(item) || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+    if (["active", "success", "succeeded", "completed", "complete", "done", "approved", "passed", "可用", "审核通过", "已完成"].includes(status)) return "ready";
+    if (["failed", "fail", "error", "rejected", "invalid", "审核失败", "失败", "已拒绝"].includes(status)) return "failed";
+    if (["processing", "pending", "reviewing", "submitted", "created", "queued", "waiting", "inprogress", "auditing", "审核中", "处理中", "待审核"].includes(status)) return "pending";
+    return "unknown";
+  };
+
+  const tianjiPortraitNameFromItem = (item) => tianjiFindDeepValue(item, ["name", "Name", "label", "pageTitle", "title", "Title"]);
 
   const tianjiAssetPagination = (result, fallbackPage = 1, fallbackPageSize = TIANJI_ASSET_PAGE_SIZE) => {
     const total = tianjiReadPositiveNumber(tianjiFindDeepValue(result, ["TotalCount", "totalCount", "total_count", "total", "Total", "count", "Count"]));
@@ -2123,8 +2145,8 @@ function installDesktopPatches() {
   };
 
   const tianjiCreateLocalUploadAsset = ({ type, name, imageUrl, result }) => ({
-    id: tianjiFindDeepValue(result, ["portrait_asset_id", "asset_id", "assetId", "id", "AssetId"]) || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-    portrait_asset_id: tianjiFindDeepValue(result, ["portrait_asset_id", "asset_id", "assetId", "id", "AssetId"]) || "",
+    id: tianjiFindDeepValue(result, ["portrait_asset_id", "protrait_asset_id", "asset_id", "assetId", "id", "AssetId"]) || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    portrait_asset_id: tianjiFindDeepValue(result, ["portrait_asset_id", "protrait_asset_id", "asset_id", "assetId", "id", "AssetId"]) || "",
     name: name || "人像素材",
     image_url: imageUrl || "",
     status: tianjiFindDeepValue(result, ["status", "Status"]) || "已提交",
@@ -2375,7 +2397,7 @@ function installDesktopPatches() {
     const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-list-assets", {
       params: tianjiAssetListParams(normalizedType, groupId, pageNumber, TIANJI_ASSET_PAGE_SIZE)
     });
-    const items = tianjiFindArray(result);
+    const items = tianjiFindArray(result).map((item) => item && typeof item === "object" ? { ...item, __wanjuanTianjiListStatus: "Active", __wanjuanTianjiGroupType: normalizedType } : item);
     const pagination = tianjiAssetPagination(result, pageNumber, TIANJI_ASSET_PAGE_SIZE);
     tianjiAssetsState = {
       ...tianjiAssetsState,
@@ -2408,11 +2430,13 @@ function installDesktopPatches() {
       const canTryNextPage = knownTotal ? currentPage < totalPages : pageAssets.length === pageSize && tianjiAssetPageEndState[type] !== true;
       const body = assets.length
         ? pageAssets.map((item) => {
-            const isLocalPending = item?.localUploaded === true;
+            const availability = tianjiPortraitAvailabilityFromItem(item);
+            const isLocalPending = availability === "pending";
             const id = tianjiPortraitAssetIdFromItem(item);
-            const name = item.name || item.Name || id || "未命名素材";
-            const img = item.image_url || item.imageUrl || item.cover_url || item.preview_url || item.url || item.URL || "";
-            const status = isLocalPending ? "待天玑素材库返回" : item.status || item.Status || "";
+            const name = tianjiPortraitNameFromItem(item) || id || "未命名素材";
+            const img = tianjiPortraitImageUrlFromItem(item);
+            const rawStatus = tianjiPortraitStatusFromItem(item);
+            const status = isLocalPending ? "待天玑素材库返回" : availability === "failed" ? "素材处理失败" : availability === "unknown" ? "状态未知，暂不可绑定" : rawStatus;
             return `<div class="wanjuan-tianji-asset${isLocalPending ? " is-pending" : ""}" title="${tianjiEscapeHtml(isLocalPending ? "上传已提交，等待刷新为天玑资产" : img || id || "")}">
               ${img ? `<img src="${tianjiEscapeHtml(img)}" alt="" onerror="this.onerror=null;this.src='${tianjiBrokenAssetImage}';this.title='素材图片无法加载，可能是天玑返回的签名链接已过期或不可访问';">` : `<span>无图</span>`}
               ${isLocalPending ? `<div class="wanjuan-tianji-asset-badge">待刷新</div>` : ``}
@@ -2513,7 +2537,12 @@ function installDesktopPatches() {
       const result = await tianjiRequest(tianjiSettingsState, "/api/cut/model/get-list-assets", {
         params: tianjiAssetListParams(groupType, groupId, pageNumber, TIANJI_ASSET_PAGE_SIZE)
       });
-      return { items: tianjiFindArray(result), raw: result, pagination: tianjiAssetPagination(result, pageNumber, TIANJI_ASSET_PAGE_SIZE), summary: tianjiResultSummary(result) };
+      return {
+        items: tianjiFindArray(result).map((item) => item && typeof item === "object" ? { ...item, __wanjuanTianjiListStatus: "Active", __wanjuanTianjiGroupType: groupType } : item),
+        raw: result,
+        pagination: tianjiAssetPagination(result, pageNumber, TIANJI_ASSET_PAGE_SIZE),
+        summary: tianjiResultSummary(result)
+      };
     };
     const loadWithFallback = async (groupType, primaryGroupId) => {
       const tried = [];

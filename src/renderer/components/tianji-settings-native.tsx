@@ -6,8 +6,10 @@ import {
   wanjuanTianjiFindArray,
   wanjuanTianjiPortraitAssetIdFromItem,
   wanjuanTianjiPortraitDeleteDescriptor,
+  wanjuanTianjiPortraitAvailabilityFromItem,
   wanjuanTianjiPortraitImageUrlFromItem,
   wanjuanTianjiPortraitNameFromItem,
+  wanjuanTianjiPortraitStatusFromItem,
   wanjuanTianjiRefreshPortraitAssets,
 } from "../lib/tianji-assets";
 import {
@@ -73,12 +75,14 @@ function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDele
       {visibleAssets.map((asset: any, index: number) => {
         const id = wanjuanTianjiPortraitAssetIdFromItem(asset);
         const image = wanjuanTianjiPortraitImageUrlFromItem(asset);
-        const pending = asset?.localUploaded === true;
+        const availability = wanjuanTianjiPortraitAvailabilityFromItem(asset);
+        const pending = availability === "pending";
+        const statusText = wanjuanTianjiPortraitStatusFromItem(asset);
         return <article className={`wanjuan-tianji-native-asset${pending ? " is-pending" : ""}`} key={id || `${type}-${index}`}>
           {image ? <img src={image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = brokenPreviewImage; }} /> : <span className="wanjuan-tianji-native-no-image">无图</span>}
           {pending && <i>待刷新</i>}
           <b title={wanjuanTianjiPortraitNameFromItem(asset)}>{wanjuanTianjiPortraitNameFromItem(asset) || "未命名素材"}</b>
-          <small>{pending ? "待天玑素材库返回" : String(asset?.status || asset?.Status || id)}</small>
+          <small>{pending ? "待天玑素材库返回" : availability === "failed" ? "素材处理失败" : availability === "unknown" ? "状态未知，暂不可绑定" : statusText || id}</small>
           {!pending && <div><button type="button" disabled={!id} title={id ? "查看素材详情" : "该旧素材未返回明确资产 ID"} onClick={() => id && onInfo(id)}>详情</button><button type="button" className="danger" disabled={!id} title={id ? "删除该素材" : "该旧素材未返回明确资产 ID，不能安全删除整组"} onClick={() => onDelete(asset, type)}>删除</button>{!id && <small>旧素材缺少可删除 ID，请刷新列表</small>}</div>}
         </article>;
       })}

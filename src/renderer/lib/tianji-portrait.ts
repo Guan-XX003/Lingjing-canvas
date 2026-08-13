@@ -6,6 +6,15 @@
  */
 
 import { wanjuanResetArkTrustedAssetBindingForImage } from "./ark-trusted-assets";
+import {
+  wanjuanTianjiFlattenPortraitAssets,
+  wanjuanTianjiPortraitAssetIdFromItem,
+  wanjuanTianjiPortraitAvailabilityFromItem,
+  wanjuanTianjiPortraitGroupTypeFromItem,
+  wanjuanTianjiPortraitImageUrlFromItem,
+  wanjuanTianjiPortraitNameFromItem,
+  wanjuanTianjiPortraitStatusFromItem,
+} from "./tianji-assets";
 
 /** 归一化后的天玑人像素材结构。 */
 interface TianjiPortraitAsset {
@@ -16,6 +25,7 @@ interface TianjiPortraitAsset {
   previewUrl: string;
   groupType: string;
   status: string;
+  availability: string;
   localUploaded: boolean;
   createdAt: number;
 }
@@ -49,57 +59,21 @@ export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUr
  * 统一展开后提取人像 id、图片地址、分组类型等字段，过滤掉无图片地址和本地上传的项。
  */
 export function wanjuanNormalizeTianjiPortraitAssets(rawAssets: any): TianjiPortraitAsset[] {
-  let flattened: any[] = [];
-  if (Array.isArray(rawAssets))
-    flattened = rawAssets.map((asset) => ({
-      ...asset,
-      groupType: asset?.groupType || asset?.group_type || asset?.type || ``,
-    }));
-  else if (rawAssets && typeof rawAssets == `object`)
-    [`LivenessFace`, `AIGC`].forEach((groupName) => {
-      Array.isArray(rawAssets[groupName]) &&
-        rawAssets[groupName].forEach((asset: any) =>
-          flattened.push({
-            ...asset,
-            groupType: asset?.groupType || asset?.group_type || groupName,
-          }),
-        );
-    });
-  return flattened
+  return wanjuanTianjiFlattenPortraitAssets(rawAssets)
     .map((asset, index) => {
-      let assetId = String(
-          asset?.portrait_asset_id ||
-            asset?.asset_id ||
-            asset?.assetId ||
-            asset?.id ||
-            asset?.Id ||
-            asset?.AssetId ||
-            ``,
-        ).trim(),
-        imageUrl = String(
-          asset?.image_url ||
-            asset?.imageUrl ||
-            asset?.cover_url ||
-            asset?.preview_url ||
-            asset?.url ||
-            asset?.URL ||
-            asset?.thumbnailUrl ||
-            ``,
-        ).trim(),
-        groupType = String(
-          asset?.groupType || asset?.group_type || asset?.asset_type || asset?.type || ``,
-        ).trim();
+      let assetId = wanjuanTianjiPortraitAssetIdFromItem(asset),
+        imageUrl = wanjuanTianjiPortraitImageUrlFromItem(asset),
+        groupType = wanjuanTianjiPortraitGroupTypeFromItem(asset);
       return imageUrl
         ? {
             id: assetId || `tianji-portrait-${Date.now()}-${index}`,
-            name: String(
-              asset?.name || asset?.Name || asset?.label || (groupType === `AIGC` ? `虚拟人像` : `真人人像`),
-            ),
+            name: wanjuanTianjiPortraitNameFromItem(asset) || (groupType === `AIGC` ? `虚拟人像` : `真人人像`),
             portraitAssetId: assetId,
             imageUrl: imageUrl,
             previewUrl: imageUrl,
             groupType: groupType || `LivenessFace`,
-            status: String(asset?.status || asset?.Status || ``),
+            status: wanjuanTianjiPortraitStatusFromItem(asset),
+            availability: wanjuanTianjiPortraitAvailabilityFromItem(asset),
             localUploaded: asset?.localUploaded === !0,
             createdAt: Number(asset?.createdAt || asset?.CreateTime || Date.now()),
           }
@@ -116,7 +90,8 @@ export function wanjuanNormalizeTianjiPortraitAssets(rawAssets: any): TianjiPort
  */
 export function wanjuanTianjiPortraitToResource(portrait: any, index = 0): any {
   let imageUrl = String(portrait?.imageUrl || portrait?.previewUrl || portrait?.url || ``).trim();
-  if (!imageUrl) return null;
+  let availability = String(portrait?.availability || wanjuanTianjiPortraitAvailabilityFromItem(portrait)).trim();
+  if (!imageUrl || availability !== `ready`) return null;
   let defaultName = portrait?.groupType === `AIGC` ? `虚拟人像` : `真人人像`,
     portraitAssetId = String(portrait?.portraitAssetId || portrait?.id || ``).trim();
   return {
@@ -134,5 +109,6 @@ export function wanjuanTianjiPortraitToResource(portrait: any, index = 0): any {
     groupType: portrait?.groupType || `LivenessFace`,
     localUploaded: portrait?.localUploaded === !0,
     isTianjiPortrait: !0,
+    tianjiPortraitBindingStatus: `ready`,
   };
 }
