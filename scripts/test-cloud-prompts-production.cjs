@@ -30,7 +30,6 @@ app.setPath("userData", temporaryUserData);
 
 let service;
 let workspace = null;
-let sourceAccountId = "";
 const createdTemplates = new Map();
 const createdWorkspaces = new Map();
 const createdInvitations = new Map();
@@ -43,26 +42,6 @@ async function invoke(payload) {
     throw error;
   }
   return result;
-}
-
-function persistRotatedTestSession() {
-  if (!sourceAccountId) return false;
-  const isolatedSessionPath = path.join(temporaryUserData, "account-session.json");
-  let isolatedState;
-  try {
-    isolatedState = JSON.parse(fs.readFileSync(isolatedSessionPath, "utf8"));
-  } catch {
-    return false;
-  }
-  if (
-    String(isolatedState?.user?.id || "") !== sourceAccountId ||
-    !isolatedState?.session?.refreshTokenEncrypted
-  ) return false;
-  const temp = `${sourceSessionPath}.tmp-${process.pid}-${Date.now()}`;
-  fs.copyFileSync(isolatedSessionPath, temp);
-  fs.chmodSync(temp, 0o600);
-  fs.renameSync(temp, sourceSessionPath);
-  return true;
 }
 
 async function deleteTemplate(templateId, revision) {
@@ -129,7 +108,6 @@ async function run() {
   const { readAccountState } = require("../electron/main/account-service.cjs");
   const copiedAccountState = readAccountState();
   assert.ok(copiedAccountState?.user?.id, "copied account session must contain an account id");
-  sourceAccountId = String(copiedAccountState.user.id);
   assert.ok(copiedAccountState?.session?.refreshTokenEncrypted, "copied account session must contain an encrypted refresh token");
   const { decryptLocalSecret } = require("../electron/main/local-secret-storage.cjs");
   assert.ok(
@@ -140,7 +118,6 @@ async function run() {
   const prefix = `CODEX_SHARE_APP_${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
   const bootstrap = await invoke({ operation: "bootstrap" });
   assert.equal(bootstrap.authenticated, true, "copied account session must refresh successfully");
-  assert.equal(persistRotatedTestSession(), true, "rotated dedicated test session must be persisted atomically");
 
   const workspaceResult = await invoke({
     operation: "workspace.create",
