@@ -64,6 +64,11 @@ function validateReferenceImage(value) {
   if (stat.size > MAX_REFERENCE_FILE_BYTES) throw requestError("本地参考图片超过 100MB 限制");
   return referenceImage;
 }
+function validatePortraitAssetId(value) {
+  const id = safeText(value, "天玑已审核人像素材 ID", 512, true);
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,511}$/.test(id)) throw requestError("天玑已审核人像素材 ID 格式无效");
+  return id;
+}
 function validateGenerationPayload(kind, value) {
   const payload = value && typeof value === "object" && !Array.isArray(value) ? value : {};
   const result = {
@@ -93,7 +98,11 @@ function validateTianjiPayload(value) {
     return values.map((item) => validateReferenceImage(item));
   };
   const result = validateGenerationPayload("video", payload);
-  return { ...result, mode, images: list("images", 9), videos: list("videos", 3), audios: list("audios", 3), callbackUrl: safeText(payload.callbackUrl, "回调 URL", 4096) };
+  const images = list("images", 9);
+  const portraitAssetIds = Array.isArray(payload.portraitAssetIds) ? payload.portraitAssetIds.map(validatePortraitAssetId) : [];
+  if (portraitAssetIds.length && mode !== "reference-media") throw requestError("已审核天玑人像仅支持 reference-media 模式");
+  if (images.length + portraitAssetIds.length > 9) throw requestError("images 与 portraitAssetIds 合计最多 9 个");
+  return { ...result, mode, images, portraitAssetIds, videos: list("videos", 3), audios: list("audios", 3), callbackUrl: safeText(payload.callbackUrl, "回调 URL", 4096) };
 }
 function readJson(req) {
   return new Promise((resolve, reject) => {
@@ -147,4 +156,4 @@ async function stopAutomationServer() {
   await new Promise((resolve) => server.close(() => resolve()));
   server = null; automationInfo = null;
 }
-module.exports = { startAutomationServer, stopAutomationServer, setAutomationWindow };
+module.exports = { startAutomationServer, stopAutomationServer, setAutomationWindow, validateTianjiPayload };

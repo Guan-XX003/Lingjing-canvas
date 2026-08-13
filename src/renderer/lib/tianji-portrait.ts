@@ -30,6 +30,80 @@ interface TianjiPortraitAsset {
   createdAt: number;
 }
 
+export const wanjuanHasTianjiPortraitClaim = (data: any): boolean =>
+  Boolean(
+    data &&
+      typeof data == `object` &&
+      (data.tianjiPortraitAssetId ||
+        data.isTianjiPortrait === true ||
+        data.tianjiPortraitBindingStatus ||
+        data.tianjiPortraitPreviewUrl ||
+        data.tianjiPortraitBindingSourceUrl ||
+        data.source === `tianji-portrait` ||
+        data.sourceOrigin === `tianji-portrait` ||
+        data.type === `image/tianji-portrait`),
+  );
+
+export const wanjuanIsReadyTianjiPortraitBinding = (data: any): boolean =>
+  Boolean(
+    data &&
+      typeof data == `object` &&
+      String(data.tianjiPortraitBindingStatus || ``).trim().toLowerCase() === `ready` &&
+      String(data.tianjiPortraitAssetId || ``).trim() &&
+      (data.source === `tianji-portrait` ||
+        data.sourceOrigin === `tianji-portrait` ||
+        data.type === `image/tianji-portrait`),
+  );
+
+export const wanjuanTianjiPortraitNodeDataFromAutomation = (assetId: any): any => {
+  const id = String(assetId || ``).trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,511}$/.test(id))
+    throw Error(`天玑已审核人像素材 ID 格式无效`);
+  return {
+    imageUrl: ``,
+    mediaKind: `image`,
+    type: `image/tianji-portrait`,
+    tianjiPortraitAssetId: id,
+    tianjiPortraitBindingStatus: `ready`,
+    isTianjiPortrait: true,
+    source: `tianji-portrait`,
+    sourceOrigin: `tianji-portrait`,
+  };
+};
+
+/** Preserve reviewed portrait metadata when a canvas node becomes a video reference. */
+export const wanjuanTianjiPortraitReferenceFromNodeData = (data: any): any => {
+  if (!wanjuanHasTianjiPortraitClaim(data)) return null;
+  if (!wanjuanIsReadyTianjiPortraitBinding(data))
+    throw Error(`这张图片的天玑审核绑定不完整，请从天玑人像库重新选择`);
+  return {
+    url: String(data.imageUrl || data.url || data.tianjiPortraitPreviewUrl || ``).trim(),
+    tianjiPortraitAssetId: String(data.tianjiPortraitAssetId || ``).trim(),
+    tianjiPortraitGroupType: data.tianjiPortraitGroupType,
+    tianjiPortraitPreviewUrl: data.tianjiPortraitPreviewUrl,
+    tianjiPortraitBindingStatus: `ready`,
+    tianjiPortraitBindingMessage: data.tianjiPortraitBindingMessage,
+    isTianjiPortrait: true,
+    source: data.source === `tianji-portrait` ? data.source : undefined,
+    sourceOrigin: `tianji-portrait`,
+  };
+};
+
+export const wanjuanRecoverTianjiPortraitNodeData = (data: any, resolved: any): any => {
+  if (!wanjuanHasTianjiPortraitClaim(data) || String(data?.tianjiPortraitAssetId || ``).trim() || !resolved?.assetId)
+    return null;
+  return {
+    ...(data || {}),
+    tianjiPortraitAssetId: String(resolved.assetId).trim(),
+    tianjiPortraitGroupType: resolved.groupType || data?.tianjiPortraitGroupType || `AIGC`,
+    tianjiPortraitPreviewUrl: resolved.imageUrl || data?.tianjiPortraitPreviewUrl || data?.imageUrl,
+    isTianjiPortrait: true,
+    sourceOrigin: `tianji-portrait`,
+    tianjiPortraitBindingStatus: `ready`,
+    tianjiPortraitBindingMessage: `已从本地 Active 素材缓存恢复最终人像 ID`,
+  };
+};
+
 /** Clear image-specific Tianji binding metadata when a new result replaces the image. */
 export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUrl: any): any {
   const currentImageUrl = String(data?.imageUrl || ``).trim();

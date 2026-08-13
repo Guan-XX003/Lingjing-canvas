@@ -110,7 +110,7 @@ async function run() {
     wanjuanTianjiPortraitImageUrlFromItem,
     wanjuanTianjiResolvePortraitAssetForNodeData,
   } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
-  const { wanjuanNormalizeTianjiPortraitAssets, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
+  const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
   const automationResult = await import(pathToFileURL(join(outDir, "automation-result.js")).href);
 
@@ -127,9 +127,12 @@ async function run() {
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
   check("tianji panel blocks task query without task credentials", nativePanelSource.includes("!bytedToken.trim() && !portraitTaskId.trim()"), true);
+  check("tianji reference dedupe prioritizes final portrait id", videoGenerationSource.includes("String(reference?.tianjiPortraitAssetId || ``).trim() === tianjiPortraitAssetId"), true);
   check("tianji preload persists portrait task id", preloadPanelSource.includes("tianjiSeedancePortraitTaskId"), true);
   check("tianji preload supports explicit form encoding", preloadPanelSource.includes('encoding = "json"') && preloadPanelSource.includes('headers["Content-Type"] = "application/x-www-form-urlencoded"'), true);
   check("tianji connection requires trusted source, ready status and final id", videoGenerationSource.includes('sourceHasTianjiPortraitClaim = Boolean(sourceNode?.data?.tianjiPortraitAssetId || sourceNode?.data?.isTianjiPortrait)') && videoGenerationSource.includes('sourceTianjiBindingStatus !== `ready` || !sourceTianjiPortraitAssetId') && !videoGenerationSource.includes('sourceTianjiPortraitPreviewUrl = String('), true);
+  check("tianji connection rebuilds reviewed metadata before generic media collection", videoGenerationSource.includes("addVideoReferenceImage(wanjuanTianjiPortraitReferenceFromNodeData(sourceNode.data));") && videoGenerationSource.includes("wanjuanHasTianjiPortraitClaim(sourceNode.data)"), true);
+  check("tianji badges require ready id and trusted source", [readFileSync(join(root, "src/renderer/components/image-node.tsx"), "utf8"), readFileSync(join(root, "src/renderer/components/prompt-node.tsx"), "utf8")].every((source) => source.includes("String(data.tianjiPortraitAssetId || ``).trim()") && source.includes("data.sourceOrigin === `tianji-portrait`")), true);
   check("tianji request diagnostics expose only scheme counts", tianjiApiSource.includes('imageSchemes: referenceSchemeCounts(imageUrls)') && !tianjiApiSource.includes('promptPreview:') && !tianjiApiSource.includes('imageRefs: imageUrls.map'), true);
   check("cloud workspace label uses workspace name, not account id", cloudWorkspaceSource.includes("workspace.name || t(\"未命名空间\")"), true);
   check("cloud workspace label exposes full text accessibly", cloudWorkspaceSource.includes("title=\"${escape(selectedWorkspaceLabel)}\" aria-label=\"${escape(selectedWorkspaceLabel)}\""), true);
@@ -970,7 +973,58 @@ async function run() {
   let unverifiedPortraitMessage = "";
   try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitAssetId: "legacy-unverified", url: "https://media.example.invalid/legacy.png" }); } catch (error) { unverifiedPortraitMessage = error.message; }
   check("legacy tianji portrait id without Active proof cannot generate", unverifiedPortraitMessage, "这张天玑人像缺少 Active 状态证明，请刷新人像库后重新选择");
+  const reviewedPortraitNodeData = {
+    imageUrl: "https://media.example.invalid/display-preview.jpg",
+    tianjiPortraitPreviewUrl: "https://media.example.invalid/signed-preview.jpg",
+    tianjiPortraitAssetId: "active-verified",
+    tianjiPortraitBindingStatus: "ready",
+    sourceOrigin: "tianji-portrait",
+    isTianjiPortrait: true,
+  };
+  check("reviewed portrait claim is detected before generic URL collection", wanjuanHasTianjiPortraitClaim(reviewedPortraitNodeData), true);
+  check("reviewed portrait ready binding requires trusted source and id", wanjuanIsReadyTianjiPortraitBinding(reviewedPortraitNodeData), true);
+  const rebuiltPortraitReference = wanjuanTianjiPortraitReferenceFromNodeData(reviewedPortraitNodeData);
+  check("reviewed portrait node metadata survives reference rebuilding", {
+    url: rebuiltPortraitReference.url,
+    assetId: rebuiltPortraitReference.tianjiPortraitAssetId,
+    status: rebuiltPortraitReference.tianjiPortraitBindingStatus,
+    sourceOrigin: rebuiltPortraitReference.sourceOrigin,
+  }, {
+    url: "https://media.example.invalid/display-preview.jpg",
+    assetId: "active-verified",
+    status: "ready",
+    sourceOrigin: "tianji-portrait",
+  });
+  check("rebuilt reviewed portrait resolves to asset reference", await wanjuanTianjiMediaUrl(rebuiltPortraitReference), "asset://active-verified");
+  let incompleteReadyClaimMessage = "";
+  try { wanjuanTianjiPortraitReferenceFromNodeData({ imageUrl: "https://media.example.invalid/ordinary.jpg", tianjiPortraitBindingStatus: "ready", sourceOrigin: "tianji-portrait" }); } catch (error) { incompleteReadyClaimMessage = error.message; }
+  check("historical ready badge without final id cannot downgrade to HTTP", incompleteReadyClaimMessage, "这张图片的天玑审核绑定不完整，请从天玑人像库重新选择");
+  const recoveredHistoricalPortrait = wanjuanRecoverTianjiPortraitNodeData({
+    imageUrl: "https://media.example.invalid/portable-preview.jpg",
+    tianjiPortraitPreviewUrl: "https://media.example.invalid/signed-preview.jpg",
+    tianjiPortraitBindingStatus: "ready",
+    sourceOrigin: "tianji-portrait",
+  }, {
+    assetId: "active-recovered",
+    imageUrl: "https://media.example.invalid/signed-preview.jpg",
+    groupType: "AIGC",
+  });
+  check("historical portrait binding recovers final id only from matched Active cache", {
+    assetId: recoveredHistoricalPortrait.tianjiPortraitAssetId,
+    status: recoveredHistoricalPortrait.tianjiPortraitBindingStatus,
+    sourceOrigin: recoveredHistoricalPortrait.sourceOrigin,
+  }, { assetId: "active-recovered", status: "ready", sourceOrigin: "tianji-portrait" });
+  check("recovered historical portrait resolves to asset reference", await wanjuanTianjiMediaUrl(wanjuanTianjiPortraitReferenceFromNodeData(recoveredHistoricalPortrait)), "asset://active-recovered");
+  check("historical portrait is not recovered without a matched Active asset", wanjuanRecoverTianjiPortraitNodeData({ tianjiPortraitBindingStatus: "ready", sourceOrigin: "tianji-portrait" }, null), null);
   check("verified Active tianji portrait uses its final asset id", await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitAssetId: "active-verified", tianjiPortraitPreviewUrl: "https://media.example.invalid/active-verified.jpg" }), "asset://active-verified");
+  const automationPortraitNodeData = wanjuanTianjiPortraitNodeDataFromAutomation("active-automation");
+  check("automation reviewed portrait creates a trusted ready node", {
+    ready: wanjuanIsReadyTianjiPortraitBinding(automationPortraitNodeData),
+    sourceOrigin: automationPortraitNodeData.sourceOrigin,
+    imageUrl: automationPortraitNodeData.imageUrl,
+  }, { ready: true, sourceOrigin: "tianji-portrait", imageUrl: "" });
+  const automationPortraitUrl = await wanjuanTianjiMediaUrl(wanjuanTianjiPortraitReferenceFromNodeData(automationPortraitNodeData));
+  check("automation reviewed portrait resolves only through final id", automationPortraitUrl, "asset://active-automation");
   let missingPortraitIdMessage = "";
   try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "ready", tianjiPortraitPreviewUrl: "https://media.example.invalid/no-id.jpg" }); } catch (error) { missingPortraitIdMessage = error.message; }
   check("verified Active tianji portrait requires an asset id", missingPortraitIdMessage, "这张天玑人像尚未完成审核和素材绑定");
@@ -1121,20 +1175,16 @@ async function run() {
   check("tianji bearer input keeps raw x api key", wanjuanTianjiAuthHeaders("Bearer test-token-prefixed")["X-API-Key"], "test-token-prefixed");
   check("tianji request stays on configured relay", capturedTianjiRequest.url, "https://mock.example.invalid/api/cut/model/coze-run-seedance-special-history");
   check("tianji v2 request JSON body", JSON.parse(Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8")), { task_id: "execute_mock_json", execute_id: "execute_mock_json" });
-  await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, "/api/cut/model/coze-seedance-video-special", {
+  const automationGenerationRequest = wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" }, imageUrls: [automationPortraitUrl] });
+  await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, automationGenerationRequest.endpoint, {
     encoding: "form",
-    params: {
-      prompt: "mock",
-      "images[]": ["asset://active-verified", "https://media.example.invalid/two.jpg"],
-      "videos[]": ["https://media.example.invalid/ref.mp4"],
-    },
+    params: automationGenerationRequest.payload,
   });
   const capturedTianjiFormBody = Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8");
   const capturedTianjiForm = new URLSearchParams(capturedTianjiFormBody);
   check("tianji generation request content type is official form", capturedTianjiRequest.headers["Content-Type"], "application/x-www-form-urlencoded");
-  check("tianji generation form repeats image bracket fields", capturedTianjiForm.getAll("images[]"), ["asset://active-verified", "https://media.example.invalid/two.jpg"]);
-  check("tianji generation form repeats video bracket fields", capturedTianjiForm.getAll("videos[]"), ["https://media.example.invalid/ref.mp4"]);
-  check("tianji generation form preserves reviewed portrait asset scheme", capturedTianjiForm.getAll("images[]")[0], "asset://active-verified");
+  check("automation tianji generation form repeats one image bracket field", capturedTianjiForm.getAll("images[]"), ["asset://active-automation"]);
+  check("automation tianji request profile is asset=1/http=0", capturedTianjiForm.getAll("images[]").reduce((profile, value) => ({ asset: profile.asset + Number(/^asset:\/\//i.test(value)), http: profile.http + Number(/^https?:\/\//i.test(value)) }), { asset: 0, http: 0 }), { asset: 1, http: 0 });
   await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, mockTaskQuery.endpoint, {
     method: mockTaskQuery.method,
     params: mockTaskQuery.params,

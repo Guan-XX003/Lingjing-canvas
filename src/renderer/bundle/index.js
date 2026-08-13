@@ -121,6 +121,7 @@ import {
 } from "../lib/mention";
 import {
   wanjuanNormalizeTianjiPortraitAssets,
+  wanjuanTianjiPortraitNodeDataFromAutomation,
   wanjuanTianjiPortraitToResource,
 } from "../lib/tianji-portrait";
 import {
@@ -1764,7 +1765,7 @@ function WanJuanAppCanvas({
         runAutomationGeneration(nodeId, "video", () => generateVideo(nodeId, String(prompt), String(resolution || "1280x720"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "")));
         return { ok: true, accepted: true, nodeId, sourceNodeId: sourceId || undefined };
       },
-      generateTianjiVideo: async ({ prompt = "", model = "", resolution = "720p", duration = "5", aspectRatio = "16:9", mode = "text-to-video", images = [], videos = [], audios = [] } = {}) => {
+      generateTianjiVideo: async ({ prompt = "", model = "", resolution = "720p", duration = "5", aspectRatio = "16:9", mode = "text-to-video", images = [], portraitAssetIds = [], videos = [], audios = [] } = {}) => {
         const nodeId = `automation-tianji-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const sources = [];
         const edges = [];
@@ -1775,7 +1776,13 @@ function WanJuanAppCanvas({
           sources.push({ id: sourceId, type: sourceType, position: { x: -420, y: index * 100 }, data: sourceData });
           edges.push({ id: `automation-edge-${sourceId}`, source: sourceId, target: nodeId, type: "custom" });
         });
-        addSources(images, "image"); addSources(videos, "video"); addSources(audios, "audio");
+        addSources(images, "image");
+        (Array.isArray(portraitAssetIds) ? portraitAssetIds : []).forEach((assetId, index) => {
+          const sourceId = `${nodeId}-portrait-${index + 1}`;
+          sources.push({ id: sourceId, type: "imageNode", position: { x: -420, y: (images.length + index) * 100 }, data: wanjuanTianjiPortraitNodeDataFromAutomation(assetId) });
+          edges.push({ id: `automation-edge-${sourceId}`, source: sourceId, target: nodeId, type: "custom" });
+        });
+        addSources(videos, "video"); addSources(audios, "audio");
         setNodes((current) => [...current, ...sources, { id: nodeId, type: "seedanceNode", position: { x: 0, y: 0 }, data: {
           prompt: String(prompt), seedanceNode: true, seedanceMode: "tianji", tianjiSeedanceGenerationMode: String(mode || "text-to-video"),
           tianjiSelectedModel: String(model || ""), selectedResolution: String(resolution || "720p"), selectedSeconds: String(duration || "5"), size: String(aspectRatio || "16:9"),

@@ -6,13 +6,15 @@ import { useCallback } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
+import { wanjuanHasTianjiPortraitClaim, wanjuanRecoverTianjiPortraitNodeData, wanjuanTianjiPortraitReferenceFromNodeData } from "../lib/tianji-portrait";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
 import { safeStringifyRequestForLog, serializeErrorPreview } from "../lib/log-utils";
 import { wanjuanClearProjectAssetBindingsFromData, wanjuanResourceKind } from "../lib/resource";
 import { wanjuanFormatMentionToken, wanjuanLegacyMentionToken, wanjuanNormalizeMentionTokensForApi } from "../lib/mention";
 import { WanJuanGetPreferredModel } from "../lib/model-favorites";
 import { wanjuanNormalizeSeedanceAssetId, wanjuanSeedanceAssetUrl } from "../lib/seedance";
-import { wanjuanRunTianjiSeedanceVideo } from "../lib/tianji-api";
+import { wanjuanRunTianjiSeedanceVideo, wanjuanTianjiStorageGet } from "../lib/tianji-api";
+import { wanjuanTianjiResolvePortraitAssetForNodeData } from "../lib/tianji-assets";
 import { wanjuanBuildReferenceMediaEntries } from "../lib/video-task";
 import { applyRunScopedStateUpdate, supersedeActiveNodeTasks, updateTaskRunningProgress } from "../lib/global-tasks";
 import { wanjuanResolveArkTrustedAssetReference } from "../lib/ark-trusted-assets";
@@ -384,7 +386,13 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   } :
                   value;
                 if (!value && !assetId && !tianjiPortraitAssetId && !arkTrustedAssetId) return;
-                let existingIndex = imageReferences.findIndex((reference) => (typeof reference == `string` ? reference : reference?.url || ``) === value);
+                let existingIndex = imageReferences.findIndex((reference) => {
+                  if (typeof reference == `string`) return !tianjiPortraitAssetId && !assetId && !arkTrustedAssetId && value && reference === value;
+                  if (tianjiPortraitAssetId) return String(reference?.tianjiPortraitAssetId || ``).trim() === tianjiPortraitAssetId;
+                  if (assetId) return wanjuanNormalizeSeedanceAssetId(reference?.seedanceAssetId || reference?.assetId) === assetId;
+                  if (arkTrustedAssetId) return String(reference?.arkTrustedAssetId || ``).replace(/^asset:\/\//i, ``).trim() === arkTrustedAssetId;
+                  return Boolean(value) && String(reference?.url || ``).trim() === value;
+                });
                 if (existingIndex >= 0) {
                   (assetId || tianjiPortraitAssetId || arkTrustedAssetId || Object.keys(seedanceMeta).length > 0) && (imageReferences[existingIndex] = entry);
                   return;
@@ -411,6 +419,26 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   kind,
                 });
               };
+            if (seedanceSourceNode?.data?.seedanceMode === `tianji`) {
+              let stored = await wanjuanTianjiStorageGet([`tianjiSeedanceAssets`]),
+                cachedAssets = stored?.tianjiSeedanceAssets || {},
+                recoveredNodes = new Map();
+              incomingEdges.forEach((edge) => {
+                let sourceNode = nodes2.find((node) => node.id === edge.source);
+                if (!sourceNode || !wanjuanHasTianjiPortraitClaim(sourceNode.data) || String(sourceNode.data?.tianjiPortraitAssetId || ``).trim()) return;
+                let resolved = wanjuanTianjiResolvePortraitAssetForNodeData(sourceNode.data, cachedAssets);
+                let recoveredData = wanjuanRecoverTianjiPortraitNodeData(sourceNode.data, resolved);
+                if (!recoveredData) return;
+                recoveredNodes.set(sourceNode.id, {
+                  ...sourceNode,
+                  data: recoveredData,
+                });
+              });
+              if (recoveredNodes.size) {
+                nodes2 = nodes2.map((node) => recoveredNodes.get(node.id) || node);
+                setNodes((current) => current.map((node) => recoveredNodes.get(node.id) || node));
+              }
+            }
             incomingEdges.forEach((edge) => {
               let sourceNode = nodes2.find((node) => node.id === edge.source);
               let sourceTianjiBindingStatus = String(sourceNode?.data?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
@@ -431,6 +459,10 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   `天玑人像缺少 Active 状态证明，请刷新人像库后重新选择` :
                   `天玑人像缺少最终素材 ID，请刷新人像库后重新选择`;
                 throw Error(sourceNode.data.tianjiPortraitBindingMessage || fallbackMessage);
+              }
+              if (seedanceSourceNode?.data?.seedanceMode === `tianji` && sourceNode && wanjuanHasTianjiPortraitClaim(sourceNode.data)) {
+                addVideoReferenceImage(wanjuanTianjiPortraitReferenceFromNodeData(sourceNode.data));
+                return;
               }
               if (sourceNode?.data?.seedanceAssetId) {
                 addVideoReferenceImage(wanjuanSeedanceAssetUrl(sourceNode.data.seedanceAssetId), {

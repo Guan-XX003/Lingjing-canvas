@@ -89,7 +89,11 @@ export const WanJuanImageNode = reactMemo(({
 	    }, [imageUrl, mediaType, nodeId]);
     let tianjiBindingSourceUrl = String(data.tianjiPortraitBindingSourceUrl || ``).trim(),
       tianjiBindingMatchesImage = !tianjiBindingSourceUrl || tianjiBindingSourceUrl === String(imageUrl || ``).trim(),
-      tianjiBindingStatus = tianjiBindingMatchesImage ? String(data.tianjiPortraitBindingStatus || ``).trim() : ``,
+      tianjiBindingStatus =
+      tianjiBindingMatchesImage &&
+      String(data.tianjiPortraitAssetId || ``).trim() &&
+      (data.sourceOrigin === `tianji-portrait` || data.source === `tianji-portrait` || data.type === `image/tianji-portrait`) ?
+      String(data.tianjiPortraitBindingStatus || ``).trim() : ``,
       tianjiBindingState =
       tianjiBindingStatus === `reviewing` ?
       {

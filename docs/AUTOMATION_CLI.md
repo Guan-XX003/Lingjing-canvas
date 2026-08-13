@@ -76,7 +76,16 @@ npm run wanjuan -- tianji generate \
   --ratio 16:9
 ```
 
-`--mode` 支持 `text-to-video`、`first-frame`、`first-last`、`reference-media`。`--image` 可重复 9 次，`--video` 和 `--audio` 可各重复 3 次。该命令创建真正的即梦天玑节点，并沿用 App 内的极鑫配置，不接受或输出 API Key。
+已审核天玑人像使用专用参数：
+
+```bash
+npm run wanjuan -- tianji generate \
+  --prompt "镜头缓慢推进" \
+  --mode reference-media \
+  --portrait-asset-id '<final-active-id>'
+```
+
+`--mode` 支持 `text-to-video`、`first-frame`、`first-last`、`reference-media`。`--image` 可重复 9 次，`--video` 和 `--audio` 可各重复 3 次。`--portrait-asset-id` 只接受天玑素材库返回的最终 Active 素材 ID，只能用于 `reference-media`，并与 `--image` 合计最多 9 个；普通 `--image` 不能传 `asset://`。该命令创建真正的即梦天玑节点，并沿用 App 内的极鑫配置，不接受或输出 API Key。
 
 生成命令立即返回 `nodeId`。以下命令同时接受 `taskId` 或该 `nodeId`：
 
@@ -124,6 +133,8 @@ MCP 工具：
 - `wanjuan_get_task`
 - `wanjuan_wait_task`
 - `wanjuan_cancel_task`
+
+MCP 的 `wanjuan_generate_tianji_video` 提供等价的 `portraitAssetIds` 数组。该字段走严格的已审核人像通道，不能由普通 `images` 或任意 `asset://` 字符串替代。
 
 MCP Server 的 stdout 只输出 JSON-RPC 消息；工具错误作为 MCP 结果返回。
 

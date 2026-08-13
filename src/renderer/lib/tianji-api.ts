@@ -753,7 +753,18 @@ export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOp
   if (media && typeof media == `object` && media.localUploaded === true)
     throw Error(`这张天玑人像还没有从素材库返回，请先刷新天玑素材列表后再生成`);
   let isTianjiPortrait = wanjuanIsTianjiPortrait(media),
-    hasTianjiPortraitClaim = Boolean(media && typeof media == `object` && (media.isTianjiPortrait === true || wanjuanTianjiPortraitAssetId(media))),
+    hasTianjiPortraitClaim = Boolean(
+      media &&
+        typeof media == `object` &&
+        (media.isTianjiPortrait === true ||
+          wanjuanTianjiPortraitAssetId(media) ||
+          media.tianjiPortraitBindingStatus ||
+          media.tianjiPortraitPreviewUrl ||
+          media.tianjiPortraitBindingSourceUrl ||
+          media.source === `tianji-portrait` ||
+          media.sourceOrigin === `tianji-portrait` ||
+          media.type === `image/tianji-portrait`),
+    ),
     portraitBindingStatus = String(media?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
     portraitAssetId = wanjuanTianjiPortraitAssetId(media);
   if (hasTianjiPortraitClaim && !isTianjiPortrait)

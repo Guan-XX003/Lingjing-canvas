@@ -9,8 +9,12 @@ import { spawn } from "node:child_process";
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "wanjuan-mcp-test-"));
 const infoFile = path.join(tempRoot, "automation.json");
 const token = "mcp-test-token-0000000000000000000000001";
-const server = http.createServer((req, res) => {
+const requests = [];
+const server = http.createServer(async (req, res) => {
   if (req.headers.authorization !== `Bearer ${token}`) { res.writeHead(401); return res.end(JSON.stringify({ ok: false })); }
+  let text = "";
+  for await (const chunk of req) text += chunk;
+  requests.push({ path: new URL(req.url, "http://127.0.0.1").pathname, body: text ? JSON.parse(text) : null });
   const responses = {
     "/v1/status": { ok: true, app: "万卷灵境", version: "1.4.2", ready: true },
     "/v1/models": { ok: true, image: ["test-image"], video: ["test-video"], text: [] },
@@ -34,7 +38,7 @@ send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "
 send({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "wanjuan_status", arguments: {} } });
 send({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "wanjuan_generate_image", arguments: { prompt: "test" } } });
-send({ jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "wanjuan_generate_tianji_video", arguments: { prompt: "test", mode: "first-last", images: ["/tmp/a.png", "/tmp/b.png"] } } });
+send({ jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "wanjuan_generate_tianji_video", arguments: { prompt: "test", mode: "reference-media", portraitAssetIds: ["asset-reviewed-mock"] } } });
 
 const deadline = Date.now() + 5000;
 while (replies.size < 5 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 20));
@@ -43,6 +47,9 @@ assert.equal(replies.get(2)?.result?.tools?.length, 9);
 assert.equal(replies.get(3)?.result?.structuredContent?.ready, true);
 assert.equal(replies.get(4)?.result?.structuredContent?.nodeId, "automation-image-test");
 assert.equal(replies.get(5)?.result?.structuredContent?.mode, "first-last");
+const tianjiTool = replies.get(2)?.result?.tools?.find((tool) => tool.name === "wanjuan_generate_tianji_video");
+assert.equal(tianjiTool?.inputSchema?.properties?.portraitAssetIds?.maxItems, 9);
+assert.deepEqual(requests.find((request) => request.path === "/v1/tianji/generate")?.body?.portraitAssetIds, ["asset-reviewed-mock"]);
 
 child.kill();
 await new Promise((resolve) => server.close(resolve));
