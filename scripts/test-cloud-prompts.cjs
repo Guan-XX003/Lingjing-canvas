@@ -387,6 +387,14 @@ async function testSharingContractsAndUi() {
   assert.equal(expired.code, "PROMPT_INVITATION_EXPIRED");
 }
 
+async function testWorkspaceSendMenuIsNotClipped() {
+  const source = fs.readFileSync(path.join(__dirname, "../electron/preload/desktop-patches.cjs"), "utf8");
+  assert.match(source, /\.wanjuan-workspace-card\{[^}]*position:relative[^}]*overflow:visible/, "template card must allow its send menu to escape the card bounds");
+  assert.match(source, /\.wanjuan-workspace-card:has\(\.wanjuan-workspace-send-menu\[open\]\)\{z-index:50\}/, "open send menu card must stack above neighboring cards");
+  assert.match(source, /\.wanjuan-workspace-card-media\{[^}]*overflow:hidden[^}]*border-radius:9px 0 0 9px/, "media must preserve the card's rounded clipping after the card becomes overflow-visible");
+  assert.match(source, /\.wanjuan-workspace-send-menu-list\{[^}]*position:absolute[^}]*z-index:40/, "send menu must remain an absolute overlay");
+}
+
 async function main() {
   if (electronApp) {
     await electronApp.whenReady();
@@ -400,6 +408,7 @@ async function main() {
   await testConflictDetailsPreserved();
   await testSendTargetsAndCloudCopy();
   await testSharingContractsAndUi();
+  await testWorkspaceSendMenuIsNotClipped();
   console.log("cloud prompt tests passed");
 }
 
