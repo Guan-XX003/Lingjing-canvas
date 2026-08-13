@@ -150,10 +150,12 @@ export const wanjuanBuildTianjiGenerationRequest = ({
     payload.first_frame = imageUrls[0];
     payload.last_frame = imageUrls[1];
   } else if (generationMode === `reference-media`) {
+    if (imageUrls.length === 0 && videoUrls.length === 0 && audioUrls.length === 0)
+      throw Error(`天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材`);
     endpoint = `/api/cut/model/coze-seedance-video-special`;
-    if (imageUrls.length) payload[`images[]`] = imageUrls;
-    if (videoUrls.length) payload[`videos[]`] = videoUrls;
-    if (audioUrls.length) payload[`audios[]`] = audioUrls;
+    if (imageUrls.length) payload.images = imageUrls;
+    if (videoUrls.length) payload.videos = videoUrls;
+    if (audioUrls.length) payload.audios = audioUrls;
   }
   return { endpoint, payload, generationMode };
 };
@@ -668,7 +670,7 @@ const wanjuanTianjiAssetUrl = (assetId: any): string => {
   return cleanId ? `asset://${cleanId}` : ``;
 };
 
-const wanjuanTianjiPortraitAssetUrl = (media: any): string => {
+export const wanjuanTianjiPortraitAssetUrl = (media: any): string => {
   if (!media || typeof media != `object`) return ``;
   let isTianjiPortrait =
       media.isTianjiPortrait === true ||
@@ -685,6 +687,17 @@ const wanjuanTianjiPortraitAssetUrl = (media: any): string => {
       media.id;
   return isTianjiPortrait ? wanjuanTianjiAssetUrl(assetId) : ``;
 };
+
+const wanjuanIsTianjiPortrait = (media: any): boolean =>
+  Boolean(
+    media &&
+      typeof media == `object` &&
+      (media.isTianjiPortrait === true ||
+        media.source === `tianji-portrait` ||
+        media.sourceOrigin === `tianji-portrait` ||
+        media.mediaSourceOrigin === `tianji-portrait` ||
+        media.type === `image/tianji-portrait`),
+  );
 
 /** 把原始状态码映射为中文进度文案（排队中 / 生成中）。 */
 export const wanjuanTianjiStatusLabel = (status: any): string => {
@@ -743,7 +756,11 @@ export const wanjuanTianjiErrorMessage = (data: any): string => {
 export const wanjuanTianjiMediaUrl = async (media: any, kind = `image`, uploadOptions: any = {}): Promise<string> => {
   if (media && typeof media == `object` && media.localUploaded === true)
     throw Error(`这张天玑人像还没有从素材库返回，请先刷新天玑素材列表后再生成`);
-  let portraitAssetUrl = wanjuanTianjiPortraitAssetUrl(media);
+  let isTianjiPortrait = wanjuanIsTianjiPortrait(media),
+    portraitBindingStatus = String(media?.tianjiPortraitBindingStatus || ``).trim().toLowerCase(),
+    portraitAssetUrl = wanjuanTianjiPortraitAssetUrl(media);
+  if (isTianjiPortrait && ([`reviewing`, `pending`, `failed`].includes(portraitBindingStatus) || !portraitAssetUrl))
+    throw Error(media.tianjiPortraitBindingMessage || `这张天玑人像尚未完成审核和素材绑定`);
   if (portraitAssetUrl) return portraitAssetUrl;
   let raw =
     media && typeof media == `object`

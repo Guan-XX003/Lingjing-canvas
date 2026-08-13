@@ -97,7 +97,9 @@ async function run() {
     wanjuanTianjiFindThumbUrl,
     wanjuanTianjiStatus,
     wanjuanTianjiFindProgress,
-    wanjuanTianjiErrorMessage
+    wanjuanTianjiErrorMessage,
+    wanjuanTianjiPortraitAssetUrl,
+    wanjuanTianjiMediaUrl
   } = await import(pathToFileURL(join(outDir, "tianji-api.js")).href);
   const { wanjuanTianjiAssetListParams, wanjuanTianjiPortraitAssetIdFromItem, wanjuanTianjiPortraitDeleteDescriptor } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
   const { wanjuanResetTianjiPortraitBindingForImage } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
@@ -936,9 +938,17 @@ async function run() {
   });
   check("tianji reference request preserves array field names", wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" }, imageUrls: ["asset://portrait-mock"], videoUrls: ["https://media.example.invalid/reference.mp4"], audioUrls: ["https://media.example.invalid/reference.mp3"] }), {
     endpoint: "/api/cut/model/coze-seedance-video-special",
-    payload: { prompt: "mock", "images[]": ["asset://portrait-mock"], "videos[]": ["https://media.example.invalid/reference.mp4"], "audios[]": ["https://media.example.invalid/reference.mp3"] },
+    payload: { prompt: "mock", images: ["asset://portrait-mock"], videos: ["https://media.example.invalid/reference.mp4"], audios: ["https://media.example.invalid/reference.mp3"] },
     generationMode: "reference-media"
   });
+  let emptyReferenceMessage = "";
+  try { wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" } }); } catch (error) { emptyReferenceMessage = error.message; }
+  check("tianji reference request rejects empty media before network", emptyReferenceMessage, "天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材");
+  check("ordinary image id is not treated as reviewed tianji portrait", wanjuanTianjiPortraitAssetUrl({ id: "ordinary-image", url: "https://media.example.invalid/plain.png" }), "");
+  check("reviewed tianji portrait uses final asset id", wanjuanTianjiPortraitAssetUrl({ isTianjiPortrait: true, tianjiPortraitAssetId: "portrait-final-001" }), "asset://portrait-final-001");
+  let pendingPortraitMessage = "";
+  try { await wanjuanTianjiMediaUrl({ mediaSourceOrigin: "tianji-portrait", tianjiPortraitBindingStatus: "pending", url: "https://media.example.invalid/unreviewed.png" }); } catch (error) { pendingPortraitMessage = error.message; }
+  check("unreviewed tianji portrait cannot fall back to ordinary image upload", pendingPortraitMessage, "这张天玑人像尚未完成审核和素材绑定");
   check("tianji asset list sends only documented pagination fields", wanjuanTianjiAssetListParams("AIGC", "group-mock", 2, 20), {
     group_ids: "group-mock", group_type: "AIGC", statuses: "Active", PageNumber: "2", PageSize: "20", SortBy: "CreateTime", SortOrder: "Desc"
   });

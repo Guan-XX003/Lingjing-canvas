@@ -18,7 +18,7 @@
 | 文生视频 | `POST /api/cut/model/coze-seedance-text-special` | 无 |
 | 首帧生视频 | `POST /api/cut/model/coze-seedance-image-first-special` | `first_frame` |
 | 首尾帧生视频 | `POST /api/cut/model/coze-seedance-image-first-last-special` | `first_frame`、`last_frame` |
-| 参考素材生视频 | `POST /api/cut/model/coze-seedance-video-special` | `images[]`、`videos[]`、`audios[]` |
+| 参考素材生视频 | `POST /api/cut/model/coze-seedance-video-special` | JSON 数组 `images`、`videos`、`audios` |
 | 任务查询 | `POST /api/cut/model/coze-run-seedance-special-history` | JSON: `task_id`、`execute_id`（同一任务 ID） |
 
 生成通用字段为 `duration`、`ratio`、`prompt`、`watermark`、`model_name`、`resolution`、`generate_audio`。文档明确的模型为 `doubao-seedance-2-0-260128` 和 `doubao-seedance-2-0-fast-260128`。

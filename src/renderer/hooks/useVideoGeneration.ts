@@ -527,9 +527,6 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	              } else
 	                sourceNode && sourceNode.type === `textNode` && sourceNode.data.text && promptParts.push(sourceNode.data.text);
 	            });
-	            let seedanceConnectedImageRefs = [...imageReferences],
-	              seedanceConnectedVideoRefs = [...videoReferences],
-	              seedanceConnectedAudioRefs = [...seedanceAudioRefs];
 	            let matchedNodeForUpdate = nodes2.find((node) => node.id === nodeId);
 	            matchedNodeForUpdate &&
 	              matchedNodeForUpdate.data.selectedContextResources &&
@@ -540,7 +537,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                  addVideoReferenceVideo(resource.url || resource.localPath || resource.path) :
 	                  wanjuanResourceKind(resource) === `audio` &&
 	                  seedanceAudioRefs.push(resource.url || resource.localPath || resource.path);
-	              });
+              });
+	            // Take the snapshots only after connected/context resources have all been collected.
+	            // Otherwise resources added from the context picker are omitted from Tianji payloads.
+	            let seedanceConnectedImageRefs = [...imageReferences],
+	              seedanceConnectedVideoRefs = [...videoReferences],
+	              seedanceConnectedAudioRefs = [...seedanceAudioRefs];
             if (seedanceSourceNode?.type === `tongyiWanxiangNode`) {
               let tongyiMode =
                   seedanceSourceNode?.data?.tongyiWanxiangMode || `text-to-video`,
