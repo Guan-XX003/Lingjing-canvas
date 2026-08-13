@@ -11,7 +11,7 @@
 - 分支：`local-ui-redesign-flow`
 - 当前提交：`99c20b5539fd1432b14c1de3d59577f07a302c01`
 - 当前标签：`v1.4.1`
-- 当前 `package.json` 版本：`1.4.1`
+- 当前 `package.json` 候选版本：`1.4.2`
 - 远端状态：当前主线与 `origin/local-ui-redesign-flow` 同步
 
 不要把 `/Users/guanpeng/Documents/万卷画布/wanjuan-lingjing-source` 当成最新源码。它是较旧的副本，不能作为后续开发主线。
@@ -162,8 +162,7 @@ npm run debug
 仓库：https://github.com/Guan-XX003/Lingjing-canvas
 分支：local-ui-redesign-flow
 当前提交：99c20b5539fd1432b14c1de3d59577f07a302c01
-当前版本：1.4.1
+当前候选版本：1.4.2（GitHub Release 仍由协调会话统一发布）
 
 先阅读 docs/CODEX_HANDOFF.md、AGENTS.md、README.md 和相关功能文档，执行 git status、git log -1、git remote -v，确认不是旧源码副本。不要清理用户数据、不要使用 reset/clean/stash 删除工作、不要硬编码模型或密钥。开始修改前先说明将检查哪些文件；完成后运行相关测试并报告实际结果。
 ```
-

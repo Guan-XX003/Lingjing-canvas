@@ -12,7 +12,7 @@ const token = "mcp-test-token-0000000000000000000000001";
 const server = http.createServer((req, res) => {
   if (req.headers.authorization !== `Bearer ${token}`) { res.writeHead(401); return res.end(JSON.stringify({ ok: false })); }
   const responses = {
-    "/v1/status": { ok: true, app: "万卷灵境", version: "1.4.1", ready: true },
+    "/v1/status": { ok: true, app: "万卷灵境", version: "1.4.2", ready: true },
     "/v1/models": { ok: true, image: ["test-image"], video: ["test-video"], text: [] },
     "/v1/tasks": { ok: true, tasks: [] },
   "/v1/image/generate": { ok: true, accepted: true, nodeId: "automation-image-test" },

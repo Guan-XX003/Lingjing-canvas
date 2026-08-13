@@ -1,5 +1,13 @@
 # 万卷灵境 CLI / MCP 自动化
 
+## 独立下载
+
+不安装桌面应用时，可下载与本版本匹配的 CLI/MCP 压缩包：
+
+[下载 wanjuan-cli-1.4.2.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/wanjuan-cli-1.4.2.zip)
+
+压缩包只包含 CLI/MCP 程序与本说明，不包含账号会话、API Key 或用户数据。
+
 万卷灵境启动后会在当前用户数据目录创建一次性本机自动化凭据。CLI 和 MCP 只连接 `127.0.0.1`，不会读取或输出模型 API Key、账号 Token 或完整应用配置。
 
 ## 使用条件

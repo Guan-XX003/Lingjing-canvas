@@ -6,7 +6,7 @@
 
 **面向 AI 创作流程的桌面画布应用**
 
-[![版本](https://img.shields.io/badge/版本-1.3.5-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![版本](https://img.shields.io/badge/版本-1.4.2-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
 [![平台](https://img.shields.io/badge/平台-macOS%20|%20Windows-lightgrey.svg)](#安装)
 [![许可](https://img.shields.io/badge/许可-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 
@@ -103,8 +103,10 @@
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [万卷灵境-1.3.5-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [万卷灵境-1.3.5-x64.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [万卷灵境-1.4.2-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/%E4%B8%87%E5%8D%B7%E7%81%B5%E5%A2%83-1.4.2-arm64.dmg) |
+| Windows | x64 | [万卷灵境-1.4.2-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/%E4%B8%87%E5%8D%B7%E7%81%B5%E5%A2%83-1.4.2-x64.exe) |
+
+CLI / MCP 独立下载：[wanjuan-cli-1.4.2.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.2/wanjuan-cli-1.4.2.zip)
 
 ### 安装说明
 
@@ -183,7 +185,13 @@ npm run build:win:x86
 
 ## 📋 更新记录
 
-### 最新版本：v1.3.5（2026-06-29）
+### 最新版本：v1.4.2（2026-08-13）
+
+- 云端提示词库、跨空间发送、团队成员与邀请、离线同步与冲突处理
+- 天玑 v2、人像素材库兼容、CLI/MCP 天玑控制和媒体结果本地持久化
+- 本地模式默认启动、开屏启动体验、长名称与旧素材删除兼容修复
+
+### 历史版本：v1.3.5（2026-06-29）
 
 - 🌐 在更新设置旁新增“前往官网”入口
 - 🛡️ 正式版忽略开发数据目录变量，避免误读临时开发数据

@@ -9,6 +9,8 @@ import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 export { compactGlobalTasks } from "./global-tasks";
 
+export const WANJUAN_RELEASE_NOTES_1_4_2 = `1.4.2：新增个人与企业云端提示词库共享、跨空间发送，完善天玑与人像素材兼容、CLI/MCP 控制和本地默认启动体验。`;
+
 export const membershipLimits = {
       FREE: {
         accounts: 999999,

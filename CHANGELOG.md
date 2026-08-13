@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.2 - 2026-08-13
+
+- Added personal and enterprise cloud prompt libraries with send-to-local, send-to-LAN-team, send-to-cloud, member/invitation controls, permission-aware UI, offline queueing, conflict handling, and cross-workspace copy.
+- Updated Jimeng Tianji v2 requests, Bearer authentication, portrait-library compatibility, safe media persistence, and four-mode task control.
+- Added the `wanjuan` CLI and MCP Tianji generation controls, including task lookup/wait/cancel and persistent media-result handling.
+- Made first launch local-first without forcing account login, kept the splash covering initialization, and made Settings open on My Account.
+- Fixed long workspace names, legacy portrait deletion IDs, and narrow-panel layout behavior across macOS and Windows.
+
 ## 1.4.1 - 2026-07-23
 
 - Restored the local gateway-owner management state after account sessions are cleared or users sign in again, while rejecting stale local identities after another computer takes over.

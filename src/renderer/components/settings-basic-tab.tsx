@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.4.1：修复重新登录后本机主网关管理面板丢失、错误进入接管流程的问题，并统一应用内版本显示与安装包版本。`),
+				                                          children: wanjuanT(`1.4.2：新增个人与企业云端提示词库共享、跨空间发送，完善天玑与人像素材兼容、CLI/MCP 控制和本地默认启动体验。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-				                                          children: `1.4.1`,
+				                                          children: `1.4.2`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,
