@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
-import { wanjuanHasTianjiPortraitClaim, wanjuanRecoverTianjiPortraitNodeData, wanjuanTianjiPortraitReferenceFromNodeData } from "../lib/tianji-portrait";
+import { wanjuanHasTianjiPortraitClaim, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanTianjiPortraitReferenceFromNodeData } from "../lib/tianji-portrait";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
 import { safeStringifyRequestForLog, serializeErrorPreview } from "../lib/log-utils";
 import { wanjuanClearProjectAssetBindingsFromData, wanjuanResourceKind } from "../lib/resource";
@@ -115,8 +115,12 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	            .split(/[\n,，、]+/)
 	            .map((item) => item.trim())
 	            .filter(Boolean)[0] || `grok-video-4.2`,
-	            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
-	            seedanceSourceNode = getNodes().find((node) => node.id === nodeId);
+		            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
+		            currentCanvasNodes = () => {
+		              const renderedNodes = Array.from(globalThis.__wanjuanRenderRuntime?.renderedNodes?.values?.() || []);
+		              return wanjuanPreferCurrentCanvasNodes(renderedNodes, wanjuanPreferCurrentCanvasNodes(nodesRef.current, getNodes()));
+		            },
+		            seedanceSourceNode = currentCanvasNodes().find((node) => node.id === nodeId);
 	          if (seedanceSourceNode?.type === `seedanceNode` && seedanceSourceNode?.data?.seedanceMode !== `tianji`) {
 	            let seedanceOfficialModelText = seedanceSourceNode?.data?.seedanceModel || seedanceSourceNode?.data?.videoModel || ``,
 	              seedanceOfficialModel = WanJuanGetPreferredModel(
@@ -335,8 +339,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
             ));
           try {
             showToast(`正在提交视频生成任务...`);
-            let edgesList = getEdges(),
-              nodes2 = getNodes(),
+	            let edgesList = getEdges(),
+	              nodes2 = currentCanvasNodes(),
               incomingEdges = edgesList.filter((edge) => edge.target === nodeId),
               imageReferences = [],
               promptParts = [],

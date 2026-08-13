@@ -110,7 +110,7 @@ async function run() {
     wanjuanTianjiPortraitImageUrlFromItem,
     wanjuanTianjiResolvePortraitAssetForNodeData,
   } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
-  const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
+  const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
   const automationResult = await import(pathToFileURL(join(outDir, "automation-result.js")).href);
 
@@ -123,6 +123,8 @@ async function run() {
   const desktopWindowSource = readFileSync(join(root, "electron/main/window.cjs"), "utf8");
   const appBundleSource = readFileSync(join(root, "src/renderer/bundle/index.js"), "utf8");
   const videoGenerationSource = readFileSync(join(root, "src/renderer/hooks/useVideoGeneration.ts"), "utf8");
+  const renderModeSource = readFileSync(join(root, "src/renderer/components/render-mode.tsx"), "utf8");
+  const desktopIpcSource = readFileSync(join(root, "electron/main/ipc.cjs"), "utf8");
   const tianjiApiSource = readFileSync(join(root, "src/renderer/lib/tianji-api.ts"), "utf8");
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
@@ -132,6 +134,9 @@ async function run() {
   check("tianji preload supports explicit form encoding", preloadPanelSource.includes('encoding = "json"') && preloadPanelSource.includes('headers["Content-Type"] = "application/x-www-form-urlencoded"'), true);
   check("tianji connection requires trusted source, ready status and final id", videoGenerationSource.includes('sourceHasTianjiPortraitClaim = Boolean(sourceNode?.data?.tianjiPortraitAssetId || sourceNode?.data?.isTianjiPortrait)') && videoGenerationSource.includes('sourceTianjiBindingStatus !== `ready` || !sourceTianjiPortraitAssetId') && !videoGenerationSource.includes('sourceTianjiPortraitPreviewUrl = String('), true);
   check("tianji connection rebuilds reviewed metadata before generic media collection", videoGenerationSource.includes("addVideoReferenceImage(wanjuanTianjiPortraitReferenceFromNodeData(sourceNode.data));") && videoGenerationSource.includes("wanjuanHasTianjiPortraitClaim(sourceNode.data)"), true);
+  check("rendered node props are registered as the freshest runtime snapshot", renderModeSource.includes("renderedNodes?.set?.(props.id, { id: props.id, type: nodeType, data: props.data })") && renderModeSource.includes("renderedNodes.delete(props.id)"), true);
+  check("manual video generation merges rendered, React and React Flow node states", videoGenerationSource.includes("globalThis.__wanjuanRenderRuntime?.renderedNodes?.values?.()") && videoGenerationSource.includes("wanjuanPreferCurrentCanvasNodes(renderedNodes, wanjuanPreferCurrentCanvasNodes(nodesRef.current, getNodes()))") && videoGenerationSource.includes("nodes2 = currentCanvasNodes()"), true);
+  check("packaged Tianji preflight is explicit, local and blocks upstream", desktopIpcSource.includes('process.env.WANJUAN_TIANJI_PREFLIGHT !== "1"') && desktopIpcSource.includes("WANJUAN_TIANJI_PREFLIGHT_FILE") && desktopIpcSource.includes("CODEX_PREFLIGHT_BLOCKED") && desktopIpcSource.includes("if (preflight) return preflight"), true);
   check("tianji badges require ready id and trusted source", [readFileSync(join(root, "src/renderer/components/image-node.tsx"), "utf8"), readFileSync(join(root, "src/renderer/components/prompt-node.tsx"), "utf8")].every((source) => source.includes("String(data.tianjiPortraitAssetId || ``).trim()") && source.includes("data.sourceOrigin === `tianji-portrait`")), true);
   check("tianji request diagnostics expose only scheme counts", tianjiApiSource.includes('imageSchemes: referenceSchemeCounts(imageUrls)') && !tianjiApiSource.includes('promptPreview:') && !tianjiApiSource.includes('imageRefs: imageUrls.map'), true);
   check("cloud workspace label uses workspace name, not account id", cloudWorkspaceSource.includes("workspace.name || t(\"未命名空间\")"), true);
@@ -981,6 +986,22 @@ async function run() {
     sourceOrigin: "tianji-portrait",
     isTianjiPortrait: true,
   };
+  const stalePortraitNode = { id: "portrait-node", data: { imageUrl: "https://media.example.invalid/stale-preview.jpg" } };
+  const currentPortraitNode = { id: "portrait-node", data: reviewedPortraitNodeData };
+  const preferredPortraitNode = wanjuanPreferCurrentCanvasNodes([currentPortraitNode], [stalePortraitNode])[0];
+  check("current canvas state replaces stale HTTP-only portrait snapshot", {
+    sameObject: preferredPortraitNode === currentPortraitNode,
+    assetId: preferredPortraitNode.data.tianjiPortraitAssetId,
+    status: preferredPortraitNode.data.tianjiPortraitBindingStatus,
+  }, { sameObject: true, assetId: "active-verified", status: "ready" });
+  check("manual portrait reference from preferred state resolves to asset scheme", await wanjuanTianjiMediaUrl(wanjuanTianjiPortraitReferenceFromNodeData(preferredPortraitNode.data)), "asset://active-verified");
+  const preferredFallbackPortraitNode = wanjuanPreferCurrentCanvasNodes([stalePortraitNode], [currentPortraitNode])[0];
+  check("reviewed binding wins when React state is the stale snapshot", {
+    sameObject: preferredFallbackPortraitNode === currentPortraitNode,
+    assetId: preferredFallbackPortraitNode.data.tianjiPortraitAssetId,
+    status: preferredFallbackPortraitNode.data.tianjiPortraitBindingStatus,
+  }, { sameObject: true, assetId: "active-verified", status: "ready" });
+  check("reverse stale snapshot competition still resolves to asset scheme", await wanjuanTianjiMediaUrl(wanjuanTianjiPortraitReferenceFromNodeData(preferredFallbackPortraitNode.data)), "asset://active-verified");
   check("reviewed portrait claim is detected before generic URL collection", wanjuanHasTianjiPortraitClaim(reviewedPortraitNodeData), true);
   check("reviewed portrait ready binding requires trusted source and id", wanjuanIsReadyTianjiPortraitBinding(reviewedPortraitNodeData), true);
   const rebuiltPortraitReference = wanjuanTianjiPortraitReferenceFromNodeData(reviewedPortraitNodeData);

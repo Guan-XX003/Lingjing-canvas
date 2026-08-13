@@ -55,6 +55,33 @@ export const wanjuanIsReadyTianjiPortraitBinding = (data: any): boolean =>
         data.type === `image/tianji-portrait`),
   );
 
+/**
+ * React Flow 的 getNodes() 在节点数据刚更新时可能短暂返回旧快照。
+ * 合并两个快照时，同 ID 节点始终采用 React state ref 中的最新数据。
+ */
+export const wanjuanPreferCurrentCanvasNodes = (currentNodes: any, fallbackNodes: any): any[] => {
+  const current = Array.isArray(currentNodes) ? currentNodes : [];
+  const fallback = Array.isArray(fallbackNodes) ? fallbackNodes : [];
+  if (!current.length) return fallback;
+  if (!fallback.length) return current;
+  const currentById = new Map(current.map((node) => [node?.id, node]));
+  const bindingStrength = (node: any) => {
+    const data = node?.data;
+    if (wanjuanIsReadyTianjiPortraitBinding(data)) return 2;
+    return wanjuanHasTianjiPortraitClaim(data) ? 1 : 0;
+  };
+  const merged = fallback.map((node) => {
+    const currentNode = currentById.get(node?.id);
+    if (!currentNode) return node;
+    return bindingStrength(node) > bindingStrength(currentNode) ? node : currentNode;
+  });
+  const fallbackIds = new Set(fallback.map((node) => node?.id));
+  current.forEach((node) => {
+    if (!fallbackIds.has(node?.id)) merged.push(node);
+  });
+  return merged;
+};
+
 export const wanjuanTianjiPortraitNodeDataFromAutomation = (assetId: any): any => {
   const id = String(assetId || ``).trim();
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,511}$/.test(id))

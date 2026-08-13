@@ -78,6 +78,37 @@ const { uploadToAnonymousHosts, validatePublicMediaUrl } = require("./uploaders/
 const { uploadToTos, uploadToQiniuS3 } = require("./uploaders/cloud-storage.cjs");
 const { getDefaultArkTrustedAssetService } = require("./uploaders/ark-trusted-assets.cjs");
 const { uploadToCustomPublicHost } = require("./uploaders/custom-host.cjs");
+
+function captureTianjiGenerationPreflight(payload = {}, body = Buffer.alloc(0)) {
+  const outputPath = String(process.env.WANJUAN_TIANJI_PREFLIGHT_FILE || "").trim();
+  if (!outputPath || process.env.WANJUAN_TIANJI_PREFLIGHT !== "1") return null;
+  let pathname = "";
+  try { pathname = new URL(String(payload.url || "")).pathname; } catch { return null; }
+  if (!/^\/api\/cut\/model\/coze-seedance-(?:video|image-first|image-first-last)-special$/i.test(pathname)) return null;
+  const params = new URLSearchParams(body.toString("utf8"));
+  const media = Object.fromEntries(["images", "videos", "audios"].map((kind) => {
+    const values = [...params.getAll(`${kind}[]`), ...params.getAll(kind)];
+    return [kind, values.reduce((counts, value) => {
+      const scheme = /^asset:\/\//i.test(value) ? "asset" : /^https?:\/\//i.test(value) ? "http" : "other";
+      counts.count += 1;
+      counts[scheme] += 1;
+      return counts;
+    }, { count: 0, asset: 0, http: 0, other: 0 })];
+  }));
+  const profile = {
+    endpoint: pathname,
+    encoding: String(payload?.headers?.["Content-Type"] || payload?.headers?.["content-type"] || ""),
+    media,
+  };
+  fs.writeFileSync(outputPath, JSON.stringify(profile), { mode: 0o600 });
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: [["content-type", "application/json"]],
+    bodyBase64: Buffer.from(JSON.stringify({ code: 599, msg: "CODEX_PREFLIGHT_BLOCKED" })).toString("base64"),
+  };
+}
 const { checkForUpdates } = require("./update-checker.cjs");
 const {
   getWorkspaceTeamStatus,
@@ -1054,6 +1085,8 @@ function registerDesktopIpc() {
       const method = String(payload?.method || "GET").toUpperCase();
       const headers = sanitizeProxyFetchHeaders(payload?.headers);
       const body = payload?.bodyBase64 ? Buffer.from(String(payload.bodyBase64), "base64") : undefined;
+      const preflight = captureTianjiGenerationPreflight(payload, body);
+      if (preflight) return preflight;
       const runProxyRequest = async () => {
         const enterpriseResult = await proxyEnterpriseRequest({
           ...payload,

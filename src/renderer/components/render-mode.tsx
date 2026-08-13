@@ -58,6 +58,7 @@ export const WanJuanRenderRuntime = (() => {
         nodeUpdates: [],
         renderModeAt: Date.now()
       },
+      renderedNodes = new Map(),
       mark = (key) => {
         let now = Date.now();
         counters[key] || (counters[key] = []);
@@ -75,6 +76,7 @@ export const WanJuanRenderRuntime = (() => {
       globalThis.__wanjuanRenderRuntime = {
         counters: counters,
         mark: mark,
+        renderedNodes: renderedNodes,
         snapshot: () => {
           let now = Date.now();
           counters.nodeUpdates = (counters.nodeUpdates || []).filter((time) => now - time <= 5000);
@@ -266,6 +268,13 @@ export const WanJuanWithRenderMode = (Component: any, nodeType: any) =>
         effectiveRenderMode = renderMode === `shell` && !props.selected && !props.data?.loading ? `shell` :
           renderMode === `lite` && !forceFull ? `lite` : `full`,
         updateNodeInternals = useUpdateNodeInternals();
+      useLayoutEffect(() => {
+        const renderedNodes = globalThis.__wanjuanRenderRuntime?.renderedNodes;
+        renderedNodes?.set?.(props.id, { id: props.id, type: nodeType, data: props.data });
+        return () => {
+          if (renderedNodes?.get?.(props.id)?.data === props.data) renderedNodes.delete(props.id);
+        };
+      }, [props.id, props.data]);
       useLayoutEffect(() => {
         let firstFrame = window.requestAnimationFrame(() => {
           updateNodeInternals(props.id);
