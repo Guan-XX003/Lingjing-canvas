@@ -68,6 +68,8 @@ interface TianjiRequestOptions {
   signal?: AbortSignal;
   encoding?: `json` | `form`;
   reviewedPortraitCount?: number;
+  ordinaryImageCount?: number;
+  reviewedPortraitPreviewUrls?: string[];
 }
 
 /** wanjuanRunTianjiSeedanceVideo 的运行入参（来自调用方编辑器上下文）。 */
@@ -80,6 +82,7 @@ interface RunTianjiSeedanceVideoOptions {
   imageRefs?: any[];
   portraitAssetIds?: string[];
   reviewedPortraitClaimCount?: number;
+  reviewedPortraitPreviewUrls?: string[];
   videoRefs?: any[];
   audioRefs?: any[];
   nodeId: string;
@@ -487,7 +490,16 @@ export const wanjuanTianjiBase64Decode = (input: any): string => {
 export const wanjuanTianjiRequest = async (
   rawConfig: any,
   path: string,
-  { method = `POST`, params = {}, query = {}, signal, encoding = `json`, reviewedPortraitCount = 0 }: TianjiRequestOptions = {},
+  {
+    method = `POST`,
+    params = {},
+    query = {},
+    signal,
+    encoding = `json`,
+    reviewedPortraitCount = 0,
+    ordinaryImageCount = 0,
+    reviewedPortraitPreviewUrls = [],
+  }: TianjiRequestOptions = {},
 ): Promise<any> => {
   let config = wanjuanNormalizeTianjiSeedanceConfig(rawConfig);
   if (!config.token) throw Error(`请先在设置里的“即梦天玑”填写 Authorization Token`);
@@ -529,7 +541,13 @@ export const wanjuanTianjiRequest = async (
         bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
         requestTimeout: 18e4,
         tianjiGenerationProfile: /coze-seedance-(?:text|video|image-first|image-first-last)-special/i.test(path)
-          ? { reviewedPortraitCount: Math.max(0, Math.floor(Number(reviewedPortraitCount || 0))) }
+          ? {
+              reviewedPortraitCount: Math.max(0, Math.floor(Number(reviewedPortraitCount || 0))),
+              ordinaryImageCount: Math.max(0, Math.floor(Number(ordinaryImageCount || 0))),
+              reviewedPortraitPreviewUrls: reviewedPortraitPreviewUrls
+                .map((value) => String(value || ``).trim())
+                .filter((value) => /^https?:\/\//i.test(value)),
+            }
           : undefined,
       });
     } finally {
@@ -964,6 +982,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
       params: payload,
       encoding,
       reviewedPortraitCount: Number(options.reviewedPortraitClaimCount || 0),
+      ordinaryImageCount: imageUrls.length,
+      reviewedPortraitPreviewUrls: options.reviewedPortraitPreviewUrls || [],
       signal: abortController.signal,
     }),
     taskId = wanjuanTianjiFindTaskId(submitResponse);

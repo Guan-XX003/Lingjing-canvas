@@ -245,7 +245,16 @@ function buildDesktopProxyFetchBridgePayload(payload = {}) {
     bodyBase64,
     requestTimeout: Number(payload.requestTimeout || getDesktopProxyFetchTimeout(url, method)),
     tianjiGenerationProfile: payload.tianjiGenerationProfile && typeof payload.tianjiGenerationProfile === "object"
-      ? { reviewedPortraitCount: Math.max(0, Math.floor(Number(payload.tianjiGenerationProfile.reviewedPortraitCount || 0))) }
+      ? {
+          reviewedPortraitCount: Math.max(0, Math.floor(Number(payload.tianjiGenerationProfile.reviewedPortraitCount || 0))),
+          ordinaryImageCount: Math.max(0, Math.floor(Number(payload.tianjiGenerationProfile.ordinaryImageCount || 0))),
+          reviewedPortraitPreviewUrls: Array.isArray(payload.tianjiGenerationProfile.reviewedPortraitPreviewUrls)
+            ? payload.tianjiGenerationProfile.reviewedPortraitPreviewUrls
+                .map((value) => String(value || "").trim())
+                .filter((value) => /^https?:\/\//i.test(value))
+                .slice(0, 9)
+            : []
+        }
       : undefined
   };
 }

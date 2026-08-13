@@ -26,15 +26,29 @@ function inspectTianjiGenerationRequest(payload = {}, body = Buffer.alloc(0)) {
     return [kind, schemeCounts(values)];
   }));
   const reviewedPortraitCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.reviewedPortraitCount || 0)));
-  return { endpoint: pathname, encoding: contentType, reviewedPortraitCount, media };
+  const ordinaryImageCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.ordinaryImageCount || 0)));
+  const reviewedPortraitPreviewUrls = new Set(
+    (Array.isArray(payload?.tianjiGenerationProfile?.reviewedPortraitPreviewUrls)
+      ? payload.tianjiGenerationProfile.reviewedPortraitPreviewUrls
+      : [])
+      .map((value) => String(value || "").trim())
+      .filter((value) => /^https?:\/\//i.test(value)),
+  );
+  const reviewedPortraitPreviewMatches = [...params.getAll("images[]"), ...params.getAll("images")]
+    .filter((value) => reviewedPortraitPreviewUrls.has(String(value || "").trim())).length;
+  return { endpoint: pathname, encoding: contentType, reviewedPortraitCount, ordinaryImageCount, reviewedPortraitPreviewMatches, media };
 }
 
 function validateTianjiGenerationRequest(profile) {
   if (!profile || profile.reviewedPortraitCount <= 0) return;
   if (!/application\/x-www-form-urlencoded/i.test(profile.encoding))
     throw Error("天玑已审核人像请求必须使用表单编码");
-  if (profile.media.images.asset < profile.reviewedPortraitCount)
+  if (profile.media.images.asset !== profile.reviewedPortraitCount)
     throw Error("天玑已审核人像引用在发送前丢失，已阻止使用预览图片替代");
+  if (profile.media.images.http !== profile.ordinaryImageCount || profile.media.images.other !== 0)
+    throw Error("天玑已审核人像的预览图片混入了普通图片通道，已阻止提交");
+  if (profile.reviewedPortraitPreviewMatches > 0)
+    throw Error("天玑已审核人像的预览图片混入了生成请求，已阻止提交");
 }
 
 function captureTianjiGenerationPreflight(profile) {

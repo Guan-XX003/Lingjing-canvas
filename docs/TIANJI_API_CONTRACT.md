@@ -27,7 +27,7 @@
 
 Active 天玑人像必须同时具备可信的天玑素材库来源、`ready` 绑定状态和明确的最终素材 ID。生成时在 `images[]` 中发送 `asset://<最终素材 ID>`，让上游按已审核素材身份解析；素材列表中的 HTTP(S) URL仅用于预览和绑定匹配，不能替代审核身份。缺少来源、状态或 ID 时在客户端阻止提交并提示刷新人像库；普通图片仍走既有公网 URL/上传逻辑，不能通过添加人像标记绕过审核门禁。方舟官方兼容模式的可信素材处理使用独立模块，不受天玑协议调整影响。
 
-手动 UI 的参考素材收集从源头分为两个通道：审核人像只进入强类型 `portraitAssetIds`，普通图片只进入 HTTP(S) `imageRefs`。请求构造层统一把 `portraitAssetIds` 转为 `images[]=asset://...` 后再追加普通图片；任何审核声明丢失最终 ID、或试图用预览 HTTP 替代审核引用，都会在客户端提交前被阻断。Electron 主进程在真正联网前再次检查表单，只记录 endpoint、编码、素材数量和 asset/http/other 计数，不记录 Token、素材 ID、URL 或提示词。
+手动 UI 的参考素材收集从源头分为两个通道：审核人像只进入强类型 `portraitAssetIds`，普通图片只进入 HTTP(S) `imageRefs`。审核人像的当前预览地址及历史绑定地址会从普通图片快照中剔除，避免旧 React/React Flow 快照在已恢复最终 ID 后仍追加一份预览 HTTP。请求构造层统一把 `portraitAssetIds` 转为 `images[]=asset://...` 后再追加真正的普通图片；任何审核声明丢失最终 ID、预览 HTTP 混入、或试图用预览 HTTP 替代审核引用，都会在客户端提交前被阻断。Electron 主进程在真正联网前再次检查表单，仅使用预览 URL 做内存中的精确匹配，日志和预检文件只保留 endpoint、编码、素材数量、asset/http/other 和命中数，不记录 Token、素材 ID、URL 或提示词。
 
 CLI/MCP 自动化仅通过专用 `portraitAssetIds` 输入构造上述可信节点，且只允许 `reference-media`。主进程会再次校验最终 ID 格式与图片总数；普通 `images` 中的 `asset://` 会被拒绝，避免调用方伪造审核状态。
 

@@ -22,10 +22,33 @@ const portraitBindingError = (data: any): string => {
 
 export interface TianjiManualPortraitInputs {
   portraitAssetIds: string[];
+  portraitPreviewUrls: Set<string>;
   claimedSourceNodeIds: Set<string>;
   claimedContextIndexes: Set<number>;
   reviewedPortraitClaimCount: number;
 }
+
+export const wanjuanExcludeTianjiPortraitPreviews = (
+  imageReferences: any[] = [],
+  portraitPreviewUrls: Set<string> = new Set(),
+): any[] =>
+  imageReferences.filter((reference) => {
+    const url = String(typeof reference === `string` ? reference : reference?.url || ``).trim();
+    return !portraitPreviewUrls.has(url);
+  });
+
+const portraitPreviewUrlsFromData = (data: any): string[] =>
+  [
+    data?.imageUrl,
+    data?.url,
+    data?.thumbnailUrl,
+    data?.previewUrl,
+    data?.tianjiPortraitPreviewUrl,
+    data?.tianjiPortraitBindingSourceUrl,
+    data?.tianjiPortraitBindingLookupUrl,
+  ]
+    .map((value) => String(value || ``).trim())
+    .filter((value) => /^https?:\/\//i.test(value));
 
 /** Keep reviewed portraits out of the ordinary image URL channel. */
 export const wanjuanCollectTianjiManualPortraitInputs = ({
@@ -41,6 +64,7 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
   const edges = Array.isArray(incomingEdges) ? incomingEdges : [];
   const contexts = Array.isArray(contextResources) ? contextResources : [];
   const portraitAssetIds: string[] = [];
+  const portraitPreviewUrls = new Set<string>();
   const assetIds = new Set<string>();
   const claimedSourceNodeIds = new Set<string>();
   const claimedContextIndexes = new Set<number>();
@@ -52,6 +76,7 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
       throw Error(data?.tianjiPortraitBindingMessage || portraitBindingError(data));
     const assetId = String(data?.tianjiPortraitAssetId || ``).trim();
     if (!assetId) throw Error(`天玑人像缺少最终素材 ID，请刷新人像库后重新选择`);
+    portraitPreviewUrlsFromData(data).forEach((url) => portraitPreviewUrls.add(url));
     if (!assetIds.has(assetId)) {
       assetIds.add(assetId);
       portraitAssetIds.push(assetId);
@@ -69,6 +94,7 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
 
   return {
     portraitAssetIds,
+    portraitPreviewUrls,
     claimedSourceNodeIds,
     claimedContextIndexes,
     reviewedPortraitClaimCount: portraitAssetIds.length,

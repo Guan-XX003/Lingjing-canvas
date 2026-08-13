@@ -112,7 +112,7 @@ async function run() {
     wanjuanTianjiResolvePortraitAssetForNodeData,
   } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
   const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
-  const { wanjuanCollectTianjiManualPortraitInputs } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
+  const { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
   const { inspectTianjiGenerationRequest, validateTianjiGenerationRequest } = await import(pathToFileURL(join(root, "electron/main/tianji-request-guard.cjs")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
   const automationResult = await import(pathToFileURL(join(outDir, "automation-result.js")).href);
@@ -1034,7 +1034,16 @@ async function run() {
     ids: manualPortraitInputs.portraitAssetIds,
     claims: manualPortraitInputs.reviewedPortraitClaimCount,
     claimedSource: manualPortraitInputs.claimedSourceNodeIds.has("portrait-node"),
-  }, { ids: ["active-verified"], claims: 1, claimedSource: true });
+    previewCount: manualPortraitInputs.portraitPreviewUrls.size,
+  }, { ids: ["active-verified"], claims: 1, claimedSource: true, previewCount: 2 });
+  check("manual generateVideo removes stale reviewed portrait previews from ordinary images", wanjuanExcludeTianjiPortraitPreviews([
+    "https://media.example.invalid/display-preview.jpg",
+    { url: "https://media.example.invalid/signed-preview.jpg" },
+  ], manualPortraitInputs.portraitPreviewUrls), []);
+  check("manual generateVideo preserves a genuinely ordinary reference image", wanjuanExcludeTianjiPortraitPreviews([
+    "https://media.example.invalid/display-preview.jpg",
+    "https://media.example.invalid/ordinary-reference.jpg",
+  ], manualPortraitInputs.portraitPreviewUrls), ["https://media.example.invalid/ordinary-reference.jpg"]);
   const duplicateManualPortraitInputs = wanjuanCollectTianjiManualPortraitInputs({
     nodes: [currentPortraitNode, manualTargetNode],
     incomingEdges: [
@@ -1254,6 +1263,22 @@ async function run() {
   }, Buffer.from(capturedTianjiFormBody));
   check("main process sees the manual reviewed portrait as asset=1/http=0", guardedProfile.media.images, { count: 1, asset: 1, http: 0, other: 0 });
   validateTianjiGenerationRequest(guardedProfile);
+  let mixedPortraitPreviewMessage = "";
+  const mixedPortraitPreviewProfile = inspectTianjiGenerationRequest({
+    url: "https://mock.example.invalid/api/cut/model/coze-seedance-video-special",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    tianjiGenerationProfile: {
+      reviewedPortraitCount: 1,
+      ordinaryImageCount: 1,
+      reviewedPortraitPreviewUrls: ["https://media.example.invalid/signed-preview.jpg"],
+    },
+  }, Buffer.from(new URLSearchParams([
+    ["images[]", "asset://active-verified"],
+    ["images[]", "https://media.example.invalid/signed-preview.jpg"],
+  ]).toString()));
+  try { validateTianjiGenerationRequest(mixedPortraitPreviewProfile); } catch (error) { mixedPortraitPreviewMessage = String(error?.message || error); }
+  check("main process records only a count for matched reviewed portrait previews", mixedPortraitPreviewProfile.reviewedPortraitPreviewMatches, 1);
+  check("main process blocks a reviewed portrait preview even when the asset id is present", mixedPortraitPreviewMessage, "天玑已审核人像的预览图片混入了生成请求，已阻止提交");
   let mainGuardMessage = "";
   try {
     validateTianjiGenerationRequest(inspectTianjiGenerationRequest({

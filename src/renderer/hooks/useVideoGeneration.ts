@@ -7,7 +7,7 @@ import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, S
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
 import { wanjuanHasTianjiPortraitClaim, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData } from "../lib/tianji-portrait";
-import { wanjuanCollectTianjiManualPortraitInputs } from "../lib/tianji-manual-reference";
+import { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } from "../lib/tianji-manual-reference";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
 import { safeStringifyRequestForLog, serializeErrorPreview } from "../lib/log-utils";
 import { wanjuanClearProjectAssetBindingsFromData, wanjuanResourceKind } from "../lib/resource";
@@ -597,7 +597,10 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               });
 	            // Take the snapshots only after connected/context resources have all been collected.
 	            // Otherwise resources added from the context picker are omitted from Tianji payloads.
-	            let seedanceConnectedImageRefs = [...imageReferences],
+	            let seedanceConnectedImageRefs = wanjuanExcludeTianjiPortraitPreviews(
+	                imageReferences,
+	                tianjiManualPortraitInputs?.portraitPreviewUrls,
+	              ),
 	              seedanceConnectedVideoRefs = [...videoReferences],
 	              seedanceConnectedAudioRefs = [...seedanceAudioRefs],
 	              seedanceConnectedPortraitAssetIds = [...(tianjiManualPortraitInputs?.portraitAssetIds || [])];
@@ -1084,6 +1087,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                  imageRefs: seedanceConnectedImageRefs,
 	                  portraitAssetIds: seedanceConnectedPortraitAssetIds,
 	                  reviewedPortraitClaimCount: tianjiManualPortraitInputs?.reviewedPortraitClaimCount || 0,
+	                  reviewedPortraitPreviewUrls: [...(tianjiManualPortraitInputs?.portraitPreviewUrls || [])],
                   videoRefs: seedanceConnectedVideoRefs,
                   audioRefs: seedanceConnectedAudioRefs,
                   updateNodes: setNodes,
