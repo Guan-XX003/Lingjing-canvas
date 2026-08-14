@@ -89,7 +89,7 @@ function taskResponseFields(settings, model, value) {
   const protocol = protocolForModel(settings, model) || {};
   const mapping = protocol.responseMapping || {};
   const mappedPaths = (item) => Array.isArray(item) ? item : typeof item === "string" && item ? [item] : [];
-  const taskPaths = [...mappedPaths(mapping.taskId), "id", "task_id", "taskId", "execute_id", "data.id", "data.task_id", "data.taskId"];
+  const taskPaths = [...mappedPaths(mapping.taskId), "id", "task_id", "taskId", "execute_id", "executeId", "data.id", "data.task_id", "data.taskId", "data.execute_id", "data.executeId"];
   const statusPaths = [...mappedPaths(mapping.status), "status", "state", "data.status", "data.state"];
   return {
     remoteTaskId: String(firstValue(value, taskPaths) || ""),
@@ -181,11 +181,13 @@ function reconcileEnterpriseTasks(payload, result, snapshot) {
   const store = readTaskStore();
   const active = store.tasks.filter((item) => item.status === "running" || item.status === "pending");
   const targetUrl = String(payload.url || "");
+  const requestValue = jsonBody(payload) || {};
+  const requestTaskId = String(firstValue(requestValue, ["task_id", "taskId", "execute_id", "executeId", "id", "data.task_id", "data.taskId", "data.execute_id", "data.executeId", "data.id"]) || "");
   const settings = snapshot?.modules?.settings?.chromeStorage || {};
   const updated = [];
   for (const task of active) {
     if (task.managedApiConfigId !== String(payload.managedApiConfigId || "")) continue;
-    if (task.remoteTaskId && !targetUrl.includes(encodeURIComponent(task.remoteTaskId)) && !targetUrl.includes(task.remoteTaskId)) continue;
+    if (task.remoteTaskId && requestTaskId !== task.remoteTaskId && !targetUrl.includes(encodeURIComponent(task.remoteTaskId)) && !targetUrl.includes(task.remoteTaskId)) continue;
     const fields = taskResponseFields(settings, task.model, value);
     if (!task.remoteTaskId && !fields.remoteTaskId) continue;
     if (fields.remoteTaskId && task.remoteTaskId && fields.remoteTaskId !== task.remoteTaskId) continue;

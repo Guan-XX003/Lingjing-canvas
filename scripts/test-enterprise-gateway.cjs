@@ -47,6 +47,7 @@ accountPublicJwk.kid = "account-test-key";
 accountPublicJwk.alg = "RS256";
 accountPublicJwk.use = "sig";
 const upstreamCalls = [];
+let seedancePollCount = 0;
 let controlMembers = [
   { user_id: "user_test", role: "member", status: "active", expires_at: null },
   { user_id: "user_other", role: "member", status: "active", expires_at: null },
@@ -94,12 +95,31 @@ global.fetch = async (url, options = {}) => {
       authorization: String(options.headers?.authorization || options.headers?.Authorization || ""),
       xApiKey: String(options.headers?.["x-api-key"] || ""),
       memberAuthorization: String(options.headers?.["x-member-authorization"] || ""),
+      contentType: String(options.headers?.["content-type"] || options.headers?.["Content-Type"] || ""),
       body,
     });
     if (parsed.pathname === "/v1/redirect") {
       return new Response(null, { status: 302, headers: { location: "https://cdn.example.net/result.mp4" } });
     }
-    return new Response(JSON.stringify({ ok: true, taskId: "task_enterprise", status: parsed.pathname.includes("tasks") ? "completed" : "queued" }), {
+    if (parsed.pathname === "/v1/videos") {
+      return new Response(JSON.stringify({ data: { execute_id: "seedance_execute_fixture", status: "queued" } }), {
+        status: 200,
+        headers: { "content-type": "application/json", "x-upstream": "enterprise-test" },
+      });
+    }
+    if (parsed.pathname === "/api/cut/model/coze-run-seedance-special-history") {
+      seedancePollCount += 1;
+      const completed = seedancePollCount >= 2;
+      return new Response(JSON.stringify({ data: {
+        execute_id: "seedance_execute_fixture",
+        status: completed ? "completed" : "running",
+        ...(completed ? { result: { video_url: "https://cdn.example.net/fixture-result.mp4" } } : {}),
+      } }), {
+        status: 200,
+        headers: { "content-type": "application/json", "x-upstream": "enterprise-test" },
+      });
+    }
+    return new Response(JSON.stringify({ ok: true, taskId: "task_enterprise", status: "completed" }), {
       status: 200,
       headers: { "content-type": "application/json", "x-upstream": "enterprise-test" },
     });
@@ -473,6 +493,7 @@ async function run() {
     requestId: "submit-enterprise-video-1",
     url: "https://api.example.com/v1/videos?key=member-placeholder",
     method: "POST",
+    enterpriseRequestKind: "submit",
     headers: { authorization: "Bearer member-personal-secret", "content-type": "application/json" },
     bodyBase64: Buffer.from(JSON.stringify({ model: "model_one", prompt: "test" }), "utf8").toString("base64"),
     requestTimeout: 5000,
@@ -490,6 +511,7 @@ async function run() {
       requestId: "submit-enterprise-video-1",
       url: "https://api.example.com/v1/videos?key=member-placeholder",
       method: "POST",
+      enterpriseRequestKind: "submit",
       headers: { authorization: "Bearer member-personal-secret", "content-type": "application/json" },
       bodyBase64: Buffer.from(JSON.stringify({ model: "model_one", prompt: "duplicate" }), "utf8").toString("base64"),
       requestTimeout: 5000,
@@ -499,21 +521,62 @@ async function run() {
   assert.equal(upstreamCalls.length, upstreamCountAfterSubmit);
 
   const pollResult = await accountService.proxyEnterpriseRequest({
-    url: "https://api.example.com/v1/videos/tasks/task_enterprise",
-    method: "GET",
-    headers: { "x-api-key": "stale-member-key" },
+    url: "https://api.example.com/api/cut/model/coze-run-seedance-special-history",
+    method: "POST",
+    enterpriseRequestKind: "poll",
+    bodyBase64: Buffer.from(JSON.stringify({ task_id: "seedance_execute_fixture", execute_id: "seedance_execute_fixture" }), "utf8").toString("base64"),
+    headers: { "x-api-key": "stale-member-key", "content-type": "application/json" },
     requestTimeout: 5000,
   });
   assert.equal(pollResult.handled, true);
-  assert.equal(upstreamCalls.at(-1).method, "GET");
+  assert.equal(upstreamCalls.at(-1).method, "POST");
+  assert.equal(upstreamCalls.at(-1).pathname, "/api/cut/model/coze-run-seedance-special-history");
+  assert.equal(upstreamCalls.at(-1).contentType, "application/json");
+  assert.deepEqual(JSON.parse(upstreamCalls.at(-1).body), { task_id: "seedance_execute_fixture", execute_id: "seedance_execute_fixture" });
   assert.equal(upstreamCalls.at(-1).authorization, "");
   assert.equal(upstreamCalls.at(-1).xApiKey, secret);
+  assert.equal(new Map(pollResult.response.headers).has("x-wanjuan-gateway-task-id"), false);
+  assert.equal(JSON.parse(Buffer.from(pollResult.response.bodyBase64, "base64").toString("utf8")).data.status, "running");
+  const runningTaskResponse = await gatewayClient.requestPinnedJson(gatewayUrl, `/workspace/tasks/${encodeURIComponent(gatewayTaskId)}`, {
+    token: sessionResponse.value.workspaceToken,
+    certificateFingerprint: initialized.activation.certificateFingerprint,
+  });
+  assert.equal(runningTaskResponse.value.task.status, "running");
+  const runningUsageResponse = await gatewayClient.requestPinnedJson(gatewayUrl, "/workspace/usage", {
+    token: sessionResponse.value.workspaceToken,
+    certificateFingerprint: initialized.activation.certificateFingerprint,
+  });
+  const runningVideoUsage = runningUsageResponse.value.capabilities.find((item) => item.capability === "video_generation");
+  assert.equal(runningVideoUsage.successful, 0);
+  assert.equal(runningVideoUsage.reserved, 1);
+  const secondPollResult = await accountService.proxyEnterpriseRequest({
+    url: "https://api.example.com/api/cut/model/coze-run-seedance-special-history",
+    method: "POST",
+    enterpriseRequestKind: "poll",
+    bodyBase64: Buffer.from(JSON.stringify({ task_id: "seedance_execute_fixture", execute_id: "seedance_execute_fixture" }), "utf8").toString("base64"),
+    headers: { "x-api-key": "stale-member-key", "content-type": "application/json" },
+    requestTimeout: 5000,
+  });
+  assert.equal(secondPollResult.response.status, 200);
+  assert.equal(new Map(secondPollResult.response.headers).has("x-wanjuan-gateway-task-id"), false);
+  assert.equal(JSON.parse(Buffer.from(secondPollResult.response.bodyBase64, "base64").toString("utf8")).data.status, "completed");
+  assert.equal(seedancePollCount, 2);
   const taskResponse = await gatewayClient.requestPinnedJson(gatewayUrl, `/workspace/tasks/${encodeURIComponent(gatewayTaskId)}`, {
     token: sessionResponse.value.workspaceToken,
     certificateFingerprint: initialized.activation.certificateFingerprint,
   });
   assert.equal(taskResponse.value.task.status, "completed");
-  assert.equal(taskResponse.value.task.remoteTaskId, "task_enterprise");
+  assert.equal(taskResponse.value.task.remoteTaskId, "seedance_execute_fixture");
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tempRoot, "enterprise-gateway", "tasks.json"), "utf8")).tasks.length, 1);
+  await assert.rejects(
+    accountService.proxyEnterpriseRequest({
+      url: "https://api.example.com/api/cut/model/coze-run-seedance-special-history",
+      method: "POST",
+      enterpriseRequestKind: "polling",
+      requestTimeout: 5000,
+    }),
+    (error) => error.code === "INVALID_ENTERPRISE_REQUEST_KIND",
+  );
   const usageResponse = await gatewayClient.requestPinnedJson(gatewayUrl, "/workspace/usage", {
     token: sessionResponse.value.workspaceToken,
     certificateFingerprint: initialized.activation.certificateFingerprint,
@@ -530,6 +593,7 @@ async function run() {
       requestId: "quota-second-video",
       url: "https://api.example.com/v1/videos",
       method: "POST",
+      enterpriseRequestKind: "submit",
       headers: { authorization: "Bearer member-personal-secret", "content-type": "application/json" },
       bodyBase64: Buffer.from(JSON.stringify({ model: "model_one", prompt: "second" }), "utf8").toString("base64"),
       requestTimeout: 5000,

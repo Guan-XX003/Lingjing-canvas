@@ -473,6 +473,21 @@ GET  /workspace/usage
 POST /workspace/logout
 ```
 
+### 9.2 原始模型代理的请求意图
+
+桌面端通过 `proxyFetch` 访问企业托管 API 时，必须显式携带
+`enterpriseRequestKind`，取值为 `submit`、`poll` 或 `request`：
+
+```text
+submit  → POST /workspace/tasks       生成提交，创建一条网关任务并预占额度
+poll    → POST /workspace/proxy-fetch  异步轮询，只转发并关联已有任务
+request → POST /workspace/proxy-fetch  余额、组信息和其它普通请求
+```
+
+`poll` 的 HTTP 方法可以是 `POST`，不能依据 HTTP method 推断为生成提交；轮询正文中的
+`task_id`/`execute_id` 仅用于关联已有远端任务，不会创建新的网关账本任务或再次预占额度。
+未提供该字段的旧调用暂时保留按 HTTP method 的兼容回退，新增节点不得依赖此回退。
+
 账号控制平面的企业加入、Gateway Grant 和成员关系不通过本机网关伪造；创建、加入和登记分别使用账号服务的 `/organizations/self-hosted`、`/organizations/join` 和 `/organizations/{organizationId}/gateways/activate`。
 
 ## 10. 节点接入规则

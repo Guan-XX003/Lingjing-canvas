@@ -70,6 +70,7 @@ interface TianjiRequestOptions {
   reviewedPortraitCount?: number;
   ordinaryImageCount?: number;
   reviewedPortraitPreviewUrls?: string[];
+  enterpriseRequestKind?: `submit` | `poll` | `request`;
 }
 
 /** wanjuanRunTianjiSeedanceVideo 的运行入参（来自调用方编辑器上下文）。 */
@@ -499,6 +500,7 @@ export const wanjuanTianjiRequest = async (
     reviewedPortraitCount = 0,
     ordinaryImageCount = 0,
     reviewedPortraitPreviewUrls = [],
+    enterpriseRequestKind,
   }: TianjiRequestOptions = {},
 ): Promise<any> => {
   let config = wanjuanNormalizeTianjiSeedanceConfig(rawConfig);
@@ -540,6 +542,7 @@ export const wanjuanTianjiRequest = async (
         headers,
         bodyBase64: body ? wanjuanTianjiBase64Encode(body) : ``,
         requestTimeout: 18e4,
+        enterpriseRequestKind,
         tianjiGenerationProfile: /coze-seedance-(?:text|video|image-first|image-first-last)-special/i.test(path)
           ? {
               reviewedPortraitCount: Math.max(0, Math.floor(Number(reviewedPortraitCount || 0))),
@@ -981,6 +984,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
   let submitResponse = await wanjuanTianjiRequest(config, endpoint, {
       params: payload,
       encoding,
+      enterpriseRequestKind: `submit`,
       reviewedPortraitCount: Number(options.reviewedPortraitClaimCount || 0),
       ordinaryImageCount: imageUrls.length,
       reviewedPortraitPreviewUrls: options.reviewedPortraitPreviewUrls || [],
@@ -1063,6 +1067,7 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
       let statusResponse = await wanjuanTianjiRequest(config, taskQuery.endpoint, {
           method: taskQuery.method,
           params: taskQuery.params,
+          enterpriseRequestKind: `poll`,
           signal: abortController.signal,
         }),
         status = wanjuanTianjiStatus(statusResponse),

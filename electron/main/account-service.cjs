@@ -1230,6 +1230,13 @@ function enterpriseAuthMetadata(headers) {
   };
 }
 
+function enterpriseRequestKind(value) {
+  const kind = String(value || "").trim().toLowerCase();
+  if (!kind) return "";
+  if (["submit", "poll", "request"].includes(kind)) return kind;
+  throw new AccountRequestError("企业代理请求意图无效", { code: "INVALID_ENTERPRISE_REQUEST_KIND" });
+}
+
 async function proxyEnterpriseRequest(payload = {}, options = {}, retryCount = 0) {
   const state = readAccountState();
   const enterprise = state.enterprise;
@@ -1250,7 +1257,10 @@ async function proxyEnterpriseRequest(payload = {}, options = {}, retryCount = 0
   try {
     const authMetadata = enterpriseAuthMetadata(payload.headers);
     const method = String(payload.method || "GET").toUpperCase();
-    const gatewayPath = ["POST", "PUT", "PATCH", "DELETE"].includes(method) ? "/workspace/tasks" : "/workspace/proxy-fetch";
+    const requestKind = enterpriseRequestKind(payload.enterpriseRequestKind);
+    const gatewayPath = requestKind
+      ? requestKind === "submit" ? "/workspace/tasks" : "/workspace/proxy-fetch"
+      : ["POST", "PUT", "PATCH", "DELETE"].includes(method) ? "/workspace/tasks" : "/workspace/proxy-fetch";
     const response = await requestPinnedJson(enterprise.gatewayUrl, gatewayPath, {
       method: "POST",
       token: workspaceToken,
@@ -1267,6 +1277,7 @@ async function proxyEnterpriseRequest(payload = {}, options = {}, retryCount = 0
         authorizationScheme: authMetadata.authorizationScheme,
         bodyBase64: String(payload.bodyBase64 || ""),
         requestTimeout: Number(payload.requestTimeout || 180000),
+        enterpriseRequestKind: requestKind || undefined,
       },
     });
     return { handled: true, response: response.value.proxy || response.value };
