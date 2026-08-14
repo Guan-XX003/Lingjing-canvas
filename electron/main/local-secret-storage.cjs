@@ -16,12 +16,19 @@ function localMasterKeyPath() {
   return path.join(app.getPath("userData"), ".wanjuan-local-secret-key");
 }
 
+function existingLocalMasterKey() {
+  try {
+    const key = fs.readFileSync(localMasterKeyPath());
+    return key.length === 32 ? key : null;
+  } catch {
+    return null;
+  }
+}
+
 function readOrCreateLocalMasterKey() {
   const target = localMasterKeyPath();
-  try {
-    const key = fs.readFileSync(target);
-    if (key.length === 32) return key;
-  } catch {}
+  const existingKey = existingLocalMasterKey();
+  if (existingKey) return existingKey;
   fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
   const key = crypto.randomBytes(32);
   try {
@@ -41,6 +48,9 @@ function localEncryptionAvailable() {
 }
 
 function secretStorageMode() {
+  // Keep ad-hoc/local updates on the existing AES key. Probing safeStorage first can
+  // block the Electron main thread on a macOS Keychain identity prompt after replacement.
+  if (existingLocalMasterKey()) return "local";
   if (systemEncryptionAvailable()) return "system";
   if (localEncryptionAvailable()) return "local";
   return "unavailable";
@@ -48,7 +58,12 @@ function secretStorageMode() {
 
 function encryptLocalSecret(value) {
   const text = String(value || "");
+  if (existingLocalMasterKey()) return encryptWithLocalKey(text);
   if (systemEncryptionAvailable()) return safeStorage.encryptString(text).toString("base64");
+  return encryptWithLocalKey(text);
+}
+
+function encryptWithLocalKey(text) {
   const key = readOrCreateLocalMasterKey();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
