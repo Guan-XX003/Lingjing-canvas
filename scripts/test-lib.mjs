@@ -1044,6 +1044,12 @@ async function run() {
     "https://media.example.invalid/display-preview.jpg",
     "https://media.example.invalid/ordinary-reference.jpg",
   ], manualPortraitInputs.portraitPreviewUrls), ["https://media.example.invalid/ordinary-reference.jpg"]);
+  check("manual generateVideo removes a re-uploaded URL from the same reviewed source node", wanjuanExcludeTianjiPortraitPreviews([
+    { url: "https://uploads.example.invalid/reuploaded-preview.jpg", sourceNodeId: "portrait-node" },
+    { url: "https://media.example.invalid/ordinary-reference.jpg", sourceNodeId: "ordinary-node" },
+  ], manualPortraitInputs.portraitPreviewUrls, manualPortraitInputs.claimedSourceNodeIds), [
+    { url: "https://media.example.invalid/ordinary-reference.jpg", sourceNodeId: "ordinary-node" },
+  ]);
   const duplicateManualPortraitInputs = wanjuanCollectTianjiManualPortraitInputs({
     nodes: [currentPortraitNode, manualTargetNode],
     incomingEdges: [

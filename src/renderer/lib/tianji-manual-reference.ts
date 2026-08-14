@@ -31,8 +31,11 @@ export interface TianjiManualPortraitInputs {
 export const wanjuanExcludeTianjiPortraitPreviews = (
   imageReferences: any[] = [],
   portraitPreviewUrls: Set<string> = new Set(),
+  claimedSourceNodeIds: Set<string> = new Set(),
 ): any[] =>
   imageReferences.filter((reference) => {
+    const sourceNodeId = String(reference && typeof reference === `object` ? reference.sourceNodeId || reference.nodeId || `` : ``).trim();
+    if (sourceNodeId && claimedSourceNodeIds.has(sourceNodeId)) return false;
     const url = String(typeof reference === `string` ? reference : reference?.url || ``).trim();
     return !portraitPreviewUrls.has(url);
   });

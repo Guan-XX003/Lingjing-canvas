@@ -483,7 +483,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                   videos: videos
                 } = wanjuanCollectNodeReferenceMedia(sourceNode, edge.sourceHandle);
                 ![`imageNode`, `promptNode`, `gridMergeNode`].includes(sourceNode.type) &&
-                  (images || []).forEach(addVideoReferenceImage);
+                  (images || []).forEach((image) => addVideoReferenceImage(image, { sourceNodeId: sourceNode.id }));
                 (videos || []).forEach(addVideoReferenceVideo);
               }
               if (
@@ -501,6 +501,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
                     arkTrustedAssetSourceUrl: sourceNode.data.arkTrustedAssetSourceUrl,
                     arkTrustedAssetStatus: sourceNode.data.arkTrustedAssetStatus,
                     nodeId: sourceNode.id,
+                    sourceNodeId: sourceNode.id,
                     label: sourceNode.data.label,
                     localPath: sourceNode.data.localPath || sourceNode.data.filePath,
                     filename: sourceNode.data.originalName,
@@ -600,6 +601,7 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	            let seedanceConnectedImageRefs = wanjuanExcludeTianjiPortraitPreviews(
 	                imageReferences,
 	                tianjiManualPortraitInputs?.portraitPreviewUrls,
+	                tianjiManualPortraitInputs?.claimedSourceNodeIds,
 	              ),
 	              seedanceConnectedVideoRefs = [...videoReferences],
 	              seedanceConnectedAudioRefs = [...seedanceAudioRefs],
