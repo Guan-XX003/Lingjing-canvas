@@ -54,3 +54,53 @@ The isolated Electron renderer reached a fully hydrated and interactive settings
 No actionable P0, P1, or P2 visual or interaction issue remains for the membership-benefits experience.
 
 final result: passed
+
+---
+
+# Image Editor Title Removal Design QA
+
+## Evidence
+
+- Source visual truth: `/Users/guan/Desktop/截屏2026-08-14 19.25.54.png`
+- Implementation screenshot: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/image-editor-title-removed-20260814.png`
+- Focused before/after comparison: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/image-editor-title-focused-compare-20260814.png`
+- Source pixels: `628 x 280` at macOS Retina density; the visible title bar is approximately `314 x 140` CSS pixels.
+- Implementation pixels and viewport: `1144 x 768` pixels at device scale factor `1`; Electron window viewport `1144 x 768` CSS pixels.
+- State: dark theme, isolated development userData, local image node with the annotation editor open.
+
+## Full-View Comparison
+
+- The visible `图片编辑` label is removed from the live editor and from the accessibility tree.
+- The original left-side width is retained as an empty spacer, so the pencil and following tools remain aligned away from the macOS window controls.
+- The image canvas, toolbar height, divider, colors, radii, and right-side cancel/save controls are unchanged.
+
+## Focused Region Comparison
+
+- The focused comparison confirms the requested difference: the old title text is absent while the pencil, text, square, circle, number, eyedropper, and crop controls retain their order and spacing.
+- No additional focused crop was needed because the requested change is limited to this single title-bar region.
+
+## Required Fidelity Surfaces
+
+- Fonts and typography: only the requested title text was removed; remaining tool labels and percentages are unchanged.
+- Spacing and layout rhythm: the removed text is replaced by a fixed `w-20` spacer, preserving toolbar position and avoiding overlap with native window controls.
+- Colors and visual tokens: unchanged.
+- Image quality and asset fidelity: the original loaded image remains sharp and uncropped; no assets were replaced.
+- Copy and content: `图片编辑` is no longer rendered; button titles and accessible tool names remain intact.
+
+## Interaction Checks
+
+- Opened the editor from a locally loaded image node.
+- Verified all editing controls, zoom controls, undo/clear, cancel, and save remain visible and enabled as expected.
+- No formal userData, production service, generation request, upload to a remote service, or account state was modified.
+
+## Findings
+
+No actionable P0, P1, or P2 visual or interaction issue remains for the requested title removal.
+
+## Comparison History
+
+- Initial source inspection identified the title overlapping the native window-control area.
+- First implementation removed the text and retained its width with an invisible spacer.
+- Post-fix Electron evidence confirms the title is absent and the toolbar remains in its original position.
+
+final result: passed

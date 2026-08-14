@@ -11,7 +11,9 @@ import { WanJuanNodeHandle } from "../components/render-mode";
 import { wanjuanBuildProjectAssetBinding, wanjuanGetDroppedFilePath, wanjuanMediaKindFromFile, wanjuanMimeFromMediaKind } from "../lib/project-asset-binding";
 import { buildProjectMediaFileUrl, wanjuanClearProjectAssetBindingsFromData } from "../lib/resource";
 import { wanjuanBrokenResourceImage } from "../lib/resource-tabs";
-import { wanjuanArkAssetBindingMatchesImage, wanjuanResetArkTrustedAssetBindingForImage } from "../lib/ark-trusted-assets";
+import { wanjuanArkAssetBindingMatchesImage } from "../lib/ark-trusted-assets";
+import { wanjuanResetTianjiPortraitBindingForImage } from "../lib/tianji-portrait";
+import { wanjuanImageEditorSourceFromNodeData } from "../lib/image-editor";
 
 /** chrome 扩展运行时（仅在浏览器扩展环境存在）。 */
 declare const chrome: any;
@@ -71,9 +73,9 @@ export const WanJuanImageNode = reactMemo(({
           if (cancelled || !result?.ok || !result.localPath) return;
           let fileUrl = buildProjectMediaFileUrl(result.localPath);
           updateNodeData(nodeId, {
-            ...wanjuanResetArkTrustedAssetBindingForImage(data, fileUrl),
+            ...wanjuanResetTianjiPortraitBindingForImage(data, fileUrl),
             imageUrl: fileUrl,
-            thumbnailUrl: data.thumbnailUrl || (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl),
+            thumbnailUrl: result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl,
             localPath: result.localPath,
             filePath: result.localPath,
             projectAssetBindings: {
@@ -180,8 +182,9 @@ export const WanJuanImageNode = reactMemo(({
               stableUrl = nativePath ? buildProjectMediaFileUrl(nativePath) : ``,
               applySelectedMedia = (mediaUrl) => {
                 updateNodeData(nodeId, {
-                  ...wanjuanResetArkTrustedAssetBindingForImage(data, mediaUrl),
+                  ...wanjuanResetTianjiPortraitBindingForImage(data, mediaUrl),
                   imageUrl: mediaUrl,
+                  thumbnailUrl: mediaKind === `image` ? mediaUrl : data.thumbnailUrl,
                   label: file.name,
                   mediaKind,
                   sourceOrigin: data.sourceOrigin || `external-upload`,
@@ -221,7 +224,7 @@ export const WanJuanImageNode = reactMemo(({
                 if (!result?.ok || !result.localPath) return;
                 let fileUrl = buildProjectMediaFileUrl(result.localPath);
                 updateNodeData(nodeId, {
-                  ...wanjuanResetArkTrustedAssetBindingForImage(data, fileUrl),
+                  ...wanjuanResetTianjiPortraitBindingForImage(data, fileUrl),
                   imageUrl: fileUrl,
                   thumbnailUrl: mediaKind === `image` ?
                     (result.thumbnailLocalPath ? buildProjectMediaFileUrl(result.thumbnailLocalPath) : fileUrl) :
@@ -288,7 +291,7 @@ export const WanJuanImageNode = reactMemo(({
                     title: `编辑`,
                     onClick: (event) => {
                       (event.stopPropagation(),
-                        data.onEdit && data.onEdit(nodeId, data.imageUrl));
+                        data.onEdit && data.onEdit(nodeId, wanjuanImageEditorSourceFromNodeData(data)));
                     },
                     children: jsx(PenLine, {
                       size: 14

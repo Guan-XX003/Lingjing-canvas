@@ -1499,7 +1499,8 @@ function WanJuanAppCanvas({
     openImageEditor,
     openVideoEditor,
     handleCropComplete,
-  } = useMediaEditors({ setNodes });
+    handleImageEditorError,
+  } = useMediaEditors({ setNodes, projectIdRef, showToast });
   let {
     handleContextMenu,
     handleNodeContextMenu,
@@ -2079,6 +2080,7 @@ function WanJuanAppCanvas({
           imageUrl: imageEditState.url,
           initialTool: imageEditState.initialTool,
           onSave: handleCropComplete,
+          onError: handleImageEditorError,
           onClose: () => setImageEditState(null),
         }),
         videoEditState &&
@@ -4268,7 +4270,7 @@ Suno 音乐生成`,
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.3`}`,
+                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.4`}`,
                 }),
               ],
             }),

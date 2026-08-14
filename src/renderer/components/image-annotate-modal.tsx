@@ -12,7 +12,8 @@ export function WanJuanImageAnnotateModal({
   imageUrl,
   initialTool,
   onSave,
-  onClose
+  onClose,
+  onError,
 }: any) {
   let canvasRef = useRef(null),
     containerRef = useRef(null),
@@ -35,6 +36,9 @@ export function WanJuanImageAnnotateModal({
     [crop, setCrop] = useState(),
     [completedCrop, setCompletedCrop] = useState<any>(null),
     originalImageRef = useRef(null),
+    [errorMessage, setErrorMessage] = useState(``),
+    [imageReady, setImageReady] = useState(false),
+    [saving, setSaving] = useState(false),
     [zoomLevel, setZoomLevel] = useState(1),
     [editorSize, setEditorSize] = useState({
       width: 1,
@@ -45,9 +49,12 @@ export function WanJuanImageAnnotateModal({
       ctx = canvas?.getContext(`2d`);
     if (!canvas || !ctx) return;
     let img = new Image();
+    setErrorMessage(``);
+    setImageReady(false);
     ((img.crossOrigin = `Anonymous`),
       (img.onload = () => {
-        ((canvas.width = img.naturalWidth),
+        try {
+          ((canvas.width = img.naturalWidth),
           (canvas.height = img.naturalHeight),
           setEditorSize({
             width: Math.max(1, img.naturalWidth),
@@ -56,10 +63,23 @@ export function WanJuanImageAnnotateModal({
           setZoomLevel(1),
           ctx.drawImage(img, 0, 0),
           (originalImageRef.current = img),
-          setHistory([ctx.getImageData(0, 0, canvas.width, canvas.height)]));
+          setHistory([ctx.getImageData(0, 0, canvas.width, canvas.height)]),
+          setImageReady(true));
+        } catch (error: any) {
+          const message = error?.name === `SecurityError`
+            ? `图片来源限制了画布导出，请重新打开编辑器后再试`
+            : `图片载入失败：${error?.message || error}`;
+          setErrorMessage(message);
+          onError?.(new Error(message));
+        }
+      }),
+      (img.onerror = () => {
+        const error = new Error(`图片载入失败，请检查原图是否仍可访问`);
+        setErrorMessage(error.message);
+        onError?.(error);
       }),
       (img.src = imageUrl));
-  }, [imageUrl]);
+  }, [imageUrl, onError]);
   let pushHistory = () => {
       let canvas = canvasRef.current,
         ctx = canvas?.getContext(`2d`);
@@ -251,9 +271,15 @@ export function WanJuanImageAnnotateModal({
             jsxs(`div`, {
               className: `flex items-center gap-2`,
               children: [
+                errorMessage && jsx(`div`, {
+                  className: `max-w-[260px] truncate text-xs text-red-300`,
+                  title: errorMessage,
+                  role: `alert`,
+                  children: errorMessage,
+                }),
                 jsx(`span`, {
-                  className: `text-white font-medium mr-4`,
-                  children: `图片编辑`,
+                  className: `w-20 shrink-0`,
+                  "aria-hidden": true,
                 }),
                 jsxs(`div`, {
                   className: `flex items-center bg-[#2a2a2a] rounded-lg p-1`,
@@ -445,13 +471,28 @@ export function WanJuanImageAnnotateModal({
                   }), `取消`],
                 }),
                 jsxs(`button`, {
-                  onClick: () => {
-                    canvasRef.current && onSave(canvasRef.current.toDataURL(`image/png`));
+                  onClick: async () => {
+                    if (!canvasRef.current || saving) return;
+                    setErrorMessage(``);
+                    setSaving(true);
+                    try {
+                      const result = canvasRef.current.toDataURL(`image/png`);
+                      await onSave(result);
+                    } catch (error: any) {
+                      const message = error?.name === `SecurityError`
+                        ? `图片来源限制了导出，未覆盖原图`
+                        : `保存失败：${error?.message || error}`;
+                      setErrorMessage(message);
+                      onError?.(new Error(message));
+                    } finally {
+                      setSaving(false);
+                    }
                   },
-                  className: `px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center gap-1 text-sm font-medium`,
+                  disabled: saving || !imageReady,
+                  className: `px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50 text-white transition-colors flex items-center gap-1 text-sm font-medium`,
                   children: [jsx(Check, {
                     size: 16
-                  }), `保存`],
+                  }), saving ? `保存中` : `保存`],
                 }),
               ],
             }),
@@ -461,8 +502,10 @@ export function WanJuanImageAnnotateModal({
           ref: containerRef,
           className: `flex-1 overflow-auto flex items-center justify-center bg-[#0a0a0a] p-4 relative`,
           onWheel: (event) => {
-            if (!(event.ctrlKey || event.metaKey)) return;
-            (event.preventDefault(), zoomEditor(event.deltaY < 0 ? 0.1 : -0.1));
+            // 编辑区域内滚轮直接控制缩放；不再要求额外按住 Ctrl/Command。
+            event.preventDefault();
+            event.stopPropagation();
+            zoomEditor(event.deltaY < 0 ? 0.1 : -0.1);
           },
           children: [
             jsx(`div`, {

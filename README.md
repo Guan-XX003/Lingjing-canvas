@@ -6,7 +6,7 @@
 
 **面向 AI 创作流程的桌面画布应用**
 
-[![版本](https://img.shields.io/badge/版本-1.4.3-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![版本](https://img.shields.io/badge/版本-1.4.4-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
 [![平台](https://img.shields.io/badge/平台-macOS%20|%20Windows-lightgrey.svg)](#安装)
 [![许可](https://img.shields.io/badge/许可-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 
@@ -103,10 +103,10 @@
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [wanjuan-lingjing-1.4.3-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.3-assets/wanjuan-lingjing-1.4.3-arm64.dmg) |
-| Windows | x64 | [wanjuan-lingjing-1.4.3-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.3-assets/wanjuan-lingjing-1.4.3-x64.exe) |
+| macOS | Apple Silicon (arm64) | [wanjuan-lingjing-1.4.4-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-assets/wanjuan-lingjing-1.4.4-arm64.dmg) |
+| Windows | x64 | [wanjuan-lingjing-1.4.4-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-assets/wanjuan-lingjing-1.4.4-x64.exe) |
 
-CLI / MCP 独立下载：[wanjuan-cli-1.4.3.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.3-assets/wanjuan-cli-1.4.3.zip)
+CLI / MCP 独立下载：[wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-assets/wanjuan-cli-1.4.4.zip)
 
 ### 安装说明
 
@@ -185,8 +185,12 @@ npm run build:win:x86
 
 ## 📋 更新记录
 
-### 最新版本：v1.4.3（2026-08-14）
+### 最新版本：v1.4.4（2026-08-14）
 
+- 修复生成图片节点编辑保存时报错、旧缩略图覆盖编辑结果及下游引用旧图的问题
+- 编辑区域支持普通鼠标滚轮直接缩放图片，编辑结果会落盘为项目本地素材
+
+### 历史版本：v1.4.3（2026-08-14）
 - 修复天玑已审核虚拟人像在画布手动生成时混入普通图片引用的问题
 - 虚拟人像素材支持本地预览图，官方未返回预览时仍可识别和管理素材
 - CLI/MCP 新增 `--portrait-asset-id` / `portraitAssetIds` 严格已审核人像入口，未审核普通图片不会进入该通道

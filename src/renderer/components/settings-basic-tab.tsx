@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-				                                          children: wanjuanT(`1.4.3：修复天玑已审核人像引用，支持本地人像预览，并新增会员权益介绍。`),
+	                                          children: wanjuanT(`1.4.4：修复图片编辑保存报错、旧缩略图覆盖和下游引用旧图，编辑区域支持普通滚轮缩放。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-				                                          children: `1.4.3`,
+	                                          children: `1.4.4`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.4 - 2026-08-14
+
+- Fixed image editor save failures by preparing remote images through the desktop bridge and persisting edited results as project-local media.
+- Replaced stale thumbnails, local bindings, and cached context references when an image result is edited.
+- Cleared Tianji/Ark reviewed-asset identity after image edits so modified content cannot reuse the original review status.
+- Enabled ordinary mouse-wheel zooming inside the image editor.
+
 ## 1.4.3 - 2026-08-14
 
 - Fixed reviewed Tianji portrait generation so the final portrait asset ID is sent without leaking the ordinary HTTP preview as an additional reference image.

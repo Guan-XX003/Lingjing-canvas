@@ -9,7 +9,7 @@ import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 export { compactGlobalTasks } from "./global-tasks";
 
-export const WANJUAN_RELEASE_NOTES_1_4_3 = `1.4.3：修复天玑已审核人像参考传递，增加人像本地预览与会员权益介绍。`;
+export const WANJUAN_RELEASE_NOTES_1_4_4 = `1.4.4：修复图片编辑保存报错、旧缩略图覆盖和下游引用旧图，编辑区域支持普通滚轮缩放。`;
 
 export const membershipLimits = {
       FREE: {

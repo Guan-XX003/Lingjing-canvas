@@ -42,6 +42,7 @@ function compile() {
       join(root, "src/renderer/lib/tianji-portrait.ts"),
       join(root, "src/renderer/lib/tianji-manual-reference.ts"),
       join(root, "src/renderer/lib/ark-trusted-assets.ts"),
+      join(root, "src/renderer/lib/image-editor.ts"),
       join(root, "src/renderer/lib/automation-result.ts"),
       join(root, "src/renderer/lib/suno-music-api.ts"),
     ],
@@ -129,6 +130,7 @@ async function run() {
   const { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
   const { inspectTianjiGenerationRequest, validateTianjiGenerationRequest } = await import(pathToFileURL(join(root, "electron/main/tianji-request-guard.cjs")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
+  const imageEditor = await import(pathToFileURL(join(outDir, "image-editor.js")).href);
   const automationResult = await import(pathToFileURL(join(outDir, "automation-result.js")).href);
 
   console.log("运行用例...");
@@ -146,6 +148,8 @@ async function run() {
   const tianjiApiSource = readFileSync(join(root, "src/renderer/lib/tianji-api.ts"), "utf8");
   const accountSettingsSource = readFileSync(join(root, "src/renderer/components/settings-account-tab.tsx"), "utf8");
   const membershipDialogSource = readFileSync(join(root, "src/renderer/components/membership-benefits-dialog.tsx"), "utf8");
+  const imageEditorModalSource = readFileSync(join(root, "src/renderer/components/image-annotate-modal.tsx"), "utf8");
+  const mediaEditorsSource = readFileSync(join(root, "src/renderer/hooks/useMediaEditors.ts"), "utf8");
   const membershipSnapshot = { plan: "free", status: "inactive" };
   const successNotifications = [];
   const copiedValues = [];
@@ -153,6 +157,9 @@ async function run() {
   check("membership price stays informational", membershipDialogSource.includes("¥</span>19.9") && !membershipDialogSource.includes("已开通"), true);
   check("membership button opens an accessible dialog", accountSettingsSource.includes("会员权益") && membershipDialogSource.includes('role="dialog"') && membershipDialogSource.includes('aria-modal="true"'), true);
   check("membership dialog supports escape, backdrop and focus return", membershipDialogSource.includes('event.key === "Escape"') && membershipDialogSource.includes("event.target === event.currentTarget") && membershipDialogSource.includes("previousFocus?.focus()"), true);
+  check("image editor catches canvas export and async save errors", imageEditorModalSource.includes("canvasRef.current.toDataURL") && imageEditorModalSource.includes("await onSave(result)") && imageEditorModalSource.includes("catch (error: any)"), true);
+  check("image editor zooms with an ordinary mouse wheel", imageEditorModalSource.includes("event.preventDefault();") && imageEditorModalSource.includes("event.stopPropagation();") && !imageEditorModalSource.includes("if (!(event.ctrlKey || event.metaKey)) return;"), true);
+  check("image editor persists results before replacing canvas media", mediaEditorsSource.includes("persistProjectAsset") && mediaEditorsSource.includes("wanjuanApplyEditedImageToCanvasNodes") && mediaEditorsSource.includes("if (!persisted?.ok || !persisted.localPath)"), true);
   check("membership state is not mutated by benefits dialog", membershipSnapshot, { plan: "free", status: "inactive" });
   check("membership copy succeeds", await membershipBenefits.copyMembershipContactQQ({ clipboard: { writeText: async (value) => copiedValues.push(value) }, notify: (message) => successNotifications.push(message) }), true);
   check("membership copy writes only contact QQ", copiedValues, [membershipBenefits.WANJUAN_MEMBERSHIP_CONTACT_QQ]);
@@ -401,6 +408,146 @@ async function run() {
       }
     }),
     { images: ["https://cdn.example.com/new-result.png"], videos: [] }
+  );
+  const editedImagePersisted = {
+    ok: true,
+    assetId: "edited-asset",
+    localPath: "/Users/test/project/edited.png",
+    thumbnailLocalPath: "/Users/test/project/edited-thumb.png",
+    filename: "edited.png",
+    mime: "image/png",
+    size: 2048,
+    sha256: "edited-sha",
+    projectId: "project-a",
+    nodeId: "source-image",
+    field: "imageUrl",
+    kind: "image",
+    savedAt: "2026-08-14T00:00:00.000Z",
+  };
+  const editedCanvasNodes = imageEditor.wanjuanApplyEditedImageToCanvasNodes([
+    {
+      id: "source-image",
+      type: "imageNode",
+      data: {
+        imageUrl: "https://cdn.example.com/original.png",
+        thumbnailUrl: "https://cdn.example.com/original-thumb.png",
+        sourceOrigin: "tianji-portrait",
+        tianjiPortraitAssetId: "portrait-id",
+        tianjiPortraitBindingStatus: "ready",
+        arkTrustedAssetId: "ark-id",
+        arkTrustedAssetSourceUrl: "https://cdn.example.com/original.png",
+        arkTrustedAssetStatus: "ready",
+        projectAssetBindings: {
+          imageUrl: { localPath: "/Users/test/project/original.png" },
+          thumbnailUrl: { localPath: "/Users/test/project/original-thumb.png" },
+        },
+      },
+    },
+    {
+      id: "target-node",
+      data: {
+        selectedContextResources: [{
+          sourceNodeId: "source-image",
+          url: "https://cdn.example.com/original.png",
+          imageUrl: "https://cdn.example.com/original.png",
+          tianjiPortraitAssetId: "portrait-id",
+          tianjiPortraitBindingStatus: "ready",
+        }],
+      },
+    },
+    { id: "unrelated", data: { selectedContextResources: [{ url: "https://cdn.example.com/other.png" }] } },
+  ], "source-image", { dataUrl: "data:image/png;base64,edited", persisted: editedImagePersisted, editedAt: 1723593600000 });
+  const editedSourceData = editedCanvasNodes[0].data;
+  check(
+    "edited image replaces preview, binding and reviewed identity together",
+    [
+      editedSourceData.imageUrl,
+      editedSourceData.thumbnailUrl,
+      editedSourceData.projectAssetBindings.imageUrl.localPath,
+      editedSourceData.projectAssetBindings.thumbnailUrl || null,
+      editedSourceData.tianjiPortraitAssetId || null,
+      editedSourceData.arkTrustedAssetId || null,
+      editedSourceData.sourceOrigin,
+    ],
+    [
+      "file:///Users/test/project/edited.png?wanjuan-edit=1723593600000",
+      "file:///Users/test/project/edited-thumb.png?wanjuan-edit=1723593600000",
+      "/Users/test/project/edited.png",
+      null,
+      null,
+      null,
+      "generated",
+    ],
+  );
+  check(
+    "edited image downstream reference resolves to the new local file",
+    wanjuanCollectNodeReferenceMedia(editedCanvasNodes[0]),
+    { images: ["file:///Users/test/project/edited.png"], videos: [] },
+  );
+  check(
+    "edited image replaces matching cached context without touching unrelated context",
+    [
+      editedCanvasNodes[1].data.selectedContextResources[0].url,
+      editedCanvasNodes[1].data.selectedContextResources[0].tianjiPortraitAssetId || null,
+      editedCanvasNodes[2].data.selectedContextResources[0].url,
+    ],
+    ["file:///Users/test/project/edited.png?wanjuan-edit=1723593600000", null, "https://cdn.example.com/other.png"],
+  );
+  const samePathEditedData = imageEditor.wanjuanBuildEditedImageNodeData({
+    imageUrl: "file:///Users/test/project/edited.png",
+    sourceOrigin: "tianji-portrait",
+    tianjiPortraitAssetId: "must-clear",
+    tianjiPortraitBindingStatus: "ready",
+    arkTrustedAssetId: "must-clear",
+    arkTrustedAssetStatus: "ready",
+  }, { persisted: editedImagePersisted, editedAt: 1723593600001 });
+  check(
+    "edited image clears reviewed identity even when persistence reuses the same path",
+    [samePathEditedData.tianjiPortraitAssetId || null, samePathEditedData.arkTrustedAssetId || null, samePathEditedData.imageUrl],
+    [null, null, "file:///Users/test/project/edited.png?wanjuan-edit=1723593600001"],
+  );
+  check(
+    "image editor remote loader returns an origin-safe data URL",
+    await imageEditor.wanjuanPrepareImageEditorSource(
+      "https://cdn.example.com/result.webp",
+      {
+        proxyFetch: async () => ({
+          ok: true,
+          status: 200,
+          headers: [["content-type", "image/webp"]],
+          bodyBase64: "d2VicA==",
+        }),
+      },
+    ),
+    "data:image/webp;base64,d2VicA==",
+  );
+  check(
+    "image editor opens the matching local project copy",
+    imageEditor.wanjuanImageEditorSourceFromNodeData({
+      imageUrl: "https://cdn.example.com/result.png",
+      projectAssetBindings: {
+        imageUrl: {
+          ok: true,
+          localPath: "/Users/test/project/result.png",
+          sourceSignature: "https://cdn.example.com/result.png",
+        },
+      },
+    }),
+    "file:///Users/test/project/result.png",
+  );
+  check(
+    "image editor refuses a local binding from an older result",
+    imageEditor.wanjuanImageEditorSourceFromNodeData({
+      imageUrl: "https://cdn.example.com/new.png",
+      projectAssetBindings: {
+        imageUrl: {
+          ok: true,
+          localPath: "/Users/test/project/old.png",
+          sourceSignature: "https://cdn.example.com/old.png",
+        },
+      },
+    }),
+    "https://cdn.example.com/new.png",
   );
   check(
     "reference selected video frame excludes source video",
