@@ -36,6 +36,7 @@ function compile() {
       join(root, "src/renderer/lib/config-butler.ts"),
       join(root, "src/renderer/lib/jixin-catalog.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
+      join(root, "src/renderer/lib/tianji-local-previews.ts"),
       join(root, "src/renderer/lib/tianji-assets.ts"),
       join(root, "src/renderer/lib/tianji-portrait.ts"),
       join(root, "src/renderer/lib/tianji-manual-reference.ts"),
@@ -109,8 +110,19 @@ async function run() {
     wanjuanTianjiPortraitDeleteDescriptor,
     wanjuanTianjiPortraitGroupTypeFromItem,
     wanjuanTianjiPortraitImageUrlFromItem,
+    wanjuanTianjiPortraitDisplayPreviewUrlFromItem,
+    wanjuanTianjiDecorateLocalPreviews,
+    wanjuanTianjiResolvePendingLocalPreviewAssetId,
     wanjuanTianjiResolvePortraitAssetForNodeData,
+    wanjuanTianjiStripLocalPreviewDecoration,
   } = await import(pathToFileURL(join(outDir, "tianji-assets.js")).href);
+  const {
+    wanjuanFindTianjiLocalPreview,
+    wanjuanNormalizeTianjiLocalPreviewRegistry,
+    wanjuanRemoveTianjiLocalPreviewFromRegistry,
+    wanjuanTianjiLocalPreviewEntryKey,
+    wanjuanTianjiLocalPreviewScope,
+  } = await import(pathToFileURL(join(outDir, "tianji-local-previews.js")).href);
   const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
   const { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
   const { inspectTianjiGenerationRequest, validateTianjiGenerationRequest } = await import(pathToFileURL(join(root, "electron/main/tianji-request-guard.cjs")).href);
@@ -126,12 +138,16 @@ async function run() {
   const desktopWindowSource = readFileSync(join(root, "electron/main/window.cjs"), "utf8");
   const appBundleSource = readFileSync(join(root, "src/renderer/bundle/index.js"), "utf8");
   const videoGenerationSource = readFileSync(join(root, "src/renderer/hooks/useVideoGeneration.ts"), "utf8");
+  const videoNodeSource = readFileSync(join(root, "src/renderer/components/video-node.tsx"), "utf8");
   const renderModeSource = readFileSync(join(root, "src/renderer/components/render-mode.tsx"), "utf8");
   const desktopIpcSource = readFileSync(join(root, "electron/main/ipc.cjs"), "utf8");
   const tianjiApiSource = readFileSync(join(root, "src/renderer/lib/tianji-api.ts"), "utf8");
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
   check("tianji panel blocks task query without task credentials", nativePanelSource.includes("!bytedToken.trim() && !portraitTaskId.trim()"), true);
+  check("tianji panel exposes local preview actions", nativePanelSource.includes("选择预览") && nativePanelSource.includes("更换预览") && nativePanelSource.includes("清除预览"), true);
+  check("tianji local preview stays out of generation preview metadata", videoNodeSource.includes("tianjiPortraitLocalPreviewUrl") && !videoNodeSource.includes("tianjiPortraitPreviewUrl: resource.url"), true);
+  check("tianji picker visibly disables non-Active portraits", videoNodeSource.includes("portraitAvailability !== `ready`") && videoNodeSource.includes("`处理失败`") && videoNodeSource.includes("`审核中`"), true);
   check("tianji reference dedupe prioritizes final portrait id", videoGenerationSource.includes("String(reference?.tianjiPortraitAssetId || ``).trim() === tianjiPortraitAssetId"), true);
   check("tianji preload persists portrait task id", preloadPanelSource.includes("tianjiSeedancePortraitTaskId"), true);
   check("tianji preload supports explicit form encoding", preloadPanelSource.includes('encoding = "json"') && preloadPanelSource.includes('headers["Content-Type"] = "application/x-www-form-urlencoded"'), true);
@@ -170,7 +186,7 @@ async function run() {
   check(
     "tianji image binding clears for new result",
     wanjuanResetTianjiPortraitBindingForImage({ imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready", tianjiPortraitBindingMessage: "bound", isTianjiPortrait: true, sourceOrigin: "tianji-portrait" }, "https://cdn/b.png"),
-    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated" }
+    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitLocalPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated" }
   );
   check(
     "ark binding survives the same image",
@@ -952,6 +968,37 @@ async function run() {
 
   // Tianji defaults
   check("tianji app default base url remains jixin relay", WANJUAN_TIANJI_DEFAULT_BASE_URL, "https://jixing.guancn.uk");
+  const localPreviewScopeA = await wanjuanTianjiLocalPreviewScope({ baseUrl: "https://jixing.guancn.uk", token: "preview-token-a" });
+  const localPreviewScopeAWithBearer = await wanjuanTianjiLocalPreviewScope({ baseUrl: "https://jixing.guancn.uk/", token: "Bearer preview-token-a" });
+  const localPreviewScopeB = await wanjuanTianjiLocalPreviewScope({ baseUrl: "https://jixing.guancn.uk", token: "preview-token-b" });
+  check("tianji local preview scope normalizes Bearer without storing token", {
+    same: localPreviewScopeA === localPreviewScopeAWithBearer,
+    isolated: localPreviewScopeA !== localPreviewScopeB,
+    leaksToken: localPreviewScopeA.includes("preview-token"),
+  }, { same: true, isolated: true, leaksToken: false });
+  const localPreviewEntry = {
+    scope: localPreviewScopeA,
+    groupType: "AIGC",
+    groupId: "group-a",
+    assetId: "asset-local-preview",
+    localPath: "/Users/test/preview.jpg",
+    previewUrl: "file:///Users/test/preview.jpg",
+    updatedAt: 1,
+  };
+  const localPreviewKey = wanjuanTianjiLocalPreviewEntryKey(localPreviewEntry);
+  const localPreviewRegistry = wanjuanNormalizeTianjiLocalPreviewRegistry({ version: 1, entries: { [localPreviewKey]: localPreviewEntry, bad: { ...localPreviewEntry, previewUrl: "data:image/png;base64,large" } }, pending: {} });
+  check("tianji local preview registry rejects embedded data URLs", Object.keys(localPreviewRegistry.entries), [localPreviewKey]);
+  check("tianji local preview lookup is identity and group isolated", {
+    matching: wanjuanFindTianjiLocalPreview(localPreviewRegistry, localPreviewEntry)?.previewUrl,
+    otherIdentity: wanjuanFindTianjiLocalPreview(localPreviewRegistry, { ...localPreviewEntry, scope: localPreviewScopeB }),
+    otherGroup: wanjuanFindTianjiLocalPreview(localPreviewRegistry, { ...localPreviewEntry, groupId: "group-b" }),
+  }, { matching: "file:///Users/test/preview.jpg", otherIdentity: null, otherGroup: null });
+  const removedLocalPreview = wanjuanRemoveTianjiLocalPreviewFromRegistry(localPreviewRegistry, localPreviewEntry);
+  check("tianji remote delete cleanup removes only the exact local preview mapping", {
+    removed: removedLocalPreview.removed,
+    matching: wanjuanFindTianjiLocalPreview(removedLocalPreview.registry, localPreviewEntry),
+    originalStillPresent: wanjuanFindTianjiLocalPreview(localPreviewRegistry, localPreviewEntry)?.previewUrl,
+  }, { removed: true, matching: null, originalStillPresent: "file:///Users/test/preview.jpg" });
   check("tianji invalid generation mode falls back to text", wanjuanNormalizeTianjiGenerationMode("legacy-unknown"), "text-to-video");
   check("tianji text generation stays on relay api namespace", wanjuanBuildTianjiGenerationRequest({ mode: "text-to-video", common: { prompt: "mock" } }).endpoint, "/api/cut/model/coze-seedance-text-special");
   check("tianji text generation explicitly uses official form encoding", wanjuanBuildTianjiGenerationRequest({ mode: "text-to-video", common: { prompt: "mock" } }).encoding, "form");
@@ -1201,6 +1248,54 @@ async function run() {
     { portraitAssetId: "asset-seven", imageUrl: "https://media.example.invalid/seven.jpg", availability: "ready" },
   ]);
   check("tianji preview extractor rejects non-http values", wanjuanTianjiPortraitImageUrlFromItem({ data: { ImageUrl: "asset://not-a-preview", local: { PreviewUrl: "/tmp/private.png" } } }), "");
+  const localOnlyPortraitItem = {
+    protrait_asset_id: "asset-local-preview",
+    protrait_type: "AIGC",
+    status: "Active",
+    name: "没有官方预览的人像",
+    __wanjuanTianjiGroupId: "group-a",
+    __wanjuanTianjiLocalPreviewUrl: "file:///Users/test/preview.jpg",
+  };
+  check("tianji display preview falls back to the isolated local file", wanjuanTianjiPortraitDisplayPreviewUrlFromItem(localOnlyPortraitItem), "file:///Users/test/preview.jpg");
+  const refreshedLocalPreviewAssets = wanjuanTianjiDecorateLocalPreviews(localPreviewRegistry, localPreviewScopeA, { AIGC: "group-a" }, { AIGC: [{ protrait_asset_id: "asset-local-preview", protrait_type: "AIGC", status: "Active", name: "没有官方预览的人像", __wanjuanTianjiGroupId: "group-a" }], LivenessFace: [] });
+  check("tianji refresh reattaches the saved local preview", refreshedLocalPreviewAssets.AIGC[0].__wanjuanTianjiLocalPreviewUrl, "file:///Users/test/preview.jpg");
+  check("tianji array payload also reattaches the saved local preview", wanjuanTianjiDecorateLocalPreviews(localPreviewRegistry, localPreviewScopeA, { AIGC: "group-a" }, [{ protrait_asset_id: "asset-local-preview", protrait_type: "AIGC", status: "Active", __wanjuanTianjiGroupId: "group-a" }])[0].__wanjuanTianjiLocalPreviewUrl, "file:///Users/test/preview.jpg");
+  check("tianji refresh does not attach another identity preview", wanjuanTianjiDecorateLocalPreviews(localPreviewRegistry, localPreviewScopeB, { AIGC: "group-a" }, refreshedLocalPreviewAssets).AIGC[0].__wanjuanTianjiLocalPreviewUrl, undefined);
+  const normalizedLocalOnlyPortrait = wanjuanNormalizeTianjiPortraitAssets({ AIGC: [localOnlyPortraitItem] })[0];
+  check("tianji Active portrait remains selectable without an official preview", {
+    id: normalizedLocalOnlyPortrait.portraitAssetId,
+    imageUrl: normalizedLocalOnlyPortrait.imageUrl,
+    displayPreviewUrl: normalizedLocalOnlyPortrait.displayPreviewUrl,
+    availability: normalizedLocalOnlyPortrait.availability,
+  }, { id: "asset-local-preview", imageUrl: "", displayPreviewUrl: "file:///Users/test/preview.jpg", availability: "ready" });
+  const localOnlyPortraitResource = wanjuanTianjiPortraitToResource(normalizedLocalOnlyPortrait);
+  check("tianji local preview resource keeps generation identity on asset scheme", {
+    url: localOnlyPortraitResource.url,
+    previewUrl: localOnlyPortraitResource.previewUrl,
+    assetId: localOnlyPortraitResource.tianjiPortraitAssetId,
+  }, { url: "asset://asset-local-preview", previewUrl: "file:///Users/test/preview.jpg", assetId: "asset-local-preview" });
+  const localPreviewManualInputs = wanjuanCollectTianjiManualPortraitInputs({
+    nodes: [{ id: "local-preview-node", data: { imageUrl: "file:///Users/test/preview.jpg", tianjiPortraitLocalPreviewUrl: "file:///Users/test/preview.jpg", tianjiPortraitAssetId: "asset-local-preview", tianjiPortraitBindingStatus: "ready", sourceOrigin: "tianji-portrait", isTianjiPortrait: true } }],
+    incomingEdges: [{ source: "local-preview-node", target: "target" }],
+  });
+  const localPreviewFilteredImages = wanjuanExcludeTianjiPortraitPreviews([{ url: "file:///Users/test/preview.jpg", sourceNodeId: "local-preview-node" }], localPreviewManualInputs.portraitPreviewUrls, localPreviewManualInputs.claimedSourceNodeIds);
+  const localPreviewGenerationRequest = wanjuanBuildTianjiGenerationRequest({ mode: "reference-media", common: { prompt: "mock" }, portraitAssetIds: localPreviewManualInputs.portraitAssetIds, reviewedPortraitClaimCount: localPreviewManualInputs.reviewedPortraitClaimCount, imageUrls: localPreviewFilteredImages.map((item) => item.url) });
+  check("tianji local display preview never enters the final generation form", localPreviewGenerationRequest.payload["images[]"], ["asset://asset-local-preview"]);
+  check("tianji local preview decoration is stripped before remote asset cache writes", wanjuanTianjiStripLocalPreviewDecoration({ AIGC: [localOnlyPortraitItem], LivenessFace: [] }).AIGC[0], {
+    protrait_asset_id: "asset-local-preview",
+    protrait_type: "AIGC",
+    status: "Active",
+    name: "没有官方预览的人像",
+    __wanjuanTianjiGroupId: "group-a",
+  });
+  check("tianji pending preview binds only a unique safe match", wanjuanTianjiResolvePendingLocalPreviewAssetId({ lookupName: "唯一上传名" }, { AIGC: [
+    { protrait_asset_id: "asset-unique", protrait_type: "AIGC", status: "Active", name: "唯一上传名", __wanjuanTianjiGroupId: "group-a" },
+    { protrait_asset_id: "asset-other", protrait_type: "AIGC", status: "Active", name: "其他", __wanjuanTianjiGroupId: "group-a" },
+  ] }, "AIGC", "group-a"), "asset-unique");
+  check("tianji pending preview does not guess between duplicate names", wanjuanTianjiResolvePendingLocalPreviewAssetId({ lookupName: "重复名" }, { AIGC: [
+    { protrait_asset_id: "asset-duplicate-a", protrait_type: "AIGC", status: "Active", name: "重复名", __wanjuanTianjiGroupId: "group-a" },
+    { protrait_asset_id: "asset-duplicate-b", protrait_type: "AIGC", status: "Active", name: "重复名", __wanjuanTianjiGroupId: "group-a" },
+  ] }, "AIGC", "group-a"), "");
   check("tianji Active item is ready", wanjuanTianjiPortraitAvailabilityFromItem(nestedTianjiPortrait), "ready");
   check("tianji Processing item remains pending", wanjuanTianjiPortraitAvailabilityFromItem({ detail: { protrait_asset_id: "asset-processing", status: "Processing" } }), "pending");
   check("tianji Failed item remains failed", wanjuanTianjiPortraitAvailabilityFromItem({ detail: { protrait_asset_id: "asset-failed", status: "Failed" } }), "failed");

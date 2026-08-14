@@ -10,6 +10,7 @@ import {
   wanjuanTianjiFlattenPortraitAssets,
   wanjuanTianjiPortraitAssetIdFromItem,
   wanjuanTianjiPortraitAvailabilityFromItem,
+  wanjuanTianjiPortraitDisplayPreviewUrlFromItem,
   wanjuanTianjiPortraitGroupTypeFromItem,
   wanjuanTianjiPortraitImageUrlFromItem,
   wanjuanTianjiPortraitNameFromItem,
@@ -23,6 +24,8 @@ interface TianjiPortraitAsset {
   portraitAssetId: string;
   imageUrl: string;
   previewUrl: string;
+  displayPreviewUrl: string;
+  localPreviewUrl: string;
   groupType: string;
   status: string;
   availability: string;
@@ -141,6 +144,7 @@ export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUr
     tianjiPortraitAssetId: undefined,
     tianjiPortraitGroupType: undefined,
     tianjiPortraitPreviewUrl: undefined,
+    tianjiPortraitLocalPreviewUrl: undefined,
     tianjiPortraitBindingLookupUrl: undefined,
     tianjiPortraitBindingName: undefined,
     tianjiPortraitBindingSourceUrl: undefined,
@@ -164,14 +168,18 @@ export function wanjuanNormalizeTianjiPortraitAssets(rawAssets: any): TianjiPort
     .map((asset, index) => {
       let assetId = wanjuanTianjiPortraitAssetIdFromItem(asset),
         imageUrl = wanjuanTianjiPortraitImageUrlFromItem(asset),
+        displayPreviewUrl = wanjuanTianjiPortraitDisplayPreviewUrlFromItem(asset),
+        localPreviewUrl = /^file:\/\//i.test(String(asset?.__wanjuanTianjiLocalPreviewUrl || ``).trim()) ? String(asset.__wanjuanTianjiLocalPreviewUrl).trim() : ``,
         groupType = wanjuanTianjiPortraitGroupTypeFromItem(asset);
-      return imageUrl
+      return assetId
         ? {
             id: assetId || `tianji-portrait-${Date.now()}-${index}`,
             name: wanjuanTianjiPortraitNameFromItem(asset) || (groupType === `AIGC` ? `虚拟人像` : `真人人像`),
             portraitAssetId: assetId,
             imageUrl: imageUrl,
-            previewUrl: imageUrl,
+            previewUrl: displayPreviewUrl,
+            displayPreviewUrl,
+            localPreviewUrl,
             groupType: groupType || `LivenessFace`,
             status: wanjuanTianjiPortraitStatusFromItem(asset),
             availability: wanjuanTianjiPortraitAvailabilityFromItem(asset),
@@ -190,17 +198,21 @@ export function wanjuanNormalizeTianjiPortraitAssets(rawAssets: any): TianjiPort
  * source/sourceOrigin 为 tianji-portrait 的图片资源。
  */
 export function wanjuanTianjiPortraitToResource(portrait: any, index = 0): any {
-  let imageUrl = String(portrait?.imageUrl || portrait?.previewUrl || portrait?.url || ``).trim();
+  let imageUrl = String(portrait?.imageUrl || ``).trim(),
+    displayPreviewUrl = String(portrait?.displayPreviewUrl || portrait?.previewUrl || ``).trim();
   let availability = String(portrait?.availability || wanjuanTianjiPortraitAvailabilityFromItem(portrait)).trim();
-  if (!imageUrl || availability !== `ready`) return null;
+  if (availability !== `ready`) return null;
   let defaultName = portrait?.groupType === `AIGC` ? `虚拟人像` : `真人人像`,
     portraitAssetId = String(portrait?.portraitAssetId || portrait?.id || ``).trim();
+  if (!portraitAssetId) return null;
   return {
     id: `tianji-portrait-${portrait?.id || index}`,
     tianjiPortraitAssetId: portraitAssetId,
-    url: imageUrl,
-    thumbnailUrl: portrait?.previewUrl || imageUrl,
-    previewUrl: portrait?.previewUrl || imageUrl,
+    url: `asset://${portraitAssetId}`,
+    thumbnailUrl: displayPreviewUrl,
+    previewUrl: displayPreviewUrl,
+    remotePreviewUrl: imageUrl,
+    localPreviewUrl: portrait?.localPreviewUrl || ``,
     type: `image/tianji-portrait`,
     pageTitle: portrait?.name || defaultName,
     label: portrait?.name || defaultName,

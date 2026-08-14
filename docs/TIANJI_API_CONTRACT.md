@@ -50,6 +50,16 @@ CLI/MCP 自动化仅通过专用 `portraitAssetIds` 输入构造上述可信节�
 
 面板交互：创建虚拟组会自动补充 `name=万卷灵境-时间`（用户可修改），创建/查询返回的 `task_id`、`bytedToken`、`group_id` 会保存到本地配置；“查询/同步组 ID”在缺少两类凭据时禁用并提示先创建/粘贴回调值；刷新素材在当前类型没有组 ID 时禁用，避免发送无效的空 `group_ids`。
 
+### 本地人像预览
+
+部分官方 Active 素材只返回最终 `portrait_asset_id` 和状态，不再返回可显示的图片 URL。App 对此使用独立的本地预览注册表：
+
+- 新上传虚拟人像会把用户选择的源图压缩为轻量预览，并通过现有媒体库持久化为本地文件；确认唯一的 Active 最终素材 ID 后，再建立最终 ID 到本地预览的映射。
+- 旧 Active 素材没有映射时，卡片提供“选择预览”；用户可更换或清除本地预览。清除只删除映射，不修改远端素材或审核 ID。
+- 映射按“极鑫接口地址 + Token 的不可逆摘要 + 人像类型 + 组 ID + 最终素材 ID”隔离。注册表不保存 Token，不保存图片 data URL，只保存本地媒体路径和摘要后的身份键。
+- 素材刷新会重新合并本地预览；远端删除成功后同步清理对应映射。上传后若只能按名称匹配，必须恰好命中一个 Active 素材；重复名称时不自动猜测。
+- 本地预览严格只用于显示，使用独立的 `tianjiPortraitLocalPreviewUrl` / 内部展示字段，不写入 `tianjiPortraitPreviewUrl`、`imageRefs`、`selectedContextResources` 或请求表单。生成仍只发送 `portraitAssetIds -> images[]=asset://<最终素材 ID>`。
+
 ## 积分
 
 - 余额：`POST /api/cut/model/fetch-points-balance`。官网旧响应出现过 `{ code, msg: { points } }`，production 代理归一为 `{ code, data: { points } }`；App 同时兼容两者。HTTP 401/403 或业务 401/403 显示鉴权失败；成功但没有 points 时显示空数据。

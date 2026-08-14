@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   WANJUAN_TIANJI_ASSET_PAGE_SIZE,
+  wanjuanTianjiApplyLocalPreviews,
   wanjuanTianjiEnsurePortraitGroups,
   wanjuanTianjiExtractGroups,
   wanjuanTianjiFindArray,
   wanjuanTianjiPortraitAssetIdFromItem,
   wanjuanTianjiPortraitDeleteDescriptor,
+  wanjuanTianjiPortraitDisplayPreviewUrlFromItem,
   wanjuanTianjiPortraitAvailabilityFromItem,
-  wanjuanTianjiPortraitImageUrlFromItem,
   wanjuanTianjiPortraitNameFromItem,
   wanjuanTianjiPortraitStatusFromItem,
   wanjuanTianjiRefreshPortraitAssets,
+  wanjuanTianjiStripLocalPreviewDecoration,
+  wanjuanUploadTianjiVirtualPortrait,
 } from "../lib/tianji-assets";
 import {
   WANJUAN_TIANJI_PORTRAIT_ENDPOINTS,
@@ -25,6 +28,12 @@ import {
   wanjuanTianjiStorageGet,
   wanjuanTianjiStorageSet,
 } from "../lib/tianji-api";
+import {
+  wanjuanPersistTianjiLocalPreview,
+  wanjuanRemoveTianjiLocalPreview,
+  wanjuanSetTianjiLocalPreview,
+  wanjuanTianjiLocalPreviewScope,
+} from "../lib/tianji-local-previews";
 
 type AssetType = "AIGC" | "LivenessFace";
 const emptyAssets = () => ({ AIGC: [], LivenessFace: [] });
@@ -58,7 +67,7 @@ const initialPointsRange = () => {
   return { start: formatDateTime(start), end: formatDateTime(end) };
 };
 
-function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDelete }: any) {
+function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDelete, onPreviewSelect, onPreviewClear }: any) {
   assets = normalizeAssetList(assets);
   const totalPages = Math.max(1, Math.ceil((total || assets.length) / WANJUAN_TIANJI_ASSET_PAGE_SIZE));
   const visibleAssets = assets.slice((page - 1) * WANJUAN_TIANJI_ASSET_PAGE_SIZE, page * WANJUAN_TIANJI_ASSET_PAGE_SIZE);
@@ -74,16 +83,28 @@ function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDele
     {visibleAssets.length ? <div className="wanjuan-tianji-native-grid">
       {visibleAssets.map((asset: any, index: number) => {
         const id = wanjuanTianjiPortraitAssetIdFromItem(asset);
-        const image = wanjuanTianjiPortraitImageUrlFromItem(asset);
+        const image = wanjuanTianjiPortraitDisplayPreviewUrlFromItem(asset);
+        const hasLocalPreview = /^file:\/\//i.test(String(asset?.__wanjuanTianjiLocalPreviewUrl || ``));
         const availability = wanjuanTianjiPortraitAvailabilityFromItem(asset);
         const pending = availability === "pending";
+        const canSelectPreview = Boolean(id) && availability === "ready";
         const statusText = wanjuanTianjiPortraitStatusFromItem(asset);
         return <article className={`wanjuan-tianji-native-asset${pending ? " is-pending" : ""}`} key={id || `${type}-${index}`}>
-          {image ? <img src={image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = brokenPreviewImage; }} /> : <span className="wanjuan-tianji-native-no-image">无图</span>}
+          {image ? <img src={image} alt={`${wanjuanTianjiPortraitNameFromItem(asset) || "天玑人像"}预览`} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = brokenPreviewImage; }} /> : <span className="wanjuan-tianji-native-no-image">无预览</span>}
           {pending && <i>待刷新</i>}
+          {!pending && hasLocalPreview && <i className="is-local-preview">本地预览</i>}
           <b title={wanjuanTianjiPortraitNameFromItem(asset)}>{wanjuanTianjiPortraitNameFromItem(asset) || "未命名素材"}</b>
           <small>{pending ? "待天玑素材库返回" : availability === "failed" ? "素材处理失败" : availability === "unknown" ? "状态未知，暂不可绑定" : statusText || id}</small>
-          {!pending && <div><button type="button" disabled={!id} title={id ? "查看素材详情" : "该旧素材未返回明确资产 ID"} onClick={() => id && onInfo(id)}>详情</button><button type="button" className="danger" disabled={!id} title={id ? "删除该素材" : "该旧素材未返回明确资产 ID，不能安全删除整组"} onClick={() => onDelete(asset, type)}>删除</button>{!id && <small>旧素材缺少可删除 ID，请刷新列表</small>}</div>}
+          {!pending && <div className="wanjuan-tianji-native-asset-actions">
+            <button type="button" disabled={!id} title={id ? "查看素材详情" : "该旧素材未返回明确资产 ID"} onClick={() => id && onInfo(id)}>详情</button>
+            <label className={`wanjuan-tianji-native-preview-button${!canSelectPreview ? " is-disabled" : ""}`} title={!id ? "缺少明确资产 ID，不能绑定本地预览" : !canSelectPreview ? "仅 Active 素材可绑定本地预览" : hasLocalPreview ? "更换本地预览" : "为该素材选择本地预览"}>
+              {hasLocalPreview ? "更换预览" : "选择预览"}
+              <input type="file" accept="image/*" disabled={!canSelectPreview} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; file && onPreviewSelect(asset, type, file); }} />
+            </label>
+            <button type="button" disabled={!id || !hasLocalPreview} title={hasLocalPreview ? "仅清除本地预览，不影响远端素材" : "尚未设置本地预览"} onClick={() => onPreviewClear(asset, type)}>清除预览</button>
+            <button type="button" className="danger" disabled={!id} title={id ? "删除该素材" : "该旧素材未返回明确资产 ID，不能安全删除整组"} onClick={() => onDelete(asset, type)}>删除</button>
+            {!id && <small>旧素材缺少可删除 ID，请刷新列表</small>}
+          </div>}
         </article>;
       })}
     </div> : <div className="wanjuan-tianji-native-empty">暂无素材，刷新列表或上传人像后查看。</div>}
@@ -114,9 +135,10 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
       wanjuanGetSyncedTianjiSeedanceConfig(),
       wanjuanTianjiStorageGet(["tianjiSeedanceGroups", "tianjiSeedanceAssets", "tianjiSeedancePortraitTaskId", "tianjiSeedancePortraitBytedToken", "tianjiSeedancePortraitGroupName"]),
     ]);
-    const nextAssets = normalizeAssets(stored.tianjiSeedanceAssets);
+    const nextGroups = { ...emptyGroups(), ...(stored.tianjiSeedanceGroups || {}) };
+    const nextAssets = normalizeAssets(await wanjuanTianjiApplyLocalPreviews(nextConfig, nextGroups, stored.tianjiSeedanceAssets || {}));
     setConfig(nextConfig);
-    setGroups({ ...emptyGroups(), ...(stored.tianjiSeedanceGroups || {}) });
+    setGroups(nextGroups);
     setAssets(nextAssets);
     setTotals({ AIGC: nextAssets.AIGC.length, LivenessFace: nextAssets.LivenessFace.length });
     setPortraitTaskId(String(stored.tianjiSeedancePortraitTaskId || ""));
@@ -197,14 +219,45 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     if (!descriptor.canDelete) throw new Error("该旧素材未返回明确的资产 ID，暂不能安全删除；请先刷新素材列表");
     const id = descriptor.id;
     if (!window.confirm(`删除素材 ${id}？`)) return;
-    await wanjuanTianjiRequest(await save(), "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id } });
+    const activeConfig = await save();
+    await wanjuanTianjiRequest(activeConfig, "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id } });
+    const scope = await wanjuanTianjiLocalPreviewScope(activeConfig);
+    const groupId = String(groups?.[type] || descriptor.groupId || "").trim();
+    if (groupId) await wanjuanRemoveTianjiLocalPreview({ scope, groupType: type, groupId, assetId: id });
     const nextAssets = {
       AIGC: normalizeAssetList(assets.AIGC).filter((item: any) => wanjuanTianjiPortraitAssetIdFromItem(item) !== id),
       LivenessFace: normalizeAssetList(assets.LivenessFace).filter((item: any) => wanjuanTianjiPortraitAssetIdFromItem(item) !== id),
     };
     setAssets(nextAssets);
-    await wanjuanTianjiStorageSet({ tianjiSeedanceAssets: nextAssets });
+    await wanjuanTianjiStorageSet({ tianjiSeedanceAssets: wanjuanTianjiStripLocalPreviewDecoration(nextAssets) });
     setStatus(`素材已删除：${id}`);
+  });
+
+  const selectLocalPreview = (asset: any, type: AssetType, file: File) => execute(async () => {
+    const id = wanjuanTianjiPortraitAssetIdFromItem(asset);
+    const groupId = String(groups?.[type] || "").trim();
+    if (!id || !groupId) throw new Error("该素材缺少明确的资产 ID 或组 ID，不能绑定本地预览");
+    setStatus("正在保存本地预览...");
+    const scope = await wanjuanTianjiLocalPreviewScope(config);
+    const preview = await wanjuanPersistTianjiLocalPreview(file, { scope, filename: file.name || `${id}.jpg` });
+    await wanjuanSetTianjiLocalPreview({ scope, groupType: type, groupId, assetId: id }, preview);
+    const decorated = await wanjuanTianjiApplyLocalPreviews(config, groups, assets);
+    setAssets(normalizeAssets(decorated));
+    setStatus("本地预览已保存，仅用于显示");
+  });
+
+  const clearLocalPreview = (asset: any, type: AssetType) => execute(async () => {
+    const id = wanjuanTianjiPortraitAssetIdFromItem(asset);
+    const groupId = String(groups?.[type] || "").trim();
+    if (!id || !groupId) return;
+    const scope = await wanjuanTianjiLocalPreviewScope(config);
+    await wanjuanRemoveTianjiLocalPreview({ scope, groupType: type, groupId, assetId: id });
+    const undecorated = {
+      AIGC: normalizeAssetList(assets.AIGC).map((item: any) => wanjuanTianjiPortraitAssetIdFromItem(item) === id ? ({ ...item, __wanjuanTianjiLocalPreviewUrl: undefined, __wanjuanTianjiLocalPreviewPath: undefined }) : item),
+      LivenessFace: normalizeAssetList(assets.LivenessFace).map((item: any) => wanjuanTianjiPortraitAssetIdFromItem(item) === id ? ({ ...item, __wanjuanTianjiLocalPreviewUrl: undefined, __wanjuanTianjiLocalPreviewPath: undefined }) : item),
+    };
+    setAssets(undecorated);
+    setStatus("已清除本地预览，远端素材未受影响");
   });
 
   const applyPortraitResult = useCallback(async (result: any, preferredType: AssetType) => {
@@ -258,18 +311,19 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     const activeConfig = await save();
     const nextGroups = await wanjuanTianjiEnsurePortraitGroups(activeConfig, uploadType);
     setGroups(nextGroups);
-    setStatus("正在上传公网图片...");
-    const uploaded = await (window as any).wanjuanDesktop?.uploadPublicMedia?.({ url: await fileToDataUrl(uploadFile), kind: "image", filename: `tianji-portrait-${Date.now()}` });
-    if (!uploaded?.ok || !uploaded.url) throw new Error(uploaded?.error || "图片公网链接上传失败");
-    setStatus("正在提交天玑人像审核...");
-    await wanjuanTianjiRequest(activeConfig, uploadType === "AIGC" ? "/api/cut/model/upload-VirtralPortrait" : "/api/cut/model/upload-Portrait", {
-      params: {
-        image_url: uploaded.url,
-        name: uploadName || uploadFile.name || "人像素材",
-        ...(uploadType === "AIGC" ? { virtual_group_id: nextGroups.AIGC } : { portrait_group_id: nextGroups.LivenessFace }),
-        type: "Image",
-      },
-    });
+    const sourceDataUrl = await fileToDataUrl(uploadFile);
+    if (uploadType === "AIGC") {
+      setStatus("正在保存本地预览并提交天玑人像审核...");
+      await wanjuanUploadTianjiVirtualPortrait(sourceDataUrl, { name: uploadName || uploadFile.name || "人像素材" });
+    } else {
+      setStatus("正在上传公网图片...");
+      const uploaded = await (window as any).wanjuanDesktop?.uploadPublicMedia?.({ url: sourceDataUrl, kind: "image", filename: `tianji-portrait-${Date.now()}` });
+      if (!uploaded?.ok || !uploaded.url) throw new Error(uploaded?.error || "图片公网链接上传失败");
+      setStatus("正在提交天玑人像审核...");
+      await wanjuanTianjiRequest(activeConfig, "/api/cut/model/upload-Portrait", {
+        params: { image_url: uploaded.url, name: uploadName || uploadFile.name || "人像素材", portrait_group_id: nextGroups.LivenessFace, type: "Image" },
+      });
+    }
     await refresh(uploadType, 1, nextGroups).catch(() => null);
     setUploadFile(null);
     setStatus("上传已提交，素材库已自动刷新");
@@ -317,8 +371,8 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     <div className="wanjuan-tianji-native-checks"><label><input type="checkbox" checked={config.generateAudio !== false} onChange={(event) => changeConfig("generateAudio", event.target.checked)} />生成同步声音</label><label><input type="checkbox" checked={config.watermark === true} onChange={(event) => changeConfig("watermark", event.target.checked)} />添加水印</label></div>
     <div className="wanjuan-tianji-native-fields"><label>上传类型<select value={uploadType} onChange={(event) => setUploadType(event.target.value as AssetType)}><option value="AIGC">虚拟人像</option><option value="LivenessFace">真人人像</option></select></label><label>素材名称<input value={uploadName} onChange={(event) => setUploadName(event.target.value)} placeholder="素材名称" /></label><label>图片文件<input type="file" accept="image/*" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label></div>
     <div className="wanjuan-tianji-native-actions"><button type="button" className="primary" disabled={busy} onClick={upload}>上传到人像库</button></div>
-    <AssetLibrary title="虚拟人像" type="AIGC" assets={assets.AIGC || []} page={pages.AIGC} total={totals.AIGC} onPage={loadPage} onInfo={showInfo} onDelete={deleteAsset} />
-    <AssetLibrary title="真人人像" type="LivenessFace" assets={assets.LivenessFace || []} page={pages.LivenessFace} total={totals.LivenessFace} onPage={loadPage} onInfo={showInfo} onDelete={deleteAsset} />
+    <AssetLibrary title="虚拟人像" type="AIGC" assets={assets.AIGC || []} page={pages.AIGC} total={totals.AIGC} onPage={loadPage} onInfo={showInfo} onDelete={deleteAsset} onPreviewSelect={selectLocalPreview} onPreviewClear={clearLocalPreview} />
+    <AssetLibrary title="真人人像" type="LivenessFace" assets={assets.LivenessFace || []} page={pages.LivenessFace} total={totals.LivenessFace} onPage={loadPage} onInfo={showInfo} onDelete={deleteAsset} onPreviewSelect={selectLocalPreview} onPreviewClear={clearLocalPreview} />
     {pointsDialog && <div className="wanjuan-tianji-points-native-overlay" role="dialog" aria-modal="true" aria-label="积分明细" onMouseDown={(event) => event.target === event.currentTarget && setPointsDialog(null)}>
       <div className="wanjuan-tianji-points-native-dialog">
         <header><div><h3>积分明细</h3><p>{pointsDialog.start} 至 {pointsDialog.end}</p></div><button type="button" onClick={() => setPointsDialog(null)}>关闭</button></header>

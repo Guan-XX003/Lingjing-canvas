@@ -58,7 +58,7 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                       ...(portraitAssetId ? {
                         tianjiPortraitAssetId: portraitAssetId,
                         tianjiPortraitGroupType: finalPortrait.asset?.groupType || finalPortrait.asset?.group_type || `AIGC`,
-                        tianjiPortraitPreviewUrl: finalPortrait.imageUrl || node2.data?.imageUrl || imageUrl,
+                        tianjiPortraitLocalPreviewUrl: /^file:\/\//i.test(String(result?.localPreview?.previewUrl || ``)) ? result.localPreview.previewUrl : node2.data?.tianjiPortraitLocalPreviewUrl,
                         tianjiPortraitBindingLookupUrl: bindingLookupUrl,
                         tianjiPortraitBindingName: bindingName,
                         tianjiPortraitBindingSourceUrl: imageUrl,
@@ -118,7 +118,6 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                             ...node2.data,
                             tianjiPortraitAssetId: resolved.assetId,
                             tianjiPortraitGroupType: resolved.groupType || node2.data.tianjiPortraitGroupType || `AIGC`,
-                            tianjiPortraitPreviewUrl: resolved.imageUrl || node2.data.tianjiPortraitPreviewUrl || node2.data.imageUrl,
                             isTianjiPortrait: true,
                             sourceOrigin: `tianji-portrait`,
                             tianjiPortraitBindingStatus: `ready`,

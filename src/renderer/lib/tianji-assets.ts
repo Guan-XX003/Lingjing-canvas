@@ -16,6 +16,15 @@ import {
   wanjuanTianjiStorageGet,
   wanjuanTianjiStorageSet,
 } from "./tianji-api";
+import {
+  wanjuanCommitPendingTianjiLocalPreview,
+  wanjuanFindTianjiLocalPreview,
+  wanjuanLoadTianjiLocalPreviewRegistry,
+  wanjuanPersistTianjiLocalPreview,
+  wanjuanQueueTianjiLocalPreview,
+  wanjuanSetTianjiLocalPreview,
+  wanjuanTianjiLocalPreviewScope,
+} from "./tianji-local-previews";
 
 export const wanjuanTianjiFindArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -115,14 +124,10 @@ export const wanjuanTianjiSubmittedPortraitAssetId = (uploadResult) => {
   let uploadedUrl = String(uploadResult?.imageUrl || uploadResult?.asset?.image_url || uploadResult?.asset?.imageUrl || ``).trim(),
     label = String(uploadResult?.asset?.name || ``).trim(),
     aigcAssets = Array.isArray(uploadResult?.refresh?.assets?.AIGC) ? uploadResult.refresh.assets.AIGC : [],
-    matchedAsset =
-      aigcAssets.find((item) => {
-        let itemId = wanjuanTianjiPortraitAssetIdFromItem(item);
-        if (!itemId || item?.localUploaded === !0 || !wanjuanTianjiPortraitIsReady(item)) return !1;
-        let itemUrl = wanjuanTianjiPortraitImageUrlFromItem(item),
-          itemName = wanjuanTianjiPortraitNameFromItem(item);
-        return (uploadedUrl && itemUrl && itemUrl === uploadedUrl) || (label && itemName && itemName === label);
-      });
+    usableAssets = aigcAssets.filter((item) => wanjuanTianjiPortraitAssetIdFromItem(item) && item?.localUploaded !== !0 && wanjuanTianjiPortraitIsReady(item)),
+    urlMatches = uploadedUrl ? usableAssets.filter((item) => wanjuanTianjiPortraitImageUrlFromItem(item) === uploadedUrl) : [],
+    nameMatches = label ? usableAssets.filter((item) => wanjuanTianjiPortraitNameFromItem(item) === label) : [],
+    matchedAsset = urlMatches.length === 1 ? urlMatches[0] : nameMatches.length === 1 ? nameMatches[0] : null;
   return wanjuanTianjiPortraitAssetIdFromItem(matchedAsset);
 };
 
@@ -131,14 +136,11 @@ export const wanjuanTianjiFinalPortraitAsset = (uploadResult) => {
     uploadedUrl = String(uploadResult?.imageUrl || uploadResult?.asset?.image_url || uploadResult?.asset?.imageUrl || ``).trim(),
     label = String(uploadResult?.asset?.name || ``).trim(),
     assets = Array.isArray(uploadResult?.refresh?.assets?.AIGC) ? uploadResult.refresh.assets.AIGC : [],
-    matchedAsset =
-      assets.find((item) => {
-        let itemId = wanjuanTianjiPortraitAssetIdFromItem(item);
-        if (!itemId || item?.localUploaded === !0 || !wanjuanTianjiPortraitIsReady(item)) return !1;
-        let itemUrl = wanjuanTianjiPortraitImageUrlFromItem(item),
-          itemName = wanjuanTianjiPortraitNameFromItem(item);
-        return (assetId && itemId === assetId) || (uploadedUrl && itemUrl && itemUrl === uploadedUrl) || (label && itemName && itemName === label);
-      }),
+    usableAssets = assets.filter((item) => wanjuanTianjiPortraitAssetIdFromItem(item) && item?.localUploaded !== !0 && wanjuanTianjiPortraitIsReady(item)),
+    idMatches = assetId ? usableAssets.filter((item) => wanjuanTianjiPortraitAssetIdFromItem(item) === assetId) : [],
+    urlMatches = uploadedUrl ? usableAssets.filter((item) => wanjuanTianjiPortraitImageUrlFromItem(item) === uploadedUrl) : [],
+    nameMatches = label ? usableAssets.filter((item) => wanjuanTianjiPortraitNameFromItem(item) === label) : [],
+    matchedAsset = idMatches.length === 1 ? idMatches[0] : urlMatches.length === 1 ? urlMatches[0] : nameMatches.length === 1 ? nameMatches[0] : null,
     finalId = wanjuanTianjiPortraitAssetIdFromItem(matchedAsset);
   return {
     assetId: finalId,
@@ -232,6 +234,14 @@ export const wanjuanTianjiPortraitGroupTypeFromItem = (item, fallback = ``) =>
     `__wanjuanTianjiGroupType`,
   ]) || String(fallback || ``).trim();
 
+export const wanjuanTianjiPortraitGroupIdFromItem = (item, fallback = ``) =>
+  wanjuanTianjiFindNestedValue(item, [
+    `group_id`, `groupId`, `GroupId`,
+    `virtual_group_id`, `virtualGroupId`, `VirtualGroupId`,
+    `portrait_group_id`, `portraitGroupId`, `PortraitGroupId`,
+    `__wanjuanTianjiGroupId`,
+  ]) || String(fallback || ``).trim();
+
 export const wanjuanTianjiPortraitAvailabilityFromItem = (item) => {
   if (item?.localUploaded === !0) return `pending`;
   let status = wanjuanTianjiPortraitStatusFromItem(item)
@@ -252,7 +262,7 @@ export const wanjuanTianjiPortraitDeleteDescriptor = (item, groupType = ``) => {
   return {
     id,
     groupType: wanjuanTianjiPortraitGroupTypeFromItem(item, groupType),
-    groupId: String(item?.group_id || item?.groupId || item?.portrait_group_id || item?.virtual_group_id || ``).trim(),
+    groupId: wanjuanTianjiPortraitGroupIdFromItem(item),
     canDelete: Boolean(id),
   };
 };
@@ -260,8 +270,90 @@ export const wanjuanTianjiPortraitDeleteDescriptor = (item, groupType = ``) => {
 export const wanjuanTianjiPortraitImageUrlFromItem = (item) =>
   wanjuanTianjiFindNestedValue(item, WANJUAN_TIANJI_PORTRAIT_PREVIEW_KEYS, (value) => /^https?:\/\//i.test(String(value || ``).trim()));
 
+/** Display-only preview. The local fallback is deliberately separate from generation-facing image fields. */
+export const wanjuanTianjiPortraitDisplayPreviewUrlFromItem = (item) =>
+  wanjuanTianjiPortraitImageUrlFromItem(item) ||
+  (/^file:\/\//i.test(String(item?.__wanjuanTianjiLocalPreviewUrl || ``).trim()) ? String(item.__wanjuanTianjiLocalPreviewUrl).trim() : ``);
+
+export const wanjuanTianjiStripLocalPreviewDecoration = (assetsPayload: any) => {
+  const clean = (items: any) => (Array.isArray(items) ? items : []).map((item) => {
+    if (!item || typeof item !== `object`) return item;
+    const { __wanjuanTianjiLocalPreviewUrl, __wanjuanTianjiLocalPreviewPath, ...rest } = item;
+    return rest;
+  });
+  return Array.isArray(assetsPayload) ? clean(assetsPayload) : {
+    ...(assetsPayload && typeof assetsPayload === `object` ? assetsPayload : {}),
+    AIGC: clean(assetsPayload?.AIGC),
+    LivenessFace: clean(assetsPayload?.LivenessFace),
+  };
+};
+
 export const wanjuanTianjiPortraitNameFromItem = (item) =>
   wanjuanTianjiFindNestedValue(item, [`name`, `Name`, `label`, `pageTitle`, `title`, `Title`]);
+
+export const wanjuanTianjiDecorateLocalPreviews = (registry: any, scope: string, groups: any, assetsPayload: any) => {
+  const source = assetsPayload && typeof assetsPayload === `object` ? assetsPayload : {},
+	    decorate = (items: any, groupType: string) => (Array.isArray(items) ? items : []).map((item) => {
+	      const { __wanjuanTianjiLocalPreviewUrl, __wanjuanTianjiLocalPreviewPath, ...cleanItem } = item && typeof item === `object` ? item : {},
+	        effectiveGroupType = groupType || wanjuanTianjiPortraitGroupTypeFromItem(cleanItem),
+	        assetId = wanjuanTianjiPortraitAssetIdFromItem(cleanItem),
+	        groupId = wanjuanTianjiPortraitGroupIdFromItem(cleanItem, groups?.[effectiveGroupType]),
+	        preview = assetId && groupId && effectiveGroupType ? wanjuanFindTianjiLocalPreview(registry, { scope, groupType: effectiveGroupType, groupId, assetId }) : null;
+      return preview ? {
+        ...cleanItem,
+        __wanjuanTianjiLocalPreviewUrl: preview.previewUrl,
+        __wanjuanTianjiLocalPreviewPath: preview.localPath,
+      } : cleanItem;
+    });
+  return Array.isArray(source) ? decorate(source, ``) : {
+    ...source,
+    AIGC: decorate(source.AIGC, `AIGC`),
+    LivenessFace: decorate(source.LivenessFace, `LivenessFace`),
+  };
+};
+
+export const wanjuanTianjiApplyLocalPreviews = async (config: any, groups: any, assetsPayload: any) => {
+  const scope = await wanjuanTianjiLocalPreviewScope(config),
+    registry = await wanjuanLoadTianjiLocalPreviewRegistry();
+  return wanjuanTianjiDecorateLocalPreviews(registry, scope, groups, assetsPayload);
+};
+
+/** Bind pending upload previews only when one Active asset is an unambiguous match. */
+export const wanjuanTianjiResolvePendingLocalPreviewAssetId = (pending: any, assetsPayload: any, groupType: string, groupId: string) => {
+  const candidates = wanjuanTianjiFlattenPortraitAssets(assetsPayload).filter((item) => {
+    if (!wanjuanTianjiPortraitIsReady(item)) return false;
+    if (wanjuanTianjiPortraitGroupTypeFromItem(item, groupType) !== groupType) return false;
+    const itemGroupId = wanjuanTianjiPortraitGroupIdFromItem(item, groupId);
+    return itemGroupId === groupId;
+  });
+  const uniqueId = (items: any[]) => {
+    const ids = [...new Set(items.map(wanjuanTianjiPortraitAssetIdFromItem).filter(Boolean))];
+    return ids.length === 1 ? ids[0] : ``;
+  };
+  const candidateIdMatch = pending?.candidateAssetId ? uniqueId(candidates.filter((item) => wanjuanTianjiPortraitAssetIdFromItem(item) === pending.candidateAssetId)) : ``;
+  if (candidateIdMatch) return candidateIdMatch;
+  const urlMatch = pending?.lookupUrl ? uniqueId(candidates.filter((item) => wanjuanTianjiPortraitImageUrlFromItem(item) === pending.lookupUrl)) : ``;
+  if (urlMatch) return urlMatch;
+  return pending?.lookupName ? uniqueId(candidates.filter((item) => wanjuanTianjiPortraitNameFromItem(item) === pending.lookupName)) : ``;
+};
+
+export const wanjuanTianjiBindPendingLocalPreviews = async (config: any, groups: any, assetsPayload: any) => {
+  const scope = await wanjuanTianjiLocalPreviewScope(config),
+    registry = await wanjuanLoadTianjiLocalPreviewRegistry(),
+    assets = wanjuanTianjiFlattenPortraitAssets(assetsPayload);
+  let bound = 0;
+  for (const [pendingKey, pending] of Object.entries(registry.pending) as any) {
+    if (pending.scope !== scope) continue;
+    const groupType = String(pending.groupType || ``).trim(),
+      groupId = String(pending.groupId || ``).trim();
+    if (!groupType || !groupId || String(groups?.[groupType] || ``).trim() !== groupId) continue;
+    const resolvedAssetId = wanjuanTianjiResolvePendingLocalPreviewAssetId(pending, assets, groupType, groupId);
+    if (!resolvedAssetId) continue;
+    await wanjuanCommitPendingTianjiLocalPreview(pendingKey, resolvedAssetId);
+    bound += 1;
+  }
+  return bound;
+};
 
 export const wanjuanTianjiFlattenPortraitAssets = (input) => {
   let source = input?.assets || input?.tianjiSeedanceAssets || input,
@@ -370,6 +462,7 @@ export const wanjuanTianjiRefreshPortraitAssets = async (config, {
 	          ...item,
 	          __wanjuanTianjiListStatus: `Active`,
 	          __wanjuanTianjiGroupType: groupType,
+	          __wanjuanTianjiGroupId: groupId,
 	        } : item),
 	        pagination: wanjuanTianjiAssetPagination(result, nextPageNumber, normalizedPageSize),
 	      };
@@ -416,8 +509,10 @@ export const wanjuanTianjiRefreshPortraitAssets = async (config, {
     tianjiSeedanceAssets: nextAssets,
     tianjiSeedanceGroups: groups,
   });
+  await wanjuanTianjiBindPendingLocalPreviews(config, groups, nextAssets);
+  const displayAssets = await wanjuanTianjiApplyLocalPreviews(config, groups, nextAssets);
   return {
-    assets: nextAssets,
+    assets: displayAssets,
 	    groups: groups,
 	    aigcCount: aigcItems.length,
 	    liveCount: liveItems.length,
@@ -438,7 +533,14 @@ export const wanjuanUploadTianjiVirtualPortrait = async (imageUrl: any, options:
   let config = await wanjuanGetSyncedTianjiSeedanceConfig(),
     label = String(options.name || options.label || `虚拟人像素材`).trim() || `虚拟人像素材`,
     groups = await wanjuanTianjiEnsurePortraitGroups(config, `AIGC`),
-    uploaded = await window.wanjuanDesktop.uploadPublicMedia({
+    scope = await wanjuanTianjiLocalPreviewScope(config),
+    localPreview = null;
+  try {
+    localPreview = await wanjuanPersistTianjiLocalPreview(sourceUrl, { scope, filename: `${label}.jpg` });
+  } catch (error) {
+    console.warn(`Tianji local portrait preview persist skipped`, error);
+  }
+  let uploaded = await window.wanjuanDesktop.uploadPublicMedia({
       url: sourceUrl,
       kind: `image`,
       filename: `tianji-portrait-${Date.now()}`,
@@ -467,10 +569,22 @@ export const wanjuanUploadTianjiVirtualPortrait = async (imageUrl: any, options:
   } catch (error) {
     console.warn(`Tianji portrait auto refresh failed`, error);
   }
+  if (localPreview) {
+    const finalPortrait = wanjuanTianjiFinalPortraitAsset({ imageUrl: uploaded.url, asset, refresh });
+    if (finalPortrait.matched && finalPortrait.assetId)
+      await wanjuanSetTianjiLocalPreview({ scope, groupType: `AIGC`, groupId: groups.AIGC, assetId: finalPortrait.assetId }, localPreview);
+    else
+      await wanjuanQueueTianjiLocalPreview({ scope, groupType: `AIGC`, groupId: groups.AIGC }, {
+        ...localPreview,
+        candidateAssetId: wanjuanTianjiPortraitAssetIdFromItem(result),
+        lookupName: label,
+      });
+  }
   return {
     result: result,
     asset: asset,
     imageUrl: uploaded.url,
+    localPreview,
     refresh: refresh,
     groups: groups,
   };
