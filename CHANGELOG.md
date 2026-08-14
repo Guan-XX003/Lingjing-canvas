@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.3 - 2026-08-14
+
+- Fixed reviewed Tianji portrait generation so the final portrait asset ID is sent without leaking the ordinary HTTP preview as an additional reference image.
+- Added local display-only preview images for Tianji portrait assets when the upstream service does not provide a preview, without changing reviewed-asset generation semantics.
+- Added strict CLI/MCP reviewed-portrait inputs through `--portrait-asset-id` and `portraitAssetIds`; ordinary unreviewed images cannot enter the reviewed-portrait channel.
+- Preserved the existing Volcengine Ark official-compatible image review and generation behavior.
+- Added a Membership Benefits dialog under My Account covering enterprise model governance, cloud prompt libraries, Jixin relay discounts, beta-code access, and QQ contact details.
+
 ## 1.4.2 - 2026-08-13
 
 - Added personal and enterprise cloud prompt libraries with send-to-local, send-to-LAN-team, send-to-cloud, member/invitation controls, permission-aware UI, offline queueing, conflict handling, and cross-workspace copy.
