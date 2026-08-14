@@ -451,7 +451,7 @@ export function WanJuanSettingsSectionB(props: any) {
                           }),
                         ],
                       }),
-                      activeSettingsTab === `account` && jsx(WanJuanSettingsAccountTab, {}),
+                      activeSettingsTab === `account` && jsx(WanJuanSettingsAccountTab, { showToast: showToast2 }),
                       activeSettingsTab === `basic` &&
                       jsx(WanJuanSettingsBasicTab, {
   $e,

@@ -1,61 +1,56 @@
-# Tianji Local Portrait Preview Design QA
+# Membership Benefits Design QA
 
 ## Evidence
 
-- Source visual truth: `/Users/guan/Desktop/截屏2026-08-13 17.44.05.png`
-- Implementation full view: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/tianji-local-preview-isolated-full-final-20260814.png`
-- Implementation focused picker: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/tianji-local-preview-isolated-picker-final-20260814.png`
-- Source pixels: `3840 x 2160` at macOS Retina density.
-- Implementation viewport: `1280 x 860` CSS px, captured at device scale factor `2` (`2560 x 1720` full view).
-- Focused picker clip: about `758 x 434` CSS px equivalent, captured at scale `2` (`1516 x 868`).
-- State: dark theme, Tianji mode, reference node open, seven isolated mock portraits, official preview absent, one local preview mapped, Active/Failed/Processing and long-name cases present.
+- Source visual truth: `/var/folders/sl/v4h8ypm53n538vdjqw7zxr540000gn/T/TemporaryItems/NSIRD_screencaptureui_hP7zp3/截屏2026-08-14 11.35.12.png`
+- Isolated membership card: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/membership-benefits-card-isolated-20260814.png`
+- Isolated wide dialog: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/membership-benefits-dialog-wide-isolated-20260814.png`
+- Isolated narrow dialog: `/Users/guan/Documents/ChatGPT/万卷开发/Lingjing-canvas/docs/qa/membership-benefits-dialog-narrow-isolated-20260814.png`
+- Reference crop: `1968 x 420` pixels.
+- Wide QA viewport: `1600 x 980` CSS pixels.
+- Narrow QA viewport: `480 x 800` CSS pixels.
+- State: dark theme, isolated userData, local mode, membership status `未开通`.
 
-The source screenshot includes desktop chrome, other applications, an alert, and a failed-preview picker. Fidelity was judged against the Tianji node and its three-column portrait picker rather than unrelated desktop content.
+The reference image contains only the membership card. Card fidelity was compared directly against that crop; the modal was assessed against the existing account-page dialog, button, border, surface, and typography system.
 
-## Full-View Comparison
+## Membership Card Comparison
 
-- The implementation preserves the existing dark canvas, compact Tianji node, anchored picker, three-column grid, header count, refresh action, and close action.
-- The picker remains inside the node workflow and does not introduce a new page or card treatment.
-- The focused state stays within the viewport and does not cover persistent navigation or bottom tools incoherently.
+- The existing bordered dark card, title icon, heading, supporting text, two-column status metrics, and enterprise note are preserved.
+- `会员权益` is placed at the right of the title row with a Lucide crown icon and the existing outline-button treatment.
+- The title group uses a shrinking text region while the action remains fixed-width, so the button does not squeeze or cover `会员状态`.
+- At narrow widths the action moves below the title group rather than forcing text outside the card.
 
-## Focused Region Comparison
+## Dialog Comparison
 
-- Local preview: the first portrait shows the mapped local file immediately while official-preview-free items retain the existing `无预览` placeholder.
-- Image quality: cards use a stable square aspect ratio and `object-fit: cover`; the wide local test image is cropped without stretching, height growth, or overflow.
-- Narrow layout: three equal columns remain inside the picker. Borders, gaps, header controls, labels, and the second row stay aligned.
-- Long names: Chinese and English names truncate on one line; they do not widen cards or cover adjacent items.
-- State clarity: Active items remain selectable. Failed and Processing items use dashed/disabled styling and show `处理失败` / `审核中` labels without overflowing.
+- The dialog uses the same charcoal surfaces, gray borders, 8px outer radius, compact icon button, and restrained typography as the account settings page.
+- `万卷会员`, `¥19.9/月`, and `内测开放` form a clear information hierarchy without implying that membership is active.
+- Three benefits use simple divider rows rather than nested cards. Icons align consistently and descriptions wrap naturally.
+- The footer keeps the beta-code/QQ explanation visible and provides one clear `复制 QQ` command.
+- Backdrop blur and shadow separate the modal from the app without adding decorative gradients or extra panels.
 
-## Required Fidelity Surfaces
+## Responsive And Accessibility Checks
 
-- Fonts and typography: existing app font stack, weights, small-label scale, line height, and zero letter-spacing are preserved. Dynamic names use single-line truncation.
-- Spacing and layout rhythm: existing compact margins, 3-column gap, radii, borders, and anchored popover proportions are preserved.
-- Colors and tokens: existing charcoal surfaces, gray borders, cyan hover intent, muted disabled state, and white hierarchy are unchanged.
-- Image quality and asset fidelity: local raster preview is rendered as a real image with cover cropping. No placeholder art, CSS drawing, or generated substitute was introduced.
-- Copy and content: `天玑人像库`, `刷新素材`, `无预览`, `处理失败`, and `审核中` are concise and consistent with the existing Chinese UI.
-- Accessibility and interaction: preview images have meaningful alt text in settings; full names remain available through titles; file selection uses a native input; unavailable items remain guarded by the existing click-time validation.
+- At `480px`, the dialog remains inside the viewport with no horizontal overflow.
+- Long benefit descriptions wrap within `minmax(0, 1fr)` rows; the QQ number remains readable.
+- The footer stacks at narrow width and the copy command expands to a stable full-width button.
+- The dialog exposes `role=dialog`, `aria-modal`, labelled title/description, and an accessible close label.
+- Initial focus moves to the close control, Tab remains trapped in the dialog, Escape and backdrop click close it, and focus returns to the opening button.
 
-## Interaction And Console Checks
+## Interaction Checks
 
-- Opened Settings -> Model Settings -> Tianji mode with isolated storage.
-- Verified settings cards with local preview, no preview, failed, processing, and long-name states.
-- Created an isolated Tianji node, switched to Tianji mode, and opened the narrow portrait picker.
-- Verified seven mock items, local preview display, status labels, and no visible overflow.
-- No upload, delete, remote refresh, or generation request was made.
-- Console showed Electron development security warnings caused by the repository's existing `webSecurity: false` development setup; no new renderer exception or local-preview error was observed.
+- Verified membership button visibility and modal open/close.
+- Verified price, all three benefit titles/descriptions, beta label, QQ number, and no `已开通` claim.
+- Verified copy success writes only `3379084564` and shows `QQ 已复制`.
+- Verified clipboard rejection shows `复制失败，请手动复制 QQ`.
+- Verified membership state is `未开通` before and after all interactions.
+- No payment, account mutation, server request, generation, upload, or formal userData access occurred.
 
-## Comparison History
+## QA Harness Note
 
-1. Initial comparison found a P2 state-affordance issue: Failed and Processing cards looked selectable even though the generation path rejected them.
-2. Fixed the picker to derive availability, apply disabled/dashed styling, and show `处理失败` / `审核中` in both the label and hover overlay. Settings now allow choosing a local preview only for Active assets.
-3. Rebuilt, reran `280/280` library tests, and captured the final focused screenshot. The corrected cards remain within the same grid and no P0/P1/P2 issue remains.
+The isolated Electron renderer reached a fully hydrated and interactive settings DOM while a concurrently running formal App kept the development splash reveal path from completing. The QA harness removed only that isolated splash element after stable DOM readiness so screenshots represented the implemented UI; product source and formal App state were not altered by this step.
 
 ## Findings
 
-No actionable P0, P1, or P2 visual differences remain for the requested local-preview experience.
-
-## Follow-up Polish
-
-- P3: the isolated preview fixture deliberately uses the supplied screenshot rather than a portrait photo; this proves cover cropping and file rendering but is not production content.
+No actionable P0, P1, or P2 visual or interaction issue remains for the membership-benefits experience.
 
 final result: passed

@@ -33,6 +33,7 @@ function compile() {
       join(root, "src/renderer/lib/global-tasks.ts"),
       join(root, "src/renderer/lib/global-config.ts"),
       join(root, "src/renderer/lib/model-selection.ts"),
+      join(root, "src/renderer/lib/membership-benefits.ts"),
       join(root, "src/renderer/lib/config-butler.ts"),
       join(root, "src/renderer/lib/jixin-catalog.ts"),
       join(root, "src/renderer/lib/tianji-api.ts"),
@@ -71,6 +72,7 @@ async function run() {
   const { applyRunScopedStateUpdate, compactGlobalTasks, failGlobalTaskRefresh, indexGlobalTasks, supersedeActiveNodeTasks, updateTaskRunningProgress } = await import(pathToFileURL(join(outDir, "global-tasks.js")).href);
   const { collectTaskCredentialConfigs, isCurrentSettingsSave, mergeGlobalConfigApiConfigs, replaceGlobalConfigApiConfigs, resolveTaskApiCredential, resolveTaskPollUrl } = await import(pathToFileURL(join(outDir, "global-config.js")).href);
   const { WanJuanShouldAutoPreferredModel } = await import(pathToFileURL(join(outDir, "model-selection.js")).href);
+  const membershipBenefits = await import(pathToFileURL(join(outDir, "membership-benefits.js")).href);
   const videoTask = await import(pathToFileURL(join(outDir, "video-task.js")).href);
   const videoParameterMode = await import(pathToFileURL(join(outDir, "video-parameter-mode.js")).href);
   const nodeRuntime = await import(pathToFileURL(join(outDir, "node-runtime-contract.js")).href);
@@ -142,6 +144,22 @@ async function run() {
   const renderModeSource = readFileSync(join(root, "src/renderer/components/render-mode.tsx"), "utf8");
   const desktopIpcSource = readFileSync(join(root, "electron/main/ipc.cjs"), "utf8");
   const tianjiApiSource = readFileSync(join(root, "src/renderer/lib/tianji-api.ts"), "utf8");
+  const accountSettingsSource = readFileSync(join(root, "src/renderer/components/settings-account-tab.tsx"), "utf8");
+  const membershipDialogSource = readFileSync(join(root, "src/renderer/components/membership-benefits-dialog.tsx"), "utf8");
+  const membershipSnapshot = { plan: "free", status: "inactive" };
+  const successNotifications = [];
+  const copiedValues = [];
+  check("membership exposes exactly three benefits", membershipBenefits.WANJUAN_MEMBERSHIP_BENEFITS.length, 3);
+  check("membership price stays informational", membershipDialogSource.includes("¥</span>19.9") && !membershipDialogSource.includes("已开通"), true);
+  check("membership button opens an accessible dialog", accountSettingsSource.includes("会员权益") && membershipDialogSource.includes('role="dialog"') && membershipDialogSource.includes('aria-modal="true"'), true);
+  check("membership dialog supports escape, backdrop and focus return", membershipDialogSource.includes('event.key === "Escape"') && membershipDialogSource.includes("event.target === event.currentTarget") && membershipDialogSource.includes("previousFocus?.focus()"), true);
+  check("membership state is not mutated by benefits dialog", membershipSnapshot, { plan: "free", status: "inactive" });
+  check("membership copy succeeds", await membershipBenefits.copyMembershipContactQQ({ clipboard: { writeText: async (value) => copiedValues.push(value) }, notify: (message) => successNotifications.push(message) }), true);
+  check("membership copy writes only contact QQ", copiedValues, [membershipBenefits.WANJUAN_MEMBERSHIP_CONTACT_QQ]);
+  check("membership copy success toast", successNotifications, ["QQ 已复制"]);
+  const failureNotifications = [];
+  check("membership copy failure is handled", await membershipBenefits.copyMembershipContactQQ({ clipboard: null, notify: (message) => failureNotifications.push(message) }), false);
+  check("membership copy failure toast", failureNotifications, ["复制失败，请手动复制 QQ"]);
   check("tianji panel exposes portrait group name", nativePanelSource.includes("素材组名称"), true);
   check("tianji virtual group sends generated name", nativePanelSource.includes("params: { name: groupName }"), true);
   check("tianji panel blocks task query without task credentials", nativePanelSource.includes("!bytedToken.trim() && !portraitTaskId.trim()"), true);

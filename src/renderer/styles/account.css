@@ -506,6 +506,25 @@
   justify-content: space-between;
 }
 
+.wanjuan-membership-band-heading,
+.wanjuan-membership-band-heading .wanjuan-account-band-title {
+  min-width: 0;
+}
+
+.wanjuan-membership-band-heading .wanjuan-account-band-title {
+  flex: 1 1 auto;
+}
+
+.wanjuan-membership-band-heading .wanjuan-account-band-title > div {
+  min-width: 0;
+}
+
+.wanjuan-membership-benefits-button {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .wanjuan-account-band-heading > svg,
 .wanjuan-account-band-title > svg {
   color: var(--wj-accent, #38bdf8);
@@ -571,6 +590,199 @@
   margin: 11px 0 0;
   color: var(--wj-muted, #94a3b8);
   font-size: 10px;
+}
+
+.wanjuan-membership-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483300;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in srgb, #000 68%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-app-region: no-drag;
+}
+
+.wanjuan-membership-dialog {
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(720px, calc(100vh - 28px));
+  overflow: auto;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 8px;
+  background: var(--wj-surface, #1f242b);
+  color: var(--wj-text, #f8fafc);
+  box-shadow: 0 24px 76px color-mix(in srgb, var(--wanjuan-theme-shadow, #000) 78%, transparent);
+}
+
+.wanjuan-membership-dialog-header,
+.wanjuan-membership-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.wanjuan-membership-dialog-header {
+  border-bottom: 1px solid var(--wj-border, #4b5563);
+}
+
+.wanjuan-membership-dialog-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 11px;
+}
+
+.wanjuan-membership-dialog-title > div {
+  min-width: 0;
+}
+
+.wanjuan-membership-dialog-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, #fbbf24 42%, var(--wj-border) 58%);
+  border-radius: 7px;
+  background: color-mix(in srgb, #fbbf24 9%, var(--wj-surface-2) 91%);
+  color: #fbbf24;
+}
+
+.wanjuan-membership-title-line {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.wanjuan-membership-title-line h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.wanjuan-membership-beta-tag {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, #fbbf24 38%, var(--wj-border) 62%);
+  border-radius: 999px;
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.wanjuan-membership-dialog-title p {
+  margin: 4px 0 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.wanjuan-membership-dialog-header > button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--wj-border, #4b5563);
+  border-radius: 6px;
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-muted, #94a3b8);
+  cursor: pointer;
+}
+
+.wanjuan-membership-dialog-header > button:hover,
+.wanjuan-membership-dialog-header > button:focus-visible {
+  color: var(--wj-text, #f8fafc);
+}
+
+.wanjuan-membership-dialog-body {
+  padding: 18px;
+}
+
+.wanjuan-membership-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding-bottom: 17px;
+}
+
+.wanjuan-membership-price strong {
+  color: var(--wj-text, #f8fafc);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.wanjuan-membership-price strong span {
+  margin-right: 2px;
+  font-size: 15px;
+}
+
+.wanjuan-membership-price > span {
+  color: var(--wj-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.wanjuan-membership-benefit-list {
+  border-top: 1px solid color-mix(in srgb, var(--wj-border) 72%, transparent);
+}
+
+.wanjuan-membership-benefit-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 11px;
+  padding: 14px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--wj-border) 72%, transparent);
+}
+
+.wanjuan-membership-benefit-row > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--wj-surface-2, #252a32);
+  color: var(--wj-accent, #38bdf8);
+}
+
+.wanjuan-membership-benefit-row strong {
+  display: block;
+  font-size: 12px;
+}
+
+.wanjuan-membership-benefit-row p {
+  margin: 4px 0 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.wanjuan-membership-dialog-footer {
+  border-top: 1px solid var(--wj-border, #4b5563);
+  background: color-mix(in srgb, var(--wj-surface-2) 58%, var(--wj-surface) 42%);
+}
+
+.wanjuan-membership-dialog-footer p {
+  min-width: 0;
+  margin: 0;
+  color: var(--wj-muted, #94a3b8);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.wanjuan-membership-dialog-footer p strong {
+  color: var(--wj-text, #f8fafc);
+  white-space: nowrap;
+}
+
+.wanjuan-membership-dialog-footer .wanjuan-account-outline-button {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .wanjuan-account-security-row {
@@ -1108,6 +1320,7 @@
   .wanjuan-account-settings-hero > button { width: 100%; }
   .wanjuan-enterprise-connect-form { grid-template-columns: 1fr; }
   .wanjuan-account-band-heading.with-action { align-items: flex-start; gap: 12px; }
+  .wanjuan-membership-band-heading { align-items: center; }
   .wanjuan-enterprise-heading-actions { align-items: stretch; flex-direction: column; }
   .wanjuan-enterprise-host-metrics { grid-template-columns: 1fr; }
   .wanjuan-enterprise-host-metrics > div { border-right: 0; border-bottom: 1px solid var(--wj-border, #4b5563); }
@@ -1127,4 +1340,18 @@
   .wanjuan-enterprise-default-quota-table > div:nth-last-child(-n+3) { border-bottom: 1px solid var(--wj-border, #4b5563); }
   .wanjuan-enterprise-default-quota-table > div:last-child { border-bottom: 0; }
   .wanjuan-enterprise-member-quota-editor > div:last-child { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px) {
+  .wanjuan-membership-band-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .wanjuan-membership-benefits-button { align-self: flex-start; }
+  .wanjuan-membership-dialog-backdrop { padding: 8px; }
+  .wanjuan-membership-dialog-header,
+  .wanjuan-membership-dialog-body,
+  .wanjuan-membership-dialog-footer { padding: 14px; }
+  .wanjuan-membership-dialog-footer { align-items: stretch; flex-direction: column; }
+  .wanjuan-membership-dialog-footer .wanjuan-account-outline-button { width: 100%; }
 }

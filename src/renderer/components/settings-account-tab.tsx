@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CircleAlert,
   Cloud,
+  Crown,
   CreditCard,
   KeyRound,
   Laptop,
@@ -35,6 +36,7 @@ import {
 import { buildEnterpriseConfigDraft } from "../lib/enterprise-config-snapshot";
 import { EnterpriseGatewayCreateDialog } from "./enterprise-gateway-create-dialog";
 import { EnterpriseManagementPanel } from "./enterprise-management-panel";
+import { WanJuanMembershipBenefitsDialog } from "./membership-benefits-dialog";
 
 const planLabels: Record<string, string> = {
   free: "本地免费版",
@@ -56,12 +58,13 @@ function AccountStatusPill({ account }: { account: ReturnType<typeof getAccountS
   return <span className="wanjuan-account-pill"><UserRound size={13} />本地模式</span>;
 }
 
-export function WanJuanSettingsAccountTab() {
+export function WanJuanSettingsAccountTab({ showToast = () => {} }: { showToast?: (message: string) => void }) {
   const account = useSyncExternalStore(subscribeAccount, getAccountState, getAccountState);
   const [enterprisePanel, setEnterprisePanel] = useState<"connect" | "create" | "takeover" | null>(null);
   const [gatewayUrl, setGatewayUrl] = useState(account.enterprise?.gatewayUrl || "");
   const [inviteCode, setInviteCode] = useState("");
   const [publishingConfig, setPublishingConfig] = useState(false);
+  const [membershipBenefitsOpen, setMembershipBenefitsOpen] = useState(false);
 
   const connectEnterprise = async () => {
     const result = await connectEnterpriseWorkspace({
@@ -127,9 +130,14 @@ export function WanJuanSettingsAccountTab() {
       )}
 
       <section className="wanjuan-account-settings-band">
-        <div className="wanjuan-account-band-heading">
-          <CreditCard size={18} />
-          <div><strong>会员状态</strong><span>查看当前账号的会员方案与有效状态</span></div>
+        <div className="wanjuan-account-band-heading with-action wanjuan-membership-band-heading">
+          <div className="wanjuan-account-band-title">
+            <CreditCard size={18} />
+            <div><strong>会员状态</strong><span>查看当前账号的会员方案与有效状态</span></div>
+          </div>
+          <button type="button" className="wanjuan-account-outline-button wanjuan-membership-benefits-button" onClick={() => setMembershipBenefitsOpen(true)}>
+            <Crown size={15} />会员权益
+          </button>
         </div>
         <div className="wanjuan-account-metrics">
           <div><span>当前方案</span><strong>{planLabels[account.subscription?.plan || "free"] || account.subscription?.plan || "本地免费版"}</strong></div>
@@ -232,6 +240,12 @@ export function WanJuanSettingsAccountTab() {
           defaultName={account.user?.name || account.user?.email?.split("@")[0] || ""}
           existingEnterprise={enterprisePanel === "takeover" ? account.ownedEnterprise : null}
           onClose={() => setEnterprisePanel(null)}
+        />
+      )}
+      {membershipBenefitsOpen && (
+        <WanJuanMembershipBenefitsDialog
+          onClose={() => setMembershipBenefitsOpen(false)}
+          showToast={showToast}
         />
       )}
     </div>
