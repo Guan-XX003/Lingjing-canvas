@@ -1595,7 +1595,7 @@ function installDesktopPatches() {
   };
   const workspaceAssertEnterpriseTeamResponse = (response) => {
     if (response?.ok !== false) return response || {};
-    const error = new Error(String(response?.error || "企业网关团队模板请求失败"));
+    const error = new Error(String(response?.error || workspaceT("企业网关团队模板请求失败")));
     error.code = String(response?.code || "ENTERPRISE_TEAM_TEMPLATE_FAILED");
     error.status = Number(response?.status || 0);
     error.details = response?.details || null;
@@ -1607,7 +1607,7 @@ function installDesktopPatches() {
     const responseContext = response?.context || {};
     if (String(responseContext.organizationId || context.organizationId) !== context.organizationId ||
         String(responseContext.gatewayId || context.gatewayId) !== context.gatewayId) {
-      throw new Error("企业团队模板返回的组织或网关与当前会话不一致");
+      throw new Error(workspaceT("企业团队模板返回的组织或网关与当前会话不一致"));
     }
     const page = response?.item ? { ...response, items: [response.item] } : response?.tombstone ? { ...response, tombstones: [response.tombstone] } : response;
     const nextCache = mergeEnterpriseTeamTemplatePage(workspaceState.enterpriseTeamCache || emptyEnterpriseTeamCache(context), page || {}, context, options);
@@ -1622,7 +1622,7 @@ function installDesktopPatches() {
     workspaceState.enterpriseTeamLastAttemptAt = Date.now();
     if (context.offline || (typeof navigator !== "undefined" && navigator.onLine === false)) {
       workspaceState.enterpriseTeamStatus = "offline";
-      workspaceState.enterpriseTeamError = "企业网关离线，正在显示上次同步缓存";
+      workspaceState.enterpriseTeamError = workspaceT("企业网关离线，正在显示上次同步缓存");
       return workspaceState.enterpriseTeamCache;
     }
     workspaceState.enterpriseTeamStatus = "loading";
@@ -1650,10 +1650,10 @@ function installDesktopPatches() {
       if (Number(error?.status || 0) === 401 || Number(error?.status || 0) === 403 || /FORBIDDEN|REVOKED|EXPIRED/.test(String(error?.code || ""))) {
         await workspaceClearEnterpriseTeamCache(context);
         workspaceState.enterpriseTeamStatus = "permission-denied";
-        workspaceState.enterpriseTeamError = "企业团队权限已失效，本地缓存已清理";
+        workspaceState.enterpriseTeamError = workspaceT("企业团队权限已失效，本地缓存已清理");
       } else {
         workspaceState.enterpriseTeamStatus = "offline";
-        workspaceState.enterpriseTeamError = String(error?.message || "企业网关暂时不可用，正在显示缓存");
+        workspaceState.enterpriseTeamError = String(error?.message || workspaceT("企业网关暂时不可用，正在显示缓存"));
       }
       return workspaceState.enterpriseTeamCache;
     }
@@ -1793,7 +1793,7 @@ function installDesktopPatches() {
     if (context) {
       try {
         if (context.offline || (typeof navigator !== "undefined" && navigator.onLine === false)) {
-          throw new Error("企业网关离线，未发送；重连后请重试");
+          throw new Error(workspaceT("企业网关离线，未发送；重连后请重试"));
         }
         const response = workspaceAssertEnterpriseTeamResponse(await workspaceTeamBridge.enterpriseTemplates({
           operation: "create",

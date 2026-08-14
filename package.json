@@ -28,6 +28,7 @@
     "test:extension-tools": "node scripts/test-extension-tool-runtime.cjs",
     "test:update-checker": "electron scripts/test-update-checker.cjs",
     "test:workspace-team": "npm run build:web && node scripts/test-workspace-team.cjs",
+    "test:i18n:workspace": "node scripts/test-workspace-i18n.cjs",
     "test:storage": "node scripts/test-storage-lab.mjs",
     "test:storage:electron": "node scripts/test-storage-electron.cjs",
     "test:storage:state": "node scripts/test-storage-state-policy.mjs",
