@@ -92,6 +92,11 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
     collect(sourceNode.data, () => claimedSourceNodeIds.add(String(sourceNode.id)));
   });
   contexts.forEach((resource, index) => {
+    const sourceId = String(resource?.sourceId || resource?.nodeId || resource?.id || ``).trim();
+    if (sourceId && claimedSourceNodeIds.has(sourceId)) {
+      claimedContextIndexes.add(index);
+      return;
+    }
     collect(resource, () => claimedContextIndexes.add(index));
   });
 

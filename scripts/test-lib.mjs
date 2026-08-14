@@ -1058,6 +1058,15 @@ async function run() {
     ],
   });
   check("manual reviewed portrait count deduplicates repeated edges", duplicateManualPortraitInputs.reviewedPortraitClaimCount, 1);
+  const historicalContextPortraitInputs = wanjuanCollectTianjiManualPortraitInputs({
+    nodes: [currentPortraitNode, manualTargetNode],
+    incomingEdges: [{ source: "portrait-node", target: "manual-target" }],
+    contextResources: [{ id: "portrait-node", sourceId: "portrait-node", type: "image", url: "https://uploads.example.invalid/reuploaded-preview.jpg" }],
+  });
+  check("manual reviewed portrait claims a metadata-stripped historical context by source id", {
+    ids: historicalContextPortraitInputs.portraitAssetIds,
+    claimedContext: historicalContextPortraitInputs.claimedContextIndexes.has(0),
+  }, { ids: ["active-verified"], claimedContext: true });
   const manualGenerationRequest = wanjuanBuildTianjiGenerationRequest({
     mode: "reference-media",
     common: { prompt: "mock" },
