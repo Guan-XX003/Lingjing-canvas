@@ -4,7 +4,7 @@
 
 不安装桌面应用时，可下载与本版本匹配的 CLI/MCP 压缩包：
 
-[下载 wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-assets/wanjuan-cli-1.4.4.zip)
+[下载 wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-release/wanjuan-cli-1.4.4.zip)
 
 压缩包只包含 CLI/MCP 程序与本说明，不包含账号会话、API Key 或用户数据。
 
