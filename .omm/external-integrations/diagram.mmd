@@ -11,6 +11,7 @@ graph LR
     account-cloud["WanJuan Account Service\nIdentity, membership, devices, wallet"]
     prompt-cloud["Prompt Workspace API\nPersonal and organization libraries"]
     enterprise-gateway["Enterprise LAN Gateway\nMembership check and model proxy"]
+    enterprise-team-prompts["Enterprise Team Prompt Routes\nworkspace token + trusted host"]
     update-service["GitHub Release Update Feed\nDesktop updater"]
     local-tools["Local Tool Runtime\nFFmpeg, Real-ESRGAN, deface, Qwen TTS"]
     automation-clients["Local Automation Clients\nCLI and stdio MCP"]
@@ -28,10 +29,12 @@ graph LR
     account-cloud -->|"access token and organization membership"| prompt-cloud
     account-cloud -->|"signed user identity"| enterprise-gateway
     renderer-adapters -->|"short-lived workspace session only"| enterprise-gateway
+    renderer-adapters -->|"strict DTO and incremental cursor"| enterprise-team-prompts
+    enterprise-team-prompts -->|"local organization and gateway store"| enterprise-gateway
     proxy-security -->|"checks release metadata"| update-service
     renderer-adapters -->|"invokes local processing through IPC"| local-tools
     automation-clients -->|"status, models, tasks and generation commands"| automation-boundary
     automation-boundary -->|"allowlisted renderer methods only"| renderer-adapters
     classDef external fill:#585b70,stroke:#585b70,color:#cdd6f4
-    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,account-cloud,prompt-cloud,enterprise-gateway,update-service external
+    class jixin,tianji,tongyi,suno,custom-providers,upload-services,admin-services,account-cloud,prompt-cloud,enterprise-gateway,enterprise-team-prompts,update-service external
     class automation-clients external

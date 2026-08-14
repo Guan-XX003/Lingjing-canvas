@@ -3,7 +3,7 @@ const {
   sanitizeSharedPromptTemplateInput,
 } = require("./cloud-prompt-contract.cjs");
 
-const ENTERPRISE_TEAM_CACHE_VERSION = 1;
+const ENTERPRISE_TEAM_CACHE_VERSION = 2;
 const ENTERPRISE_TEAM_TEMPLATE_FIELDS = new Set(["title", "content", "description", "type", "tags", "modelHint", "providerHint", "generationMode", "parameters"]);
 const ENTERPRISE_TEAM_PARAMETER_FIELDS = new Set(["aspectRatio", "resolution", "durationSeconds", "imageSize", "generateAudio", "watermark"]);
 
@@ -105,6 +105,7 @@ function emptyEnterpriseTeamCache(context = {}) {
     version: ENTERPRISE_TEAM_CACHE_VERSION,
     organizationId: cleanText(context.organizationId, 160),
     gatewayId: cleanText(context.gatewayId, 160),
+    userId: cleanText(context.userId, 160),
     cursor: "",
     items: [],
     role: cleanText(context.role || "member", 40),
@@ -123,6 +124,7 @@ function mergeEnterpriseTeamTemplatePage(cache = {}, response = {}, context = {}
   const scope = {
     organizationId: cleanText(context.organizationId || cache.organizationId, 160),
     gatewayId: cleanText(context.gatewayId || cache.gatewayId, 160),
+    userId: cleanText(context.userId || cache.userId, 160),
     role: cleanText(response.role || context.role || cache.role || "member", 40),
     permissions: response.permissions || context.permissions || cache.permissions,
   };
@@ -157,6 +159,7 @@ function mergeEnterpriseTeamTemplatePage(cache = {}, response = {}, context = {}
     ...base,
     organizationId: scope.organizationId,
     gatewayId: scope.gatewayId,
+    userId: scope.userId,
     cursor: cleanText(response.nextCursor ?? base.cursor, 2000),
     items: [...byId.values()].sort((left, right) =>
       new Date(right.updatedAt || 0).getTime() - new Date(left.updatedAt || 0).getTime()

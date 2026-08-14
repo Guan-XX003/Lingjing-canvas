@@ -15,6 +15,7 @@ const {
 const context = {
   organizationId: "org_test",
   gatewayId: "gateway_test",
+  userId: "user_test",
   role: "member",
 };
 
@@ -93,6 +94,7 @@ let cache = mergeEnterpriseTeamTemplatePage(
 assert.equal(cache.items.length, 1);
 assert.equal(cache.cursor, "cursor_1");
 assert.equal(cache.permissions.canCreate, true);
+assert.equal(cache.userId, "user_test");
 
 cache = mergeEnterpriseTeamTemplatePage(
   cache,
@@ -118,6 +120,12 @@ cache = mergeEnterpriseTeamTemplatePage(
 );
 assert.equal(cache.items.length, 0);
 assert.equal(cache.cursor, "cursor_3");
+
+const switchedAccountCache = emptyEnterpriseTeamCache({ ...context, userId: "user_other" });
+assert.equal(switchedAccountCache.items.length, 0);
+assert.equal(switchedAccountCache.cursor, "");
+assert.equal(switchedAccountCache.permissions.canCreate, false);
+assert.notEqual(switchedAccountCache.userId, cache.userId);
 
 const normalized = normalizeEnterpriseTeamTemplate(template, { ...context, role: "owner" });
 assert.equal(normalized.permissions.canEdit, false, "client must not infer edit permission from role");
@@ -148,8 +156,14 @@ assert.match(ipcSource, /wanjuan:enterprise-team-templates/);
 assert.match(bridgeSource, /enterpriseTeamTemplates/);
 assert.match(preloadSource, /data-template-source="\$\{teamSource\}"/);
 assert.match(preloadSource, /templateSource === "enterprise"/);
+assert.match(preloadSource, /const enterpriseTeamTemplates = \(workspaceState\.enterpriseTeamCache\?\.items \|\| \[\]\)\.map/);
+assert.match(preloadSource, /const teamTemplates = \[\.\.\.enterpriseTeamTemplates, \.\.\.localTeamTemplates, \.\.\.remoteTeamTemplates\]/);
+assert.match(preloadSource, /enterpriseTemplate \|\| teamTemplate \|\| localPublishedTemplate/);
 assert.match(preloadSource, /refresh-enterprise-team/);
 assert.match(preloadSource, /workspaceSyncEnterpriseTeamTemplates\(\{ force: true \}\)/);
+assert.match(preloadSource, /window\.addEventListener\("online", async \(\) => \{[\s\S]*workspaceSyncEnterpriseTeamTemplates\(\{ force: true \}\)/);
+assert.match(preloadSource, /workspaceState\.activeSpace === "team"[\s\S]*workspaceSyncEnterpriseTeamTemplates\(\{ force: true \}\)/);
+assert.match(preloadSource, /String\(cached\.userId \|\| ""\) === context\.userId/);
 assert.match(preloadSource, /企业网关团队/);
 assert.match(preloadSource, /局域网兼容共享/);
 

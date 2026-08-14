@@ -1566,7 +1566,10 @@ function installDesktopPatches() {
     const data = await workspaceReadAll();
     const scopeKey = enterpriseTeamScopeKey(context);
     const cached = data.enterpriseTeamCaches?.[scopeKey];
-    workspaceState.enterpriseTeamCache = cached && typeof cached === "object" ? cached : emptyEnterpriseTeamCache(context);
+    const cacheMatchesAccount = cached && typeof cached === "object" &&
+      Number(cached.version || 0) === 2 &&
+      String(cached.userId || "") === context.userId;
+    workspaceState.enterpriseTeamCache = cacheMatchesAccount ? cached : emptyEnterpriseTeamCache(context);
     return context;
   };
   const workspacePersistEnterpriseTeamCache = async (cache, context = workspaceState.enterpriseTeamContext) => {

@@ -10,6 +10,8 @@ graph LR
     account-identity["Account and Enterprise Identity\nmain/account-service + renderer account UI"]
     cloud-prompt-service["Cloud Prompt Service\nmain/cloud-prompt-service.cjs"]
     cloud-prompt-cache["Account-scoped Prompt Cache\npreload IndexedDB stores"]
+    enterprise-team-cache["Enterprise Team Prompt Cache\norganization + gateway + account permissions"]
+    enterprise-team-store["Enterprise Gateway Team Store\nlocal gateway JSON + tombstones"]
     external-tools["Local Extension Tools\nelectron/main/tools"]
     automation-clients["Local Automation Clients\nwanjuan CLI + stdio MCP"]
     automation-service["Loopback Automation Service\nelectron/main/automation-server.cjs"]
@@ -22,6 +24,8 @@ graph LR
     account-identity -->|"main-process bearer authentication only"| cloud-prompt-service
     preload-bridge -->|"templates, offline queue, sync cursor"| cloud-prompt-cache
     cloud-prompt-cache -->|"safe DTO operations through trusted IPC"| cloud-prompt-service
+    preload-bridge -->|"incremental team template sync and source-aware actions"| enterprise-team-cache
+    enterprise-team-cache -->|"member workspace token or verified host session"| enterprise-team-store
     renderer-app -->|"mounts React Flow and node registry"| canvas-system
     canvas-system -->|"dispatches generation workflows"| generation-system
     generation-system -->|"persists outputs and references"| storage-assets
@@ -38,5 +42,6 @@ graph LR
     class storage-assets store
     class account-identity store
     class cloud-prompt-cache store
+    class enterprise-team-cache,enterprise-team-store store
     class external-services external
     class automation-clients external
