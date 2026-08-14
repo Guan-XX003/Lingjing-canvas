@@ -12,6 +12,7 @@ class EnterpriseGatewayClientError extends Error {
     this.name = "EnterpriseGatewayClientError";
     this.code = String(options.code || "ENTERPRISE_GATEWAY_REQUEST_FAILED");
     this.status = Number(options.status || 0);
+    this.details = options.details && typeof options.details === "object" ? options.details : null;
   }
 }
 
@@ -64,6 +65,7 @@ function requestPinnedJson(baseUrl, pathname, options = {}) {
     };
     const request = https.request(target, {
       method: options.method || "GET",
+      agent: false,
       rejectUnauthorized: false,
       servername: target.hostname.endsWith(".local") ? target.hostname : undefined,
       headers: {
@@ -97,6 +99,7 @@ function requestPinnedJson(baseUrl, pathname, options = {}) {
           finish(new EnterpriseGatewayClientError(value.error || `企业网关请求失败 (${response.statusCode})`, {
             code: value.code || `HTTP_${response.statusCode}`,
             status: response.statusCode,
+            details: value.details,
           }));
           return;
         }

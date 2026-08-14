@@ -13,6 +13,7 @@ const {
   getEnterpriseGatewayManagementSnapshot,
   getEnterpriseGatewayStatus,
   initializeEnterpriseGateway,
+  invokeEnterpriseTeamTemplatesAsHost,
   publishEnterpriseGatewaySnapshot,
   startEnterpriseGateway,
   stopEnterpriseGateway,
@@ -26,6 +27,11 @@ const {
   writeEnterpriseSnapshotCache,
 } = require("./enterprise-gateway-client.cjs");
 const { createEnterpriseUploadSource } = require("./enterprise-upload-source.cjs");
+const {
+  normalizeEnterpriseTeamConflictDetails,
+  normalizeEnterpriseTeamTemplateResponse,
+  sanitizeEnterpriseTeamTemplateInput,
+} = require("../shared/enterprise-team-template-contract.cjs");
 
 const ACCOUNT_STATE_VERSION = 2;
 const ACCOUNT_REQUEST_TIMEOUT_MS = 15000;
@@ -1003,6 +1009,169 @@ function getEnterpriseStorageOverlay() {
   };
 }
 
+function enterpriseTeamOperationPayload(operation, payload = {}) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  if (operation === "list") {
+    return {
+      cursor: String(source.cursor || ""),
+      limit: Math.max(1, Math.min(100, Number(source.limit || 50))),
+      updatedAfter: String(source.updatedAfter || ""),
+      includeArchived: source.includeArchived === true,
+    };
+  }
+  if (operation === "changes") {
+    return {
+      cursor: String(source.cursor || ""),
+      limit: Math.max(1, Math.min(200, Number(source.limit || 100))),
+    };
+  }
+  const id = String(source.id || "").trim();
+  if (["get", "update", "delete"].includes(operation) && !id) {
+    throw new AccountRequestError("团队模板 ID 不能为空", { code: "TEAM_TEMPLATE_ID_REQUIRED" });
+  }
+  if (operation === "get") return { id };
+  if (operation === "create") {
+    const idempotencyKey = String(source.idempotencyKey || "").trim();
+    if (idempotencyKey.length < 8 || idempotencyKey.length > 120) {
+      throw new AccountRequestError("团队模板幂等键长度必须为 8..120", { code: "IDEMPOTENCY_KEY_INVALID" });
+    }
+    return {
+      input: sanitizeEnterpriseTeamTemplateInput(source.input || {}),
+      idempotencyKey,
+    };
+  }
+  if (operation === "update") {
+    const revision = Number(source.revision);
+    if (!Number.isFinite(revision) || revision < 1) {
+      throw new AccountRequestError("更新团队模板需要有效 revision", { code: "TEAM_TEMPLATE_REVISION_REQUIRED" });
+    }
+    const input = sanitizeEnterpriseTeamTemplateInput(source.input || {}, { requireContent: false, partial: true });
+    if (!Object.keys(input).length) {
+      throw new AccountRequestError("没有可更新的团队模板字段", { code: "TEAM_TEMPLATE_UPDATE_EMPTY" });
+    }
+    return { id, input, revision };
+  }
+  if (operation === "delete") {
+    const revision = Number(source.revision);
+    if (!Number.isFinite(revision) || revision < 1) {
+      throw new AccountRequestError("删除团队模板需要有效 revision", { code: "TEAM_TEMPLATE_REVISION_REQUIRED" });
+    }
+    return { id, revision };
+  }
+  throw new AccountRequestError("不支持的企业团队模板操作", { code: "TEAM_TEMPLATE_OPERATION_INVALID" });
+}
+
+function verifiedEnterpriseHostSession() {
+  const state = readAccountState();
+  const enterprise = state.enterprise;
+  const gatewayHost = getEnterpriseGatewayStatus();
+  const organizationId = String(enterprise?.organization?.id || "");
+  const gatewayId = String(enterprise?.gatewayId || "");
+  const ownedEnterprise = accountOrganizationsCache.find((item) =>
+    String(item.id || "") === organizationId &&
+    item.membershipStatus === "active" &&
+    ["owner", "admin"].includes(String(item.role || "").toLowerCase())
+  );
+  const role = String(ownedEnterprise?.role || "").toLowerCase();
+  if (enterprise?.mode !== "host" || !state.user?.id || !ownedEnterprise ||
+      !gatewayHost.initialized || organizationId !== String(gatewayHost.organizationId || "") ||
+      gatewayId !== String(gatewayHost.gatewayId || gatewayHost.localGatewayId || "")) {
+    throw new AccountRequestError("当前账号不是该企业网关的受信管理员", { code: "ENTERPRISE_TEAM_HOST_FORBIDDEN", status: 403 });
+  }
+  return {
+    userId: String(state.user.id),
+    organizationId,
+    gatewayId,
+    role,
+    trustedHost: true,
+  };
+}
+
+function enterpriseMemberTeamContext() {
+  const state = readAccountState();
+  const enterprise = state.enterprise;
+  if (enterprise?.mode !== "member" || !state.user?.id || !enterprise.organization?.id || !enterprise.gatewayId) {
+    throw new AccountRequestError("当前未连接企业网关", { code: "ENTERPRISE_TEAM_NOT_CONNECTED", status: 401 });
+  }
+  const workspaceToken = decryptSecret(enterprise.workspaceTokenEncrypted);
+  if (!workspaceToken || !enterprise.gatewayUrl || !enterprise.certificateFingerprint) {
+    throw new AccountRequestError("企业网关会话不可用", { code: "ENTERPRISE_GATEWAY_UNAVAILABLE", status: 401 });
+  }
+  return {
+    enterprise,
+    workspaceToken,
+    organizationId: String(enterprise.organization.id),
+    gatewayId: String(enterprise.gatewayId),
+    role: String(enterprise.organization.role || "member"),
+  };
+}
+
+function enterpriseTeamHttpRequestOptions(operation, payload, context) {
+  const base = {
+    token: context.workspaceToken,
+    certificateFingerprint: context.enterprise.certificateFingerprint,
+  };
+  if (operation === "list" || operation === "changes") {
+    const params = new URLSearchParams();
+    if (payload.cursor) params.set("cursor", payload.cursor);
+    params.set("limit", String(payload.limit));
+    if (operation === "list") {
+      if (payload.updatedAfter) params.set("updatedAfter", payload.updatedAfter);
+      params.set("includeArchived", payload.includeArchived ? "true" : "false");
+    }
+    return {
+      path: `/workspace/team-templates${operation === "changes" ? "/changes" : ""}?${params.toString()}`,
+      options: base,
+    };
+  }
+  const itemPath = payload.id ? `/workspace/team-templates/${encodeURIComponent(payload.id)}` : "/workspace/team-templates";
+  if (operation === "get") return { path: itemPath, options: base };
+  if (operation === "create") return {
+    path: itemPath,
+    options: { ...base, method: "POST", headers: { "idempotency-key": payload.idempotencyKey }, body: payload.input },
+  };
+  if (operation === "update") return {
+    path: itemPath,
+    options: { ...base, method: "PATCH", headers: { "if-match": `"${payload.revision}"` }, body: { ...payload.input, revision: payload.revision } },
+  };
+  return {
+    path: itemPath,
+    options: { ...base, method: "DELETE", headers: { "if-match": `"${payload.revision}"` } },
+  };
+}
+
+async function invokeEnterpriseTeamTemplates(payload = {}, retryCount = 0) {
+  const operation = String(payload.operation || "list").trim();
+  const operationPayload = enterpriseTeamOperationPayload(operation, payload);
+  const state = readAccountState();
+  try {
+    if (state.enterprise?.mode === "host") {
+      const session = verifiedEnterpriseHostSession();
+      const response = await invokeEnterpriseTeamTemplatesAsHost({ operation, payload: operationPayload, session });
+      return {
+        ...normalizeEnterpriseTeamTemplateResponse(response, session),
+        context: { organizationId: session.organizationId, gatewayId: session.gatewayId, role: session.role },
+      };
+    }
+    const context = enterpriseMemberTeamContext();
+    const request = enterpriseTeamHttpRequestOptions(operation, operationPayload, context);
+    const response = await requestPinnedJson(context.enterprise.gatewayUrl, request.path, request.options);
+    return {
+      ...normalizeEnterpriseTeamTemplateResponse(response.value, context),
+      context: { organizationId: context.organizationId, gatewayId: context.gatewayId, role: context.role },
+    };
+  } catch (error) {
+    if (error?.code === "WORKSPACE_SESSION_EXPIRED" && state.enterprise?.mode === "member" && retryCount < 1) {
+      await reconnectEnterpriseWorkspace();
+      return invokeEnterpriseTeamTemplates(payload, retryCount + 1);
+    }
+    if (error?.code === "TEAM_TEMPLATE_CONFLICT") {
+      error.details = normalizeEnterpriseTeamConflictDetails(error.details);
+    }
+    throw error;
+  }
+}
+
 function listEnterpriseManagedApiConfigs(snapshot) {
   const settings = snapshot?.modules?.settings?.chromeStorage || {};
   const configured = (Array.isArray(settings.apiConfigs) ? settings.apiConfigs : [])
@@ -1166,6 +1335,7 @@ module.exports = {
   getCurrentAccount,
   getEnterpriseManagement,
   getEnterpriseStorageOverlay,
+  invokeEnterpriseTeamTemplates,
   loginAccount,
   logoutAccount,
   normalizeBaseUrl,

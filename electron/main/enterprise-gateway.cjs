@@ -30,6 +30,15 @@ const {
   reserveEnterpriseQuota,
   settleEnterpriseQuota,
 } = require("./enterprise-quota-store.cjs");
+const {
+  TeamTemplateError,
+  createTeamTemplate,
+  deleteTeamTemplate,
+  getTeamTemplate,
+  listTeamTemplateChanges,
+  listTeamTemplates,
+  updateTeamTemplate,
+} = require("./enterprise-team-template-store.cjs");
 
 const DEFAULT_GATEWAY_PORT = 39472;
 const GATEWAY_STATE_VERSION = 1;
@@ -42,6 +51,7 @@ let gatewayServer = null;
 let runtimeState = null;
 let heartbeatTimer = null;
 let jwksCache = null;
+const teamTemplateRateLimits = new Map();
 
 function gatewayRoot() {
   return path.join(app.getPath("userData"), "enterprise-gateway");
@@ -735,6 +745,195 @@ function stopGatewayHeartbeat() {
   heartbeatTimer = null;
 }
 
+function membershipExpiry(value) {
+  const raw = value?.expires_at ?? value?.expiresAt;
+  if (raw === undefined || raw === null || raw === "") return 0;
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric)) return numeric > 0 && numeric < 1e12 ? numeric * 1000 : numeric;
+  const parsed = Date.parse(String(raw));
+  return Number.isFinite(parsed) ? parsed : -1;
+}
+
+function currentTeamTemplatePrincipal(session, options = {}) {
+  const state = loadRuntimeState();
+  const principal = {
+    userId: String(session?.userId || ""),
+    organizationId: String(session?.organizationId || ""),
+    gatewayId: String(session?.gatewayId || ""),
+    role: String(session?.role || "member").toLowerCase(),
+  };
+  if (!principal.userId || principal.organizationId !== String(state.organizationId || "") || principal.gatewayId !== String(state.gatewayId || "")) {
+    throw new TeamTemplateError("企业会话与当前网关不匹配", { status: 403, code: "TEAM_TEMPLATE_FORBIDDEN" });
+  }
+  if (options.trustedHost) {
+    if (session?.trustedHost !== true || !["owner", "admin"].includes(principal.role)) {
+      throw new TeamTemplateError("本机团队提示词调用缺少已核验的网关所有者身份", {
+        status: 403,
+        code: "TEAM_TEMPLATE_HOST_AUTH_REQUIRED",
+      });
+    }
+    return principal;
+  }
+
+  if (!fs.existsSync(gatewayControlSnapshotPath())) {
+    throw new TeamTemplateError("企业成员控制快照暂不可用", { status: 503, code: "TEAM_TEMPLATE_CONTROL_UNAVAILABLE" });
+  }
+  const control = readJson(gatewayControlSnapshotPath(), null);
+  if (!control || !Array.isArray(control.members)) {
+    throw new TeamTemplateError("企业成员控制快照暂不可用", { status: 503, code: "TEAM_TEMPLATE_CONTROL_UNAVAILABLE" });
+  }
+  if ((control.organizationId && String(control.organizationId) !== principal.organizationId) ||
+      (control.gatewayId && String(control.gatewayId) !== principal.gatewayId)) {
+    throw new TeamTemplateError("企业成员控制快照与当前网关不匹配", { status: 403, code: "TEAM_TEMPLATE_FORBIDDEN" });
+  }
+  const member = (Array.isArray(control.members) ? control.members : []).find((item) =>
+    String(item?.user_id ?? item?.userId ?? item?.id ?? "") === principal.userId);
+  const status = String(member?.status || "").toLowerCase();
+  const expiresAt = membershipExpiry(member);
+  if (!member || status !== "active" || expiresAt < 0 || (expiresAt > 0 && expiresAt <= Date.now())) {
+    throw new TeamTemplateError("企业成员资格已失效", { status: 403, code: "TEAM_TEMPLATE_MEMBERSHIP_REVOKED" });
+  }
+  principal.role = String(member.role || "member").toLowerCase();
+  if (!["member", "owner", "admin"].includes(principal.role)) {
+    throw new TeamTemplateError("当前企业角色无权访问团队提示词", { status: 403, code: "TEAM_TEMPLATE_FORBIDDEN" });
+  }
+  return principal;
+}
+
+function enforceTeamTemplateRateLimit(principal, operation) {
+  const group = ["list", "get", "changes"].includes(operation) ? "read" : operation === "create" ? "create" : "modify";
+  const rules = {
+    read: { limit: 300, windowMs: 60 * 1000 },
+    create: { limit: 120, windowMs: 60 * 60 * 1000 },
+    modify: { limit: 300, windowMs: 60 * 60 * 1000 },
+  };
+  const rule = rules[group];
+  const now = Date.now();
+  const key = `${principal.organizationId}:${principal.gatewayId}:${principal.userId}:${group}`;
+  const recent = (teamTemplateRateLimits.get(key) || []).filter((timestamp) => timestamp > now - rule.windowMs);
+  if (recent.length >= rule.limit) {
+    const retryAfter = Math.max(1, Math.ceil((recent[0] + rule.windowMs - now) / 1000));
+    throw new TeamTemplateError("团队提示词请求过于频繁", {
+      status: 429,
+      code: "TEAM_TEMPLATE_RATE_LIMITED",
+      details: { retryAfter },
+    });
+  }
+  recent.push(now);
+  teamTemplateRateLimits.set(key, recent);
+}
+
+function teamTemplateOperation(operation, payload, principal) {
+  enforceTeamTemplateRateLimit(principal, operation);
+  if (operation === "list") return { ok: true, ...listTeamTemplates(principal, payload) };
+  if (operation === "changes") return { ok: true, ...listTeamTemplateChanges(principal, payload) };
+  if (operation === "get") return { ok: true, item: getTeamTemplate(principal, payload.id) };
+  if (operation === "create") {
+    return { ok: true, item: createTeamTemplate(principal, payload.input, payload.idempotencyKey) };
+  }
+  if (operation === "update") {
+    return { ok: true, item: updateTeamTemplate(principal, payload.id, payload.input, payload.revision) };
+  }
+  if (operation === "delete") {
+    return { ok: true, tombstone: deleteTeamTemplate(principal, payload.id, payload.revision) };
+  }
+  throw new TeamTemplateError("未知的团队提示词操作", { status: 400, code: "TEAM_TEMPLATE_OPERATION_INVALID" });
+}
+
+async function invokeEnterpriseTeamTemplatesAsHost({ operation, payload = {}, session } = {}) {
+  const principal = currentTeamTemplatePrincipal(session, { trustedHost: true });
+  return teamTemplateOperation(String(operation || ""), payload && typeof payload === "object" ? payload : {}, principal);
+}
+
+function ifMatchRevision(request, bodyRevision) {
+  const raw = String(request.headers["if-match"] || "").trim();
+  let headerRevision;
+  if (raw) {
+    const normalized = raw.replace(/^W\//i, "").replace(/^"|"$/g, "");
+    headerRevision = Number(normalized);
+    if (!Number.isInteger(headerRevision) || headerRevision < 1) {
+      throw new TeamTemplateError("If-Match revision 格式无效", { status: 400, code: "TEAM_TEMPLATE_REVISION_INVALID" });
+    }
+  }
+  if (bodyRevision !== undefined && headerRevision !== undefined && Number(bodyRevision) !== headerRevision) {
+    throw new TeamTemplateError("revision 与 If-Match 不一致", { status: 400, code: "TEAM_TEMPLATE_REVISION_INVALID" });
+  }
+  return headerRevision ?? bodyRevision;
+}
+
+function sendTeamTemplateError(response, error) {
+  const status = error instanceof TeamTemplateError ? error.status : 500;
+  sendJson(response, status, {
+    ok: false,
+    code: String(error?.code || "TEAM_TEMPLATE_FAILED"),
+    error: error instanceof TeamTemplateError ? error.message : "团队提示词操作失败",
+    ...(error?.details ? { details: error.details } : {}),
+  });
+}
+
+async function handleTeamTemplateRequest(request, response, url, workspaceSession) {
+  if (!url.pathname.startsWith("/workspace/team-templates")) return false;
+  try {
+    const principal = currentTeamTemplatePrincipal(workspaceSession);
+    if (request.method === "GET" && url.pathname === "/workspace/team-templates") {
+      const result = teamTemplateOperation("list", {
+        cursor: url.searchParams.get("cursor") || "",
+        limit: url.searchParams.get("limit") || undefined,
+        updatedAfter: url.searchParams.get("updatedAfter") || "",
+        includeArchived: url.searchParams.get("includeArchived") || "",
+      }, principal);
+      sendJson(response, 200, result);
+      return true;
+    }
+    if (request.method === "POST" && url.pathname === "/workspace/team-templates") {
+      const input = parseJsonBuffer(await readRequestBody(request));
+      const result = teamTemplateOperation("create", {
+        input,
+        idempotencyKey: String(request.headers["idempotency-key"] || ""),
+      }, principal);
+      response.setHeader("etag", `"${result.item.revision}"`);
+      sendJson(response, 201, result);
+      return true;
+    }
+    if (request.method === "GET" && url.pathname === "/workspace/team-templates/changes") {
+      const result = teamTemplateOperation("changes", {
+        cursor: url.searchParams.get("cursor") || "",
+        limit: url.searchParams.get("limit") || undefined,
+      }, principal);
+      sendJson(response, 200, result);
+      return true;
+    }
+    const match = url.pathname.match(/^\/workspace\/team-templates\/([^/]+)$/);
+    if (match) {
+      const id = decodeURIComponent(match[1]);
+      if (request.method === "GET") {
+        const result = teamTemplateOperation("get", { id }, principal);
+        response.setHeader("etag", `"${result.item.revision}"`);
+        sendJson(response, 200, result);
+        return true;
+      }
+      if (request.method === "PATCH") {
+        const body = parseJsonBuffer(await readRequestBody(request));
+        const { revision, ...input } = body;
+        const result = teamTemplateOperation("update", { id, input, revision: ifMatchRevision(request, revision) }, principal);
+        response.setHeader("etag", `"${result.item.revision}"`);
+        sendJson(response, 200, result);
+        return true;
+      }
+      if (request.method === "DELETE") {
+        const body = parseJsonBuffer(await readRequestBody(request));
+        const result = teamTemplateOperation("delete", { id, revision: ifMatchRevision(request, body.revision) }, principal);
+        sendJson(response, 200, result);
+        return true;
+      }
+    }
+    sendJson(response, 404, { ok: false, code: "TEAM_TEMPLATE_ROUTE_NOT_FOUND", error: "团队提示词接口不存在" });
+  } catch (error) {
+    sendTeamTemplateError(response, error);
+  }
+  return true;
+}
+
 async function handleGatewayRequest(request, response) {
   const url = new URL(request.url || "/", "https://wanjuan-gateway.local");
   if (request.method === "GET" && url.pathname === "/health") {
@@ -804,6 +1003,8 @@ async function handleGatewayRequest(request, response) {
     sendJson(response, 401, { ok: false, code: "WORKSPACE_SESSION_EXPIRED", error: "企业会话无效或已过期" });
     return;
   }
+
+  if (await handleTeamTemplateRequest(request, response, url, workspaceSession)) return;
 
   if (request.method === "GET" && url.pathname === "/workspace/config-snapshot") {
     const snapshot = readJson(gatewaySnapshotPath(), null);
@@ -1101,6 +1302,7 @@ module.exports = {
   getEnterpriseGatewayManagementSnapshot,
   getEnterpriseGatewayStatus,
   initializeEnterpriseGateway,
+  invokeEnterpriseTeamTemplatesAsHost,
   publishEnterpriseGatewaySnapshot,
   restoreEnterpriseGatewayOnLaunch,
   startEnterpriseGateway,

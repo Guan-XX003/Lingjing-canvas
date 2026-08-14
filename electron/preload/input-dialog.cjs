@@ -4,13 +4,14 @@ function showWanjuanInputDialog(options = {}) {
     const title = String(options.title || "请输入").trim() || "请输入";
     const message = String(options.message || "").trim();
     const defaultValue = String(options.defaultValue || "");
+    const multiline = options.multiline === true;
     const overlay = document.createElement("div");
     overlay.className = "wanjuan-native-input-overlay";
     overlay.innerHTML = `
       <div class="wanjuan-native-input-dialog" role="dialog" aria-modal="true">
         <div class="wanjuan-native-input-title"></div>
         <div class="wanjuan-native-input-message"></div>
-        <input class="wanjuan-native-input-control" />
+        ${multiline ? `<textarea class="wanjuan-native-input-control" rows="8"></textarea>` : `<input class="wanjuan-native-input-control" />`}
         <div class="wanjuan-native-input-actions">
           <button type="button" data-action="cancel">取消</button>
           <button type="button" data-action="ok">确定</button>
@@ -38,7 +39,7 @@ function showWanjuanInputDialog(options = {}) {
     });
     overlay.addEventListener("keydown", (event) => {
       if (event.key === "Escape") finish(null);
-      if (event.key === "Enter") finish(input ? input.value : "");
+      if (event.key === "Enter" && (!multiline || event.metaKey || event.ctrlKey)) finish(input ? input.value : "");
     });
     document.body.appendChild(overlay);
     window.setTimeout(() => {

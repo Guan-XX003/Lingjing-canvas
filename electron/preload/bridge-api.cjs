@@ -113,6 +113,8 @@ exposeGlobal("wanjuanDesktop", {
     ipcRenderer.invoke("wanjuan:workspace-team-update-templates", payload),
   workspaceTeamFetchMember: async (payload = {}) =>
     ipcRenderer.invoke("wanjuan:workspace-team-fetch-member", payload),
+  enterpriseTeamTemplates: async (payload = {}) =>
+    ipcRenderer.invoke("wanjuan:enterprise-team-templates", payload),
   cloudPrompts: async (payload = {}) => ipcRenderer.invoke("wanjuan:cloud-prompts", payload),
   accountBootstrap: async () => ipcRenderer.invoke("wanjuan:account-bootstrap"),
   accountSendCode: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-send-code", payload),

@@ -102,6 +102,7 @@ const {
   getCurrentAccount,
   getEnterpriseManagement,
   getEnterpriseStorageOverlay,
+  invokeEnterpriseTeamTemplates,
   loginAccount,
   logoutAccount,
   publishEnterpriseGatewayConfig,
@@ -210,6 +211,22 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:workspace-team-fetch-member");
     if (blocked) return blocked;
     return fetchWorkspaceTeamMember(payload?.address || "", payload?.timeoutMs || 8000);
+  });
+
+  ipcMain.handle("wanjuan:enterprise-team-templates", async (event, payload = {}) => {
+    const blocked = rejectUntrustedIpc(event, "wanjuan:enterprise-team-templates");
+    if (blocked) return blocked;
+    try {
+      return await invokeEnterpriseTeamTemplates(payload || {});
+    } catch (error) {
+      return {
+        ok: false,
+        error: formatErrorMessage(error),
+        code: String(error?.code || "ENTERPRISE_TEAM_TEMPLATE_FAILED"),
+        status: Number(error?.status || 0),
+        details: error?.details && typeof error.details === "object" ? error.details : null,
+      };
+    }
   });
 
   ipcMain.handle("wanjuan:cloud-prompts", async (event, payload = {}) => {

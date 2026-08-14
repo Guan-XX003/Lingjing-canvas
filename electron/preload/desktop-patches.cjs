@@ -3,6 +3,13 @@ const { ipcRenderer } = require("./runtime.cjs");
 const { PERFORMANCE_PROFILE_STORAGE_KEY, PERFORMANCE_PROFILE_PRESETS } = require("./constants.cjs");
 const { showWanjuanInputDialog } = require("./input-dialog.cjs");
 const { createCloudPromptWorkspaceController } = require("./cloud-prompt-workspace.cjs");
+const {
+  emptyEnterpriseTeamCache,
+  enterpriseTeamScopeKey,
+  enterpriseTeamTemplateToWorkspace,
+  mergeEnterpriseTeamTemplatePage,
+  sanitizeEnterpriseTeamTemplateInput,
+} = require("../shared/enterprise-team-template-contract.cjs");
 
 const WANJUAN_OFFICIAL_SITE_URL = "https://lingjing.guancn.uk";
 
@@ -12,6 +19,7 @@ const workspaceTeamBridge = Object.freeze({
   stop: () => ipcRenderer.invoke("wanjuan:workspace-team-stop"),
   updateTemplates: (payload = {}) => ipcRenderer.invoke("wanjuan:workspace-team-update-templates", payload),
   fetchMember: (payload = {}) => ipcRenderer.invoke("wanjuan:workspace-team-fetch-member", payload),
+  enterpriseTemplates: (payload = {}) => ipcRenderer.invoke("wanjuan:enterprise-team-templates", payload),
 });
 
 function installDesktopPatches() {
@@ -1361,6 +1369,11 @@ function installDesktopPatches() {
     teamRefreshing: false,
     teamServiceError: "",
     status: null,
+    enterpriseTeamContext: null,
+    enterpriseTeamCache: null,
+    enterpriseTeamStatus: "idle",
+    enterpriseTeamError: "",
+    enterpriseTeamLastAttemptAt: 0,
   };
   let workspaceRenderTimer = null;
   let workspaceRenderSeq = 0;
@@ -1371,6 +1384,7 @@ function installDesktopPatches() {
     "workspacePromptTemplateGroups",
     "workspaceTeamSettings",
     "workspacePublishedTemplates",
+    "workspaceEnterpriseTeamCache",
   ];
 
   const workspaceStorageGet = (keys) => getDesktopStorageItems(keys);
@@ -1459,6 +1473,7 @@ function installDesktopPatches() {
         ...(stored.workspaceTeamSettings && typeof stored.workspaceTeamSettings === "object" ? stored.workspaceTeamSettings : {}),
       },
       publishedTemplates: (Array.isArray(stored.workspacePublishedTemplates) ? stored.workspacePublishedTemplates : []).map(workspaceNormalizeTemplate),
+      enterpriseTeamCaches: stored.workspaceEnterpriseTeamCache && typeof stored.workspaceEnterpriseTeamCache === "object" ? stored.workspaceEnterpriseTeamCache : {},
     };
   };
   const workspaceSyncPublishedTemplates = async (publishedTemplates) => {
@@ -1521,6 +1536,136 @@ function installDesktopPatches() {
       }
     }
     return null;
+  };
+  const workspaceEnterpriseContextFromAccount = (account = {}) => {
+    const enterprise = account?.enterprise;
+    const organizationId = String(enterprise?.organization?.id || "").trim();
+    const gatewayId = String(enterprise?.gatewayId || "").trim();
+    if (!account?.authenticated || enterprise?.connected !== true || !organizationId || !gatewayId || !["host", "member"].includes(String(enterprise?.mode || ""))) return null;
+    return {
+      organizationId,
+      gatewayId,
+      organizationName: String(enterprise.organization?.name || "企业网关团队"),
+      userId: String(account.user?.id || ""),
+      role: String(enterprise.organization?.role || (enterprise.mode === "host" ? "owner" : "member")),
+      mode: String(enterprise.mode),
+      connected: enterprise.connected === true,
+      offline: account.offline === true,
+    };
+  };
+  const workspaceLoadEnterpriseTeamContext = async () => {
+    const account = await ipcRenderer.invoke("wanjuan:account-bootstrap").catch(() => null);
+    const context = workspaceEnterpriseContextFromAccount(account);
+    workspaceState.enterpriseTeamContext = context;
+    if (!context) {
+      workspaceState.enterpriseTeamCache = null;
+      workspaceState.enterpriseTeamStatus = "unavailable";
+      workspaceState.enterpriseTeamError = "";
+      return null;
+    }
+    const data = await workspaceReadAll();
+    const scopeKey = enterpriseTeamScopeKey(context);
+    const cached = data.enterpriseTeamCaches?.[scopeKey];
+    workspaceState.enterpriseTeamCache = cached && typeof cached === "object" ? cached : emptyEnterpriseTeamCache(context);
+    return context;
+  };
+  const workspacePersistEnterpriseTeamCache = async (cache, context = workspaceState.enterpriseTeamContext) => {
+    const scopeKey = enterpriseTeamScopeKey(context || cache || {});
+    if (!scopeKey) return;
+    const data = await workspaceReadAll();
+    await workspaceStorageSet({
+      workspaceEnterpriseTeamCache: {
+        ...data.enterpriseTeamCaches,
+        [scopeKey]: cache,
+      },
+    });
+    workspaceState.enterpriseTeamCache = cache;
+  };
+  const workspaceClearEnterpriseTeamCache = async (context = workspaceState.enterpriseTeamContext) => {
+    const scopeKey = enterpriseTeamScopeKey(context || {});
+    if (!scopeKey) return;
+    const data = await workspaceReadAll();
+    const nextCaches = { ...data.enterpriseTeamCaches };
+    delete nextCaches[scopeKey];
+    await workspaceStorageSet({ workspaceEnterpriseTeamCache: nextCaches });
+    workspaceState.enterpriseTeamCache = emptyEnterpriseTeamCache(context);
+  };
+  const workspaceAssertEnterpriseTeamResponse = (response) => {
+    if (response?.ok !== false) return response || {};
+    const error = new Error(String(response?.error || "企业网关团队模板请求失败"));
+    error.code = String(response?.code || "ENTERPRISE_TEAM_TEMPLATE_FAILED");
+    error.status = Number(response?.status || 0);
+    error.details = response?.details || null;
+    throw error;
+  };
+  const workspaceMergeEnterpriseTeamResponse = async (response, options = {}) => {
+    const context = workspaceState.enterpriseTeamContext;
+    if (!context) return null;
+    const responseContext = response?.context || {};
+    if (String(responseContext.organizationId || context.organizationId) !== context.organizationId ||
+        String(responseContext.gatewayId || context.gatewayId) !== context.gatewayId) {
+      throw new Error("企业团队模板返回的组织或网关与当前会话不一致");
+    }
+    const page = response?.item ? { ...response, items: [response.item] } : response?.tombstone ? { ...response, tombstones: [response.tombstone] } : response;
+    const nextCache = mergeEnterpriseTeamTemplatePage(workspaceState.enterpriseTeamCache || emptyEnterpriseTeamCache(context), page || {}, context, options);
+    await workspacePersistEnterpriseTeamCache(nextCache, context);
+    return nextCache;
+  };
+  const workspaceSyncEnterpriseTeamTemplates = async ({ force = false } = {}) => {
+    if (workspaceState.enterpriseTeamStatus === "loading") return workspaceState.enterpriseTeamCache;
+    const context = await workspaceLoadEnterpriseTeamContext();
+    if (!context) return null;
+    if (!force && Date.now() - Number(workspaceState.enterpriseTeamLastAttemptAt || 0) < 5000) return workspaceState.enterpriseTeamCache;
+    workspaceState.enterpriseTeamLastAttemptAt = Date.now();
+    if (context.offline || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+      workspaceState.enterpriseTeamStatus = "offline";
+      workspaceState.enterpriseTeamError = "企业网关离线，正在显示上次同步缓存";
+      return workspaceState.enterpriseTeamCache;
+    }
+    workspaceState.enterpriseTeamStatus = "loading";
+    workspaceState.enterpriseTeamError = "";
+    try {
+      let cache = workspaceState.enterpriseTeamCache || emptyEnterpriseTeamCache(context);
+      let cursor = String(cache.cursor || "");
+      let firstPage = true;
+      for (let pageIndex = 0; pageIndex < 50; pageIndex += 1) {
+        const response = workspaceAssertEnterpriseTeamResponse(await workspaceTeamBridge.enterpriseTemplates({
+          operation: "changes",
+          cursor,
+          limit: 100,
+        }));
+        cache = await workspaceMergeEnterpriseTeamResponse(response, { replace: firstPage && !cursor });
+        const nextCursor = String(response.nextCursor || "");
+        firstPage = false;
+        if (!nextCursor || nextCursor === cursor) break;
+        cursor = nextCursor;
+      }
+      workspaceState.enterpriseTeamStatus = "synced";
+      workspaceState.enterpriseTeamError = "";
+      return cache;
+    } catch (error) {
+      if (Number(error?.status || 0) === 401 || Number(error?.status || 0) === 403 || /FORBIDDEN|REVOKED|EXPIRED/.test(String(error?.code || ""))) {
+        await workspaceClearEnterpriseTeamCache(context);
+        workspaceState.enterpriseTeamStatus = "permission-denied";
+        workspaceState.enterpriseTeamError = "企业团队权限已失效，本地缓存已清理";
+      } else {
+        workspaceState.enterpriseTeamStatus = "offline";
+        workspaceState.enterpriseTeamError = String(error?.message || "企业网关暂时不可用，正在显示缓存");
+      }
+      return workspaceState.enterpriseTeamCache;
+    }
+  };
+  const workspaceFindEnterpriseTeamTemplate = (id) => {
+    const item = (workspaceState.enterpriseTeamCache?.items || []).find((template) => String(template.id) === String(id));
+    if (!item) return null;
+    return enterpriseTeamTemplateToWorkspace(item, workspaceState.enterpriseTeamContext || {});
+  };
+  const workspaceEnterpriseAuthorLabel = (template = {}) => {
+    const authorId = String(template.author?.id || "");
+    if (!authorId) return workspaceT("作者：团队成员");
+    if (authorId === String(workspaceState.enterpriseTeamContext?.userId || "")) return workspaceT("作者：我");
+    const masked = authorId.length > 8 ? `${authorId.slice(0, 4)}…${authorId.slice(-4)}` : "团队成员";
+    return workspaceTf("作者：{name}", { name: masked });
   };
   const workspaceCopyText = async (text) => {
     try {
@@ -1629,7 +1774,38 @@ function installDesktopPatches() {
     workspaceState.status = result?.status || null;
     renderWorkspacePanel();
   };
+  const workspaceEnterpriseInputFromTemplate = (template) => sanitizeEnterpriseTeamTemplateInput({
+    title: String(template.title || "").trim(),
+    content: String(template.prompt || template.content || "").trim(),
+    description: String(template.description || "").trim(),
+    type: String(template.type || "generic"),
+    tags: Array.isArray(template.tags) ? template.tags : [],
+    modelHint: String(template.modelName || template.modelHint || "").trim(),
+    providerHint: String(template.sourceProvider || template.providerHint || "").trim(),
+    generationMode: String(template.generationMode || "").trim(),
+    parameters: template.params && typeof template.params === "object" ? template.params : {},
+  });
   const workspacePublishTemplate = async (template) => {
+    const context = await workspaceLoadEnterpriseTeamContext();
+    if (context) {
+      try {
+        if (context.offline || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+          throw new Error("企业网关离线，未发送；重连后请重试");
+        }
+        const response = workspaceAssertEnterpriseTeamResponse(await workspaceTeamBridge.enterpriseTemplates({
+          operation: "create",
+          input: workspaceEnterpriseInputFromTemplate(template),
+          idempotencyKey: workspaceId("team-create"),
+        }));
+        await workspaceMergeEnterpriseTeamResponse(response);
+        workspaceState.enterpriseTeamStatus = "synced";
+        workspaceToast(workspaceT("已发送到企业网关团队"));
+      } catch (error) {
+        workspaceToast(workspaceTf("发送团队失败：{message}", { message: error?.message || String(error) }));
+      }
+      await renderWorkspacePanel();
+      return;
+    }
     let data = await workspaceReadAll(),
       normalized = workspaceNormalizeTemplate(template),
       nextPublished = [normalized, ...data.publishedTemplates.filter((item) => item.id !== normalized.id)];
@@ -1641,8 +1817,58 @@ function installDesktopPatches() {
         publishedTemplates: nextPublished,
       });
     }
-    workspaceToast(data.teamSettings.enabled ? workspaceT("已发布到团队空间") : workspaceT("已加入团队发布列表，开启团队空间后可被成员拉取"));
+    workspaceToast(data.teamSettings.enabled ? workspaceT("已发布到局域网团队") : workspaceT("已加入局域网发布列表，开启团队空间后可被成员拉取"));
     renderWorkspacePanel();
+  };
+  const workspaceUpdateEnterpriseTeamTemplate = async (template) => {
+    const title = await showWanjuanInputDialog({
+      title: workspaceT("编辑团队模板标题"),
+      message: workspaceT("仅作者或企业管理员可修改"),
+      defaultValue: template.title,
+    });
+    if (title == null || !String(title).trim()) return;
+    const content = await showWanjuanInputDialog({
+      title: workspaceT("编辑团队提示词"),
+      message: workspaceT("多行内容使用 Command/Ctrl + Enter 确认"),
+      defaultValue: template.prompt,
+      multiline: true,
+    });
+    if (content == null || !String(content).trim()) return;
+    try {
+      const response = workspaceAssertEnterpriseTeamResponse(await workspaceTeamBridge.enterpriseTemplates({
+        operation: "update",
+        id: template.id,
+        revision: template.revision,
+        input: { title: String(title).trim(), content: String(content).trim() },
+      }));
+      await workspaceMergeEnterpriseTeamResponse(response);
+      workspaceToast(workspaceT("团队模板已更新"));
+    } catch (error) {
+      if (String(error?.code || "") === "TEAM_TEMPLATE_CONFLICT") {
+        await workspaceSyncEnterpriseTeamTemplates({ force: true });
+        workspaceToast(workspaceT("模板已被其他成员更新，已刷新服务器版本，未覆盖"));
+      } else {
+        workspaceToast(workspaceTf("更新团队模板失败：{message}", { message: error?.message || String(error) }));
+      }
+    }
+  };
+  const workspaceDeleteEnterpriseTeamTemplate = async (template) => {
+    try {
+      const response = workspaceAssertEnterpriseTeamResponse(await workspaceTeamBridge.enterpriseTemplates({
+        operation: "delete",
+        id: template.id,
+        revision: template.revision,
+      }));
+      await workspaceMergeEnterpriseTeamResponse(response);
+      workspaceToast(workspaceT("已从企业网关团队撤销"));
+    } catch (error) {
+      if (String(error?.code || "") === "TEAM_TEMPLATE_CONFLICT") {
+        await workspaceSyncEnterpriseTeamTemplates({ force: true });
+        workspaceToast(workspaceT("模板版本已变更，已刷新服务器版本，未删除"));
+      } else {
+        workspaceToast(workspaceTf("撤销团队模板失败：{message}", { message: error?.message || String(error) }));
+      }
+    }
   };
   const workspaceAddMember = async () => {
     let raw = workspaceState.teamMemberAddress || "";
@@ -3215,6 +3441,10 @@ function installDesktopPatches() {
     const sourceName = options.memberName || template.memberName || template.sourceMemberName || "";
     const groups = Array.isArray(options.groups) ? options.groups : [];
     const isLocalTeamTemplate = options.team && template.sourceMemberAddress === "local";
+    const isEnterpriseTeamTemplate = options.team && template.enterpriseTeam === true;
+    const teamSource = isEnterpriseTeamTemplate ? "enterprise" : isLocalTeamTemplate ? "local-lan" : options.team ? "remote-lan" : "personal";
+    const permissionLabel = isEnterpriseTeamTemplate ?
+      (template.permissions?.canEdit && template.permissions?.canDelete ? workspaceT("可管理") : template.permissions?.canEdit ? workspaceT("可编辑") : workspaceT("只读")) : "";
     const groupSelect = options.team ? "" : `
       <select data-workspace-template-group title="${workspaceEscapedT("模板分组")}">
         <option value="" ${template.groupId ? "" : "selected"}>${workspaceEscapedT("未分组")}</option>
@@ -3227,15 +3457,15 @@ function installDesktopPatches() {
         `<img src="${workspaceEscapeHtml(template.thumbnailUrl)}" alt="">` :
         `<span>${workspaceEscapedT("无结果预览")}</span>`;
     return `
-      <article class="wanjuan-workspace-card" data-template-id="${workspaceEscapeHtml(template.id)}">
+      <article class="wanjuan-workspace-card" data-template-id="${workspaceEscapeHtml(template.id)}" data-template-source="${teamSource}">
         <div class="wanjuan-workspace-card-media">${media}</div>
         <div class="wanjuan-workspace-card-body">
           <div class="wanjuan-workspace-card-title" title="${workspaceEscapeHtml(template.title)}">${workspaceEscapeHtml(template.title)}</div>
-          <div class="wanjuan-workspace-card-meta">${workspaceEscapeHtml([sourceName, template.modelName || template.sourceProvider, workspaceDateLabel(template.updatedAt)].filter(Boolean).join(" · "))}</div>
+          <div class="wanjuan-workspace-card-meta">${workspaceEscapeHtml([sourceName, permissionLabel, template.modelName || template.sourceProvider, workspaceDateLabel(template.updatedAt)].filter(Boolean).join(" · "))}</div>
           <div class="wanjuan-workspace-card-prompt">${workspaceEscapeHtml(template.prompt)}</div>
           ${groupSelect}
           <div class="wanjuan-workspace-card-actions">
-            ${options.team ? `<button class="wanjuan-workspace-button primary" data-workspace-action="use-team-template">${workspaceEscapedT("使用")}</button>${isLocalTeamTemplate ? `<button class="wanjuan-workspace-button danger" data-workspace-action="delete-team-template">${workspaceEscapedT("删除")}</button>` : `<button class="wanjuan-workspace-button" data-workspace-action="copy-team-template">${workspaceEscapedT("存到个人")}</button>`}` : `<button class="wanjuan-workspace-button primary" data-workspace-action="use-template">${workspaceEscapedT("使用")}</button><details class="wanjuan-workspace-send-menu"><summary class="wanjuan-workspace-button">${workspaceEscapedT("发送到")} ▾</summary><div class="wanjuan-workspace-send-menu-list"><button type="button" data-workspace-action="save-local-template">${workspaceEscapedT("保存到本地工作空间")}</button><button type="button" data-workspace-action="publish-template">${workspaceEscapedT("发布到局域网团队")}</button><button type="button" data-workspace-action="send-cloud-template">${workspaceEscapedT("发送到云端工作空间")}</button></div></details>`}
+            ${options.team ? `<button class="wanjuan-workspace-button primary" data-workspace-action="use-team-template">${workspaceEscapedT("使用")}</button>${isEnterpriseTeamTemplate ? `<button class="wanjuan-workspace-button" data-workspace-action="copy-team-template">${workspaceEscapedT("存到个人")}</button>${template.permissions?.canEdit ? `<button class="wanjuan-workspace-button" data-workspace-action="edit-enterprise-team-template">${workspaceEscapedT("编辑")}</button>` : ""}${template.permissions?.canDelete ? `<button class="wanjuan-workspace-button danger" data-workspace-action="delete-enterprise-team-template">${workspaceEscapedT("撤销")}</button>` : ""}` : isLocalTeamTemplate ? `<button class="wanjuan-workspace-button danger" data-workspace-action="delete-team-template">${workspaceEscapedT("删除")}</button>` : `<button class="wanjuan-workspace-button" data-workspace-action="copy-team-template">${workspaceEscapedT("存到个人")}</button>`}` : `<button class="wanjuan-workspace-button primary" data-workspace-action="use-template">${workspaceEscapedT("使用")}</button><details class="wanjuan-workspace-send-menu"><summary class="wanjuan-workspace-button">${workspaceEscapedT("发送到")} ▾</summary><div class="wanjuan-workspace-send-menu-list"><button type="button" data-workspace-action="save-local-template">${workspaceEscapedT("保存到本地工作空间")}</button><button type="button" data-workspace-action="publish-template">${workspaceEscapedT(workspaceState.enterpriseTeamContext ? "发送到企业网关团队" : "发布到局域网团队")}</button><button type="button" data-workspace-action="send-cloud-template">${workspaceEscapedT("发送到云端工作空间")}</button></div></details>`}
             <button class="wanjuan-workspace-button" data-workspace-action="copy-prompt">${workspaceEscapedT("复制提示词")}</button>
             ${options.team ? "" : `<button class="wanjuan-workspace-button danger" data-workspace-action="delete-template">${workspaceEscapedT("删除")}</button>`}
           </div>
@@ -3272,6 +3502,7 @@ function installDesktopPatches() {
     const activeSelectionEnd = activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement ?
       activeElement.selectionEnd :
       null;
+    if (workspaceState.enterpriseTeamStatus === "idle") await workspaceLoadEnterpriseTeamContext();
     const data = await workspaceReadAll();
     const cloudState = await cloudPromptWorkspace.prepare();
     if (workspaceState.activeSpace === "cloud" && !cloudState.authenticated && !cloudPromptWorkspace.peek().targetPicker) workspaceState.activeSpace = "personal";
@@ -3303,8 +3534,16 @@ function installDesktopPatches() {
         sourceMemberAddress: result.address,
       }))
     );
-    const teamTemplates = [...localTeamTemplates, ...remoteTeamTemplates]
-      .filter((template) => !query || `${template.title} ${template.prompt} ${template.modelName} ${template.memberName}`.toLowerCase().includes(query));
+    const enterpriseTeamTemplates = (workspaceState.enterpriseTeamCache?.items || []).map((item) => {
+      const template = enterpriseTeamTemplateToWorkspace(item, workspaceState.enterpriseTeamContext || {});
+      return {
+        ...template,
+        memberName: `${workspaceT("企业网关")} · ${workspaceEnterpriseAuthorLabel(template)}`,
+        sourceMemberName: workspaceState.enterpriseTeamContext?.organizationName || workspaceT("企业网关团队"),
+      };
+    });
+    const teamTemplates = [...enterpriseTeamTemplates, ...localTeamTemplates, ...remoteTeamTemplates]
+      .filter((template) => !query || `${template.title} ${template.prompt} ${template.modelName} ${template.memberName} ${template.sourceMemberName || ""} ${template.permissions?.canEdit ? "可编辑" : "只读"}`.toLowerCase().includes(query));
     const teamUrls = workspaceState.status?.urls || [];
     const allTeamUrls = workspaceState.status?.allUrls || teamUrls;
     const preferredUrl = workspaceState.status?.preferredUrl || teamUrls[0] || "";
@@ -3321,6 +3560,28 @@ function installDesktopPatches() {
         <small>${workspaceEscapedT("如果推荐地址连不上，让对方改用同一 Wi-Fi/网线网段里的另一个 192.168/10/172 地址。")}</small>
       ` :
       `${workspaceEscapedT("未开启。Windows 首次开启如无法访问，请允许防火墙访问当前端口。")}${workspaceState.teamServiceError ? `<small>${workspaceEscapedTf("错误：{message}", { message: workspaceState.teamServiceError })}</small>` : ""}`;
+    const enterpriseContext = workspaceState.enterpriseTeamContext;
+    const enterpriseCache = workspaceState.enterpriseTeamCache;
+    const enterpriseRoleLabel = enterpriseContext ? ({ owner: "所有者", admin: "管理员", member: "成员" }[String(enterpriseCache?.role || enterpriseContext.role || "member").toLowerCase()] || "成员") : "";
+    const enterpriseStatusLabel = {
+      loading: workspaceT("正在同步企业团队模板"),
+      synced: workspaceT("已连接企业网关团队"),
+      offline: workspaceT("网关离线，显示上次同步缓存"),
+      "permission-denied": workspaceT("团队权限已失效，本地缓存已清理"),
+    }[workspaceState.enterpriseTeamStatus] || workspaceT("等待同步企业团队模板");
+    const enterpriseTeamStatusHtml = enterpriseContext ? `
+      <strong>${workspaceEscapeHtml(enterpriseContext.organizationName || workspaceT("企业网关团队"))}</strong>
+      <span>${workspaceEscapeHtml(enterpriseStatusLabel)}</span>
+      <small>${workspaceEscapedTf("角色：{role} · 团队模板：{count} 个", { role: workspaceT(enterpriseRoleLabel), count: enterpriseTeamTemplates.length })}</small>
+      <small>${enterpriseCache?.permissions?.canCreate ? workspaceEscapedT("可向当前企业网关发布模板") : workspaceEscapedT("发布权限以网关同步结果为准")}</small>
+      ${workspaceState.enterpriseTeamError ? `<small>${workspaceEscapeHtml(workspaceState.enterpriseTeamError)}</small>` : ""}
+      ${enterpriseCache?.syncedAt ? `<small>${workspaceEscapedTf("上次同步：{time}", { time: workspaceDateLabel(enterpriseCache.syncedAt) })}</small>` : ""}
+      <button class="wanjuan-workspace-button" data-workspace-action="refresh-enterprise-team" ${workspaceState.enterpriseTeamStatus === "loading" ? "disabled" : ""}>${workspaceState.enterpriseTeamStatus === "loading" ? workspaceEscapedT("同步中") : workspaceEscapedT("刷新企业团队")}</button>
+    ` : `
+      <strong>${workspaceEscapedT("企业网关团队")}</strong>
+      <span>${workspaceEscapedT("连接企业网关后，会自动显示同一组织成员发布的模板。")}</span>
+      <small>${workspaceEscapedT("个人模板不会自动共享；云端工作空间与此处相互独立。")}</small>
+    `;
     const teamMemberStatusHtml = (data.teamSettings.members || []).map((member) => {
       const address = typeof member === "string" ? member : member.address;
       const result = (workspaceState.teamResults || []).find((item) =>
@@ -3382,6 +3643,8 @@ function installDesktopPatches() {
               <div class="wanjuan-workspace-group-list">${renderWorkspaceGroups(data.groups, data.templates)}</div>
             ` : `<button class="wanjuan-workspace-button primary" data-workspace-action="add-function-prompt">${workspaceEscapedT("新增功能提示词")}</button>`}
           ` : workspaceState.activeSpace === "cloud" ? cloudPromptWorkspace.renderSidebar() : `
+            <div class="wanjuan-workspace-team-status">${enterpriseTeamStatusHtml}</div>
+            <div class="wanjuan-workspace-field-help"><strong>${workspaceEscapedT("局域网兼容共享")}</strong><br>${workspaceEscapedT("以下设置仅用于旧版手动地址共享，不会写入云端工作空间或企业网关团队。")}</div>
             <div class="wanjuan-workspace-team-status">${teamStatusHtml}</div>
             <button class="wanjuan-workspace-button ${data.teamSettings.enabled ? "" : "primary"}" data-workspace-action="${data.teamSettings.enabled ? "stop-team" : "start-team"}">${data.teamSettings.enabled ? workspaceEscapedT("关闭团队空间") : workspaceEscapedT("开启团队空间")}</button>
             <div class="wanjuan-workspace-form">
@@ -3425,7 +3688,7 @@ function installDesktopPatches() {
           ` : `
             <div class="wanjuan-workspace-list">
               ${workspaceState.activeSpace === "team" ?
-                (teamTemplates.length ? teamTemplates.map((template) => renderWorkspaceTemplateCard(template, { team: true, memberName: template.memberName })).join("") : `<div class="wanjuan-workspace-empty">${workspaceEscapedT("暂无团队模板。先添加成员地址并刷新，或让本机发布模板。")}</div>`) :
+                (teamTemplates.length ? teamTemplates.map((template) => renderWorkspaceTemplateCard(template, { team: true, memberName: template.memberName })).join("") : `<div class="wanjuan-workspace-empty">${workspaceEscapedT("暂无团队模板。连接企业网关后会自动同步同组织模板；也可继续使用局域网兼容共享。")}</div>`) :
                 (personalTemplates.length ? personalTemplates.map((template) => renderWorkspaceTemplateCard(template, { groups: data.groups })).join("") : `<div class="wanjuan-workspace-empty">${workspaceEscapedT("暂无提示词模板。可以先新建分组，后续从生成结果整理为模板。")}</div>`)
               }
             </div>
@@ -3482,6 +3745,11 @@ function installDesktopPatches() {
       if (spaceButton) {
         workspaceState.activeSpace = spaceButton.getAttribute("data-workspace-space") || "personal";
         if (["team", "cloud"].includes(workspaceState.activeSpace)) workspaceState.activeSection = "templates";
+        if (workspaceState.activeSpace === "team") {
+          await workspaceLoadEnterpriseTeamContext();
+          await renderWorkspacePanel();
+          await workspaceSyncEnterpriseTeamTemplates({ force: true });
+        }
         if (workspaceState.activeSpace === "cloud") {
           await cloudPromptWorkspace.prepare();
           await cloudPromptWorkspace.syncActiveWorkspace();
@@ -3595,9 +3863,11 @@ function installDesktopPatches() {
       }
       const data = await workspaceReadAll();
       const personalTemplate = data.templates.find((item) => item.id === templateId);
-      const teamTemplate = workspaceFindTeamTemplate(templateId);
-      const localPublishedTemplate = data.publishedTemplates.find((item) => item.id === templateId);
-      const selectedTemplate = workspaceState.activeSpace === "team" ? (teamTemplate || localPublishedTemplate) : personalTemplate;
+      const templateSource = card?.getAttribute("data-template-source") || "";
+      const enterpriseTemplate = templateSource === "enterprise" ? workspaceFindEnterpriseTeamTemplate(templateId) : null;
+      const teamTemplate = templateSource === "remote-lan" ? workspaceFindTeamTemplate(templateId) : null;
+      const localPublishedTemplate = templateSource === "local-lan" ? data.publishedTemplates.find((item) => item.id === templateId) : null;
+      const selectedTemplate = workspaceState.activeSpace === "team" ? (enterpriseTemplate || teamTemplate || localPublishedTemplate) : personalTemplate;
 
       if (action === "close") {
         workspaceOpenCanvas();
@@ -3681,13 +3951,26 @@ function installDesktopPatches() {
         await renderWorkspacePanel();
         return;
       }
+      if (action === "edit-enterprise-team-template" && enterpriseTemplate) {
+        await workspaceUpdateEnterpriseTeamTemplate(enterpriseTemplate);
+        await renderWorkspacePanel();
+        return;
+      }
+      if (action === "delete-enterprise-team-template" && enterpriseTemplate) {
+        const confirmed = window.confirm(workspaceTf("从企业网关团队撤销“{name}”？", { name: enterpriseTemplate.title }));
+        if (!confirmed) return;
+        await workspaceDeleteEnterpriseTeamTemplate(enterpriseTemplate);
+        await renderWorkspacePanel();
+        return;
+      }
       if ((action === "use-template" || action === "use-team-template") && selectedTemplate) {
         workspaceUseTemplate(selectedTemplate);
         return;
       }
-      if (action === "copy-team-template" && teamTemplate) {
+      if (action === "copy-team-template" && (enterpriseTemplate || teamTemplate)) {
+        const sourceTemplate = enterpriseTemplate || teamTemplate;
         await workspaceSaveTemplate({
-          ...teamTemplate,
+          ...sourceTemplate,
           id: workspaceId("workspace-template"),
           groupId: "",
           createdAt: Date.now(),
@@ -3731,6 +4014,11 @@ function installDesktopPatches() {
       }
       if (action === "refresh-team") {
         await workspaceRefreshTeamMembers();
+        return;
+      }
+      if (action === "refresh-enterprise-team") {
+        await workspaceSyncEnterpriseTeamTemplates({ force: true });
+        await renderWorkspacePanel();
       }
     }, true);
 
@@ -3839,15 +4127,24 @@ function installDesktopPatches() {
 
     window.addEventListener("online", async () => {
       const cloudState = cloudPromptWorkspace.peek();
-      if (!cloudState.authenticated) return;
-      await cloudPromptWorkspace.prepare({ force: true });
-      await cloudPromptWorkspace.syncActiveWorkspace({ force: true });
+      if (cloudState.authenticated) {
+        await cloudPromptWorkspace.prepare({ force: true });
+        await cloudPromptWorkspace.syncActiveWorkspace({ force: true });
+      }
+      await workspaceSyncEnterpriseTeamTemplates({ force: true });
       if (document.documentElement.classList.contains("wanjuan-workspace-open")) await renderWorkspacePanel();
     });
 
     window.addEventListener("wanjuan:account-session-changed", async () => {
       cloudPromptWorkspace.reset();
+      workspaceState.enterpriseTeamContext = null;
+      workspaceState.enterpriseTeamCache = null;
+      workspaceState.enterpriseTeamStatus = "idle";
+      workspaceState.enterpriseTeamError = "";
+      workspaceState.enterpriseTeamLastAttemptAt = 0;
       await cloudPromptWorkspace.prepare({ force: true });
+      await workspaceLoadEnterpriseTeamContext();
+      if (workspaceState.activeSpace === "team") await workspaceSyncEnterpriseTeamTemplates({ force: true });
       if (workspaceState.activeSpace === "cloud" && !cloudPromptWorkspace.peek().authenticated) workspaceState.activeSpace = "personal";
       if (document.documentElement.classList.contains("wanjuan-workspace-open")) await renderWorkspacePanel();
     });
@@ -3856,7 +4153,12 @@ function installDesktopPatches() {
       installWorkspacePanel();
       document.documentElement.classList.add("wanjuan-workspace-open");
       document.querySelector(".wanjuan-workspace-nav-tab")?.classList.add("wanjuan-app-nav-tab-active");
+      await workspaceLoadEnterpriseTeamContext();
       await renderWorkspacePanel();
+      if (workspaceState.activeSpace === "team") {
+        await workspaceSyncEnterpriseTeamTemplates({ force: true });
+        await renderWorkspacePanel();
+      }
     });
   };
 

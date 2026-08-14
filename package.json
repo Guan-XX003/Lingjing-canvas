@@ -45,6 +45,7 @@
     "test:cloud-prompts": "node scripts/test-cloud-prompts.cjs",
     "test:cloud-prompts:production": "electron scripts/test-cloud-prompts-production.cjs",
     "test:enterprise-gateway": "node scripts/test-enterprise-gateway.cjs",
+    "test:enterprise-team-templates": "node scripts/test-enterprise-team-templates.cjs",
     "test:local-secret-storage": "node scripts/test-local-secret-storage.cjs",
     "test:local-data-cleanup": "node scripts/test-local-data-cleanup.cjs",
     "test:version": "node scripts/test-version-consistency.cjs",

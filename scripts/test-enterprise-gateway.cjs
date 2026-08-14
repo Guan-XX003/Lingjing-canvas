@@ -47,6 +47,11 @@ accountPublicJwk.kid = "account-test-key";
 accountPublicJwk.alg = "RS256";
 accountPublicJwk.use = "sig";
 const upstreamCalls = [];
+let controlMembers = [
+  { user_id: "user_test", role: "member", status: "active", expires_at: null },
+  { user_id: "user_other", role: "member", status: "active", expires_at: null },
+  { user_id: "user_admin", role: "admin", status: "active", expires_at: null },
+];
 
 function jwt(payload) {
   const encode = (value) => Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
@@ -74,6 +79,7 @@ global.fetch = async (url, options = {}) => {
       gatewayId: "gw_test",
       policyVersion: 1,
       timezone: "Asia/Shanghai",
+      members: controlMembers,
       quotaDefaults: [{ capability_key: "video_generation", enabled: true, limit_value: 1, unit: "successful_tasks" }],
       memberQuotaOverrides: [],
       events: [],
@@ -179,34 +185,41 @@ async function run() {
   assert.equal(health.body.organizationId, "org_test");
 
   const now = Math.floor(Date.now() / 1000);
-  const accessToken = jwt({
-    iss: "https://account.example.com",
-    aud: "wanjuan-desktop",
-    sub: "user_test",
-    sid: "session_test",
-    did: "device_test",
-    iat: now,
-    exp: now + 600,
-  });
-  const gatewayGrant = jwt({
-    typ: "wanjuan-gateway-grant",
-    iss: "https://account.example.com",
-    aud: "wanjuan-local-gateway",
-    sub: "user_test",
-    org: "org_test",
-    gateway: "gw_test",
-    device: "device_test",
-    role: "member",
-    policyVersion: 1,
-    iat: now,
-    exp: now + 600,
-  });
-  const sessionResponse = await gatewayClient.requestPinnedJson(`https://127.0.0.1:${initialized.status.port}`, "/workspace/session", {
-    method: "POST",
-    token: accessToken,
-    certificateFingerprint: initialized.activation.certificateFingerprint,
-    body: { signedGatewayGrant: gatewayGrant, deviceId: "device_test", appVersion: "1.3.9-test" },
-  });
+  await gateway.syncGatewayControlPlane();
+  const createWorkspaceSession = async (userId, role = "member") => {
+    const deviceId = `device_${userId}`;
+    const accessToken = jwt({
+      iss: "https://account.example.com",
+      aud: "wanjuan-desktop",
+      sub: userId,
+      sid: `session_${userId}`,
+      did: deviceId,
+      iat: now,
+      exp: now + 600,
+    });
+    const gatewayGrant = jwt({
+      typ: "wanjuan-gateway-grant",
+      iss: "https://account.example.com",
+      aud: "wanjuan-local-gateway",
+      sub: userId,
+      org: "org_test",
+      gateway: "gw_test",
+      device: deviceId,
+      role,
+      policyVersion: 1,
+      iat: now,
+      exp: now + 600,
+    });
+    return gatewayClient.requestPinnedJson(`https://127.0.0.1:${initialized.status.port}`, "/workspace/session", {
+      method: "POST",
+      token: accessToken,
+      certificateFingerprint: initialized.activation.certificateFingerprint,
+      body: { signedGatewayGrant: gatewayGrant, deviceId, appVersion: "1.3.9-test" },
+    });
+  };
+  const sessionResponse = await createWorkspaceSession("user_test", "member");
+  const otherSessionResponse = await createWorkspaceSession("user_other", "member");
+  const adminSessionResponse = await createWorkspaceSession("user_admin", "admin");
   assert.ok(sessionResponse.value.workspaceToken);
   assert.equal(sessionResponse.value.organization.role, "member");
   const configResponse = await gatewayClient.requestPinnedJson(`https://127.0.0.1:${initialized.status.port}`, "/workspace/config-snapshot", {
@@ -216,6 +229,148 @@ async function run() {
   assert.equal(configResponse.value.hash, snapshot.hash);
 
   const gatewayUrl = `https://127.0.0.1:${initialized.status.port}`;
+  const teamRequest = (workspaceToken, pathname, options = {}) => gatewayClient.requestPinnedJson(gatewayUrl, pathname, {
+    token: workspaceToken,
+    certificateFingerprint: initialized.activation.certificateFingerprint,
+    ...options,
+  });
+  const templateInput = {
+    title: "Synthetic team template",
+    content: "Synthetic prompt content used only by the isolated gateway test.",
+    description: "Initial description",
+    type: "video",
+    tags: ["test", "team"],
+    modelHint: "model_one",
+    providerHint: "provider_test",
+    generationMode: "text-to-video",
+    parameters: { aspectRatio: "16:9", resolution: "720p", durationSeconds: 5 },
+  };
+  const createdTeamTemplate = await teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+    method: "POST",
+    headers: { "idempotency-key": "team-create-test-0001" },
+    body: templateInput,
+  });
+  assert.equal(createdTeamTemplate.status, 201);
+  assert.equal(createdTeamTemplate.value.item.author.id, "user_test");
+  assert.equal(createdTeamTemplate.value.item.permissions.canEdit, true);
+  const teamTemplateId = createdTeamTemplate.value.item.id;
+
+  const idempotentRetry = await teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+    method: "POST",
+    headers: { "idempotency-key": "team-create-test-0001" },
+    body: templateInput,
+  });
+  assert.equal(idempotentRetry.value.item.id, teamTemplateId);
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+      method: "POST",
+      headers: { "idempotency-key": "team-create-test-0001" },
+      body: { ...templateInput, title: "Different payload" },
+    }),
+    (error) => error.code === "IDEMPOTENCY_CONFLICT" && error.status === 409,
+  );
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+      method: "POST",
+      headers: { "idempotency-key": "team-create-danger-0001" },
+      body: { ...templateInput, apiKey: "must-be-rejected" },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_DTO_REJECTED" && error.status === 400,
+  );
+
+  const secondTeamTemplate = await teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+    method: "POST",
+    headers: { "idempotency-key": "team-create-test-0002" },
+    body: { ...templateInput, title: "Second synthetic template", content: "Second synthetic content." },
+  });
+  const secondTemplateId = secondTeamTemplate.value.item.id;
+  const otherListFirstPage = await teamRequest(otherSessionResponse.value.workspaceToken, "/workspace/team-templates?limit=1");
+  assert.equal(otherListFirstPage.value.items.length, 1);
+  assert.ok(otherListFirstPage.value.nextCursor);
+  assert.equal(otherListFirstPage.value.items[0].permissions.canEdit, false);
+  const otherListSecondPage = await teamRequest(otherSessionResponse.value.workspaceToken,
+    `/workspace/team-templates?limit=1&cursor=${encodeURIComponent(otherListFirstPage.value.nextCursor)}`);
+  assert.equal(otherListSecondPage.value.items.length, 1);
+
+  await assert.rejects(
+    teamRequest(otherSessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(teamTemplateId)}`, {
+      method: "PATCH",
+      headers: { "if-match": '"1"' },
+      body: { description: "Unauthorized edit" },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_FORBIDDEN" && error.status === 403,
+  );
+  const authorPatch = await teamRequest(sessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(teamTemplateId)}`, {
+    method: "PATCH",
+    headers: { "if-match": '"1"' },
+    body: { description: "Updated description" },
+  });
+  assert.equal(authorPatch.value.item.revision, 2);
+  assert.equal(authorPatch.value.item.description, "Updated description");
+  assert.equal(authorPatch.value.item.title, templateInput.title);
+  assert.equal(authorPatch.value.item.content, templateInput.content);
+  assert.deepEqual(authorPatch.value.item.parameters, templateInput.parameters);
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(teamTemplateId)}`, {
+      method: "PATCH",
+      headers: { "if-match": '"1"' },
+      body: { description: "Stale edit" },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_CONFLICT" && error.status === 409 && error.details.revision === 2,
+  );
+
+  const hostOwnerPatch = await gateway.invokeEnterpriseTeamTemplatesAsHost({
+    operation: "update",
+    payload: { id: teamTemplateId, input: { title: "Host managed title" }, revision: 2 },
+    session: {
+      userId: "user_host_owner",
+      organizationId: "org_test",
+      gatewayId: "gw_test",
+      role: "owner",
+      trustedHost: true,
+    },
+  });
+  assert.equal(hostOwnerPatch.item.title, "Host managed title");
+  assert.equal(hostOwnerPatch.item.content, templateInput.content);
+  assert.equal(hostOwnerPatch.item.revision, 3);
+  await assert.rejects(
+    gateway.invokeEnterpriseTeamTemplatesAsHost({
+      operation: "list",
+      payload: {},
+      session: { userId: "user_host_owner", organizationId: "org_test", gatewayId: "gw_test", role: "owner" },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_HOST_AUTH_REQUIRED",
+  );
+
+  const adminDelete = await teamRequest(adminSessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(secondTemplateId)}`, {
+    method: "DELETE",
+    headers: { "if-match": '"1"' },
+  });
+  assert.equal(adminDelete.value.tombstone.revision, 2);
+  const listAfterDelete = await teamRequest(otherSessionResponse.value.workspaceToken, "/workspace/team-templates");
+  assert.equal(listAfterDelete.value.items.some((item) => item.id === secondTemplateId), false);
+
+  const initialChanges = await teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates/changes?limit=100");
+  assert.ok(initialChanges.value.nextCursor);
+  assert.equal(initialChanges.value.tombstones.some((item) => item.id === secondTemplateId), true);
+  const authorDelete = await teamRequest(sessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(teamTemplateId)}`, {
+    method: "DELETE",
+    headers: { "if-match": '"3"' },
+  });
+  assert.equal(authorDelete.value.tombstone.revision, 4);
+  const incrementalChanges = await teamRequest(sessionResponse.value.workspaceToken,
+    `/workspace/team-templates/changes?cursor=${encodeURIComponent(initialChanges.value.nextCursor)}`);
+  assert.equal(incrementalChanges.value.items.length, 0);
+  assert.equal(incrementalChanges.value.tombstones.length, 1);
+  assert.equal(incrementalChanges.value.tombstones[0].id, teamTemplateId);
+
+  const persistentTemplate = await teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+    method: "POST",
+    headers: { "idempotency-key": "team-create-persist-001" },
+    body: { ...templateInput, title: "Persistent synthetic template", content: "Persists across gateway restart." },
+  });
+  const persistentTemplateId = persistentTemplate.value.item.id;
+
   fs.writeFileSync(path.join(tempRoot, "account-session.json"), JSON.stringify({
     version: 2,
     enterprise: {
@@ -356,6 +511,37 @@ async function run() {
   assert.equal(taskStoreText.includes('"prompt"'), false);
   assert.equal(taskStoreText.includes("member-personal-secret"), false);
   assert.equal(fs.readFileSync(path.join(gatewayRoot, "config-snapshot.json"), "utf8").includes("$secretRef"), true);
+  const teamStorePath = path.join(gatewayRoot, "team-templates.json");
+  const teamAuditPath = path.join(gatewayRoot, "team-template-audit.json");
+  const teamStoreText = fs.readFileSync(teamStorePath, "utf8");
+  const teamAuditText = fs.readFileSync(teamAuditPath, "utf8");
+  assert.equal(fs.statSync(teamStorePath).mode & 0o777, 0o600);
+  assert.equal(fs.statSync(teamAuditPath).mode & 0o777, 0o600);
+  assert.equal(teamStoreText.includes(templateInput.content), false);
+  assert.equal(teamStoreText.includes("Second synthetic content."), false);
+  assert.equal(teamAuditText.includes("Synthetic prompt content"), false);
+  assert.equal(teamAuditText.includes("Persistent synthetic template"), false);
+
+  controlMembers = controlMembers.map((member) => member.user_id === "user_other" ? { ...member, status: "disabled" } : member);
+  await gateway.syncGatewayControlPlane();
+  await assert.rejects(
+    teamRequest(otherSessionResponse.value.workspaceToken, "/workspace/team-templates"),
+    (error) => error.code === "TEAM_TEMPLATE_MEMBERSHIP_REVOKED" && error.status === 403,
+  );
+  fs.rmSync(path.join(gatewayRoot, "control-snapshot.json"), { force: true });
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates"),
+    (error) => error.code === "TEAM_TEMPLATE_CONTROL_UNAVAILABLE" && error.status === 503,
+  );
+  await gateway.syncGatewayControlPlane();
+  await assert.rejects(
+    gateway.invokeEnterpriseTeamTemplatesAsHost({
+      operation: "list",
+      payload: {},
+      session: { userId: "user_host_owner", organizationId: "org_other", gatewayId: "gw_test", role: "owner", trustedHost: true },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_FORBIDDEN",
+  );
 
   const nextSnapshot = { ...snapshot, version: 2, hash: "sha256:test-two" };
   const published = await gateway.publishEnterpriseGatewaySnapshot({
@@ -379,10 +565,13 @@ async function run() {
   );
   await gateway.startEnterpriseGateway();
   assert.equal(gateway.getEnterpriseGatewayStatus().running, true);
+  const persistedAfterRestart = await teamRequest(sessionResponse.value.workspaceToken,
+    `/workspace/team-templates/${encodeURIComponent(persistentTemplateId)}`);
+  assert.equal(persistedAfterRestart.value.item.title, "Persistent synthetic template");
   await gateway.stopEnterpriseGateway({ disableAutoStart: true });
   assert.equal(gateway.getEnterpriseGatewayStatus().autoStart, false);
 
-  console.log("enterprise gateway: TLS pinning, streaming upload, task ledger, quota settlement and no-fallback passed");
+  console.log("enterprise gateway: TLS pinning, local team templates, task ledger, quota settlement and no-fallback passed");
 }
 
 run().finally(() => {
