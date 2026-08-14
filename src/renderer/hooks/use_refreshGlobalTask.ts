@@ -601,6 +601,7 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
                         result = await wanjuanTianjiRequest(config, taskQuery.endpoint, {
                           method: taskQuery.method,
                           params: taskQuery.params,
+                          enterpriseRequestKind: `poll`,
                         }),
                         status = wanjuanTianjiStatus(result),
                         videoUrl = wanjuanTianjiFindVideoUrl(result),

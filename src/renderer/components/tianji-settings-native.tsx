@@ -210,7 +210,7 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
   });
 
   const showInfo = (id: string) => execute(async () => {
-    const result = await wanjuanTianjiRequest(await save(), "/api/cut/model/get-portrait-info", { params: { portrait_asset_id: id } });
+    const result = await wanjuanTianjiRequest(await save(), "/api/cut/model/get-portrait-info", { params: { portrait_asset_id: id }, enterpriseRequestKind: `request` });
     window.alert(`素材 ID：${id}\n\n${JSON.stringify(result, null, 2).slice(0, 1800)}`);
   });
 
@@ -220,7 +220,7 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     const id = descriptor.id;
     if (!window.confirm(`删除素材 ${id}？`)) return;
     const activeConfig = await save();
-    await wanjuanTianjiRequest(activeConfig, "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id } });
+    await wanjuanTianjiRequest(activeConfig, "/api/cut/model/delete-portrait", { params: { portrait_asset_id: id }, enterpriseRequestKind: `request` });
     const scope = await wanjuanTianjiLocalPreviewScope(activeConfig);
     const groupId = String(groups?.[type] || descriptor.groupId || "").trim();
     if (groupId) await wanjuanRemoveTianjiLocalPreview({ scope, groupType: type, groupId, assetId: id });
@@ -276,14 +276,14 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     const groupName = portraitGroupName.trim() || wanjuanTianjiDefaultPortraitGroupName();
     setPortraitGroupName(groupName);
     await wanjuanTianjiStorageSet({ tianjiSeedancePortraitGroupName: groupName });
-    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createVirtual, { params: { name: groupName } });
+    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createVirtual, { params: { name: groupName }, enterpriseRequestKind: `request` });
     const { taskId, nextGroups } = await applyPortraitResult(result, "AIGC");
     setStatus(nextGroups.AIGC ? `虚拟组已创建：${nextGroups.AIGC}` : taskId ? `虚拟组创建任务已提交：${taskId}` : "虚拟组创建请求已提交；请填写返回的任务 ID 后查询");
   });
 
   const createRealAuthentication = () => execute(async () => {
     if (!/^https?:\/\//i.test(realCallbackUrl.trim())) throw new Error("创建真人认证需要填写可公网访问的 callback_url");
-    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createReal, { params: { callback_url: realCallbackUrl.trim() } });
+    const result = await wanjuanTianjiRequest(await save(), WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.createReal, { params: { callback_url: realCallbackUrl.trim() }, enterpriseRequestKind: `request` });
     const { taskId } = await applyPortraitResult(result, "LivenessFace");
     setStatus(taskId ? `真人认证已创建：${taskId}；请在认证页面完成后查询` : "真人认证已创建；完成认证后填写 BytedToken 查询结果");
   });
@@ -293,12 +293,12 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
     const activeConfig = await save();
     if (bytedToken.trim()) await wanjuanTianjiStorageSet({ tianjiSeedancePortraitBytedToken: bytedToken.trim() });
     const result = bytedToken.trim()
-      ? await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryRealResult, { params: { bytedToken: bytedToken.trim() } })
-      : await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryTask, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId) });
+      ? await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryRealResult, { params: { bytedToken: bytedToken.trim() }, enterpriseRequestKind: `request` })
+      : await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.queryTask, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId), enterpriseRequestKind: `request` });
     const preferredType: AssetType = bytedToken.trim() ? "LivenessFace" : uploadType;
     const { taskId, nextGroups } = await applyPortraitResult(result, preferredType);
     if (!nextGroups[preferredType] && (portraitTaskId || taskId)) {
-      const synced = await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.syncAssetId, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId || taskId) });
+      const synced = await wanjuanTianjiRequest(activeConfig, WANJUAN_TIANJI_PORTRAIT_ENDPOINTS.syncAssetId, { params: wanjuanBuildTianjiPortraitTaskParams(portraitTaskId || taskId), enterpriseRequestKind: `request` });
       const applied = await applyPortraitResult(synced, preferredType);
       setStatus(applied.nextGroups[preferredType] ? `组 ID 已同步：${applied.nextGroups[preferredType]}` : "任务尚未返回组 ID，请稍后重试");
       return;
@@ -322,6 +322,7 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
       setStatus("正在提交天玑人像审核...");
       await wanjuanTianjiRequest(activeConfig, "/api/cut/model/upload-Portrait", {
         params: { image_url: uploaded.url, name: uploadName || uploadFile.name || "人像素材", portrait_group_id: nextGroups.LivenessFace, type: "Image" },
+        enterpriseRequestKind: `request`,
       });
     }
     await refresh(uploadType, 1, nextGroups).catch(() => null);

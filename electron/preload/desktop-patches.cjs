@@ -2571,7 +2571,8 @@ function installDesktopPatches() {
         method,
         headers,
         bodyBase64: body ? tianjiEncodeBody(body) : "",
-        requestTimeout: 180000
+        requestTimeout: 180000,
+        enterpriseRequestKind: "request"
       });
       if (!bridged?.ok) throw new Error(`天玑网络请求失败：${bridged?.error || "桌面代理不可用"}`);
       response = {

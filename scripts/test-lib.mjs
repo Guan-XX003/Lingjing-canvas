@@ -1365,9 +1365,11 @@ async function run() {
   await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000", sassId: "1", platform: "web" }, mockTaskQuery.endpoint, {
     method: mockTaskQuery.method,
     params: mockTaskQuery.params,
+    enterpriseRequestKind: "poll",
   });
   check("tianji v2 request method", capturedTianjiRequest.method, "POST");
   check("tianji v2 request content type", capturedTianjiRequest.headers["Content-Type"], "application/json");
+  check("tianji v2 poll uses enterprise proxy poll route", capturedTianjiRequest.enterpriseRequestKind, "poll");
   check("tianji v2 request x api key", capturedTianjiRequest.headers["X-API-Key"], "test-token-000000000000000000000000");
   check("tianji jixin request authorization bearer", capturedTianjiRequest.headers.Authorization, "Bearer test-token-000000000000000000000000");
   check("tianji bearer input is not duplicated", wanjuanTianjiAuthHeaders("Bearer test-token-prefixed").Authorization, "Bearer test-token-prefixed");
@@ -1378,10 +1380,12 @@ async function run() {
   await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, automationGenerationRequest.endpoint, {
     encoding: "form",
     params: automationGenerationRequest.payload,
+    enterpriseRequestKind: "submit",
   });
   const capturedTianjiFormBody = Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8");
   const capturedTianjiForm = new URLSearchParams(capturedTianjiFormBody);
   check("tianji generation request content type is official form", capturedTianjiRequest.headers["Content-Type"], "application/x-www-form-urlencoded");
+  check("tianji generation uses enterprise submit route", capturedTianjiRequest.enterpriseRequestKind, "submit");
   check("automation tianji generation form repeats one image bracket field", capturedTianjiForm.getAll("images[]"), ["asset://active-automation"]);
   check("automation tianji request profile is asset=1/http=0", capturedTianjiForm.getAll("images[]").reduce((profile, value) => ({ asset: profile.asset + Number(/^asset:\/\//i.test(value)), http: profile.http + Number(/^https?:\/\//i.test(value)) }), { asset: 0, http: 0 }), { asset: 1, http: 0 });
   const guardedProfile = inspectTianjiGenerationRequest({
@@ -1419,8 +1423,10 @@ async function run() {
   await wanjuanTianjiRequest({ baseUrl: "https://mock.example.invalid", token: "test-token-000000000000000000000000" }, mockTaskQuery.endpoint, {
     method: mockTaskQuery.method,
     params: mockTaskQuery.params,
+    enterpriseRequestKind: "poll",
   });
   check("tianji task query remains JSON after form request", capturedTianjiRequest.headers["Content-Type"], "application/json");
+  check("tianji task query keeps poll route after generation", capturedTianjiRequest.enterpriseRequestKind, "poll");
   check("tianji task query JSON body remains unchanged", JSON.parse(Buffer.from(capturedTianjiRequest.bodyBase64, "base64").toString("utf8")), { task_id: "execute_mock_json", execute_id: "execute_mock_json" });
   check("official compatible asset module remains independent", (await arkTrustedAssets.wanjuanResolveArkTrustedAssetReference({ config: { enabled: true, reviewMode: "manual" }, entry: { url: "https://cdn/official.png", arkTrustedAssetId: "official-asset", arkTrustedAssetSourceUrl: "https://cdn/official.png", arkTrustedAssetStatus: "ready" }, reviewAsset: () => { throw new Error("should not review"); } })).url, "asset://official-asset");
   await wanjuanTianjiRequest({ baseUrl: "https://jixing.guancn.uk/", token: "Bearer test-token-prefixed" }, "/api/cut/model/fetch-points-balance");

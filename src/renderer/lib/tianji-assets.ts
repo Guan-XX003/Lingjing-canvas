@@ -454,8 +454,9 @@ export const wanjuanTianjiRefreshPortraitAssets = async (config, {
 	    normalizedPageSize = Math.max(1, Number(pageSize) || WANJUAN_TIANJI_ASSET_PAGE_SIZE),
 	    load = async (groupType, groupId, nextPageNumber = normalizedPageNumber) => {
 	      if (!groupId) return { items: [], pagination: { total: 0, page: nextPageNumber, pageSize: normalizedPageSize } };
-	      let result = await wanjuanTianjiRequest(config, `/api/cut/model/get-list-assets`, {
-	        params: wanjuanTianjiAssetListParams(groupType, groupId, nextPageNumber, normalizedPageSize),
+      let result = await wanjuanTianjiRequest(config, `/api/cut/model/get-list-assets`, {
+        params: wanjuanTianjiAssetListParams(groupType, groupId, nextPageNumber, normalizedPageSize),
+        enterpriseRequestKind: `request`,
 	      });
 	      return {
 	        items: wanjuanTianjiFindArray(result).map((item) => item && typeof item == `object` ? {
@@ -553,6 +554,7 @@ export const wanjuanUploadTianjiVirtualPortrait = async (imageUrl: any, options:
         virtual_group_id: groups.AIGC,
         type: `Image`,
       },
+      enterpriseRequestKind: `request`,
     }),
     asset = wanjuanTianjiCreateLocalUploadAsset({
       name: label,
