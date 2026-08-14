@@ -55,10 +55,16 @@ function auditPath() {
 }
 
 function atomicWrite(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
+  const directory = path.dirname(filePath);
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  try { fs.chmodSync(directory, 0o700); } catch {}
   const temp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  fs.writeFileSync(temp, value, { encoding: "utf8", mode: 0o600 });
-  fs.renameSync(temp, filePath);
+  try {
+    fs.writeFileSync(temp, value, { encoding: "utf8", mode: 0o600 });
+    fs.renameSync(temp, filePath);
+  } finally {
+    try { fs.rmSync(temp, { force: true }); } catch {}
+  }
 }
 
 function normalizedScope(principal) {
@@ -88,11 +94,22 @@ function emptyStore(scope) {
 
 function readStore(principal) {
   const scope = normalizedScope(principal);
+  let serialized;
+  try {
+    serialized = fs.readFileSync(storePath(), "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") return emptyStore(scope);
+    throw new TeamTemplateError("团队提示词存储暂不可用", { status: 503, code: "TEAM_TEMPLATE_STORE_UNAVAILABLE" });
+  }
   let value;
   try {
-    value = JSON.parse(fs.readFileSync(storePath(), "utf8"));
+    value = JSON.parse(serialized);
   } catch {
-    return emptyStore(scope);
+    throw new TeamTemplateError("团队提示词存储已损坏，已停止读写", { status: 503, code: "TEAM_TEMPLATE_STORE_CORRUPT" });
+  }
+  if (value?.version !== STORE_VERSION || !Array.isArray(value?.templates) || !Array.isArray(value?.idempotency) ||
+      !Number.isFinite(Number(value?.lastTimestamp || 0))) {
+    throw new TeamTemplateError("团队提示词存储格式不受支持", { status: 503, code: "TEAM_TEMPLATE_STORE_CORRUPT" });
   }
   if (String(value?.organizationId || "") !== scope.organizationId || String(value?.gatewayId || "") !== scope.gatewayId) {
     throw new TeamTemplateError("团队提示词存储不属于当前企业网关", {
@@ -100,7 +117,7 @@ function readStore(principal) {
       code: "TEAM_TEMPLATE_SCOPE_MISMATCH",
     });
   }
-  return {
+  const store = {
     version: STORE_VERSION,
     organizationId: scope.organizationId,
     gatewayId: scope.gatewayId,
@@ -108,14 +125,22 @@ function readStore(principal) {
     templates: Array.isArray(value?.templates) ? value.templates : [],
     idempotency: Array.isArray(value?.idempotency) ? value.idempotency : [],
   };
+  if (store.templates.some((item) => !isPlainObject(item) || !String(item.id || "") ||
+      String(item.organizationId || "") !== scope.organizationId || String(item.gatewayId || "") !== scope.gatewayId ||
+      !["active", "archived", "deleted"].includes(String(item.status || "")) ||
+      !Number.isInteger(Number(item.revision)) || Number(item.revision) < 1 ||
+      !Number.isFinite(Number(item.createdAt)) || !Number.isFinite(Number(item.updatedAt)))) {
+    throw new TeamTemplateError("团队提示词存储包含无效记录", { status: 503, code: "TEAM_TEMPLATE_STORE_CORRUPT" });
+  }
+  return store;
 }
 
-function writeStore(store) {
+function serializeStore(store) {
   const serialized = JSON.stringify(store, null, 2);
   if (Buffer.byteLength(serialized, "utf8") > MAX_STORE_BYTES) {
     throw new TeamTemplateError("团队提示词存储已达到容量上限", { status: 507, code: "TEAM_TEMPLATE_STORE_FULL" });
   }
-  atomicWrite(storePath(), serialized);
+  return serialized;
 }
 
 function nextTimestamp(store) {
@@ -255,9 +280,28 @@ function pruneIdempotency(store, now) {
     .slice(0, MAX_IDEMPOTENCY_RECORDS);
 }
 
-function appendAudit(principal, action, template, result = "success") {
-  let value = { version: 1, records: [] };
-  try { value = JSON.parse(fs.readFileSync(auditPath(), "utf8")); } catch {}
+function readAudit() {
+  let serialized;
+  try {
+    serialized = fs.readFileSync(auditPath(), "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") return { version: 1, records: [] };
+    throw new TeamTemplateError("团队提示词审计日志暂不可用", { status: 503, code: "TEAM_TEMPLATE_AUDIT_UNAVAILABLE" });
+  }
+  let value;
+  try {
+    value = JSON.parse(serialized);
+  } catch {
+    throw new TeamTemplateError("团队提示词审计日志已损坏，已停止写入", { status: 503, code: "TEAM_TEMPLATE_AUDIT_CORRUPT" });
+  }
+  if (value?.version !== 1 || !Array.isArray(value?.records)) {
+    throw new TeamTemplateError("团队提示词审计日志格式不受支持", { status: 503, code: "TEAM_TEMPLATE_AUDIT_CORRUPT" });
+  }
+  return value;
+}
+
+function nextAudit(principal, action, template, result = "success") {
+  const value = readAudit();
   const records = Array.isArray(value?.records) ? value.records : [];
   records.unshift({
     timestamp: Date.now(),
@@ -270,7 +314,35 @@ function appendAudit(principal, action, template, result = "success") {
     revision: Number(template?.revision || 0),
     result: String(result),
   });
-  atomicWrite(auditPath(), JSON.stringify({ version: 1, records: records.slice(0, MAX_AUDIT_RECORDS) }, null, 2));
+  return JSON.stringify({ version: 1, records: records.slice(0, MAX_AUDIT_RECORDS) }, null, 2);
+}
+
+function cloneStore(store) {
+  return JSON.parse(JSON.stringify(store));
+}
+
+function commitMutation(previousStore, store, principal, action, template) {
+  const previousExisted = fs.existsSync(storePath());
+  const previousSerialized = serializeStore(previousStore);
+  const nextSerialized = serializeStore(store);
+  const auditSerialized = nextAudit(principal, action, template);
+  try {
+    atomicWrite(storePath(), nextSerialized);
+  } catch {
+    throw new TeamTemplateError("团队提示词存储写入失败", { status: 503, code: "TEAM_TEMPLATE_STORE_UNAVAILABLE" });
+  }
+  try {
+    atomicWrite(auditPath(), auditSerialized);
+  } catch {
+    try {
+      if (previousExisted) atomicWrite(storePath(), previousSerialized);
+      else fs.rmSync(storePath(), { force: true });
+    } catch {}
+    throw new TeamTemplateError("团队提示词审计写入失败，模板变更已回滚", {
+      status: 503,
+      code: "TEAM_TEMPLATE_AUDIT_UNAVAILABLE",
+    });
+  }
 }
 
 function canManage(principal, template) {
@@ -372,6 +444,7 @@ function createTeamTemplate(principalValue, input, idempotencyKey) {
   }
   const normalized = normalizeTeamTemplateInput(input);
   const store = readStore(principal);
+  const previousStore = cloneStore(store);
   const now = Date.now();
   pruneIdempotency(store, now);
   const keyHash = hashValue(`${principal.userId}\0${key}`);
@@ -382,7 +455,13 @@ function createTeamTemplate(principalValue, input, idempotencyKey) {
       throw new TeamTemplateError("Idempotency-Key 已用于不同请求", { status: 409, code: "IDEMPOTENCY_CONFLICT" });
     }
     const existing = store.templates.find((item) => item.id === prior.templateId);
-    if (existing) return publicTemplate(existing, principal);
+    if (!existing || existing.status === "deleted") {
+      throw new TeamTemplateError("该幂等请求对应的团队提示词已删除", {
+        status: 409,
+        code: "IDEMPOTENCY_RESOURCE_GONE",
+      });
+    }
+    return publicTemplate(existing, principal);
   }
   if (store.templates.filter((item) => item.status !== "deleted").length >= MAX_ACTIVE_TEMPLATES) {
     throw new TeamTemplateError("团队提示词数量已达到上限", { status: 409, code: "TEAM_TEMPLATE_LIMIT_REACHED" });
@@ -403,8 +482,7 @@ function createTeamTemplate(principalValue, input, idempotencyKey) {
   store.templates.push(template);
   store.idempotency.unshift({ keyHash, payloadHash, templateId: template.id, createdAt: now });
   pruneIdempotency(store, now);
-  writeStore(store);
-  appendAudit(principal, "create", template);
+  commitMutation(previousStore, store, principal, "create", template);
   return publicTemplate(template, principal);
 }
 
@@ -445,6 +523,7 @@ function updateTeamTemplate(principalValue, templateId, input, expectedRevision)
   const principal = normalizedScope(principalValue);
   const normalized = normalizeTeamTemplateInput(input, { partial: true });
   const store = readStore(principal);
+  const previousStore = cloneStore(store);
   const template = store.templates.find((item) => item.id === String(templateId || "") && item.status !== "deleted");
   if (!template) throw new TeamTemplateError("团队提示词不存在", { status: 404, code: "TEAM_TEMPLATE_NOT_FOUND" });
   if (!canManage(principal, template)) {
@@ -454,14 +533,14 @@ function updateTeamTemplate(principalValue, templateId, input, expectedRevision)
   Object.assign(template, normalized);
   template.revision = Number(template.revision || 0) + 1;
   template.updatedAt = nextTimestamp(store);
-  writeStore(store);
-  appendAudit(principal, "update", template);
+  commitMutation(previousStore, store, principal, "update", template);
   return publicTemplate(template, principal);
 }
 
 function deleteTeamTemplate(principalValue, templateId, expectedRevision) {
   const principal = normalizedScope(principalValue);
   const store = readStore(principal);
+  const previousStore = cloneStore(store);
   const template = store.templates.find((item) => item.id === String(templateId || "") && item.status !== "deleted");
   if (!template) throw new TeamTemplateError("团队提示词不存在", { status: 404, code: "TEAM_TEMPLATE_NOT_FOUND" });
   if (!canManage(principal, template)) {
@@ -480,8 +559,7 @@ function deleteTeamTemplate(principalValue, templateId, expectedRevision) {
   template.providerHint = "";
   template.generationMode = "";
   template.parameters = {};
-  writeStore(store);
-  appendAudit(principal, "delete", template);
+  commitMutation(previousStore, store, principal, "delete", template);
   return { id: template.id, revision: template.revision, deletedAt: isoTime(template.deletedAt) };
 }
 

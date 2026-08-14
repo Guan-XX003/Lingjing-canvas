@@ -155,6 +155,8 @@ The HTTP status is `409`. The client must refetch instead of merging prompt cont
 
 Idempotency is scoped to the user and gateway store. The raw key is never persisted. The same key and payload returns the same template; the same key with a different payload returns `409 IDEMPOTENCY_CONFLICT`.
 
+If the resource was deleted after the original request, replaying its old key returns `409 IDEMPOTENCY_RESOURCE_GONE`. It never returns a cleared tombstone as an active template.
+
 ## Local Persistence And Audit
 
 ```text
@@ -163,6 +165,8 @@ Idempotency is scoped to the user and gateway store. The raw key is never persis
 ```
 
 The directory is mode `0700`; both files use atomic replacement and mode `0600`. Audit records contain action, template ID, actor user ID, organization/gateway scope, role, revision, result and timestamp. They never contain prompt content.
+
+Malformed or unreadable store/audit JSON fails closed with a `503` error. A corrupt file is not treated as an empty store and is never silently overwritten. Mutations validate the audit file before changing the template store; an audit write failure rolls the store back.
 
 Limits:
 

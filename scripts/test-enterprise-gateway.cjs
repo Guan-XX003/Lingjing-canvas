@@ -134,6 +134,38 @@ function fetchHealth(port) {
   });
 }
 
+function rawGatewayRequest(port, pathname, options = {}) {
+  const body = Buffer.from(String(options.body || ""), "utf8");
+  return new Promise((resolve, reject) => {
+    const request = https.request({
+      hostname: "127.0.0.1",
+      port,
+      path: pathname,
+      method: options.method || "GET",
+      rejectUnauthorized: false,
+      timeout: 5000,
+      headers: {
+        accept: "application/json",
+        ...(body.length ? { "content-type": "application/json", "content-length": body.length } : {}),
+        ...(options.headers || {}),
+      },
+    }, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => {
+        const text = Buffer.concat(chunks).toString("utf8");
+        let value = {};
+        try { value = text ? JSON.parse(text) : {}; } catch {}
+        resolve({ status: response.statusCode, headers: response.headers, value });
+      });
+    });
+    request.on("error", reject);
+    request.on("timeout", () => request.destroy(new Error("raw gateway request timeout")));
+    if (body.length) request.write(body);
+    request.end();
+  });
+}
+
 async function run() {
   const gateway = require("../electron/main/enterprise-gateway.cjs");
   const gatewayClient = require("../electron/main/enterprise-gateway-client.cjs");
@@ -234,6 +266,43 @@ async function run() {
     certificateFingerprint: initialized.activation.certificateFingerprint,
     ...options,
   });
+  const accountAccessOnlyToken = jwt({
+    iss: "https://account.example.com",
+    aud: "wanjuan-desktop",
+    sub: "user_test",
+    sid: "access-only-session",
+    did: "access-only-device",
+    iat: now,
+    exp: now + 600,
+  });
+  await assert.rejects(
+    teamRequest(accountAccessOnlyToken, "/workspace/team-templates"),
+    (error) => error.code === "WORKSPACE_SESSION_EXPIRED" && error.status === 401,
+  );
+  const rawTeamHeaders = {
+    authorization: `Bearer ${sessionResponse.value.workspaceToken}`,
+    "idempotency-key": "team-invalid-request-0001",
+  };
+  const malformedTeamRequest = await rawGatewayRequest(initialized.status.port, "/workspace/team-templates", {
+    method: "POST",
+    headers: rawTeamHeaders,
+    body: "{",
+  });
+  assert.equal(malformedTeamRequest.status, 400);
+  assert.equal(malformedTeamRequest.value.code, "TEAM_TEMPLATE_JSON_INVALID");
+  const oversizedTeamRequest = await rawGatewayRequest(initialized.status.port, "/workspace/team-templates", {
+    method: "POST",
+    headers: rawTeamHeaders,
+    body: JSON.stringify({ title: "Too large", content: "x".repeat(70 * 1024) }),
+  });
+  assert.equal(oversizedTeamRequest.status, 413);
+  assert.equal(oversizedTeamRequest.value.code, "TEAM_TEMPLATE_BODY_TOO_LARGE");
+  const unsupportedTeamMethod = await rawGatewayRequest(initialized.status.port, "/workspace/team-templates", {
+    method: "PUT",
+    headers: { authorization: `Bearer ${sessionResponse.value.workspaceToken}` },
+  });
+  assert.equal(unsupportedTeamMethod.status, 405);
+  assert.equal(unsupportedTeamMethod.headers.allow, "GET, POST");
   const templateInput = {
     title: "Synthetic team template",
     content: "Synthetic prompt content used only by the isolated gateway test.",
@@ -358,6 +427,14 @@ async function run() {
     headers: { "if-match": '"3"' },
   });
   assert.equal(authorDelete.value.tombstone.revision, 4);
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates", {
+      method: "POST",
+      headers: { "idempotency-key": "team-create-test-0001" },
+      body: templateInput,
+    }),
+    (error) => error.code === "IDEMPOTENCY_RESOURCE_GONE" && error.status === 409,
+  );
   const incrementalChanges = await teamRequest(sessionResponse.value.workspaceToken,
     `/workspace/team-templates/changes?cursor=${encodeURIComponent(initialChanges.value.nextCursor)}`);
   assert.equal(incrementalChanges.value.items.length, 0);
@@ -521,14 +598,66 @@ async function run() {
   assert.equal(teamStoreText.includes("Second synthetic content."), false);
   assert.equal(teamAuditText.includes("Synthetic prompt content"), false);
   assert.equal(teamAuditText.includes("Persistent synthetic template"), false);
+  assert.equal(fs.statSync(gatewayRoot).mode & 0o777, 0o700);
+
+  const rateLimitHostSession = {
+    userId: "user_rate_limit_owner",
+    organizationId: "org_test",
+    gatewayId: "gw_test",
+    role: "owner",
+    trustedHost: true,
+  };
+  for (let index = 0; index < 300; index += 1) {
+    await gateway.invokeEnterpriseTeamTemplatesAsHost({ operation: "list", payload: {}, session: rateLimitHostSession });
+  }
+  await assert.rejects(
+    gateway.invokeEnterpriseTeamTemplatesAsHost({ operation: "list", payload: {}, session: rateLimitHostSession }),
+    (error) => error.code === "TEAM_TEMPLATE_RATE_LIMITED" && error.status === 429,
+  );
+
+  fs.writeFileSync(teamStorePath, "{", { encoding: "utf8", mode: 0o600 });
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates"),
+    (error) => error.code === "TEAM_TEMPLATE_STORE_CORRUPT" && error.status === 503,
+  );
+  assert.equal(fs.readFileSync(teamStorePath, "utf8"), "{");
+  fs.writeFileSync(teamStorePath, teamStoreText, { encoding: "utf8", mode: 0o600 });
+
+  fs.writeFileSync(teamAuditPath, "{", { encoding: "utf8", mode: 0o600 });
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, `/workspace/team-templates/${encodeURIComponent(persistentTemplateId)}`, {
+      method: "PATCH",
+      headers: { "if-match": '"1"' },
+      body: { description: "Must roll back when audit is unavailable" },
+    }),
+    (error) => error.code === "TEAM_TEMPLATE_AUDIT_CORRUPT" && error.status === 503,
+  );
+  const unchangedAfterAuditFailure = await teamRequest(sessionResponse.value.workspaceToken,
+    `/workspace/team-templates/${encodeURIComponent(persistentTemplateId)}`);
+  assert.equal(unchangedAfterAuditFailure.value.item.revision, 1);
+  assert.equal(unchangedAfterAuditFailure.value.item.description, templateInput.description);
+  fs.writeFileSync(teamAuditPath, teamAuditText, { encoding: "utf8", mode: 0o600 });
 
   controlMembers = controlMembers.map((member) => member.user_id === "user_other" ? { ...member, status: "disabled" } : member);
+  controlMembers = controlMembers.map((member) => member.user_id === "user_admin" ? {
+    ...member,
+    expires_at: new Date(Date.now() - 60 * 1000).toISOString(),
+  } : member);
   await gateway.syncGatewayControlPlane();
   await assert.rejects(
     teamRequest(otherSessionResponse.value.workspaceToken, "/workspace/team-templates"),
     (error) => error.code === "TEAM_TEMPLATE_MEMBERSHIP_REVOKED" && error.status === 403,
   );
+  await assert.rejects(
+    teamRequest(adminSessionResponse.value.workspaceToken, "/workspace/team-templates"),
+    (error) => error.code === "TEAM_TEMPLATE_MEMBERSHIP_REVOKED" && error.status === 403,
+  );
   fs.rmSync(path.join(gatewayRoot, "control-snapshot.json"), { force: true });
+  await assert.rejects(
+    teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates"),
+    (error) => error.code === "TEAM_TEMPLATE_CONTROL_UNAVAILABLE" && error.status === 503,
+  );
+  fs.writeFileSync(path.join(gatewayRoot, "control-snapshot.json"), "{", { encoding: "utf8", mode: 0o600 });
   await assert.rejects(
     teamRequest(sessionResponse.value.workspaceToken, "/workspace/team-templates"),
     (error) => error.code === "TEAM_TEMPLATE_CONTROL_UNAVAILABLE" && error.status === 503,

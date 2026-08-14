@@ -43,6 +43,7 @@ const {
 const DEFAULT_GATEWAY_PORT = 39472;
 const GATEWAY_STATE_VERSION = 1;
 const MAX_REQUEST_BODY_BYTES = 32 * 1024 * 1024;
+const MAX_TEAM_TEMPLATE_BODY_BYTES = 64 * 1024;
 const MAX_ENTERPRISE_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
 const WORKSPACE_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const JWKS_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -548,6 +549,38 @@ function parseJsonBuffer(buffer) {
   }
 }
 
+function readTeamTemplateJson(request) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let overflow = false;
+    request.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_TEAM_TEMPLATE_BODY_BYTES) {
+        overflow = true;
+        chunks.length = 0;
+        return;
+      }
+      if (!overflow) chunks.push(chunk);
+    });
+    request.on("end", () => {
+      if (overflow) {
+        reject(new TeamTemplateError("团队提示词请求内容过大", { status: 413, code: "TEAM_TEMPLATE_BODY_TOO_LARGE" }));
+        return;
+      }
+      try {
+        resolve(parseJsonBuffer(Buffer.concat(chunks)));
+      } catch {
+        reject(new TeamTemplateError("团队提示词请求 JSON 格式不正确", { status: 400, code: "TEAM_TEMPLATE_JSON_INVALID" }));
+      }
+    });
+    request.on("error", () => reject(new TeamTemplateError("团队提示词请求读取失败", {
+      status: 400,
+      code: "TEAM_TEMPLATE_REQUEST_INVALID",
+    })));
+  });
+}
+
 function bearerToken(request) {
   const authorization = String(request.headers.authorization || "");
   return authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
@@ -886,7 +919,7 @@ async function handleTeamTemplateRequest(request, response, url, workspaceSessio
       return true;
     }
     if (request.method === "POST" && url.pathname === "/workspace/team-templates") {
-      const input = parseJsonBuffer(await readRequestBody(request));
+      const input = await readTeamTemplateJson(request);
       const result = teamTemplateOperation("create", {
         input,
         idempotencyKey: String(request.headers["idempotency-key"] || ""),
@@ -913,7 +946,7 @@ async function handleTeamTemplateRequest(request, response, url, workspaceSessio
         return true;
       }
       if (request.method === "PATCH") {
-        const body = parseJsonBuffer(await readRequestBody(request));
+        const body = await readTeamTemplateJson(request);
         const { revision, ...input } = body;
         const result = teamTemplateOperation("update", { id, input, revision: ifMatchRevision(request, revision) }, principal);
         response.setHeader("etag", `"${result.item.revision}"`);
@@ -921,11 +954,26 @@ async function handleTeamTemplateRequest(request, response, url, workspaceSessio
         return true;
       }
       if (request.method === "DELETE") {
-        const body = parseJsonBuffer(await readRequestBody(request));
+        const body = await readTeamTemplateJson(request);
         const result = teamTemplateOperation("delete", { id, revision: ifMatchRevision(request, body.revision) }, principal);
         sendJson(response, 200, result);
         return true;
       }
+    }
+    if (url.pathname === "/workspace/team-templates") {
+      response.setHeader("allow", "GET, POST");
+      sendJson(response, 405, { ok: false, code: "TEAM_TEMPLATE_METHOD_NOT_ALLOWED", error: "团队提示词接口不支持该请求方法" });
+      return true;
+    }
+    if (url.pathname === "/workspace/team-templates/changes") {
+      response.setHeader("allow", "GET");
+      sendJson(response, 405, { ok: false, code: "TEAM_TEMPLATE_METHOD_NOT_ALLOWED", error: "团队提示词增量接口仅支持 GET" });
+      return true;
+    }
+    if (match) {
+      response.setHeader("allow", "GET, PATCH, DELETE");
+      sendJson(response, 405, { ok: false, code: "TEAM_TEMPLATE_METHOD_NOT_ALLOWED", error: "团队提示词项目接口不支持该请求方法" });
+      return true;
     }
     sendJson(response, 404, { ok: false, code: "TEAM_TEMPLATE_ROUTE_NOT_FOUND", error: "团队提示词接口不存在" });
   } catch (error) {
