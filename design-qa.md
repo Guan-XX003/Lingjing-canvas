@@ -23,7 +23,7 @@ The reference image contains only the membership card. Card fidelity was compare
 ## Dialog Comparison
 
 - The dialog uses the same charcoal surfaces, gray borders, 8px outer radius, compact icon button, and restrained typography as the account settings page.
-- `万卷会员`, `¥19.9/月`, and `内测开放` form a clear information hierarchy without implying that membership is active.
+- `StarCanvas会员`, `¥19.9/月`, and `内测开放` form a clear information hierarchy without implying that membership is active.
 - Three benefits use simple divider rows rather than nested cards. Icons align consistently and descriptions wrap naturally.
 - The footer keeps the beta-code/QQ explanation visible and provides one clear `复制 QQ` command.
 - Backdrop blur and shadow separate the modal from the app without adding decorative gradients or extra panels.

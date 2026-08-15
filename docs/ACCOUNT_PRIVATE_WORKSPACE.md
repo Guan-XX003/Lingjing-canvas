@@ -1,4 +1,4 @@
-# 万卷灵境账号与企业私密空间契约
+# StarCanvas账号与企业私密空间契约
 
 ## 目标
 
@@ -61,7 +61,7 @@ WANJUAN_ACCOUNT_API_URL=http://127.0.0.1:39991 npm start
   "identifier": "user@example.com",
   "code": "123456",
   "inviteCode": "optional",
-  "deviceName": "万卷灵境桌面端"
+  "deviceName": "StarCanvas桌面端"
 }
 ```
 
@@ -114,7 +114,7 @@ Authorization: Bearer <WanJuan account access token>
 
 网关应执行：
 
-1. 验证万卷灵境账号 Token 的签名、有效期和签发方。
+1. 验证StarCanvas账号 Token 的签名、有效期和签发方。
 2. 检查该 `userId` 是否属于企业组织。
 3. 检查客户端来源是否位于允许的局域网、VPN 或设备范围。
 4. 首次绑定时核对邀请码；完成绑定后邀请码不再作为登录凭证。

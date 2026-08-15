@@ -17,7 +17,7 @@ function archName(arch) {
 
 function resourceRoot(context) {
   if (context.electronPlatformName === "darwin") {
-    return path.join(context.appOutDir, "万卷灵境.app", "Contents", "Resources");
+    return path.join(context.appOutDir, "StarCanvas.app", "Contents", "Resources");
   }
   return path.join(context.appOutDir, "resources");
 }

@@ -53,7 +53,7 @@ export function useArkTrustedAssetReview({
         url: sourceUrl,
         localPath: meta.localPath || meta.filePath || undefined,
         filename: meta.filename || meta.label || `ark-reference-${Date.now()}`,
-        name: meta.label || meta.name || `万卷灵境参考图`,
+        name: meta.label || meta.name || `StarCanvas参考图`,
         kind: `image`,
         requestId,
         tos: tosConfig || {},

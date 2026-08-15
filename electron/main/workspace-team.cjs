@@ -105,7 +105,7 @@ function getWorkspaceManifest() {
   return {
     protocol: "wanjuan-workspace-team",
     protocolVersion: WORKSPACE_PROTOCOL_VERSION,
-    appName: "万卷灵境",
+    appName: "StarCanvas",
     appVersion: app?.getVersion?.() || "",
     platform: process.platform,
     memberName: teamServerState.memberName || os.hostname() || "团队成员",
@@ -284,7 +284,7 @@ function renderWorkspaceHomePage() {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>万卷灵境团队空间</title>
+  <title>StarCanvas团队空间</title>
   <style>
     :root{color-scheme:dark;background:#111418;color:#e5e7eb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body{margin:0;padding:28px;background:#111418}
@@ -303,8 +303,8 @@ function renderWorkspaceHomePage() {
 <body>
   <main>
     <section>
-      <h1>万卷灵境团队空间</h1>
-      <p>这台电脑的团队空间服务已运行。另一台电脑在万卷灵境的工作空间里添加本地址后，点击“刷新团队”即可拉取模板。</p>
+      <h1>StarCanvas团队空间</h1>
+      <p>这台电脑的团队空间服务已运行。另一台电脑在StarCanvas的工作空间里添加本地址后，点击“刷新团队”即可拉取模板。</p>
       <p>模板接口：<code>/workspace/templates</code>，当前共享模板 <strong>${templates.length}</strong> 个。</p>
       <p>成员名：${escapeHtml(manifest.memberName || "团队成员")}；端口：${escapeHtml(manifest.port)}</p>
     </section>
@@ -518,7 +518,7 @@ function buildTeamProbeDiagnostics({ baseUrl, endpoint, timeoutMs, error, status
       error: `接口返回 HTTP ${status}${statusText ? ` ${statusText}` : ""}`,
       detail: `目标能访问，但 ${endpoint} 没有返回可用的团队空间数据。`,
       diagnostics: [
-        "确认填写的是对方万卷灵境团队空间地址，不是其他服务地址。",
+        "确认填写的是对方StarCanvas团队空间地址，不是其他服务地址。",
         "让对方重新开启团队空间后再刷新团队成员。",
       ],
       code,
@@ -527,11 +527,11 @@ function buildTeamProbeDiagnostics({ baseUrl, endpoint, timeoutMs, error, status
   }
   if (parseFailed) {
     return {
-      error: "目标地址能访问，但不是万卷灵境团队空间接口",
+      error: "目标地址能访问，但不是StarCanvas团队空间接口",
       detail: preview ? `返回内容：${preview}` : `探测接口：${endpoint}`,
       diagnostics: [
         "确认端口填写的是对方团队空间端口。",
-        "如果浏览器打开后不是万卷灵境团队空间页面，请改用应用里显示的推荐局域网地址。",
+        "如果浏览器打开后不是StarCanvas团队空间页面，请改用应用里显示的推荐局域网地址。",
       ],
       code,
       name,
@@ -544,7 +544,7 @@ function buildTeamProbeDiagnostics({ baseUrl, endpoint, timeoutMs, error, status
       diagnostics: [
         "确认对方电脑已开启团队空间。",
         "确认端口号和对方应用里显示的一致。",
-        "Windows 防火墙需要允许万卷灵境访问专用/公用网络。",
+        "Windows 防火墙需要允许StarCanvas访问专用/公用网络。",
       ],
       code,
       name,
@@ -580,7 +580,7 @@ function buildTeamProbeDiagnostics({ baseUrl, endpoint, timeoutMs, error, status
     diagnostics: [
       "确认对方电脑已开启团队空间。",
       "确认两台电脑在同一局域网或同一网线直连网段。",
-      "Windows 上请检查防火墙是否允许万卷灵境和当前端口入站连接。",
+      "Windows 上请检查防火墙是否允许StarCanvas和当前端口入站连接。",
     ],
     code,
     name,

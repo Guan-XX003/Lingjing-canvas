@@ -38,7 +38,7 @@ assert.equal(latestYamlUrlForPlatform("darwin").endsWith("/latest-mac.yml"), tru
 
 const release = normalizeRelease({
   tag_name: "v1.3.0-2",
-  name: "万卷灵境 v1.3.0-2",
+  name: "StarCanvas v1.3.0-2",
   body: "更新说明",
   html_url: "https://example.com/release",
   assets
@@ -48,7 +48,7 @@ assert.equal(release.assetName, "wanjuan-lingjing-1.3.0.dmg");
 
 const windowsRelease = normalizeRelease({
   tag_name: "v1.3.0-release",
-  name: "万卷灵境 v1.3.0",
+  name: "StarCanvas v1.3.0",
   body: "更新说明",
   html_url: "https://example.com/release",
   assets

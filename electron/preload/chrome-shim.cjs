@@ -10,9 +10,9 @@ const {
 
 const APP_VERSION = (() => {
   try {
-    return require("../../package.json").version || "1.4.4";
+    return require("../../package.json").version || "1.4.5";
   } catch {
-    return "1.4.4";
+    return "1.4.5";
   }
 })();
 
@@ -65,9 +65,9 @@ function createChromeShim() {
       }
     },
     tabs: {
-      query: (_queryInfo, cb) => callbackOrPromise(cb, [{ id: 1, active: true, title: "万卷灵境", url: window.location.href }]),
+      query: (_queryInfo, cb) => callbackOrPromise(cb, [{ id: 1, active: true, title: "StarCanvas", url: window.location.href }]),
       getCurrent: (cb) => callbackOrPromise(cb, null),
-      get: (_tabId, cb) => callbackOrPromise(cb, { id: 1, active: true, title: "万卷灵境", url: window.location.href }),
+      get: (_tabId, cb) => callbackOrPromise(cb, { id: 1, active: true, title: "StarCanvas", url: window.location.href }),
       create: (_createProperties, cb) => callbackOrPromise(cb, { id: 1 }),
       update: (_tabId, _updateProperties, cb) => callbackOrPromise(cb, { id: 1 }),
       onUpdated: noopEvent,

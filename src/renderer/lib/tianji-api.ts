@@ -242,7 +242,7 @@ export const wanjuanBuildTianjiPortraitTaskParams = (taskId: any): Record<string
 
 /** 创建人像组的可见默认名称，避免上游因空名称拒绝请求。 */
 export const wanjuanTianjiDefaultPortraitGroupName = (now = Date.now()): string =>
-  (() => { const date = new Date(now); const pad = (value: number) => String(value).padStart(2, `0`); return `万卷灵境-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`; })();
+  (() => { const date = new Date(now); const pad = (value: number) => String(value).padStart(2, `0`); return `StarCanvas-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`; })();
 
 /** 即梦天玑默认配置（base 地址、可选模型 / 时长 / 分辨率 / 画幅比例等）。 */
 export const wanjuanTianjiSeedanceDefaults: TianjiSeedanceConfig = {

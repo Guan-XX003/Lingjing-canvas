@@ -162,7 +162,7 @@ export function WanJuanSettingsAccountTab({ showToast = () => {} }: { showToast?
         {account.device?.id && (
           <div className="wanjuan-account-security-row">
             <div><Laptop size={17} /><span>当前设备</span></div>
-            <strong>{account.device.name || "万卷灵境桌面端"} · {platformLabels[account.device.platform || "unknown"] || account.device.platform || "未知平台"}</strong>
+            <strong>{account.device.name || "StarCanvas桌面端"} · {platformLabels[account.device.platform || "unknown"] || account.device.platform || "未知平台"}</strong>
           </div>
         )}
       </section>

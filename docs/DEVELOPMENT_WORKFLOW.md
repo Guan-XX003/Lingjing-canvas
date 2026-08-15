@@ -1,13 +1,13 @@
-# 万卷灵境开发工作流
+# StarCanvas开发工作流
 
 ## 固定地址
 
-- 主线源码：`/Users/guanpeng/Desktop/claude工作区/Lingjing-canvas`
-- 正式版 App：`/Applications/万卷灵境.app`
+- 主线源码：`/Users/guanpeng/Desktop/claude工作区/StarCanvas`
+- 正式版 App：`/Applications/StarCanvas.app`
 - 正式用户数据：`/Users/guanpeng/Library/Application Support/wanjuan-ai-canvas-desktop-test`
 - 开发用户数据：源码目录下的 `.wanjuan-dev-user-data`
 - App 备份目录：`/Users/guanpeng/Desktop/codex工作区/`
-- GitHub：`https://github.com/Guan-XX003/Lingjing-canvas.git`
+- GitHub：`https://github.com/Guan-XX003/StarCanvas.git`
 
 ## 标准流程
 
@@ -74,7 +74,7 @@ npm run arch:validate
 只有用户明确要求后才执行：
 
 1. 从测试通过的源码重新构建 App。
-2. 将现有 `/Applications/万卷灵境.app` 备份到时间戳目录。
+2. 将现有 `/Applications/StarCanvas.app` 备份到时间戳目录。
 3. 只替换 App 包，不删除正式用户数据。
 4. 启动正式版，检查现有项目、媒体、配置、版本号和本次修复。
 

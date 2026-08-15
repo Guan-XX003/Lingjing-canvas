@@ -79,9 +79,9 @@ export function use_runConfigButlerErrorDiagnosis(deps: UseRunConfigButlerErrorD
 		                    apiUrl: task.apiBaseUrl || protocolDefinition?.url || ``,
 		                  });
 		                }
-			                let systemPrompt = `你是万卷灵境的配置管家故障诊断器。用户手动点击错误查询，需要排查任务清单中最新一次失败任务。
+			                let systemPrompt = `你是StarCanvas的配置管家故障诊断器。用户手动点击错误查询，需要排查任务清单中最新一次失败任务。
 
-请基于任务上下文、当前软件协议配置、错误信息、API 文档摘要和万卷灵境工作流判断原因。
+请基于任务上下文、当前软件协议配置、错误信息、API 文档摘要和StarCanvas工作流判断原因。
 只输出 JSON，不要解释。字段：
 {
   "classification": "upstream" | "request_config" | "model_code" | "unknown",
@@ -102,7 +102,7 @@ export function use_runConfigButlerErrorDiagnosis(deps: UseRunConfigButlerErrorD
 - 如果软件当前工作流缺少必要数据或节点代码层面无法表达文档要求，classification=model_code，并说明需要改哪里。
 - 如果任务上下文 requestProfile.submitUrl 已经是 http/https 完整 URL，而错误信息里只引用 POST /xxx 路径，不要误判为前端没有拼接 baseUrl；这通常是上游对 endpoint/平台路由不接受，优先按 request_config 或 upstream 判断。
 - 只有当 suggestedProtocol.config 能实际改变 submitPath/pollPath/字段映射/字段类型时，shouldApplyPatch 才能为 true；如果只是需要修改软件源码，不要给应用修复。
-- suggestedProtocol.config 必须是万卷灵境可用协议配置，包含 category/requestType/submitPath/pollPath/fieldMapping/fieldValueTypes/parameterAdapter/responseMapping 等必要字段。
+- suggestedProtocol.config 必须是StarCanvas可用协议配置，包含 category/requestType/submitPath/pollPath/fieldMapping/fieldValueTypes/parameterAdapter/responseMapping 等必要字段。
 - 视频协议还应根据接口语义设置 parameterMode：比例+清晰度用 ratio-quality，像素尺寸用 exact-resolution，由输入素材决定尺寸用 follow-source；清晰度由模型 ID 后缀承载时使用 qualityModelVariants。
 - 必须覆盖文本/多模态、图片、视频、音频转写、语音合成、音乐生成等模型家族；不要仅依据模型名称猜协议，应优先依据端点、Content-Type、请求 Schema、curl 示例、响应体和错误信息。
 - API 文档没有展示某个可选字段，不等于接口明确不支持该字段。除非错误信息明确指出 unknown/unsupported parameter，否则不要把现有 fieldMapping 字段改为空字符串，也不要设置 omitDuration 等省略开关。

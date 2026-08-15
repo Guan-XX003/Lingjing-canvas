@@ -364,7 +364,7 @@ export function WanJuanTianjiSettingsNative({ pointsUnlocked = false }: { points
       <label>Sass ID<input value={config.sassId || "1"} onChange={(event) => changeConfig("sassId", event.target.value)} /></label>
       <label>真人组 ID<input value={groups.LivenessFace || ""} onChange={(event) => setGroups((current: any) => ({ ...current, LivenessFace: event.target.value }))} /></label>
       <label>虚拟组 ID<input value={groups.AIGC || ""} onChange={(event) => setGroups((current: any) => ({ ...current, AIGC: event.target.value }))} /></label>
-      <label>素材组名称<input value={portraitGroupName} onChange={(event) => setPortraitGroupName(event.target.value)} placeholder="留空自动生成万卷灵境-时间" /></label>
+      <label>素材组名称<input value={portraitGroupName} onChange={(event) => setPortraitGroupName(event.target.value)} placeholder="留空自动生成StarCanvas-时间" /></label>
       <label>真人回调 URL<input value={realCallbackUrl} onChange={(event) => setRealCallbackUrl(event.target.value)} placeholder="https://.../tianji/callback" /></label>
       <label>人像任务 ID<input value={portraitTaskId} onChange={(event) => { setPortraitTaskId(event.target.value); void wanjuanTianjiStorageSet({ tianjiSeedancePortraitTaskId: event.target.value }); }} placeholder="创建组后自动填写；也可手动填写" /></label>
       <label>BytedToken<input value={bytedToken} onChange={(event) => { setBytedToken(event.target.value); void wanjuanTianjiStorageSet({ tianjiSeedancePortraitBytedToken: event.target.value }); }} placeholder="真人认证回调返回" /></label>

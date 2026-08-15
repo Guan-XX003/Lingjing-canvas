@@ -395,7 +395,7 @@ function createCloudPromptService(options = {}) {
     if (operation === "bootstrap" && !context.authenticated) {
       return { ok: true, authenticated: false, account: null, workspaces: [], mock: mockEnabled };
     }
-    if (!context.authenticated) throw new AccountRequestError("请先登录万卷灵境账号", { status: 401, code: "AUTH_REQUIRED" });
+    if (!context.authenticated) throw new AccountRequestError("请先登录StarCanvas账号", { status: 401, code: "AUTH_REQUIRED" });
     if (operation === "bootstrap" || operation === "workspace.list") {
       try {
         const response = await request(`/prompt-workspaces${encodeQuery({ cursor: payload.cursor })}`, { method: "GET" });

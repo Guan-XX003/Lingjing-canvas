@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, "..");
 const pkg = require(path.join(root, "package.json"));
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
-assert.equal(pkg.build.artifactName, `万卷灵境-${pkg.version}-${"${arch}"}.${"${ext}"}`);
+assert.equal(pkg.build.artifactName, `StarCanvas-${pkg.version}-${"${arch}"}.${"${ext}"}`);
 assert.equal(pkg.build.mac.extendInfo.CFBundleShortVersionString, pkg.version);
 assert.equal(pkg.build.mac.extendInfo.CFBundleVersion, pkg.version);
 

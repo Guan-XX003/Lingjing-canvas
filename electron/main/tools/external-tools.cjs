@@ -481,7 +481,7 @@ function normalizeManifestList(value) {
 
 function assertToolPackManifest(manifest) {
   const protocol = String(manifest.protocol || manifest.type || "").trim();
-  if (protocol && protocol !== "wanjuan-toolpack") throw new Error("这不是万卷灵境离线工具包。");
+  if (protocol && protocol !== "wanjuan-toolpack") throw new Error("这不是StarCanvas离线工具包。");
   const platforms = normalizeManifestList(manifest.platforms || manifest.platform);
   const arches = normalizeManifestList(manifest.arches || manifest.arch);
   if (platforms.length && !platforms.includes(PLATFORM_KEY)) {
@@ -729,7 +729,7 @@ async function importExtensionToolPack(sourcePath) {
     });
     return {
       ok: true,
-      name: manifest.name || "万卷灵境离线工具包",
+      name: manifest.name || "StarCanvas离线工具包",
       version: manifest.version || "",
       platform: PLATFORM_KEY,
       arch: ARCH_KEY,
@@ -796,7 +796,7 @@ finish() {
   if [ "$code" -eq 0 ]; then
     /bin/date -u '+{"ok":true,"completedAt":"%Y-%m-%dT%H:%M:%SZ"}' > "$MARKER"
     echo ""
-    echo "Qwen-TTS 依赖安装完成，万卷灵境会继续安装模型环境。"
+    echo "Qwen-TTS 依赖安装完成，StarCanvas会继续安装模型环境。"
   else
     /bin/date -u '+{"ok":false,"completedAt":"%Y-%m-%dT%H:%M:%SZ"}' > "$MARKER"
     echo ""
@@ -809,7 +809,7 @@ finish() {
 trap finish EXIT
 set -e
 
-echo "万卷灵境 Qwen-TTS 依赖安装脚本"
+echo "StarCanvas Qwen-TTS 依赖安装脚本"
 echo "缺少依赖：${missing.join(", ") || "未知"}"
 echo "开始时间：$(date)"
 echo ""

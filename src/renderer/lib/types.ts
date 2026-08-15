@@ -1,5 +1,5 @@
 /**
- * 万卷灵境渲染层核心领域类型（历史入口）。
+ * StarCanvas渲染层核心领域类型（历史入口）。
  *
  * 共享数据类型（ApiConfig / GlobalTask / ProtocolConfig / 节点 / 连线 / 资源等）已统一到
  * `./app-types.ts` 作为单一源头，这里重新导出；CanvasNode / CanvasEdge / ResourceItem

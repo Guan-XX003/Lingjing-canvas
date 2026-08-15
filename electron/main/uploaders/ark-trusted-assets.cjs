@@ -93,7 +93,7 @@ function normalizeArkTrustedAssetConfig(payload = {}) {
   const secretAccessKey = String(tos.secretAccessKey || tos.secretKey || ark.secretAccessKey || "").trim();
   const projectName = String(ark.projectName || "default").trim() || "default";
   const groupId = String(ark.assetGroupId || ark.groupId || "").trim();
-  const groupName = String(ark.assetGroupName || "万卷灵境可信素材").trim() || "万卷灵境可信素材";
+  const groupName = String(ark.assetGroupName || "StarCanvas可信素材").trim() || "StarCanvas可信素材";
   const region = String(ark.region || "cn-beijing").trim() || "cn-beijing";
   if (!accessKeyId || !secretAccessKey) throw new Error("请先在上传与直链中填写火山 TOS AccessKey 和 SecretKey");
   if (!String(tos.bucket || "").trim()) throw new Error("请先在上传与直链中填写火山 TOS Bucket");
@@ -240,7 +240,7 @@ function createArkTrustedAssetService({
       if (signal?.aborted) throw new Error("可信素材审核已取消");
       const result = await callArkAssetsApi("CreateAssetGroup", {
         Name: config.groupName,
-        Description: "万卷灵境 Seedance 参考图可信素材",
+        Description: "StarCanvas Seedance 参考图可信素材",
         GroupType: "AIGC",
         ProjectName: config.projectName,
       }, config, fetchImpl, now());

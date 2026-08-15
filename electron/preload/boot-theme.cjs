@@ -187,7 +187,7 @@ function installBootStabilityStyle() {
       splash.setAttribute("role", "alert");
       splash.innerHTML = `
         <div class="wanjuan-boot-recovery">
-          <div class="wanjuan-boot-recovery-title">万卷灵境暂未准备完成</div>
+          <div class="wanjuan-boot-recovery-title">StarCanvas暂未准备完成</div>
           <div class="wanjuan-boot-recovery-message">${String(message || "请重新加载后再试").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char])}</div>
           <button type="button" class="wanjuan-boot-retry">重新加载</button>
         </div>`;
@@ -230,7 +230,7 @@ function installBootStabilityStyle() {
             <div class="wanjuan-scroll-roll right"></div>
           </div>
           <div class="wanjuan-scroll-copy">
-            <div class="wanjuan-scroll-title">万卷灵境</div>
+            <div class="wanjuan-scroll-title">StarCanvas</div>
           </div>
         </div>`;
       const mintVineHTML = `<span class="mint-halo h1"></span><span class="mint-halo h2"></span><span class="mint-thread t1"></span><span class="mint-thread t2"></span><span class="mint-thread t3"></span><span class="mint-dew d1"></span><span class="mint-dew d2"></span><span class="mint-dew d3"></span><span class="mint-dew d4"></span><svg class="mint-vine-scene" viewBox="0 0 620 270" aria-hidden="true"><path class="mint-vine-main vine-left" d="M166 136 C130 132 92 116 78 91 C66 70 82 49 106 57 C129 65 126 91 105 94 C88 96 78 87 77 74"/><path class="mint-vine-main vine-right" d="M454 136 C490 132 528 116 542 91 C554 70 538 49 514 57 C491 65 494 91 515 94 C532 96 542 87 543 74"/><path class="mint-vine-main vine-left-low" d="M168 142 C132 154 98 178 85 201 C73 224 94 241 116 228 C137 216 128 190 105 194 C90 197 84 208 89 219"/><path class="mint-vine-main vine-right-low" d="M452 142 C488 154 522 178 535 201 C547 224 526 241 504 228 C483 216 492 190 515 194 C530 197 536 208 531 219"/><path class="mint-vine-branch branch-left-top" d="M138 126 C126 103 136 82 158 72"/><path class="mint-vine-branch branch-right-top" d="M482 126 C494 103 484 82 462 72"/><path class="mint-vine-branch branch-left-bottom" d="M142 154 C126 171 126 193 144 209"/><path class="mint-vine-branch branch-right-bottom" d="M478 154 C494 171 494 193 476 209"/><path class="mint-vine-curl curl-top" d="M310 80 C304 55 332 42 346 62 C359 81 331 98 316 82"/><path class="mint-vine-curl curl-bottom" d="M310 190 C317 217 286 229 273 207 C263 188 291 174 306 191"/></svg>`;
@@ -332,7 +332,7 @@ function installBootStabilityStyle() {
           const rootRect = appRoot?.getBoundingClientRect?.();
           const hasStableShell =
             document.readyState === "complete" &&
-            /(灵境画布|万卷灵境)/.test(text) &&
+            /StarCanvas/.test(text) &&
             /资源/.test(text) &&
             /智能体/.test(text) &&
             /设置/.test(text) &&

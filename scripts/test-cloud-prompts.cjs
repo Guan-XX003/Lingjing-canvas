@@ -9,7 +9,7 @@ const electronTemporaryUserData = electronApp
   ? fs.mkdtempSync(path.join(os.tmpdir(), "wanjuan-cloud-prompt-mock-electron-"))
   : "";
 if (electronApp) {
-  electronApp.setName("万卷灵境");
+  electronApp.setName("StarCanvas");
   electronApp.setPath("userData", electronTemporaryUserData);
 }
 

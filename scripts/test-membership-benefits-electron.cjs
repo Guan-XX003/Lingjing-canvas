@@ -125,7 +125,7 @@ async function run() {
     await waitFor("!!document.querySelector('.wanjuan-membership-dialog')", "会员权益弹窗");
     const dialogText = await evaluate("document.querySelector('.wanjuan-membership-dialog')?.innerText || ''");
     for (const expected of [
-      "万卷会员",
+      "StarCanvas会员",
       "19.9",
       "/月",
       "内测开放",

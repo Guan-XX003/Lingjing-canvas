@@ -1,12 +1,12 @@
-# Lingjing Canvas by Wanjuan
+# StarCanvas by Wanjuan
 
 <div align="center">
 
-![Lingjing Canvas](../docs/screenshots/01-canvas.png)
+![StarCanvas](../docs/screenshots/01-canvas.png)
 
 **Desktop Canvas Application for AI Creation Workflow**
 
-[![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![Version](https://img.shields.io/badge/version-1.4.5-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-lightgrey.svg)](#installation)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange.svg)](../LICENSE)
 
@@ -16,9 +16,9 @@
 
 ---
 
-## 🌟 What is Lingjing Canvas?
+## 🌟 What is StarCanvas?
 
-Lingjing Canvas is a powerful local desktop AI creation workbench designed for modern AI creators. It integrates text, images, videos, audio, agents, and project materials into a unified canvas environment, making it easy to build, manage, and optimize complete AI generation pipelines.
+StarCanvas is a powerful local desktop AI creation workbench designed for modern AI creators. It integrates text, images, videos, audio, agents, and project materials into a unified canvas environment, making it easy to build, manage, and optimize complete AI generation pipelines.
 
 ### 🎯 Core Values
 
@@ -88,8 +88,8 @@ Project switching, group management, import/export, backup center, and cross-dev
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
-| macOS | Apple Silicon (arm64) | [Wanjuan-Lingjing-1.3.5-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [Wanjuan-Lingjing-1.3.5-x64.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.5-arm64.dmg](../../releases/latest) |
+| Windows | x64 | [StarCanvas-1.4.5-x64.exe](../../releases/latest) |
 
 ---
 
@@ -103,8 +103,8 @@ Project switching, group management, import/export, backup center, and cross-dev
 
 ```bash
 # Clone repository
-git clone https://github.com/Guan-XX003/Lingjing-canvas.git
-cd Lingjing-canvas
+git clone https://github.com/Guan-XX003/StarCanvas.git
+cd StarCanvas
 
 # Install dependencies
 npm install
@@ -151,7 +151,7 @@ Build artifacts output to `release/` directory.
 
 ## 📋 Latest Updates
 
-### v1.3.5 (2026-06-29)
+### v1.4.5 (2026-06-29)
 - 🌐 Added an official website button next to update checking
 - 🛡️ Packaged builds now ignore development user-data overrides
 
@@ -185,7 +185,7 @@ Build artifacts output to `release/` directory.
 
 ## 🔒 Data & Privacy
 
-Lingjing Canvas saves all project data, configurations, task records, and media materials **locally only**.
+StarCanvas saves all project data, configurations, task records, and media materials **locally only**.
 
 ### Data Storage
 - **macOS**: `~/Library/Application Support/wanjuan-lingjing/`

@@ -49,7 +49,7 @@ export function useRunConfigButlerBatch(deps: UseRunConfigButlerBatchDeps) {
 	              toolContext = buildConfigButlerToolContext(docText, docUrlForBatch, {
 	                apiUrl: String(targetApiConfig.url || ``).trim(),
 	              }),
-	              basePrompt = `你是“配置管家”的全局批量模式，负责根据 API 文档和模型列表，为每个模型生成可直接应用到万卷灵境的结构化配置。
+	              basePrompt = `你是“配置管家”的全局批量模式，负责根据 API 文档和模型列表，为每个模型生成可直接应用到StarCanvas的结构化配置。
 
 请阅读文档摘要，并对下面模型列表逐个判断类型和请求协议。输出严格 JSON，不要解释。
 

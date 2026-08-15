@@ -396,7 +396,7 @@ function createCloudPromptWorkspaceController(options = {}) {
   const sendTemplateToWorkspace = async (template, targetWorkspaceId) => {
     const target = state.workspaces.find((workspace) => workspace.id === String(targetWorkspaceId || ""));
     if (!state.authenticated || !state.account?.id) {
-      const error = new Error("请先登录万卷灵境账号");
+      const error = new Error("请先登录StarCanvas账号");
       error.code = "AUTH_REQUIRED";
       throw error;
     }
@@ -417,7 +417,7 @@ function createCloudPromptWorkspaceController(options = {}) {
   const copyTemplateToWorkspace = async (template, targetWorkspaceId) => {
     const target = state.workspaces.find((workspace) => workspace.id === String(targetWorkspaceId || ""));
     if (!state.authenticated || !state.account?.id) {
-      const error = new Error("请先登录万卷灵境账号");
+      const error = new Error("请先登录StarCanvas账号");
       error.code = "AUTH_REQUIRED";
       throw error;
     }

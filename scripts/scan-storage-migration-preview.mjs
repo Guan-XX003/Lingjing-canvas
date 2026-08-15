@@ -230,7 +230,7 @@ function snapshotRoot(root) {
 
 function markdown(report) {
   const lines = [
-    "# 万卷灵境旧项目存储迁移预览",
+    "# StarCanvas旧项目存储迁移预览",
     "",
     `生成时间：${report.generatedAt}`,
     "",

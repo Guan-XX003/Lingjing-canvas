@@ -197,7 +197,7 @@ export function WanJuanSettingsGenerationTab({
 	                                            className: `flex-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-all wanjuan-settings-control`,
 	                                            value: downloadDirectory,
 	                                            readOnly: true,
-	                                            placeholder: `默认保存到“下载/万卷灵境”`,
+	                                            placeholder: `默认保存到“下载/StarCanvas”`,
 	                                          }),
 	                                          jsx(`button`, {
 	                                            type: `button`,
@@ -227,7 +227,7 @@ export function WanJuanSettingsGenerationTab({
 	                                      }),
 	                                      jsx(`p`, {
 	                                        className: `text-[10px] text-gray-500 mt-1 wanjuan-settings-help`,
-	                                        children: `节点下载按钮会直接保存到此文件夹，不再跳转浏览器。留空时使用系统下载目录下的“万卷灵境”文件夹。`,
+	                                        children: `节点下载按钮会直接保存到此文件夹，不再跳转浏览器。留空时使用系统下载目录下的“StarCanvas”文件夹。`,
 	                                      }),
 	                                      jsxs(`div`, {
 	                                        className: `wanjuan-auto-download-row`,

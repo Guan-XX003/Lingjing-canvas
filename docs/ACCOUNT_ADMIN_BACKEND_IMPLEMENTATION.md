@@ -1,4 +1,4 @@
-# 万卷灵境账号与网站管理后台落地设计
+# StarCanvas账号与网站管理后台落地设计
 
 ## 0. 给后台开发会话的执行说明
 
@@ -12,13 +12,13 @@
 4. 邮箱验证码发送适配器及开发环境模拟适配器。
 5. Access Token、Refresh Token、轮换、撤销和 JWKS 验签能力。
 6. 自动化接口测试、权限测试和部署说明。
-7. 可供万卷灵境 App 联调的测试账号、邀请码和生产接口地址。
+7. 可供StarCanvas App 联调的测试账号、邀请码和生产接口地址。
 
 实现完成后请实际启动后台，通过测试和浏览器检查管理页面，不要在未经验证的情况下宣布完成。
 
 ## 1. 项目目标
 
-为万卷灵境桌面 App 提供可投入使用的账号管理模块，支持：
+为StarCanvas桌面 App 提供可投入使用的账号管理模块，支持：
 
 - 邮箱或手机号验证码注册、登录。
 - 邀请码控制内测注册。
@@ -44,7 +44,7 @@
 
 ```mermaid
 flowchart LR
-  App["万卷灵境桌面 App"] --> Account["公网账号模块\naccount.guancn.uk"]
+  App["StarCanvas桌面 App"] --> Account["公网账号模块\naccount.guancn.uk"]
   Admin["网站管理后台\nwanjuan-admin.guancn.uk"] --> DB[("PostgreSQL")]
   Account --> DB
   Account --> Redis[("Redis")]
@@ -675,7 +675,7 @@ enterprise 企业版       device_limit=20
 
 ### 11.3 App 联调测试
 
-使用万卷灵境源码运行：
+使用StarCanvas源码运行：
 
 ```bash
 WANJUAN_ACCOUNT_API_URL=https://account-staging.guancn.uk npm start
@@ -698,7 +698,7 @@ WANJUAN_ACCOUNT_API_URL=https://account-staging.guancn.uk npm start
 2. 部署账号模块到 `account-staging.guancn.uk`。
 3. 配置测试邮件供应商和 Redis。
 4. 完成接口测试和管理后台权限测试。
-5. 使用万卷灵境源码连接测试环境联调。
+5. 使用StarCanvas源码连接测试环境联调。
 6. 生成生产 JWT 密钥并放入 Secret Manager。
 7. 部署 `account.guancn.uk`，配置 TLS、WAF、限流和监控。
 8. 向 App 开发侧交付生产地址、JWKS 地址和测试结果。
@@ -735,7 +735,7 @@ WANJUAN_ACCOUNT_API_URL=https://account-staging.guancn.uk npm start
 9. 数据库不保存明文验证码、Refresh Token、邀请码或企业 API Key。
 10. 自动化测试全部通过，并附带接口测试结果和管理后台截图。
 
-## 15. 与万卷灵境 App 的衔接事项
+## 15. 与StarCanvas App 的衔接事项
 
 App 当前已经完成登录 UI、主进程安全存储、会话刷新和企业网关绑定。后台实现时不要要求 App 保存网站 Cookie，也不要把 Directus Token 返回 App。
 

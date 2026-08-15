@@ -1,8 +1,8 @@
-# 万卷灵境 App 邮箱账号生产化改造清单
+# StarCanvas App 邮箱账号生产化改造清单
 
 ## 0. 给 App 开发会话的执行说明
 
-请在万卷灵境 Claude 主线源码中直接实现本文档，不要修改正式版 App 和正式用户数据。开发和测试使用独立 `WANJUAN_TEST_USER_DATA_PATH`。
+请在StarCanvas Claude 主线源码中直接实现本文档，不要修改正式版 App 和正式用户数据。开发和测试使用独立 `WANJUAN_TEST_USER_DATA_PATH`。
 
 目标是让账号功能以“邮箱验证码”方式投入生产，并与 `https://account.guancn.uk` 对接。不得影响本地模式、画布项目、自有 API、模型配置、资源、智能体和工作空间。
 
@@ -82,7 +82,7 @@ WANJUAN_ACCOUNT_DEFAULT_API_URL=https://account.guancn.uk
 
 ### 4.1 问题
 
-当前 App 登录只发送固定名称“万卷灵境桌面端”，没有发送 `deviceFingerprint` 和 `platform`。真实 staging 联调中服务器记录的平台为 `unknown`，不同电脑可能被合并成同一台设备。
+当前 App 登录只发送固定名称“StarCanvas桌面端”，没有发送 `deviceFingerprint` 和 `platform`。真实 staging 联调中服务器记录的平台为 `unknown`，不同电脑可能被合并成同一台设备。
 
 ### 4.2 实现方式
 
@@ -129,8 +129,8 @@ WANJUAN_ACCOUNT_DEFAULT_API_URL=https://account.guancn.uk
 设备名称优先使用操作系统主机名，无法读取时使用：
 
 ```text
-Mac 上的万卷灵境
-Windows 上的万卷灵境
+Mac 上的StarCanvas
+Windows 上的StarCanvas
 ```
 
 主要文件：

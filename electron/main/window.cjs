@@ -190,7 +190,7 @@ function createMainWindow(baseUrl) {
           (() => {
             const root = document.getElementById('root');
             const text = (document.body?.innerText || '').replace(/\\s+/g, ' ').trim();
-            const hasMainNav = /(灵境画布|万卷灵境)/.test(text) && /资源/.test(text) && /智能体/.test(text) && /设置/.test(text);
+            const hasMainNav = /StarCanvas/.test(text) && /资源/.test(text) && /智能体/.test(text) && /设置/.test(text);
             const isLoading = /^Loading\\.\\.\\.$/.test(text) || text === 'Loading...';
             const rootRect = root?.getBoundingClientRect?.();
             return {
@@ -312,7 +312,7 @@ function createMainWindow(baseUrl) {
             return rect.width >= 8 && rect.height >= 8;
           };
           const visibleText = (document.body?.innerText || '').replace(/\\s+/g, ' ').trim();
-          const contentMarkers = /灵境画布|万卷灵境|资源|设置|任务清单|上传|空节点|点击配置|果汁|赞面包/.test(visibleText);
+          const contentMarkers = /StarCanvas|资源|设置|任务清单|上传|空节点|点击配置|果汁|赞面包/.test(visibleText);
           const structuralMarkers = Boolean(
             document.querySelector('.react-flow, .react-flow__pane, [data-testid], canvas, video, img, input, textarea, select')
           );

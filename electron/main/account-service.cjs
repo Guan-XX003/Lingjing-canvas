@@ -381,7 +381,7 @@ async function requestWithAccountAuth(baseUrl, pathname, options = {}) {
   if (!accessToken && readAccountState().session?.refreshTokenEncrypted) {
     await refreshAccountSession();
   }
-  if (!accessToken) throw new AccountRequestError("请先登录万卷灵境账号", { status: 401, code: "AUTH_REQUIRED" });
+  if (!accessToken) throw new AccountRequestError("请先登录StarCanvas账号", { status: 401, code: "AUTH_REQUIRED" });
   try {
     return await requestJson(baseUrl, pathname, { ...options, token: accessToken });
   } catch (error) {

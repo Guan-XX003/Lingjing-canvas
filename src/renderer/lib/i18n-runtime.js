@@ -13,7 +13,7 @@ const LANGUAGE_ALIASES = {
 const LANGUAGE_PACKS = {
   "zh-CN": {},
   "zh-TW": {
-    "灵境画布": "靈境畫布",
+    "StarCanvas": "StarCanvas",
     "资源": "資源",
     "智能体": "智慧體",
     "工作空间": "工作空間",
@@ -220,7 +220,7 @@ const LANGUAGE_PACKS = {
     "企业网关离线，未发送；重连后请重试": "企業網關離線，未傳送；重新連線後請重試",
     },
   "en-US": {
-    "灵境画布": "Canvas",
+    "StarCanvas": "StarCanvas",
     "资源": "Assets",
     "智能体": "Agents",
     "工作空间": "Workspace",

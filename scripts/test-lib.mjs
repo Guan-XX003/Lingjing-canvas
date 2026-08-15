@@ -1357,7 +1357,7 @@ async function run() {
   check("tianji portrait endpoints stay on relay api namespace", Object.values(WANJUAN_TIANJI_PORTRAIT_ENDPOINTS).every((endpoint) => endpoint.startsWith("/api/cut/model/")), true);
   check("tianji portrait task id parser", wanjuanTianjiFindPortraitTaskId({ data: { task_id: "portrait_mock_001" } }), "portrait_mock_001");
   check("tianji portrait task params", wanjuanBuildTianjiPortraitTaskParams("portrait_mock_001"), { task_id: "portrait_mock_001", execute_id: "portrait_mock_001" });
-  check("tianji portrait group default name is readable", wanjuanTianjiDefaultPortraitGroupName(new Date("2026-08-12T12:34:56").getTime()), "万卷灵境-20260812123456");
+  check("tianji portrait group default name is readable", wanjuanTianjiDefaultPortraitGroupName(new Date("2026-08-12T12:34:56").getTime()), "StarCanvas-20260812123456");
   check("tianji legacy material id aliases are supported", wanjuanTianjiPortraitAssetIdFromItem({ MaterialId: "asset-legacy-001" }), "asset-legacy-001");
   const nestedTianjiPortrait = {
     data: {

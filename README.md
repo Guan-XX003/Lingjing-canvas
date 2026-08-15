@@ -1,12 +1,12 @@
-# 万卷灵境 Lingjing Canvas
+# StarCanvas
 
 <div align="center">
 
-![万卷灵境](docs/screenshots/01-canvas.png)
+![StarCanvas](docs/screenshots/01-canvas.png)
 
 **面向 AI 创作流程的桌面画布应用**
 
-[![版本](https://img.shields.io/badge/版本-1.4.4-blue.svg)](https://github.com/Guan-XX003/Lingjing-canvas/releases)
+[![版本](https://img.shields.io/badge/版本-1.4.5-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
 [![平台](https://img.shields.io/badge/平台-macOS%20|%20Windows-lightgrey.svg)](#安装)
 [![许可](https://img.shields.io/badge/许可-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 
@@ -18,7 +18,7 @@
 
 ## ✨ 项目简介
 
-万卷灵境是一款强大的本地桌面 AI 创作工作台，专为现代 AI 创作者设计。它将文本、图像、视频、音频、智能体和项目资料整合到一个统一的画布环境中，让你轻松构建、管理和优化完整的 AI 生成链路。
+StarCanvas是一款强大的本地桌面 AI 创作工作台，专为现代 AI 创作者设计。它将文本、图像、视频、音频、智能体和项目资料整合到一个统一的画布环境中，让你轻松构建、管理和优化完整的 AI 生成链路。
 
 ### 🎯 核心价值
 
@@ -40,10 +40,10 @@
 
 ## 🚀 代表功能
 
-### 📐 节点式灵境画布
+### 📐 节点式画布
 基于 XYFlow 的可视化编辑器，支持文本、图片、视频、音频、音乐等多种创作节点，轻松搭建复杂的多步骤 AI 工作流。
 
-![灵境画布](docs/screenshots/01-canvas.png)
+![StarCanvas](docs/screenshots/01-canvas.png)
 
 ### 📚 资源库
 集中查看和管理所有生成与导入的素材，支持类型筛选、来源筛选、收藏、下载和一键复用到画布。
@@ -103,10 +103,10 @@
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [wanjuan-lingjing-1.4.4-arm64.dmg](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-release/wanjuan-lingjing-1.4.4-arm64.dmg) |
-| Windows | x64 | [wanjuan-lingjing-1.4.4-x64.exe](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-release/wanjuan-lingjing-1.4.4-x64.exe) |
+| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.5-arm64.dmg](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/StarCanvas-1.4.5-arm64.dmg) |
+| Windows | x64 | [StarCanvas-1.4.5-x64.exe](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/StarCanvas-1.4.5-x64.exe) |
 
-CLI / MCP 独立下载：[wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-release/wanjuan-cli-1.4.4.zip)
+CLI / MCP 独立下载：[starcanvas-cli-1.4.5.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/starcanvas-cli-1.4.5.zip)
 
 ### 安装说明
 
@@ -132,8 +132,8 @@ CLI / MCP 独立下载：[wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/L
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Guan-XX003/Lingjing-canvas.git
-cd Lingjing-canvas
+git clone https://github.com/Guan-XX003/StarCanvas.git
+cd StarCanvas
 
 # 安装依赖
 npm install
@@ -185,7 +185,7 @@ npm run build:win:x86
 
 ## 📋 更新记录
 
-### 最新版本：v1.4.4（2026-08-14）
+### 最新版本：v1.4.5（2026-08-15）
 
 - 修复生成图片节点编辑保存时报错、旧缩略图覆盖编辑结果及下游引用旧图的问题
 - 编辑区域支持普通鼠标滚轮直接缩放图片，编辑结果会落盘为项目本地素材
@@ -241,7 +241,7 @@ npm run build:win:x86
 
 ## 🔒 数据与隐私
 
-万卷灵境在本地保存所有项目数据、配置、任务记录和媒体素材，**不会上传任何用户数据到云端**。
+StarCanvas在本地保存所有项目数据、配置、任务记录和媒体素材，**不会上传任何用户数据到云端**。
 
 ### 数据存储位置
 - **macOS**: `~/Library/Application Support/wanjuan-lingjing/`
@@ -295,6 +295,6 @@ npm run build:win:x86
 
 **Made with ❤️ for AI Creators**
 
-[返回顶部](#万卷灵境-lingjing-canvas)
+[返回顶部](#starcanvas)
 
 </div>
