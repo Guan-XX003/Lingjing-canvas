@@ -45,10 +45,10 @@ StarCanvas is a powerful local desktop AI creation workbench that integrates tex
 
 ### Design Suggestions for Social Card
 1. **Background**: Use warm cream (#F7F4EF) from the app's theme
-2. **Main Visual**: Screenshot of the canvas with nodes and connections
+2. **Main Visual**: Current StarCanvas canvas screenshot with text, image, and video nodes
 3. **Title**: "StarCanvas" in large serif font
 4. **Tagline**: "AI 创作流程的桌面画布 | Desktop Canvas for AI Workflow"
-5. **Badge**: Version 1.3.2, Platform icons (macOS, Windows)
+5. **Badge**: Version 1.4.5, Platform icons (macOS, Windows)
 6. **Footer**: GitHub username or project URL
 
 ### File Location
@@ -65,7 +65,7 @@ https://github.com/Guan-XX003/StarCanvas
 
 - [x] Add description
 - [x] Add topics/tags
-- [ ] Upload social preview image
+- [x] Add current UI social preview image at `docs/social-preview.png`
 - [ ] Enable Issues
 - [ ] Enable Discussions (optional)
 - [ ] Add README badges

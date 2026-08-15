@@ -80,6 +80,16 @@ Complete video generation pipeline:
 ### 💾 Project & Backup
 Project switching, group management, import/export, backup center, and cross-device migration to ensure data security for long-term projects.
 
+### 👤 Account & Membership
+Start creating locally without signing in. After signing in, manage cloud prompt libraries, enterprise gateways, and membership benefits.
+
+![My Account](../docs/screenshots/04-account.png)
+
+### 🎨 Appearance & General Settings
+Customize theme, language, and application-wide preferences.
+
+![Appearance & General](../docs/screenshots/05-appearance.png)
+
 ---
 
 ## 📥 Installation

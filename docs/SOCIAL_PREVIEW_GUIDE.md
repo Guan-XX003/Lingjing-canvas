@@ -110,7 +110,7 @@
 
 1. **创建画布**: 1280 x 640px，背景色 #F7F4EF
 2. **添加截图**: 
-   - 从 `docs/screenshots/` 中选择最佳截图
+   - 从 `docs/screenshots/` 中选择当前版本的脱敏截图（当前主图为 `01-canvas.png`）
    - 添加轻微阴影增加层次感
 3. **添加文字**:
    - 标题: 48-60px，衬线字体
@@ -155,7 +155,7 @@
 
 ## 📤 上传步骤
 
-1. 将制作好的图片保存为 `social-preview.png`
+1. 将制作好的图片保存为 `social-preview.png`（当前版本为 1280x640）
 2. 上传到仓库的 `docs/` 目录
 3. 在 GitHub 仓库设置中：
    - Settings → General → Social preview

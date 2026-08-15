@@ -48,12 +48,8 @@ StarCanvas是一款强大的本地桌面 AI 创作工作台，专为现代 AI �
 ### 📚 资源库
 集中查看和管理所有生成与导入的素材，支持类型筛选、来源筛选、收藏、下载和一键复用到画布。
 
-![资源库](docs/screenshots/02-resources.png)
-
 ### 🤖 智能体工作台
 为不同任务创建专属 AI 智能体，绑定特定模型、角色设定和知识库，通过对话整理创意、优化提示词。
-
-![智能体](docs/screenshots/03-agents.png)
 
 ### ✅ 任务清单
 统一追踪所有异步生成任务，实时查看进度、刷新结果、处理失败任务，保持创作流程井然有序。
@@ -76,8 +72,6 @@ StarCanvas是一款强大的本地桌面 AI 创作工作台，专为现代 AI �
 ### ⚙️ 模型与 API 配置
 通过配置管家维护 Base URL、API Key、模型列表和协议映射，灵活适配各类中转站和模型服务。
 
-![模型配置](docs/screenshots/05-config-butler.png)
-
 ### 🎬 即梦 / Seedance 工作流
 完整的视频生成链路，支持：
 - 参考图/参考视频上传
@@ -88,12 +82,15 @@ StarCanvas是一款强大的本地桌面 AI 创作工作台，专为现代 AI �
 ### 💾 项目与备份
 支持项目切换、分组管理、导入导出、备份中心和跨设备迁移，保障长期项目的数据安全。
 
-![项目备份](docs/screenshots/06-data-backup.png)
+### 👤 账号与会员
+本地模式可直接开始创作；登录后可使用云端提示词库、企业网关和会员权益管理。
+
+![我的账号](docs/screenshots/04-account.png)
 
 ### 🎨 外观与主题
 自定义主题、语言（简体中文、繁体中文、English）、个性化描述和界面设置。
 
-![设置界面](docs/screenshots/04-settings.png)
+![外观与通用](docs/screenshots/05-appearance.png)
 
 ---
 
