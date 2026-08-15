@@ -4210,7 +4210,7 @@ Suno 音乐生成`,
                   className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-canvas`,
                   children: `🎨`,
                 }), jsx(`span`, {
-                  children: wanjuanT(`StarCanvas`),
+                  children: wanjuanT(`画布`),
                 })],
               }),
             }),
