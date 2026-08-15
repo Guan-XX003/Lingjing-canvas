@@ -17,7 +17,7 @@
 **推送状态**: ✅ 已成功推送到 GitHub
 
 ### 2. 截图更新 ✅ 已提交到本地
-- ✅ **01-canvas.png** - 灵境画布界面（198KB）
+- ✅ **01-canvas.png** - StarCanvas界面（198KB）
 - ✅ **02-resources.png** - 资源库界面（191KB）
 - ✅ **03-agents.png** - 智能体界面（291KB）
 - ✅ **04-settings.png** - 外观与设置（233KB）
@@ -66,11 +66,11 @@ git push origin main
 
 ## 🎯 GitHub 仓库配置建议
 
-访问: https://github.com/Guan-XX003/Lingjing-canvas/settings
+访问: https://github.com/Guan-XX003/StarCanvas/settings
 
 ### 1. 更新仓库描述
 ```
-🎨 万卷灵境 - 面向 AI 创作流程的桌面画布应用 | Desktop Canvas Application for AI Creation Workflow
+🎨 StarCanvas - 面向 AI 创作流程的桌面画布应用 | Desktop Canvas Application for AI Creation Workflow
 ```
 
 ### 2. 添加主题标签
@@ -90,7 +90,7 @@ vite, typescript, zustand
 ## 🎉 完成效果
 
 访问仓库主页查看效果：
-🔗 https://github.com/Guan-XX003/Lingjing-canvas
+🔗 https://github.com/Guan-XX003/StarCanvas
 
 **已实现**:
 - ✅ 现代化的 README 设计

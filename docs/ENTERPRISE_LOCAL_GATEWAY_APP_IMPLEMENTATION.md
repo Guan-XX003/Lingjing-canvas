@@ -1,9 +1,9 @@
-# 万卷灵境 App 企业本机网关落地方案
+# StarCanvas App 企业本机网关落地方案
 
 ## 1. 文档状态
 
 - 目标版本：企业私密空间第一版
-- 适用主线：Claude 工作区 `Lingjing-canvas`
+- 适用主线：Claude 工作区 `StarCanvas`
 - 当前状态：App 第三阶段基础链路已实现；标准协议执行器、远端取消和管理 UI 仍待后续阶段
 - 配套服务器文档：`ENTERPRISE_LOCAL_GATEWAY_SERVER_IMPLEMENTATION.md`
 

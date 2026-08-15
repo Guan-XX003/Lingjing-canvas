@@ -60,7 +60,7 @@ export function readAutomationInfos() {
 export function readAutomationInfo() {
   const info = readAutomationInfos()[0];
   if (info) return info;
-  throw new Error("找不到运行中的万卷灵境，请先启动应用");
+  throw new Error("找不到运行中的StarCanvas，请先启动应用");
 }
 
 async function requestWithInfo(info, method, endpoint, body, timeoutMs) {
@@ -86,7 +86,7 @@ async function requestWithInfo(info, method, endpoint, body, timeoutMs) {
 
 export async function wanjuanRequest(method, endpoint, body, options = {}) {
   const infos = readAutomationInfos();
-  if (!infos.length) throw new Error("找不到运行中的万卷灵境，请先启动应用");
+  if (!infos.length) throw new Error("找不到运行中的StarCanvas，请先启动应用");
   const timeoutMs = Math.max(1000, Number(options.timeoutMs || DEFAULT_REQUEST_TIMEOUT_MS));
   let lastConnectionError = null;
   for (const info of infos) {
@@ -105,7 +105,7 @@ export async function wanjuanRequest(method, endpoint, body, options = {}) {
       throw error;
     }
   }
-  throw new Error(lastConnectionError ? "万卷灵境自动化端点不可用，已自动跳过失效凭据；请重启应用后重试" : "没有可用的万卷灵境自动化端点；请启动或重启应用");
+  throw new Error(lastConnectionError ? "StarCanvas自动化端点不可用，已自动跳过失效凭据；请重启应用后重试" : "没有可用的StarCanvas自动化端点；请启动或重启应用");
 }
 
 export async function waitForTask(id, options = {}) {

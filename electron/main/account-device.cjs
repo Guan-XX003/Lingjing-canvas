@@ -13,9 +13,9 @@ function normalizeAccountPlatform(value = process.platform) {
 }
 
 function fallbackDeviceName(platform) {
-  if (platform === "darwin") return "Mac 上的万卷灵境";
-  if (platform === "win32") return "Windows 上的万卷灵境";
-  return "万卷灵境桌面端";
+  if (platform === "darwin") return "Mac 上的StarCanvas";
+  if (platform === "win32") return "Windows 上的StarCanvas";
+  return "StarCanvas桌面端";
 }
 
 function sanitizeDeviceName(value, platform) {

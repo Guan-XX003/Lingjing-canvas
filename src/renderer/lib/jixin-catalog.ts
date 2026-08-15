@@ -1,7 +1,7 @@
 /**
  * 极心（Jixin）内置模型目录 —— Seedance 部分。
  *
- * 万卷灵境接入极心一站式 API 时的内置候选清单：Seedance 视频模型、
+ * StarCanvas接入极心一站式 API 时的内置候选清单：Seedance 视频模型、
  * 时长、分辨率与画幅比例。设置面板与天玑（Tianji）Seedance 默认配置均以此为底。
  *
  * 另含 wanjuanMergeModelText：把若干模型清单（数组或以换行/逗号/顿号分隔的文本）

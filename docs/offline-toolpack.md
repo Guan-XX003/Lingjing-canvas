@@ -1,4 +1,4 @@
-# 万卷灵境离线工具包规范
+# StarCanvas离线工具包规范
 
 离线工具包用于把 Qwen-TTS、Real-ESRGAN 等体积较大的本地工具预先打包好，再由主软件导入到应用数据目录。主软件保持轻量，工具包按平台和架构单独分发。
 
@@ -24,7 +24,7 @@ zip 可以直接包含 manifest，也可以只有一个顶层目录，manifest �
 ```json
 {
   "protocol": "wanjuan-toolpack",
-  "name": "万卷灵境本地工具包 macOS arm64",
+  "name": "StarCanvas本地工具包 macOS arm64",
   "version": "2026.06.22",
   "platform": "darwin",
   "arch": "arm64",

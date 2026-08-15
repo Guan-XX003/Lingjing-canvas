@@ -1,8 +1,8 @@
 {
   "name": "wanjuan-lingjing",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "private": true,
-  "description": "万卷灵境 - macOS AI 创作画布桌面应用",
+  "description": "StarCanvas - macOS AI 创作画布桌面应用",
   "author": "",
   "main": "electron/main/index.cjs",
   "bin": {
@@ -86,8 +86,8 @@
   },
   "build": {
     "appId": "com.wanjuan.lingjing",
-    "productName": "万卷灵境",
-    "artifactName": "万卷灵境-1.4.4-${arch}.${ext}",
+    "productName": "StarCanvas",
+    "artifactName": "StarCanvas-1.4.5-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -96,20 +96,29 @@
       "electron/**/*"
     ],
     "extraResources": [
-      { "from": "bin", "to": "wanjuan-cli" },
-      { "from": "docs/AUTOMATION_CLI.md", "to": "wanjuan-cli/README.md" }
+      {
+        "from": "bin",
+        "to": "wanjuan-cli"
+      },
+      {
+        "from": "docs/AUTOMATION_CLI.md",
+        "to": "wanjuan-cli/README.md"
+      }
     ],
     "afterPack": "scripts/copy-platform-tool-runtime.cjs",
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
       "extendInfo": {
-        "CFBundleShortVersionString": "1.4.4",
-        "CFBundleVersion": "1.4.4"
+        "CFBundleShortVersionString": "1.4.5",
+        "CFBundleVersion": "1.4.5"
       }
     },
     "win": {
-      "target": ["nsis", "zip"]
+      "target": [
+        "nsis",
+        "zip"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -117,7 +126,7 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "万卷灵境",
+      "shortcutName": "StarCanvas",
       "deleteAppDataOnUninstall": true,
       "include": "build/installer.nsh"
     }

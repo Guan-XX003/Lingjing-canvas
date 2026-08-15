@@ -1,18 +1,18 @@
-# 万卷灵境 CLI / MCP 自动化
+# StarCanvas CLI / MCP 自动化
 
 ## 独立下载
 
 不安装桌面应用时，可下载与本版本匹配的 CLI/MCP 压缩包：
 
-[下载 wanjuan-cli-1.4.4.zip](https://github.com/Guan-XX003/Lingjing-canvas/releases/download/v1.4.4-release/wanjuan-cli-1.4.4.zip)
+[下载 starcanvas-cli-1.4.5.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/starcanvas-cli-1.4.5.zip)
 
 压缩包只包含 CLI/MCP 程序与本说明，不包含账号会话、API Key 或用户数据。
 
-万卷灵境启动后会在当前用户数据目录创建一次性本机自动化凭据。CLI 和 MCP 只连接 `127.0.0.1`，不会读取或输出模型 API Key、账号 Token 或完整应用配置。
+StarCanvas启动后会在当前用户数据目录创建一次性本机自动化凭据。CLI 和 MCP 只连接 `127.0.0.1`，不会读取或输出模型 API Key、账号 Token 或完整应用配置。
 
 ## 使用条件
 
-- 万卷灵境桌面 App 必须正在运行，并且画布已经加载完成。
+- StarCanvas桌面 App 必须正在运行，并且画布已经加载完成。
 - 外部运行 CLI/MCP 需要 Node.js 18 或更高版本。
 - 每次 App 启动都会生成新的随机 bearer token；异常退出留下的旧凭据会在下次启动时清理，CLI 也会自动跳过死进程、旧端口和失效鉴权。
 
@@ -23,10 +23,10 @@ CLI/MCP 作为真实文件随安装包放在 `resources/wanjuan-cli`，不会只
 macOS：
 
 ```bash
-node "/Applications/万卷灵境.app/Contents/Resources/wanjuan-cli/wanjuan.mjs" status
+node "/Applications/StarCanvas.app/Contents/Resources/wanjuan-cli/wanjuan.mjs" status
 ```
 
-Windows：在万卷灵境安装目录下使用：
+Windows：在StarCanvas安装目录下使用：
 
 ```powershell
 node ".\resources\wanjuan-cli\wanjuan.mjs" status
@@ -113,7 +113,7 @@ npm run wanjuan:mcp
     "wanjuan-lingjing": {
       "command": "node",
       "args": [
-        "/Applications/万卷灵境.app/Contents/Resources/wanjuan-cli/wanjuan-mcp.mjs"
+        "/Applications/StarCanvas.app/Contents/Resources/wanjuan-cli/wanjuan-mcp.mjs"
       ]
     }
   }

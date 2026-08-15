@@ -21,9 +21,9 @@ function findPackagedApp() {
   const explicit = process.env.WANJUAN_PACKAGED_APP;
   const candidates = [
     explicit,
-    path.join(projectRoot, "release", "mac-arm64", "万卷灵境.app"),
-    path.join(projectRoot, "release", "mac", "万卷灵境.app"),
-    path.join(projectRoot, "release", "mac-universal", "万卷灵境.app"),
+    path.join(projectRoot, "release", "mac-arm64", "StarCanvas.app"),
+    path.join(projectRoot, "release", "mac", "StarCanvas.app"),
+    path.join(projectRoot, "release", "mac-universal", "StarCanvas.app"),
   ].filter(Boolean);
   return candidates.find((candidate) => fs.existsSync(candidate)) || "";
 }
@@ -34,8 +34,8 @@ let cliRoot;
 if (mode === "packaged") {
   if (process.platform !== "darwin") throw new Error("当前打包版冒烟脚本仅在 macOS 运行；Windows 使用 build:win 后检查 resources/wanjuan-cli");
   const appBundle = findPackagedApp();
-  if (!appBundle) throw new Error("找不到打包后的万卷灵境.app，请先运行 npm run build");
-  command = path.join(appBundle, "Contents", "MacOS", "万卷灵境");
+  if (!appBundle) throw new Error("找不到打包后的StarCanvas.app，请先运行 npm run build");
+  command = path.join(appBundle, "Contents", "MacOS", "StarCanvas");
   appArgs = [];
   cliRoot = path.join(appBundle, "Contents", "Resources", "wanjuan-cli");
 } else {

@@ -507,10 +507,10 @@ function registerDesktopIpc() {
     const blocked = rejectUntrustedIpc(event, "wanjuan:choose-backup-file");
     if (blocked) return blocked;
     const result = await dialog.showOpenDialog({
-      title: String(payload?.title || "选择万卷备份 JSON"),
+      title: String(payload?.title || "选择StarCanvas备份 JSON"),
       properties: ["openFile"],
       filters: [
-        { name: "万卷备份 JSON", extensions: ["json"] },
+        { name: "StarCanvas备份 JSON", extensions: ["json"] },
         { name: "所有文件", extensions: ["*"] }
       ]
     });
@@ -918,11 +918,11 @@ function registerDesktopIpc() {
       // 安全：忽略渲染进程传入的任意路径（payload.path），一律由用户在系统对话框中选择。
       const win = BrowserWindow.fromWebContents(event.sender);
       const result = await dialog.showOpenDialog(win || undefined, {
-        title: "选择万卷灵境离线工具包",
+        title: "选择StarCanvas离线工具包",
         buttonLabel: "导入工具包",
         properties: ["openFile", "openDirectory"],
         filters: [
-          { name: "万卷灵境离线工具包", extensions: ["zip"] },
+          { name: "StarCanvas离线工具包", extensions: ["zip"] },
           { name: "所有文件", extensions: ["*"] }
         ]
       });

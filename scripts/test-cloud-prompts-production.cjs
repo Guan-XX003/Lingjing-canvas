@@ -25,7 +25,7 @@ if (path.basename(path.dirname(sourceSessionPath)) !== "wanjuan-ai-canvas-deskto
 
 const temporaryUserData = fs.mkdtempSync(path.join(os.tmpdir(), "wanjuan-cloud-prompt-production-"));
 fs.copyFileSync(sourceSessionPath, path.join(temporaryUserData, "account-session.json"));
-app.setName("万卷灵境");
+app.setName("StarCanvas");
 app.setPath("userData", temporaryUserData);
 
 let service;

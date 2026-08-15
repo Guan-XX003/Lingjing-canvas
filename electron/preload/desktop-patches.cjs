@@ -1687,7 +1687,7 @@ function installDesktopPatches() {
   };
   const workspaceOpenCanvas = () => {
     let canvasTab = Array.from(document.querySelectorAll(".wanjuan-app-nav-tab")).find((button) =>
-      /灵境画布/.test(button.textContent || "")
+      /StarCanvas/.test(button.textContent || "")
     );
     canvasTab?.click?.();
     document.documentElement.classList.remove("wanjuan-workspace-open");
@@ -2474,7 +2474,7 @@ function installDesktopPatches() {
   };
 
   const tianjiPortraitTaskId = (result) => tianjiFindDeepValue(result, ["task_id", "taskId", "execute_id", "executeId"]);
-  const tianjiDefaultPortraitGroupName = (now = Date.now()) => { const date = new Date(now); const pad = (value) => String(value).padStart(2, "0"); return `万卷灵境-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`; };
+  const tianjiDefaultPortraitGroupName = (now = Date.now()) => { const date = new Date(now); const pad = (value) => String(value).padStart(2, "0"); return `StarCanvas-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`; };
   const tianjiPortraitTaskParams = (taskId) => {
     const id = String(taskId || "").trim();
     if (!id) throw new Error("请填写人像任务 ID");
@@ -3008,7 +3008,7 @@ function installDesktopPatches() {
           <label>Sass ID<input data-tianji-field="sassId" value="${tianjiSettingsState.sassId}"></label>
           <label>真人组 ID<input data-tianji-field="liveGroupId" value="${tianjiGroupsState.LivenessFace || ""}"></label>
           <label>虚拟组 ID<input data-tianji-field="aigcGroupId" value="${tianjiGroupsState.AIGC || ""}"></label>
-          <label>素材组名称<input data-tianji-field="portraitGroupName" placeholder="留空自动生成万卷灵境-时间" value="${tianjiEscapeHtml(tianjiGroupNameState || tianjiDefaultPortraitGroupName())}"></label>
+          <label>素材组名称<input data-tianji-field="portraitGroupName" placeholder="留空自动生成StarCanvas-时间" value="${tianjiEscapeHtml(tianjiGroupNameState || tianjiDefaultPortraitGroupName())}"></label>
           <label>真人回调 URL<input data-tianji-field="callbackUrl" placeholder="https://.../tianji/callback"></label>
           <label>人像任务 ID<input data-tianji-field="portraitTaskId" placeholder="创建组后自动填写；也可手动填写" value="${tianjiEscapeHtml(tianjiPortraitTaskIdState)}"></label>
           <label>BytedToken<input data-tianji-field="bytedToken" placeholder="真人认证回调返回" value="${tianjiEscapeHtml(tianjiPortraitBytedTokenState)}"></label>

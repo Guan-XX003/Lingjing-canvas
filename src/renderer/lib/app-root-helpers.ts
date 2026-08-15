@@ -9,7 +9,7 @@ import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 export { compactGlobalTasks } from "./global-tasks";
 
-export const WANJUAN_RELEASE_NOTES_1_4_4 = `1.4.4：修复图片编辑保存报错、旧缩略图覆盖和下游引用旧图，编辑区域支持普通滚轮缩放。`;
+export const WANJUAN_RELEASE_NOTES_1_4_5 = `1.4.5：StarCanvas 品牌升级，保留本地数据与自动化兼容能力。`;
 
 export const membershipLimits = {
       FREE: {
@@ -34,7 +34,7 @@ export const membershipLimits = {
 
 export const wanjuanI18n = {
       "zh-TW": {
-        "灵境画布": "靈境畫布",
+        "StarCanvas": "StarCanvas",
         "资源": "資源",
         "智能体": "智慧體",
         "设置": "設定",
@@ -102,7 +102,7 @@ export const wanjuanI18n = {
         "设置已保存": "設定已儲存"
       },
       "en-US": {
-        "灵境画布": "Canvas",
+        "StarCanvas": "StarCanvas",
         "资源": "Assets",
         "智能体": "Agents",
         "设置": "Settings",

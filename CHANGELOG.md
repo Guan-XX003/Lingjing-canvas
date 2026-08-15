@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.5 - 2026-08-15
+
+- Rebranded the desktop application, installer, workspace UI, CLI documentation, and release metadata as StarCanvas.
+- Kept the existing bundle identifier, local data directories, and `wanjuan` automation commands for seamless upgrades.
+
 ## 1.4.4 - 2026-08-14
 
 - Fixed image editor save failures by preparing remote images through the desktop bridge and persisting edited results as project-local media.

@@ -2,10 +2,10 @@ const { app, BrowserWindow, dialog, Menu, shell } = require("./electron-refs.cjs
 const { appendDesktopLog, formatErrorMessage } = require("./logging.cjs");
 const { parse: parseYaml } = require("yaml");
 
-const RELEASES_API_URL = "https://api.github.com/repos/Guan-XX003/Lingjing-canvas/releases/latest";
-const RELEASES_PAGE_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest";
-const LATEST_MAC_YML_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/latest-mac.yml";
-const LATEST_WIN_YML_URL = "https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/latest.yml";
+const RELEASES_API_URL = "https://api.github.com/repos/Guan-XX003/StarCanvas/releases/latest";
+const RELEASES_PAGE_URL = "https://github.com/Guan-XX003/StarCanvas/releases/latest";
+const LATEST_MAC_YML_URL = "https://github.com/Guan-XX003/StarCanvas/releases/latest/download/latest-mac.yml";
+const LATEST_WIN_YML_URL = "https://github.com/Guan-XX003/StarCanvas/releases/latest/download/latest.yml";
 const DOWNLOAD_PAGE_URL = "https://lingjing.guancn.uk";
 const AUTO_CHECK_DELAY_MS = 6000;
 
@@ -153,13 +153,13 @@ function normalizeLatestYaml(text, arch = process.arch, platform = process.platf
     sha512: String(file?.sha512 || ""),
     size: Number(file?.size || 0),
     browser_download_url: file?.url
-      ? `https://github.com/Guan-XX003/Lingjing-canvas/releases/latest/download/${encodeURIComponent(file.url)}`
+      ? `https://github.com/Guan-XX003/StarCanvas/releases/latest/download/${encodeURIComponent(file.url)}`
       : ""
   }));
   const asset = selectDownloadAsset(assets, arch, platform);
   return {
     version,
-    name: `万卷灵境 v${version}`,
+    name: `StarCanvas v${version}`,
     notes: "",
     publishedAt: String(metadata?.releaseDate || ""),
     releaseUrl: RELEASES_PAGE_URL,
@@ -217,7 +217,7 @@ async function showUpdateAvailable(release) {
   ].filter(Boolean).join("\n");
   const result = await dialog.showMessageBox(getParentWindow(), {
     type: "info",
-    title: "发现万卷灵境新版本",
+    title: "发现StarCanvas新版本",
     message: `${release.name} 已发布`,
     detail,
     buttons: ["前往下载页", "查看发布说明", "稍后"],
@@ -237,7 +237,7 @@ async function showNoUpdate(currentVersion) {
     type: "info",
     title: "检查更新",
     message: "当前已是最新版本",
-    detail: `万卷灵境 ${currentVersion}`,
+    detail: `StarCanvas ${currentVersion}`,
     buttons: ["好"],
     defaultId: 0
   });

@@ -1732,12 +1732,12 @@ function WanJuanAppCanvas({
         if (createdTaskId) setAutomationJob(nodeId, { id: createdTaskId, status: "pending" });
         else setAutomationJob(nodeId, { status: "failed", errorMsg: "任务未创建；请检查应用内模型、接口配置和输入参数" });
       }).catch(() => {
-        setAutomationJob(nodeId, { status: "failed", errorMsg: "任务提交失败；请在万卷灵境任务列表查看详情" });
+        setAutomationJob(nodeId, { status: "failed", errorMsg: "任务提交失败；请在StarCanvas任务列表查看详情" });
       });
     };
     const waitForCanvasState = () => new Promise((resolve) => setTimeout(resolve, 80));
     const automation = {
-      status: async () => ({ ok: true, app: "万卷灵境", version: globalThis.chrome?.runtime?.getManifest?.()?.version || "", ready: true, activeTasks: (await allAutomationTasks()).filter((task) => ["pending", "submitting", "running"].includes(task.status)).length }),
+      status: async () => ({ ok: true, app: "StarCanvas", version: globalThis.chrome?.runtime?.getManifest?.()?.version || "", ready: true, activeTasks: (await allAutomationTasks()).filter((task) => ["pending", "submitting", "running"].includes(task.status)).length }),
       models: async () => ({ ok: true, image: WanJuanParseModelList(drawingModel || ""), video: WanJuanParseModelList(videoModel || ""), text: WanJuanParseModelList(textModel || "") }),
       tasks: async ({ materialize = false } = {}) => ({ ok: true, tasks: await allAutomationTasks(materialize === true) }),
       task: async ({ id, materialize = true } = {}) => ({ ok: true, task: await findAutomationTask(id, materialize !== false) }),
@@ -4210,7 +4210,7 @@ Suno 音乐生成`,
                   className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-canvas`,
                   children: `🎨`,
                 }), jsx(`span`, {
-                  children: wanjuanT(`灵境画布`),
+                  children: wanjuanT(`StarCanvas`),
                 })],
               }),
             }),
@@ -4270,7 +4270,7 @@ Suno 音乐生成`,
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.4`}`,
+                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.5`}`,
                 }),
               ],
             }),

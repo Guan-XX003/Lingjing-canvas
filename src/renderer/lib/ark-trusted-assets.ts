@@ -4,7 +4,7 @@ export const WANJUAN_DEFAULT_ARK_TRUSTED_ASSET_CONFIG = Object.freeze({
   region: `cn-beijing`,
   projectName: `default`,
   assetGroupId: ``,
-  assetGroupName: `万卷灵境可信素材`,
+  assetGroupName: `StarCanvas可信素材`,
 });
 
 export function wanjuanNormalizeArkTrustedAssetConfig(value: any = {}) {

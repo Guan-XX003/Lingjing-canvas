@@ -22,7 +22,7 @@ function setAutomationWindow(win) { registeredWindow = win; }
 function getWindow() { return registeredWindow && !registeredWindow.isDestroyed?.() ? registeredWindow : BrowserWindow.getAllWindows?.().find((win) => !win.isDestroyed?.()) || null; }
 async function evaluate(method, payload) {
   const win = getWindow();
-  if (!win?.webContents) throw new Error("万卷灵境窗口尚未就绪");
+  if (!win?.webContents) throw new Error("StarCanvas窗口尚未就绪");
   const m = JSON.stringify(String(method));
   const p = JSON.stringify(payload ?? {});
   return Promise.race([

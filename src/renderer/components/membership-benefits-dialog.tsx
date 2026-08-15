@@ -75,7 +75,7 @@ export function WanJuanMembershipBenefitsDialog({
             <span className="wanjuan-membership-dialog-icon" aria-hidden="true"><Crown size={20} /></span>
             <div>
               <div className="wanjuan-membership-title-line">
-                <h3 id="wanjuan-membership-dialog-title">万卷会员</h3>
+                <h3 id="wanjuan-membership-dialog-title">StarCanvas会员</h3>
                 <span className="wanjuan-membership-beta-tag">内测开放</span>
               </div>
               <p id="wanjuan-membership-dialog-description">为个人创作与团队协作提供更完整的模型和提示词能力</p>

@@ -1,13 +1,13 @@
-# 万卷灵境 Codex 接手说明
+# StarCanvas Codex 接手说明
 
 更新日期：2026-08-10
 
-这份文档用于把万卷灵境项目交给另一台电脑上的 Codex。新会话开始后，先阅读本文件，再开始任何修改。
+这份文档用于把StarCanvas项目交给另一台电脑上的 Codex。新会话开始后，先阅读本文件，再开始任何修改。
 
 ## 1. 唯一主线
 
-- 主线源码：`/Users/guanpeng/Desktop/claude工作区/Lingjing-canvas`
-- GitHub：<https://github.com/Guan-XX003/Lingjing-canvas>
+- 主线源码：`/Users/guanpeng/Desktop/claude工作区/StarCanvas`
+- GitHub：<https://github.com/Guan-XX003/StarCanvas>
 - 分支：`local-ui-redesign-flow`
 - 当前提交：`99c20b5539fd1432b14c1de3d59577f07a302c01`
 - 当前标签：`v1.4.1`
@@ -25,9 +25,9 @@
 
 ## 2. 当前发行状态
 
-- 正式 App：`/Applications/万卷灵境.app`
+- 正式 App：`/Applications/StarCanvas.app`
 - 正式 App Bundle 版本：`1.4.1`
-- GitHub Release：<https://github.com/Guan-XX003/Lingjing-canvas/releases/tag/v1.4.1>
+- GitHub Release：<https://github.com/Guan-XX003/StarCanvas/releases/tag/v1.4.1>
 - 历史构建产物保存在主线 `release/` 目录，包含 `1.4.1` 的 macOS、Windows 安装包和压缩包。
 - 旧的 `v1.4.0` 标签保持不变；不要移动或覆盖已发布标签。
 - macOS 包为 ad-hoc 签名，未做 Apple 公证。
@@ -125,14 +125,14 @@ npm audit --omit=dev
 3. 不改生成接口、模型配置规则、项目核心格式和节点连接语义，除非用户明确要求。
 4. 不硬编码模型名、API 配置、协议字段或服务器密钥；新增能力要走现有配置/协议注册表。
 5. 画布问题必须用包含真实生成结果的项目检查，尤其是媒体数量多、图片尺寸大、视频结果多的项目。
-6. 正式版同步前备份 `/Applications/万卷灵境.app`，先验证开发版，再替换正式版。
+6. 正式版同步前备份 `/Applications/StarCanvas.app`，先验证开发版，再替换正式版。
 7. 发布新版本时同时检查 `package.json`、Electron manifest、导航版本显示、更新说明、安装包和 GitHub Release，避免“包版本已更新、界面仍显示旧版本”。
 8. 用户要求“只查不改”时不得顺手修改；用户要求同步/发布时完成构建、启动检查和结果报告，不只改源码。
 
 ## 7. 新会话启动命令
 
 ```bash
-cd "/Users/guanpeng/Desktop/claude工作区/Lingjing-canvas"
+cd "/Users/guanpeng/Desktop/claude工作区/StarCanvas"
 git status --short --branch
 git log -1 --oneline --decorate
 git remote -v
@@ -156,10 +156,10 @@ npm run debug
 ## 8. 可直接粘贴给下一会话的开场白
 
 ```text
-请接手万卷灵境项目。唯一主线是：
-/Users/guanpeng/Desktop/claude工作区/Lingjing-canvas
+请接手StarCanvas项目。唯一主线是：
+/Users/guanpeng/Desktop/claude工作区/StarCanvas
 
-仓库：https://github.com/Guan-XX003/Lingjing-canvas
+仓库：https://github.com/Guan-XX003/StarCanvas
 分支：local-ui-redesign-flow
 当前提交：99c20b5539fd1432b14c1de3d59577f07a302c01
 当前候选版本：1.4.2（GitHub Release 仍由协调会话统一发布）

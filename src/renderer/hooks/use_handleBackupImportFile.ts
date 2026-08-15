@@ -33,7 +33,7 @@ export function use_handleBackupImportFile(deps: UseHandleBackupImportFileDeps) 
                                   if (window.wanjuanDesktop?.chooseBackupFile) {
                                     try {
                                       let backupFileResult = await window.wanjuanDesktop.chooseBackupFile({
-                                        title: `选择万卷备份 JSON`,
+                                        title: `选择StarCanvas备份 JSON`,
                                       });
                                       if (backupFileResult?.canceled) return;
                                       if (!backupFileResult?.ok) throw Error(backupFileResult?.error || `读取备份文件失败`);

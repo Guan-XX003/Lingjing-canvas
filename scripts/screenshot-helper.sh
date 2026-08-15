@@ -1,15 +1,15 @@
 #!/bin/bash
-# 万卷灵境截图自动化脚本
+# StarCanvas截图自动化脚本
 # 使用方法：在每个界面停留后按回车键，脚本会自动截图
 
 SCREENSHOT_DIR="/Users/guan/Documents/画布/Lingjing-canvas/docs/screenshots-new"
 mkdir -p "$SCREENSHOT_DIR"
 
-echo "📸 万卷灵境 v1.3.2 截图工具"
+echo "📸 StarCanvas v1.3.2 截图工具"
 echo "================================"
 echo ""
 echo "准备工作："
-echo "1. 确保开发版万卷灵境正在运行"
+echo "1. 确保开发版StarCanvas正在运行"
 echo "2. 将应用窗口最大化"
 echo "3. 准备好要截图的内容"
 echo ""
@@ -17,7 +17,7 @@ echo "按回车开始..."
 read
 
 screenshots=(
-    "01-canvas.png|灵境画布 - 显示多个节点和连接线"
+    "01-canvas.png|StarCanvas - 显示多个节点和连接线"
     "02-resources.png|资源库 - 显示各类素材"
     "03-agents.png|智能体 - 显示智能体列表或对话"
     "04-settings.png|设置 - 外观与通用设置"

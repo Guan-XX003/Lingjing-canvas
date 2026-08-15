@@ -76,7 +76,7 @@ function AccountAuthSurface({ welcome = false }: { welcome?: boolean }) {
           <BookOpen />
         </div>
         <div>
-          <div className="wanjuan-account-kicker">万卷灵境账号</div>
+          <div className="wanjuan-account-kicker">StarCanvas账号</div>
           <h1>随时随地开始创作</h1>
           <p>登录后可启用云备份、多设备同步、会员权益和企业私密空间。本地项目不会因为登录、退出或会员到期而被删除。</p>
         </div>
@@ -102,7 +102,7 @@ function AccountAuthSurface({ welcome = false }: { welcome?: boolean }) {
         <div className="wanjuan-account-form-heading">
           <UserRound size={20} />
           <div>
-            <strong>{register ? "创建万卷灵境账号" : "欢迎回来"}</strong>
+            <strong>{register ? "创建StarCanvas账号" : "欢迎回来"}</strong>
             <span>{register ? "内测阶段可通过邀请码创建账号" : "使用邮箱验证码登录"}</span>
           </div>
         </div>

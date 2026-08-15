@@ -33,7 +33,7 @@ const server = http.createServer((req, res) => {
     return res.end(body);
   }
   const responses = {
-    "/v1/status": { ok: true, app: "万卷灵境", ready: true },
+    "/v1/status": { ok: true, app: "StarCanvas", ready: true },
     "/v1/models": { ok: true, image: [], video: [], text: [] },
     "/v1/tasks": { ok: true, tasks: [] },
     "/v1/tasks/node-failed": { ok: true, task: { id: "task-failed", nodeId: "node-failed", status: "failed", errorMsg: "test" } },
