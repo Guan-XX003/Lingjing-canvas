@@ -69,6 +69,7 @@ function writePortableWindowsRuntime(sourceRoot) {
     const toolsSource = fs.readFileSync(path.join(repoRoot, "electron", "main", "tools", "external-tools.cjs"), "utf8");
     assert.match(prepareSource, /"--onefile"/);
     assert.match(prepareSource, /"--collect-data", "deface"/);
+    assert.match(prepareSource, /"--copy-metadata", "imageio"/);
     assert.match(prepareSource, /"--collect-all", "imageio_ffmpeg"/);
     assert.match(toolsSource, /args\.push\("--backend", "opencv"\)/);
     assert.match(toolsSource, /Windows 版 Deface 随 StarCanvas 安装包提供，不支持在线安装/);

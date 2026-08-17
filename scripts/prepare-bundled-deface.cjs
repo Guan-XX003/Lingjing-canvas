@@ -200,6 +200,7 @@ function prepareWindowsStandalone(python) {
     "--workpath", windowsWorkPath,
     "--specpath", windowsSpecPath,
     "--collect-data", "deface",
+    "--copy-metadata", "imageio",
     "--collect-all", "imageio_ffmpeg",
     windowsEntryPath
   ]);
