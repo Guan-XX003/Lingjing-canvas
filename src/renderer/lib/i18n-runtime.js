@@ -787,6 +787,8 @@ const TEXT_NODE_ROOTS = [
   ".wanjuan-membership-dialog-backdrop",
   ".wanjuan-canvas-bottom-dock-wrap",
   ".wanjuan-canvas-pressure-meter",
+  ".wanjuan-canvas-project-toolbar",
+  ".wanjuan-empty-canvas-placeholder",
   ".wanjuan-canvas-top-tools",
   ".wanjuan-canvas-controls",
   ".wanjuan-canvas-minimap",

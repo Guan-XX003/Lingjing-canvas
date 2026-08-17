@@ -1519,6 +1519,7 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 
 .wanjuan-system-notification-title {
   min-width: 0 !important;
+  overflow-wrap: anywhere !important;
   color: var(--wj-text) !important;
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -1531,6 +1532,7 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   font-size: 12px !important;
   line-height: 1.55 !important;
   white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
 }
 
 .wanjuan-system-notification-time {
@@ -1593,6 +1595,7 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 .wanjuan-system-notification-dialog {
   width: min(680px, calc(100vw - 44px)) !important;
   max-height: min(720px, calc(100vh - 56px)) !important;
+  min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -1677,6 +1680,8 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
@@ -1700,14 +1705,21 @@ html:is(.theme-light, .theme-warm-light, .theme-mist-blue, .theme-chrome-blue, .
 }
 
 .wanjuan-system-notification-dialog-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
   padding: 18px !important;
   color: color-mix(in srgb, var(--wj-text) 90%, var(--wj-muted) 10%) !important;
   font-size: 13px !important;
   line-height: 1.7 !important;
   white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
 }
 
 .wanjuan-system-notification-dialog-actions {
+  flex: 0 0 auto !important;
   justify-content: flex-end !important;
   padding: 14px 18px 18px !important;
 }

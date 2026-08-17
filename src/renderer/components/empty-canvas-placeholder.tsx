@@ -8,7 +8,7 @@ export function WanJuanEmptyCanvasPlaceholder({
   wrapperRef,
 }: any) {
   return jsx(`div`, {
-              className: `absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none`,
+              className: `wanjuan-empty-canvas-placeholder absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none`,
               children: jsxs(`div`, {
                 className: `flex flex-col items-center pointer-events-auto -translate-y-10`,
                 style: {

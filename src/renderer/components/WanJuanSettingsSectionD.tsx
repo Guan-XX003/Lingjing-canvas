@@ -202,7 +202,7 @@ export function WanJuanSettingsSectionD(props: any) {
               className: `absolute inset-0 w-full h-full bg-[#121212] flex flex-col ${activeView === `canvas` ? `visible z-10` : `invisible -z-10`}`,
               children: [
                 jsxs(`div`, {
-                  className: `bg-[#1c1c1c] border-b border-[#333] px-4 py-2 flex items-center justify-between z-20 relative`,
+                  className: `wanjuan-canvas-project-toolbar bg-[#1c1c1c] border-b border-[#333] px-4 py-2 flex items-center justify-between z-20 relative`,
                   children: [
                     jsxs(`div`, {
                       className: `flex items-center gap-2`,

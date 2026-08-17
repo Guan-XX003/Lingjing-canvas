@@ -217,10 +217,12 @@ const agentUserContent = new FakeElement().append(new FakeText("用户自定义�
 agentUserContent.setAttribute("data-wanjuan-i18n-skip", "true");
 const agentRoot = new FakeElement("wanjuan-agent-page").append(new FakeText("新建智能体"), agentUserContent);
 const canvasToolbarRoot = new FakeElement("wanjuan-canvas-top-tools").append(new FakeText("一键自动排版"));
+const canvasProjectToolbarRoot = new FakeElement("wanjuan-canvas-project-toolbar").append(new FakeText("分组"));
+const emptyCanvasRoot = new FakeElement("wanjuan-empty-canvas-placeholder").append(new FakeText("创建节点，展开你的想象"));
 const projectGroupRoot = new FakeElement("wanjuan-project-group-dialog").append(new FakeText("项目分组"));
 const taskDrawerRoot = new FakeElement("wanjuan-task-drawer").append(new FakeText("全局任务清单"), new FakeText("清空已结束"));
 const unrelatedRoot = new FakeElement("unrelated").append(new FakeText("设置"));
-const body = new FakeElement("body").append(settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, projectGroupRoot, taskDrawerRoot, unrelatedRoot);
+const body = new FakeElement("body").append(settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, canvasProjectToolbarRoot, emptyCanvasRoot, projectGroupRoot, taskDrawerRoot, unrelatedRoot);
 const rafQueue = [];
 const walkedRoots = [];
 let observerCallback = null;
@@ -269,13 +271,15 @@ vm.runInContext(runtimeSource, domContext, { filename: "i18n-runtime-dom-test.js
 
 assert.equal(rafQueue.length, 1, "initial language application should schedule one frame");
 rafQueue.shift()();
-assert.deepEqual(walkedRoots, [settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, projectGroupRoot, taskDrawerRoot], "full refresh should scan registered UI roots, not document.body");
+assert.deepEqual(walkedRoots, [settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, canvasProjectToolbarRoot, emptyCanvasRoot, projectGroupRoot, taskDrawerRoot], "full refresh should scan registered UI roots, not document.body");
 assert.equal(settingsRoot.children[0].nodeValue, "Settings");
 assert.equal(latestUpdateText.nodeValue, "Last updated 2026-08-16");
 assert.equal(dockRoot.children[0].nodeValue, "Tools");
 assert.equal(agentRoot.children[0].nodeValue, "New Agent");
 assert.equal(agentUserContent.children[0].nodeValue, "用户自定义智能体与提示词正文", "agent user content must never be translated");
 assert.equal(canvasToolbarRoot.children[0].nodeValue, "Auto Layout");
+assert.equal(canvasProjectToolbarRoot.children[0].nodeValue, "Group");
+assert.equal(emptyCanvasRoot.children[0].nodeValue, "Create a node and expand your imagination");
 assert.equal(projectGroupRoot.children[0].nodeValue, "Project Groups");
 assert.equal(taskDrawerRoot.children[0].nodeValue, "Global Task List");
 assert.equal(taskDrawerRoot.children[1].nodeValue, "Clear Finished");
@@ -316,11 +320,13 @@ domContext.wanjuanI18nRuntime.setLanguage("zh-TW");
 assert.equal(languageNotifications, 1, "direct i18n consumers should receive one language-change notification");
 assert.equal(rafQueue.length, 1, "language change should coalesce with pending mutation work");
 rafQueue.shift()();
-assert.deepEqual(walkedRoots, [settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, projectGroupRoot, taskDrawerRoot], "language change should perform one registered-root refresh");
+assert.deepEqual(walkedRoots, [settingsRoot, dockRoot, agentRoot, canvasToolbarRoot, canvasProjectToolbarRoot, emptyCanvasRoot, projectGroupRoot, taskDrawerRoot], "language change should perform one registered-root refresh");
 assert.equal(settingsRoot.children[0].nodeValue, "設定");
 assert.equal(latestUpdateText.nodeValue, "最近更新 2026-08-16", "English placeholder output should restore to the canonical source before translating to Traditional Chinese");
 assert.equal(dockRoot.children[0].nodeValue, "工具");
 assert.equal(addedAccount.children[0].nodeValue, "我的帳號");
+assert.equal(canvasProjectToolbarRoot.children[0].nodeValue, "分組");
+assert.equal(emptyCanvasRoot.children[0].nodeValue, "建立節點，展開你的想像");
 assert.equal(projectGroupRoot.children[0].nodeValue, "專案分組");
 assert.equal(taskDrawerRoot.children[0].nodeValue, "全域任務清單");
 
@@ -342,11 +348,15 @@ assert.match(settingsSource, /settingsT\(`模型服务`\)/, "settings navigation
 assert.match(settingsSource, /settingsT\(`外观与通用`\)/, "settings navigation items should not depend on DOM mutation for language changes");
 const projectGroupSource = fs.readFileSync(path.join(root, "src/renderer/components/project-group-panel.tsx"), "utf8");
 assert.match(projectGroupSource, /position: `fixed`/, "project group modal should remain above the canvas toolbar at narrow heights and high zoom");
+assert.match(projectGroupSource, /flex-1 min-h-0 overflow-y-auto overscroll-contain/, "project group contents should scroll inside the viewport-bounded modal");
 assert.match(projectGroupSource, /aria-label": projectGroupT\(`关闭`\)/, "project group modal should expose a translated close action");
 assert.match(projectGroupSource, /children: projectGroupT\(`项目分组`\)/, "project group UI should render directly in the selected language");
 const taskDrawerSource = fs.readFileSync(path.join(root, "src/renderer/components/global-tasks-panel.tsx"), "utf8");
 assert.match(taskDrawerSource, /children: taskT\(`全局任务清单`\)/, "task drawer heading should render directly in the selected language");
 assert.match(taskDrawerSource, /children: taskT\(`清空已结束`\)/, "task drawer actions should render directly in the selected language");
+const uiOverridesSource = fs.readFileSync(path.join(root, "electron/main/ui-overrides.css"), "utf8");
+assert.match(uiOverridesSource, /\.wanjuan-system-notification-list\s*\{[\s\S]*?min-height:\s*0\s*!important;[\s\S]*?overflow-y:\s*auto\s*!important;[\s\S]*?overscroll-behavior:\s*contain\s*!important;/, "system notification list should scroll inside the viewport-bounded panel");
+assert.match(uiOverridesSource, /\.wanjuan-system-notification-dialog-content\s*\{[\s\S]*?min-height:\s*0\s*!important;[\s\S]*?overflow-y:\s*auto\s*!important;/, "long notification details should scroll without pushing the close button or actions off screen");
 
 const bundleSource = fs.readFileSync(path.join(root, "src/renderer/bundle/index.js"), "utf8");
 const bundleCanvasKeys = [

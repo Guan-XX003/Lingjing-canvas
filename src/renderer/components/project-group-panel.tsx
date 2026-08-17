@@ -51,7 +51,7 @@ export function WanJuanProjectGroupPanel({
                     backgroundColor: `rgba(5, 7, 11, 0.88)`
                   },
                   children: jsxs(`div`, {
-                    className: `wanjuan-project-group-dialog bg-[#161a20] rounded-xl border border-[#6b7280] shadow-[0_24px_80px_rgba(0,0,0,0.72)] w-[720px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-140px)] flex flex-col overflow-hidden`,
+                    className: `wanjuan-project-group-dialog bg-[#161a20] rounded-xl border border-[#6b7280] shadow-[0_24px_80px_rgba(0,0,0,0.72)] w-[720px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-48px)] min-h-0 flex flex-col overflow-hidden`,
                     role: `dialog`,
                     "aria-modal": `true`,
                     "aria-labelledby": `wanjuan-project-group-title`,
@@ -65,7 +65,7 @@ export function WanJuanProjectGroupPanel({
                     },
                     children: [
                       jsxs(`div`, {
-                        className: `wanjuan-project-group-dialog-header px-4 py-3 border-b border-[#3a4048] flex items-center justify-between`,
+                        className: `wanjuan-project-group-dialog-header shrink-0 px-4 py-3 border-b border-[#3a4048] flex items-center justify-between`,
                         children: [
                           jsxs(`div`, {
                             className: `flex flex-col`,
@@ -91,7 +91,7 @@ export function WanJuanProjectGroupPanel({
                         ],
                       }),
                       jsxs(`div`, {
-                        className: `wanjuan-project-group-dialog-form p-3 border-b border-[#3a4048] grid grid-cols-[1fr_1fr_auto] gap-2`,
+                        className: `wanjuan-project-group-dialog-form shrink-0 p-3 border-b border-[#3a4048] grid grid-cols-[1fr_1fr_auto] gap-2`,
                         children: [
                           jsx(`input`, {
                             value: projectGroupSearch,
@@ -116,7 +116,11 @@ export function WanJuanProjectGroupPanel({
                         ],
                       }),
                       jsxs(`div`, {
-                        className: `wanjuan-project-group-dialog-body flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar`,
+                        className: `wanjuan-project-group-dialog-body flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-3 custom-scrollbar`,
+                        style: {
+                          minHeight: 0,
+                          overscrollBehavior: `contain`,
+                        },
                         children: [
                           jsxs(`div`, {
                             className: `wanjuan-project-group-section rounded-lg border border-[#4b5563] bg-[#11151b] overflow-hidden`,
