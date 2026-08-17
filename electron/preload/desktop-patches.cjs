@@ -1555,6 +1555,7 @@ function installDesktopPatches() {
   };
   const workspaceLoadEnterpriseTeamContext = async () => {
     const account = await ipcRenderer.invoke("wanjuan:account-bootstrap").catch(() => null);
+    resetEnterpriseStorageOverlay();
     const context = workspaceEnterpriseContextFromAccount(account);
     workspaceState.enterpriseTeamContext = context;
     if (!context) {
@@ -3245,7 +3246,7 @@ function installDesktopPatches() {
       html.wanjuan-workspace-open .wanjuan-app-nav-tab:not(.wanjuan-workspace-nav-tab).wanjuan-app-nav-tab-active{color:var(--wanjuan-nav-text,#b6beca)!important}
       html.wanjuan-workspace-open .wanjuan-workspace-nav-tab{opacity:1!important;color:var(--wanjuan-nav-text-active,#f8fafc)!important}
       .wanjuan-workspace-page{position:absolute;inset:0;z-index:18;display:none;flex-direction:column;background:var(--wj-bg,#101214);color:var(--wj-text,#e5e7eb)}
-      .wanjuan-workspace-header{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 16px;border-bottom:1px solid var(--wj-panel-divider,var(--wj-border,#2b2f36));background:var(--wj-surface,#171a1f)}
+      .wanjuan-workspace-header{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 16px;border-bottom:0;background:var(--wj-surface,#171a1f)}
       .wanjuan-workspace-title{font-size:16px;font-weight:800;color:var(--wj-text,#f8fafc)}
       .wanjuan-workspace-heading{display:flex;align-items:center;gap:6px;min-width:0}
       .wanjuan-workspace-subtitle{font-size:11px;color:var(--wj-muted,#8b949e);margin:0;min-width:0}
@@ -3261,10 +3262,10 @@ function installDesktopPatches() {
       .wanjuan-workspace-sidebar .wanjuan-workspace-sections button{width:100%;min-width:0;text-align:center}
       .wanjuan-workspace-tabs button.is-active,.wanjuan-workspace-sections button.is-active,.wanjuan-workspace-segment button.is-active{background:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;background-image:var(--wj-control-selected-bg,var(--wj-accent,#2563eb))!important;border-color:var(--wj-control-selected-border,var(--wj-accent,#3b82f6))!important;color:var(--wj-control-selected-text,var(--wj-on-accent,var(--wanjuan-theme-on-primary,#fff)))!important;box-shadow:var(--wj-control-selected-shadow,none)!important}
       .wanjuan-workspace-body{min-height:0;flex:1;display:grid;grid-template-columns:230px minmax(0,1fr);overflow:hidden}
-      .wanjuan-workspace-sidebar{min-width:0;border-right:1px solid var(--wj-panel-border,var(--wj-border,#2b2f36));background:var(--wj-surface-2,#14171c);padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:8px 0 18px rgba(0,0,0,.16)}
+      .wanjuan-workspace-sidebar{min-width:0;border-right:0;background:var(--wj-surface-2,#14171c);padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:none}
       .wanjuan-workspace-group-list{display:grid;grid-template-columns:1fr;gap:8px;width:100%;align-items:stretch}
-      .wanjuan-workspace-content{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-      .wanjuan-workspace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--wj-panel-divider,var(--wj-border,#252a31));background:var(--wj-surface-2,#111419)}
+      .wanjuan-workspace-content{position:relative;min-width:0;min-height:0;margin:12px 16px 16px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--wj-panel-border,var(--wj-border,#2b2f36));border-radius:24px;background:var(--wj-bg,#101214);box-shadow:0 18px 48px rgba(0,0,0,.24)}
+      .wanjuan-workspace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:0;background:var(--wj-surface-2,#111419)}
       .wanjuan-workspace-toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;min-width:0}
       .wanjuan-workspace-search{height:34px;min-width:220px;max-width:420px;flex:1;border:1px solid var(--wj-border,#303640);border-radius:8px;background:var(--wj-surface,#171a1f);color:var(--wj-text,#e5e7eb);padding:0 11px;font-size:12px;outline:none}
       .wanjuan-workspace-search:focus{border-color:var(--wj-accent,#3b82f6)}
@@ -4292,4 +4293,4 @@ module.exports = { installDesktopPatches };
 var { installChromeShim } = require("./chrome-shim.cjs");
 var { dataUrlFromBlobUrl, extensionFromMime, localPathFromFileUrl, saveProjectName } = require("./media-utils.cjs");
 var { ensureProjectSafetyAutoBackupStarted, installProjectSafetyBackupCenter, prewarmProjectSafetyCenter } = require("./safety-center.cjs");
-var { getDesktopStorageItems, getPerformanceSettings, normalizePerformanceProfileKey, persistPerformanceProfile, setDesktopStorageItems } = require("./storage.cjs");
+var { getDesktopStorageItems, getPerformanceSettings, normalizePerformanceProfileKey, persistPerformanceProfile, resetEnterpriseStorageOverlay, setDesktopStorageItems } = require("./storage.cjs");

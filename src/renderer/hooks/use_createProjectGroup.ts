@@ -21,15 +21,16 @@ export function use_createProjectGroup(deps: UseCreateProjectGroupDeps) {
     setProjectGroupDraft,
     showToast2,
   } = deps;
+  const projectGroupT = (text: string) => (globalThis as any).wanjuanI18nRuntime?.t?.(text) || text;
   const createProjectGroup = () => {
           let groupName = String(projectGroupDraft || ``).trim();
           if (!groupName) {
-            showToast2(`分组名称不能为空`);
+            showToast2(projectGroupT(`分组名称不能为空`));
             return;
           }
           let existingGroups = normalizeProjectGroups(projectGroups);
           if (existingGroups.some((group) => group.name === groupName)) {
-            showToast2(`已存在同名分组`);
+            showToast2(projectGroupT(`已存在同名分组`));
             return;
           }
           let updatedGroups = [...existingGroups, {
@@ -38,7 +39,7 @@ export function use_createProjectGroup(deps: UseCreateProjectGroupDeps) {
             collapsed: false,
             order: existingGroups.length
           }];
-          (persistProjectGroups(updatedGroups), setProjectGroupDraft(``), showToast2(`分组已创建`));
+          (persistProjectGroups(updatedGroups), setProjectGroupDraft(``), showToast2(projectGroupT(`分组已创建`)));
         };
   return { createProjectGroup };
 }

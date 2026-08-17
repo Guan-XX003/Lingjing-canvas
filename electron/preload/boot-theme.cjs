@@ -1,4 +1,5 @@
 // 职责：启动主题解析与开机启动画面(boot splash)样式注入及主题镜像。
+const { inspectRendererStartupDocument, isRendererBaseReady } = require("../shared/startup-readiness.cjs");
 const { fs, os, path } = require("./runtime.cjs");
 const {
   LEGACY_THEME_STORAGE_KEYS,
@@ -327,21 +328,9 @@ function installBootStabilityStyle() {
       root.classList.add("wanjuan-booting");
       const releaseBootingFallback = () => {
         try {
-          const appRoot = document.getElementById("root");
-          const text = (document.body?.innerText || "").replace(/\s+/g, " ").trim();
-          const rootRect = appRoot?.getBoundingClientRect?.();
-          const hasStableShell =
-            document.readyState === "complete" &&
-            /StarCanvas/.test(text) &&
-            /资源/.test(text) &&
-            /智能体/.test(text) &&
-            /设置/.test(text) &&
-            !/^Loading\.\.\.$/.test(text) &&
-            (appRoot?.childElementCount || 0) > 0 &&
-            (rootRect?.width || 0) > 200 &&
-            (rootRect?.height || 0) > 200 &&
-            typeof window.wanjuanDesktop?.proxyFetch === "function" &&
-            typeof window.wanjuanDesktop?.saveDownload === "function";
+          const status = inspectRendererStartupDocument(document, window);
+          const desktopBridgeReady = Object.values(status.desktopBridge || {}).every(Boolean);
+          const hasStableShell = isRendererBaseReady(status) && desktopBridgeReady;
           if (hasStableShell) {
             root.classList.remove("wanjuan-booting");
             root.dataset.wanjuanBootReady = "stable-shell-fallback";

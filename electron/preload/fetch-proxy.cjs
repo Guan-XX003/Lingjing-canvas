@@ -237,6 +237,9 @@ function buildDesktopProxyFetchBridgePayload(payload = {}) {
   const bodyBase64 = payload.bodyBase64
     ? String(payload.bodyBase64)
     : base64FromBridgeBody(payload.body);
+  const enterpriseRequestKind = ["submit", "poll", "request"].includes(String(payload.enterpriseRequestKind || "").trim().toLowerCase())
+    ? String(payload.enterpriseRequestKind).trim().toLowerCase()
+    : undefined;
   return {
     requestId: String(payload.requestId || `desktop-fetch-${Date.now()}-${Math.random().toString(16).slice(2)}`),
     url,
@@ -244,6 +247,7 @@ function buildDesktopProxyFetchBridgePayload(payload = {}) {
     headers,
     bodyBase64,
     requestTimeout: Number(payload.requestTimeout || getDesktopProxyFetchTimeout(url, method)),
+    enterpriseRequestKind,
     tianjiGenerationProfile: payload.tianjiGenerationProfile && typeof payload.tianjiGenerationProfile === "object"
       ? {
           reviewedPortraitCount: Math.max(0, Math.floor(Number(payload.tianjiGenerationProfile.reviewedPortraitCount || 0))),

@@ -57,6 +57,59 @@ final result: passed
 
 ---
 
+# Workspace Rounded Content Panel Design QA
+
+## Evidence
+
+- Source visual truth: `/var/folders/sl/v4h8ypm53n538vdjqw7zxr540000gn/T/TemporaryItems/NSIRD_screencaptureui_xcQrKA/截屏2026-08-16 13.33.20.png`
+- Implementation screenshot: `/tmp/starcanvas-workspace-rounded.png`
+- Combined comparison: `/tmp/starcanvas-workspace-comparison.png`
+- Source pixels: `2580 x 1726`; implementation pixels: `2560 x 1720`.
+- CSS viewport: `1280 x 860`; both captures are macOS Retina-density desktop views and were normalized to `1280 x 860` panels for the combined comparison.
+- State: dark theme, isolated development userData, Workspace open, personal prompt templates selected, empty template list.
+
+## Full-View Comparison
+
+- The top Workspace navigation, descriptive header, space selector, sidebar controls, search input, return action, and empty-state copy keep their existing positions and visual tokens.
+- The hard header-bottom, sidebar-right, and toolbar-bottom dividers are removed.
+- The complete right-side Workspace region is inset by `12px 16px 16px` and enclosed by one `24px` rounded border with a restrained dark-theme shadow, matching the rounded Agent conversation treatment requested immediately before this change.
+- The sidebar remains unframed and continuous. No content overlaps the panel edge, and the right/bottom padding remains visible at the `1280 x 860` CSS viewport.
+
+## Focused Region Comparison
+
+- A separate focused crop was not required: the requested changes affect the complete sidebar/content boundary and the full right content frame, both clearly visible at full-view scale in the combined comparison.
+- Computed layout verification confirms the content panel measures `1018 x 705` CSS pixels, has `24px` radius, `1px` border, `overflow: hidden`, and no scroll-width overflow.
+
+## Required Fidelity Surfaces
+
+- Fonts and typography: unchanged; search, actions, tabs, sidebar labels, and empty-state text retain the existing sizes, weights, wrapping, and truncation behavior.
+- Spacing and layout rhythm: the new inset panel uses the same margin and radius language as the Agent page; sidebar width and toolbar/list internal padding are preserved.
+- Colors and visual tokens: all surfaces, borders, text, and selected states continue to use existing `--wj-*` theme tokens.
+- Image quality and asset fidelity: no image or icon assets were added, removed, rasterized, or replaced.
+- Copy and content: unchanged; personal and team states retain their existing localized labels and empty-state guidance.
+
+## Interaction And Responsive Checks
+
+- Verified the personal and team tabs render inside the same rounded content shell.
+- Verified team-template empty state and legacy/enterprise team controls remain present.
+- Verified the content and list regions have no horizontal overflow at `1280 x 860` CSS pixels.
+- Existing `max-width: 900px` behavior still collapses the sidebar and wraps toolbar actions; the rounded content region remains the sole grid item.
+- No production App, formal userData, network service, prompt content, or generation flow was accessed.
+
+## Findings
+
+No actionable P0, P1, or P2 visual, responsive, or interaction issue remains for the requested Workspace treatment.
+
+## Comparison History
+
+- Initial reference showed hard page-wide and sidebar dividers with a rectangular full-bleed content region.
+- The implementation removed those three structural dividers and introduced one inset rounded content panel.
+- Post-fix combined evidence confirms the sidebar and right content now read as the same softer two-region composition used by the Agent page, without changing Workspace functionality.
+
+final result: passed
+
+---
+
 # Image Editor Title Removal Design QA
 
 ## Evidence

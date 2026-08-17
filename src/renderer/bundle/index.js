@@ -1096,6 +1096,7 @@ function WanJuanCanvasShell(props) {
 }
 
 function WanJuanAppCanvas({
+  appLanguage: appLanguage = `zh-CN`,
   projectId: projectId = `default`,
   textApiUrl: propTextApiUrl,
   textApiKey: propTextApiKey,
@@ -1186,6 +1187,8 @@ function WanJuanAppCanvas({
   initialEmptyProject: initialEmptyProject = false,
   onInitialEmptyProjectReady: onInitialEmptyProjectReady,
 	}) {
+  const wanjuanCanvasT = (text) =>
+    globalThis.wanjuanI18nRuntime?.t?.(text, appLanguage) || text;
   let [nodes, setNodes, onNodesChange] = useEdgesState([]),
 		    [edges, setEdges, onEdgesChange] = useNodesState(WANJUAN_STARTER_EDGES),
 		    [shouldFitView, setShouldFitView] = useState(false),
@@ -1675,6 +1678,10 @@ function WanJuanAppCanvas({
 
   const automationJobsRef = useRef(new Map());
   const automationResultCacheRef = useRef(new Map());
+  const automationGenerateImageRef = useRef(generateImage);
+  const automationGenerateVideoRef = useRef(generateVideo);
+  automationGenerateImageRef.current = generateImage;
+  automationGenerateVideoRef.current = generateVideo;
   // CLI/MCP 自动化桥：只暴露任务控制，不暴露 API Key 或完整配置。
   useEffect(() => {
     const cleanTask = (task, stableResultUrl = "") => ({
@@ -1735,7 +1742,20 @@ function WanJuanAppCanvas({
         setAutomationJob(nodeId, { status: "failed", errorMsg: "任务提交失败；请在StarCanvas任务列表查看详情" });
       });
     };
-    const waitForCanvasState = () => new Promise((resolve) => setTimeout(resolve, 80));
+    const waitForCanvasState = async ({ nodeId, sourceNodeIds = [] } = {}) => {
+      const expectedSourceIds = new Set(sourceNodeIds.filter(Boolean));
+      const deadline = Date.now() + 3e3;
+      while (Date.now() < deadline) {
+        const currentNodes = getNodes();
+        const currentEdges = getEdges();
+        const targetReady = currentNodes.some((node) => node.id === nodeId) && nodesRef.current.some((node) => node.id === nodeId);
+        const sourcesReady = [...expectedSourceIds].every((sourceId) => currentNodes.some((node) => node.id === sourceId));
+        const edgesReady = [...expectedSourceIds].every((sourceId) => currentEdges.some((edge) => edge.source === sourceId && edge.target === nodeId));
+        if (targetReady && sourcesReady && edgesReady) return;
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
+      throw Error(`自动化画布状态同步超时`);
+    };
     const automation = {
       status: async () => ({ ok: true, app: "StarCanvas", version: globalThis.chrome?.runtime?.getManifest?.()?.version || "", ready: true, activeTasks: (await allAutomationTasks()).filter((task) => ["pending", "submitting", "running"].includes(task.status)).length }),
       models: async () => ({ ok: true, image: WanJuanParseModelList(drawingModel || ""), video: WanJuanParseModelList(videoModel || ""), text: WanJuanParseModelList(textModel || "") }),
@@ -1753,8 +1773,8 @@ function WanJuanAppCanvas({
       generateImage: async ({ prompt = "", model = "", size = "1024x1024", referenceImage = "" } = {}) => {
         const nodeId = `automation-image-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         setNodes((current) => [...current, { id: nodeId, type: "promptNode", position: { x: 0, y: 0 }, data: { prompt: String(prompt), imageUrl: String(referenceImage || ""), mediaKind: referenceImage ? "image" : undefined } }]);
-        await waitForCanvasState();
-        runAutomationGeneration(nodeId, "image", () => generateImage(nodeId, String(prompt), String(size || "1024x1024"), String(model || "")));
+        await waitForCanvasState({ nodeId });
+        runAutomationGeneration(nodeId, "image", () => automationGenerateImageRef.current(nodeId, String(prompt), String(size || "1024x1024"), String(model || "")));
         return { ok: true, accepted: true, nodeId };
       },
       generateVideo: async ({ prompt = "", model = "", resolution = "1280x720", duration = "", aspectRatio = "", referenceImage = "" } = {}) => {
@@ -1762,8 +1782,8 @@ function WanJuanAppCanvas({
         const sourceId = referenceImage ? `${nodeId}-source` : "";
         setNodes((current) => [...current, ...(sourceId ? [{ id: sourceId, type: "imageNode", position: { x: -360, y: 0 }, data: { imageUrl: String(referenceImage), mediaKind: "image" } }] : []), { id: nodeId, type: "videoNode", position: { x: 0, y: 0 }, data: { prompt: String(prompt), aspectRatio: String(aspectRatio || ""), imageResolution: String(resolution || "") } }]);
         if (sourceId) setEdges((current) => [...current, { id: `automation-edge-${nodeId}`, source: sourceId, target: nodeId, type: "custom" }]);
-        await waitForCanvasState();
-        runAutomationGeneration(nodeId, "video", () => generateVideo(nodeId, String(prompt), String(resolution || "1280x720"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "")));
+        await waitForCanvasState({ nodeId, sourceNodeIds: sourceId ? [sourceId] : [] });
+        runAutomationGeneration(nodeId, "video", () => automationGenerateVideoRef.current(nodeId, String(prompt), String(resolution || "1280x720"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "")));
         return { ok: true, accepted: true, nodeId, sourceNodeId: sourceId || undefined };
       },
       generateTianjiVideo: async ({ prompt = "", model = "", resolution = "720p", duration = "5", aspectRatio = "16:9", mode = "text-to-video", images = [], portraitAssetIds = [], videos = [], audios = [] } = {}) => {
@@ -1789,8 +1809,8 @@ function WanJuanAppCanvas({
           tianjiSelectedModel: String(model || ""), selectedResolution: String(resolution || "720p"), selectedSeconds: String(duration || "5"), size: String(aspectRatio || "16:9"),
         } }]);
         if (edges.length) setEdges((current) => [...current, ...edges]);
-        await waitForCanvasState();
-        runAutomationGeneration(nodeId, "video", () => generateVideo(nodeId, String(prompt), String(resolution || "720p"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "16:9")));
+        await waitForCanvasState({ nodeId, sourceNodeIds: sources.map((item) => item.id) });
+        runAutomationGeneration(nodeId, "video", () => automationGenerateVideoRef.current(nodeId, String(prompt), String(resolution || "720p"), String(model || ""), duration ? Number(duration) : undefined, undefined, String(aspectRatio || "16:9")));
         return { ok: true, accepted: true, nodeId, sourceNodeIds: sources.map((item) => item.id), mode: String(mode || "text-to-video") };
       },
       materializeTestResult: async ({ kind = "image", dataUrl = "", directory = "" } = {}) => {
@@ -1806,7 +1826,7 @@ function WanJuanAppCanvas({
     };
     globalThis.__wanjuanAutomation = automation;
     return () => { if (globalThis.__wanjuanAutomation === automation) delete globalThis.__wanjuanAutomation; };
-  }, [drawingModel, videoModel, textModel, GlobalTasks, generateImage, generateVideo, getNodes, setNodes, setEdges, stopGeneration]);
+  }, [drawingModel, videoModel, textModel, GlobalTasks, generateImage, generateVideo, getNodes, getEdges, setNodes, setEdges, stopGeneration]);
 		  let onDeleteEdge = useCallback(
 	    (event, edge) => {
 	      (event.stopPropagation(), setEdges((edges2) => edges2.filter((edge2) => edge2.id !== edge.id)));
@@ -1842,7 +1862,15 @@ function WanJuanAppCanvas({
           accept: `image/*,video/*,audio/*,text/plain`,
           onChange: handleFileChange,
         }),
-        jsxs(ReactFlow, {
+	        jsxs(ReactFlow, {
+	          ariaLabelConfig: {
+	            "controls.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`控制面板`, appLanguage) || `控制面板`,
+	            "controls.zoomIn.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`放大`, appLanguage) || `放大`,
+	            "controls.zoomOut.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`缩小`, appLanguage) || `缩小`,
+	            "controls.fitView.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`适应画布`, appLanguage) || `适应画布`,
+	            "controls.interactive.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`切换交互`, appLanguage) || `切换交互`,
+	            "minimap.ariaLabel": globalThis.wanjuanI18nRuntime?.t?.(`缩略图`, appLanguage) || `缩略图`,
+	          },
 	          nodes: wanjuanCanvasNodes,
           edges: edges,
           onNodesChange: onNodesChange,
@@ -1906,7 +1934,7 @@ function WanJuanAppCanvas({
 	                    jsx(`button`, {
 	                      onClick: autoLayout,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors text-gray-300 hover:text-white hover:bg-[#444]`,
-	                      title: `一键自动排版`,
+	                      title: wanjuanCanvasT(`一键自动排版`),
 	                      children: jsx(LayoutGrid, {
 	                        size: 16
 	                      }),
@@ -1918,7 +1946,7 @@ function WanJuanAppCanvas({
 	                      onClick: $e,
 	                      disabled: historyIndex <= 0,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors ${historyIndex <= 0 ? `text-gray-600 cursor-not-allowed` : `text-gray-300 hover:text-white hover:bg-[#444]`}`,
-	                      title: `撤销 (Ctrl+Z)`,
+	                      title: wanjuanCanvasT(`撤销 (Ctrl+Z)`),
 	                      children: jsx(Undo2, {
 	                        size: 16
 	                      }),
@@ -1930,7 +1958,7 @@ function WanJuanAppCanvas({
 	                      onClick: redo,
 	                      disabled: historyIndex >= history.length - 1,
 	                      className: `p-1.5 rounded flex items-center justify-center transition-colors ${historyIndex >= history.length - 1 ? `text-gray-600 cursor-not-allowed` : `text-gray-300 hover:text-white hover:bg-[#444]`}`,
-	                      title: `重做 (Ctrl+Y)`,
+	                      title: wanjuanCanvasT(`重做 (Ctrl+Y)`),
 	                      children: jsx(Redo2, {
 	                        size: 16
 	                      }),
@@ -1985,7 +2013,7 @@ function WanJuanAppCanvas({
                     (event.stopPropagation(), setIsVisible(!isVisible));
                   },
                   className: `pointer-events-auto bg-[#222] border border-[#333] text-gray-400 hover:text-white p-2 rounded-full shadow-xl hover:bg-[#2a2a2a] transition-all flex items-center justify-center absolute -bottom-2 -right-2 w-8 h-8 z-50`,
-                  title: isVisible ? `隐藏缩略图` : `显示缩略图`,
+                  title: wanjuanCanvasT(isVisible ? `隐藏缩略图` : `显示缩略图`),
                   children: jsx(`svg`, {
                     xmlns: `http://www.w3.org/2000/svg`,
                     width: `14`,
@@ -2024,7 +2052,7 @@ function WanJuanAppCanvas({
                   }),
                   jsx(`span`, {
                     className: `text-sm font-medium whitespace-nowrap`,
-                    children: `项目加载中...`,
+                    children: wanjuanCanvasT(`项目加载中...`),
                   }),
                 ],
               }),
@@ -3445,6 +3473,7 @@ Suno 音乐生成`,
 	                  children: [
 	                    jsx(`span`, {
 	                      className: `block truncate`,
+	                      "data-wanjuan-i18n-skip": true,
 	                      style: {
 	                        display: `block`,
 	                        overflow: `hidden`,
@@ -3455,8 +3484,8 @@ Suno 音乐生成`,
 	                        lineHeight: `13px`,
 	                        color: `#2f2a24`,
 	                      },
-	                      title: attachment.name || `参考文件`,
-	                      children: attachment.name || `参考文件`,
+	                      title: attachment.name || wanjuanT(`参考文件`),
+	                      children: attachment.name || wanjuanT(`参考文件`),
 	                    }),
 	                    jsxs(`span`, {
 	                      className: `block truncate`,
@@ -3471,7 +3500,8 @@ Suno 音乐生成`,
 	                        color: `#8a7a66`,
 	                      },
 	                      children: [
-	                        isReady ? `已选择` : `选择中 ${Math.round(uploadProgress)}%`,
+	                        isReady ? wanjuanT(`已选择`) :
+	                          (globalThis.wanjuanI18nRuntime?.format?.(`选择中 {progress}%`, { progress: Math.round(uploadProgress) }, appLanguage) || `选择中 ${Math.round(uploadProgress)}%`),
 	                        sizeLabel ? ` · ${sizeLabel}` : ``,
 	                      ],
 	                    }),
@@ -4251,7 +4281,7 @@ Suno 音乐生成`,
                   className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-workspace`,
                   children: `🗃️`,
                 }), jsx(`span`, {
-                  children: `工作空间`,
+                  children: wanjuanT(`工作空间`),
                 })],
               }),
             }),
@@ -4270,7 +4300,7 @@ Suno 音乐生成`,
                 }),
                 jsx(`span`, {
                   className: `absolute bottom-1 right-2 text-[8px] text-gray-600 font-normal`,
-                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.5`}`,
+                  children: `v${globalThis.chrome?.runtime?.getManifest?.()?.version || `1.4.6`}`,
                 }),
               ],
             }),
@@ -4285,7 +4315,7 @@ Suno 音乐生成`,
           children: [
             jsx(WanJuanSettingsSectionC, { Copy, Download, FolderOpen, Maximize2, Star, Trash, activeView, chrome, copyResource, currentPage, filteredTransitResources, handleCleanInvalidResources, handleClearUnfavorited, handleRemoveTransitResource, isPluginEnv, resourceCleanupBusy, resourceFavoriteOnly, resourceSourceFilter, resourceTypeFilter, setCurrentPage, setResourceFavoriteOnly, setResourceSourceFilter, setResourceTypeFilter, setTransitGridCols, setWjResourceFullscreen, showToast2, toggleFavorite, transitGridCols, transitResourcePageSize, transitResourceTotalPages, transitResources, wanjuanUseBrokenResourceImage }),
             jsx(WanJuanSettingsSectionD, { $e, Trash2, VtRenameProject, WanJuanCanvasShell, activeProjectId, activeView, addCustomNodeTemplate, addTransitResource, apiConfigs, arkTrustedAssetConfig, setArkTrustedAssetConfig, audioApiKey, audioApiUrl, audioModelApiBindings, audioModelProtocolBindings, audioModels, configButlerErrorAssistant, configButlerErrorAssistantMinimized, customPublicUploadConfig, deleteCustomNodeTemplate, edges, getUnreadSystemNotifications, globalTasks, handleDeleteProject, imageApiKey, imageApiUrl, imageCompatResolutions, imageModelApiBindings, imageModelProtocolBindings, imageModels, isOpen, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, maxPollingDuration, modelProtocolRegistry, newProjectIds, openSystemNotificationPanel, pollingInterval, presetPrompts, projectGroupIds, projectGroupPanelOpen, projectGroupedSectionsAll, projectMenuOpen, projectStorageLabel, projectUngroupedAll, projects, qiniuConfig, renameProjectId, runManualConfigButlerErrorQuery, runStorageMigrationForProject, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, sendToPlugin, setActiveProjectId, setIsOpen, setNewProjectGroupId, setNewProjectIds, setProjectGroupPanelOpen, setProjectMenuOpen, settingsNotificationChecking, showToast2, textApiKey, textApiUrl, textModelApiBindings, textModelProtocolBindings, textModels, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangTextModels, tosConfig, transitResources, ttsMusicModel, updateGlobalTasks, videoApiKey, videoApiUrl, videoAspectRatios, videoDurations, videoModelApiBindings, videoModelProtocolBindings, videoModelRequestProfilesText, videoModels, videoResolutions, applyConfigButlerErrorAssistantFix, ConfirmRenameProject, applyConfigButlerManualProtocolFix, canManualRecoverImageTask, canManuallyRefreshGlobalTask, configButlerManualProblemPart, configButlerManualProtocolName, configButlerManualProtocolOpen, configButlerManualProtocolText, configButlerRepairHistory, configButlerRepairHistoryOpen, configErrorAssistantTheme, confirmProjectGroupRename, createProjectGroup, deleteProjectGroup, editingProjectGroupId, editingProjectGroupName, groupedProjectSections, handleCreateProject, handleManualRecoverImageTask, moveProjectToGroup, newProjectGroupId, newProjectName, openConfigButlerManualProblemFields, persistProjectGroups, projectGroupDraft, projectGroupList, projectGroupSearch, refreshGlobalTask, renameProjectGroup, renameProjectName, rollbackConfigButlerRepair, setConfigButlerErrorAssistant, setConfigButlerErrorAssistantMinimized, setConfigButlerManualProblemPart, setConfigButlerManualProtocolName, setConfigButlerManualProtocolOpen, setConfigButlerManualProtocolText, setConfigButlerRepairHistoryOpen, setEditingProjectGroupId, setEditingProjectGroupName, setNewProjectName, setProjectGroupDraft, setProjectGroupSearch, setRenameProjectId, setRenameProjectName, ungroupedProjectList }),
-            jsx(WanJuanSettingsSectionA, { Trash2, activeView, addAgentReferenceFile, agentAttachmentInputRef, agentAttachments, agentComposer, agentConfigOpen, agentConversations, agentMessagesScrollRef, agentSearch, agentTheme, clearSelectedAgentConversation, createAgent, deleteSelectedAgent, duplicateSelectedAgent, filteredAgentItems, handleAgentReferenceSelection, isLightAgentTheme, renderAgentAttachmentPill, selectedAgent, selectedAgentId, selectedAgentMessages, sendAgentMessage, setAgentAttachments, setAgentComposer, setAgentConfigOpen, setAgentSearch, setSelectedAgentId, showToast2, agentModelOptions, apiConfigs, importAgentKnowledgeFile, removeAgentKnowledgeFile, textApiConfigId, textModelApiBindings, updateSelectedAgent }),
+            jsx(WanJuanSettingsSectionA, { Trash2, activeView, addAgentReferenceFile, agentAttachmentInputRef, agentAttachments, agentComposer, agentConfigOpen, agentConversations, agentMessagesScrollRef, agentSearch, agentTheme, clearSelectedAgentConversation, createAgent, deleteSelectedAgent, duplicateSelectedAgent, filteredAgentItems, handleAgentReferenceSelection, isLightAgentTheme, renderAgentAttachmentPill, selectedAgent, selectedAgentId, selectedAgentMessages, sendAgentMessage, setAgentAttachments, setAgentComposer, setAgentConfigOpen, setAgentSearch, setSelectedAgentId, showToast2, agentModelOptions, apiConfigs, importAgentKnowledgeFile, removeAgentKnowledgeFile, textApiConfigId, textModelApiBindings, updateSelectedAgent, appLanguage }),
             jsx(WanJuanSettingsSectionB, { activeSettingsTab, arkTrustedAssetConfig, activeStoredGlobalConfigId, activeView, allAdvancedModelSettingsExpanded, audioModelSettingsExpanded, configButlerBatchModalOpen, configButlerExpanded, globalConfigPresetsExpanded, imageModelSettingsExpanded, seedanceSettingsExpanded, setActiveSettingsTab, setAllAdvancedModelSettings, setAudioModelSettingsExpanded, setConfigButlerExpanded, setGlobalConfigPresetsExpanded, setImageModelSettingsExpanded, setSeedanceSettingsExpanded, setTextModelSettingsExpanded, setTtsMusicSettingsExpanded, setVideoModelSettingsExpanded, storedGlobalConfigs, textModelSettingsExpanded, tianjiSeedanceSettingsMode, ttsMusicSettingsExpanded, updateInfo, videoModelSettingsExpanded, $e, BACKUP_MODULE_LABELS, _e, apiConfigs, appLanguage, applyConfigButlerBatchResults, applyConfigButlerResult, applyLitterboxUploadPreset, applyPerformanceProfile, applyStoredGlobalConfig, applyTianjiSeedanceSettingsMode, audioModelApiBindings, audioModels, autoDownloadGeneratedResults, backupExportSelection, cleanStorageOptimization, configButlerAgentExpanded, configButlerApiKey, configButlerApiUrl, configButlerBatchActiveCategory, configButlerBatchItems, configButlerBatchLoading, configButlerDocUrl, configButlerLoading, configButlerMode, configButlerModel, configButlerProtocol, configButlerResultText, configButlerTargetApiConfigId, configButlerTargetCategory, configButlerTargetModel, currentLimits, customPublicUploadConfig, customUploadConfigExpanded, dailyUsageCount, deviceId, downloadDirectory, editSeedancePortrait, enableStorageOptimization, expanded, extensionToolInstalling, extensionToolStatus, handleAddPreset, handleBackupImportFile, handleRemovePreset, handleSeedancePortraitFile, handleServerVerify, imageCompatResolutions, imageModelApiBindings, imageModels, importExtensionToolPack, installExtensionTool, layeredRunConcurrencyOptions, layeredRunMaxConcurrency, manageStorageOptimizationTrash, maxPollingDuration, membershipCode, openBackupExportDialog, performanceProfile, pollingInterval, presetPrompts, projects, purgeStorageOptimizationTrash, qiniuConfig, qiniuJsonImportOpen, qiniuJsonImportText, qiniuUploadConfigExpanded, refreshExtensionToolStatus, refreshStorageOptimizationStatus, removeSeedancePortrait, resetJixinDefaultConfiguration, resetSeedancePortraitForm, restoreStorageOptimizationTrash, runConfigButler, runConfigButlerBatch, runNextStorageMigration, saveSeedancePortraitForm, saveStoredGlobalConfigApiDocUrl, scanStorageOptimization, seedanceDurations, seedanceEnableWebSearch, seedanceGenerateAudio, seedanceModel, seedancePortraitEditingId, seedancePortraitFileInputRef, seedancePortraitForm, seedancePortraitLibraryExpanded, seedanceRatios, seedanceResolutions, seedanceUploadMode, seedanceVirtualPortraits, seedanceWatermark, setActiveStoredGlobalConfigId, setApiConfigs, setArkTrustedAssetConfig, setAppLanguage, setAudioModelApiBindings, setAudioModels, setAutoDownloadGeneratedResults, setBackupExportSelection, setConfigButlerAgentExpanded, setConfigButlerApiKey, setConfigButlerApiUrl, setConfigButlerBatchActiveCategory, setConfigButlerBatchItems, setConfigButlerBatchModalOpen, setConfigButlerDocUrl, setConfigButlerMode, setConfigButlerModel, setConfigButlerProtocol, setConfigButlerResultText, setConfigButlerTargetApiConfigId, setConfigButlerTargetCategory, setConfigButlerTargetModel, setCustomPublicUploadConfig, setCustomUploadConfigExpanded, setDownloadDirectory, setExpanded, setImageCompatResolutions, setImageModelApiBindings, setImageModels, setLayeredRunConcurrencyOptions, setLayeredRunMaxConcurrency, setMaxPollingDuration, setMembershipCode, setPollingInterval, setQiniuConfig, setQiniuJsonImportOpen, setQiniuJsonImportText, setQiniuUploadConfigExpanded, setSeedanceDurations, setSeedanceEnableWebSearch, setSeedanceGenerateAudio, setSeedanceModel, setSeedancePortraitForm, setSeedancePortraitLibraryExpanded, setSeedanceRatios, setSeedanceResolutions, setSeedanceUploadMode, setSeedanceWatermark, setShowQiniuSecretKey, setShowTosSecretKey, setStorageOptimizationLastResult, setStorageOptimizationPaused, setStoredGlobalConfigs, setTextModelApiBindings, setThemeMode, setTianjiSeedanceModel, setTongyiWanxiangDurations, setTongyiWanxiangEditModels, setTongyiWanxiangImageModels, setTongyiWanxiangRatios, setTongyiWanxiangReferenceImageModels, setTongyiWanxiangResolutions, setTongyiWanxiangSettingsExpanded, setTongyiWanxiangTextModels, setTosConfig, setTosUploadConfigExpanded, setTtsMusicModel, setVideoAspectRatios, setVideoDurations, setVideoModelApiBindings, setVideoModels, setVideoResolutions, showQiniuSecretKey, showStorageOptimizationDetails, showToast2, showTosSecretKey, storageOptimizationBusy, storageOptimizationEnabled, storageOptimizationLastResult, storageOptimizationPaused, storageOptimizationStatus, textModelApiBindings, textModels, themeMode, tianjiSeedanceModel, tongyiWanxiangDurations, tongyiWanxiangEditModels, tongyiWanxiangImageModels, tongyiWanxiangRatios, tongyiWanxiangReferenceImageModels, tongyiWanxiangResolutions, tongyiWanxiangSettingsExpanded, tongyiWanxiangTextModels, tosConfig, tosUploadConfigExpanded, ttsMusicModel, updatePresetField, users, videoAspectRatios, videoDurations, videoModelApiBindings, videoModels, videoResolutions }),
           ],
         }),

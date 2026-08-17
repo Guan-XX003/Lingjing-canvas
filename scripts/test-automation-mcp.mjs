@@ -16,7 +16,7 @@ const server = http.createServer(async (req, res) => {
   for await (const chunk of req) text += chunk;
   requests.push({ path: new URL(req.url, "http://127.0.0.1").pathname, body: text ? JSON.parse(text) : null });
   const responses = {
-    "/v1/status": { ok: true, app: "StarCanvas", version: "1.4.5", ready: true },
+    "/v1/status": { ok: true, app: "StarCanvas", version: "1.4.6", ready: true },
     "/v1/models": { ok: true, image: ["test-image"], video: ["test-video"], text: [] },
     "/v1/tasks": { ok: true, tasks: [] },
   "/v1/image/generate": { ok: true, accepted: true, nodeId: "automation-image-test" },

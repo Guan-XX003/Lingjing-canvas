@@ -23,6 +23,13 @@ function readEnterpriseStorageOverlay() {
   return enterpriseOverlayPromise;
 }
 
+// The first storage read can happen before account bootstrap finishes. Do not
+// let that early inactive overlay remain authoritative for the whole renderer
+// lifetime.
+function resetEnterpriseStorageOverlay() {
+  enterpriseOverlayPromise = null;
+}
+
 function overlayStorageResult(keys, stored, overlay) {
   if (!overlay?.active) return stored;
   const combined = { ...(stored || {}), ...(overlay.settings || {}) };
@@ -311,6 +318,7 @@ module.exports = {
   getDesktopStorageItems,
   setDesktopStorageItems,
   removeDesktopStorageItems,
+  resetEnterpriseStorageOverlay,
   resetStorageDbPromise,
 };
 

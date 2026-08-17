@@ -43,9 +43,12 @@ const normalizeAssets = (value: any) => ({
   AIGC: normalizeAssetList(value?.AIGC),
   LivenessFace: normalizeAssetList(value?.LivenessFace),
 });
-const brokenPreviewImage = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="10" fill="#202020"/><rect x="28" y="36" width="104" height="68" rx="8" fill="#2c2c2c" stroke="#555"/><circle cx="58" cy="62" r="9" fill="#666"/><path d="M38 96l24-24 18 18 14-16 28 22H38z" fill="#555"/><text x="80" y="130" text-anchor="middle" font-size="13" font-family="Arial,sans-serif" fill="#aaa">预览暂不可用</text></svg>`,
-)}`;
+const brokenPreviewImage = () => {
+  const label = (globalThis as any).wanjuanI18nRuntime?.t?.("预览暂不可用") || "预览暂不可用";
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="10" fill="#202020"/><rect x="28" y="36" width="104" height="68" rx="8" fill="#2c2c2c" stroke="#555"/><circle cx="58" cy="62" r="9" fill="#666"/><path d="M38 96l24-24 18 18 14-16 28 22H38z" fill="#555"/><text x="80" y="130" text-anchor="middle" font-size="13" font-family="Arial,sans-serif" fill="#aaa">${label}</text></svg>`,
+  )}`;
+};
 
 const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
@@ -90,7 +93,7 @@ function AssetLibrary({ title, type, assets, page, total, onPage, onInfo, onDele
         const canSelectPreview = Boolean(id) && availability === "ready";
         const statusText = wanjuanTianjiPortraitStatusFromItem(asset);
         return <article className={`wanjuan-tianji-native-asset${pending ? " is-pending" : ""}`} key={id || `${type}-${index}`}>
-          {image ? <img src={image} alt={`${wanjuanTianjiPortraitNameFromItem(asset) || "天玑人像"}预览`} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = brokenPreviewImage; }} /> : <span className="wanjuan-tianji-native-no-image">无预览</span>}
+          {image ? <img src={image} alt={`${wanjuanTianjiPortraitNameFromItem(asset) || "天玑人像"}预览`} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = brokenPreviewImage(); }} /> : <span className="wanjuan-tianji-native-no-image">无预览</span>}
           {pending && <i>待刷新</i>}
           {!pending && hasLocalPreview && <i className="is-local-preview">本地预览</i>}
           <b title={wanjuanTianjiPortraitNameFromItem(asset)}>{wanjuanTianjiPortraitNameFromItem(asset) || "未命名素材"}</b>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.6 - 2026-08-17
+
+- Fixed enterprise-gateway member task routing so Seedance POST polling uses the proxy-fetch path instead of creating duplicate task ledgers or quota reservations.
+- Restored managed configuration after account/gateway changes and across App restarts, allowing asynchronous tasks to resume and completed results to be recovered.
+- Hardened startup reveal recovery and expanded the Simplified Chinese, Traditional Chinese, and English UI coverage without translating agent response content.
+- Kept the project-group close action visible above the canvas toolbar and localized the project-group modal, task drawer, and related confirmation/toast messages.
+
 ## 1.4.5 - 2026-08-15
 
 - Rebranded the desktop application, installer, workspace UI, CLI documentation, and release metadata as StarCanvas.

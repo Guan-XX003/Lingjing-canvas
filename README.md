@@ -6,7 +6,7 @@
 
 **面向 AI 创作流程的桌面画布应用**
 
-[![版本](https://img.shields.io/badge/版本-1.4.5-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
+[![版本](https://img.shields.io/badge/版本-1.4.6-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
 [![平台](https://img.shields.io/badge/平台-macOS%20|%20Windows-lightgrey.svg)](#安装)
 [![许可](https://img.shields.io/badge/许可-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 
@@ -100,10 +100,10 @@ StarCanvas是一款强大的本地桌面 AI 创作工作台，专为现代 AI �
 
 | 平台 | 架构 | 下载 |
 |------|------|------|
-| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.5-arm64.dmg](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/StarCanvas-1.4.5-arm64.dmg) |
-| Windows | x64 | [StarCanvas-1.4.5-x64.exe](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/StarCanvas-1.4.5-x64.exe) |
+| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.6-arm64.dmg](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.6-release/StarCanvas-1.4.6-arm64.dmg) |
+| Windows | x64 | [StarCanvas-1.4.6-x64.exe](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.6-release/StarCanvas-1.4.6-x64.exe) |
 
-CLI / MCP 独立下载：[starcanvas-cli-1.4.5.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.5-release/starcanvas-cli-1.4.5.zip)
+CLI / MCP 独立下载：[starcanvas-cli-1.4.6.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.6-release/starcanvas-cli-1.4.6.zip)
 
 ### 安装说明
 
@@ -182,7 +182,13 @@ npm run build:win:x86
 
 ## 📋 更新记录
 
-### 最新版本：v1.4.5（2026-08-15）
+### 最新版本：v1.4.6（2026-08-17）
+
+- 修复企业网关成员的异步生成提交/轮询路由，确保重启后可继续查询并恢复任务结果
+- 修复账号或网关切换后的配置缓存隔离，完善启动恢复与简体/繁体/英文界面切换稳定性
+- 修复项目分组弹窗关闭按钮被顶栏遮挡，并补齐任务清单及分组操作提示的多语言切换
+
+### 历史版本：v1.4.5（2026-08-15）
 
 - 修复生成图片节点编辑保存时报错、旧缩略图覆盖编辑结果及下游引用旧图的问题
 - 编辑区域支持普通鼠标滚轮直接缩放图片，编辑结果会落盘为项目本地素材

@@ -140,6 +140,7 @@ async function run() {
   const accountGateSource = readFileSync(join(root, "src/renderer/components/account-gate.tsx"), "utf8");
   const bootThemeSource = readFileSync(join(root, "electron/preload/boot-theme.cjs"), "utf8");
   const desktopWindowSource = readFileSync(join(root, "electron/main/window.cjs"), "utf8");
+  const startupReadiness = await import(pathToFileURL(join(root, "electron/shared/startup-readiness.cjs")).href);
   const appBundleSource = readFileSync(join(root, "src/renderer/bundle/index.js"), "utf8");
   const videoGenerationSource = readFileSync(join(root, "src/renderer/hooks/useVideoGeneration.ts"), "utf8");
   const videoNodeSource = readFileSync(join(root, "src/renderer/components/video-node.tsx"), "utf8");
@@ -192,6 +193,34 @@ async function run() {
   check("boot splash has a minimum visible duration", bootThemeSource.includes("if (elapsed < 720)"), true);
   check("boot splash timeout offers recovery", bootThemeSource.includes("wanjuan-boot-retry"), true);
   check("boot splash releases an already rendered shell", bootThemeSource.includes('root.dataset.wanjuanBootReady = "stable-shell-fallback"'), true);
+  const startupRoot = {
+    innerText: "Canvas Resources Agents Settings",
+    childElementCount: 1,
+    getBoundingClientRect: () => ({ width: 1280, height: 860 })
+  };
+  const startupDocument = {
+    readyState: "complete",
+    documentElement: { dataset: { wanjuanAppReady: "true", wanjuanProjectId: "default", wanjuanThemeMode: "graphite" } },
+    getElementById: (id) => id === "root" ? startupRoot : null,
+    querySelectorAll: (selector) => selector === ".wanjuan-app-top-nav .wanjuan-app-nav-tab" ? new Array(5).fill({}) : []
+  };
+  const startupWindow = {
+    wanjuanDesktop: {
+      proxyFetch() {}, abortProxyFetch() {}, saveDownload() {}, uploadPublicMedia() {}
+    },
+    __wanjuanMainWorldFetchProxyInstalled: true
+  };
+  const englishStartupStatus = startupReadiness.inspectRendererStartupDocument(startupDocument, startupWindow);
+  check("startup readiness is structural and language independent", englishStartupStatus.hasMainNav && startupReadiness.isRendererBaseReady(englishStartupStatus), true);
+  const startupLifecycle = startupReadiness.createRendererStartupLifecycle();
+  const firstStartup = startupLifecycle.beginNavigation();
+  check("first startup reveal is armed", startupLifecycle.beginReveal(), firstStartup);
+  startupLifecycle.markRevealed(firstStartup);
+  const retryStartup = startupLifecycle.beginNavigation();
+  check("reload creates a fresh startup attempt", retryStartup, firstStartup + 1);
+  check("stale startup attempt cannot reveal reloaded page", startupLifecycle.markRevealed(firstStartup), false);
+  check("reloaded page can start readiness detection", startupLifecycle.beginReveal(), retryStartup);
+  check("main process rearms readiness on navigation", desktopWindowSource.includes('startupLifecycle.beginNavigation()') && desktopWindowSource.includes('revealWindowWhenStable("did-finish-load")'), true);
   check("main process accepts a stable bridged shell fallback", desktopWindowSource.includes('readiness: rendererReady ? "app-ready" : "stable-shell-fallback"'), true);
   check("late first renderer response can still release a valid shell", desktopWindowSource.includes("Date.now() - startedAt >= maxWaitMs"), true);
   check("blank or unbridged startup still reaches recovery", desktopWindowSource.includes("if (!rendererReady && !shellReadyFallback)"), true);

@@ -8,8 +8,15 @@ const { appendDesktopLog, formatErrorMessage, truncateLogValue } = require("./lo
 const { isSafeExternalUrl } = require("./net/security.cjs");
 const { loadTextApiSelfTestConfig } = require("./self-test.cjs");
 const { setAutomationWindow } = require("./automation-server.cjs");
+const {
+  createRendererStartupLifecycle,
+  inspectRendererStartupDocument,
+  isRendererBaseReady
+} = require("../shared/startup-readiness.cjs");
 
 function createMainWindow(baseUrl) {
+  const startupLifecycle = createRendererStartupLifecycle();
+  startupLifecycle.beginNavigation();
   let isRecoveringRenderer = false;
   let blankScreenHits = 0;
   let blankScreenTimer = null;
@@ -24,7 +31,6 @@ function createMainWindow(baseUrl) {
     setTimeout(() => {
       if (win.isDestroyed()) return;
       blankScreenHits = 0;
-      hasRevealedContent = false;
       desktopCssInjected = false;
       win.webContents.reloadIgnoringCache();
       win.webContents.loadURL(`${baseUrl}/index.html`).catch((error) => {
@@ -65,7 +71,6 @@ function createMainWindow(baseUrl) {
   setAutomationWindow(win);
 
   let hasShownWindow = false;
-  let hasRevealedContent = false;
   let hasRunProxyFetchSelfTest = false;
   let hasRunTextApiSelfTest = false;
   const runProxyFetchSelfTest = async () => {
@@ -174,7 +179,9 @@ function createMainWindow(baseUrl) {
     win.focus();
   };
   const revealWindowWhenStable = async (reason = "unknown") => {
-    if (hasRevealedContent || win.isDestroyed()) return;
+    if (win.isDestroyed()) return;
+    const attemptGeneration = startupLifecycle.beginReveal();
+    if (!attemptGeneration) return;
     const startedAt = Date.now();
     const maxWaitMs = 12000;
     const settleMs = 420;
@@ -184,45 +191,21 @@ function createMainWindow(baseUrl) {
     let rendererReady = false;
     let shellReadyFallback = false;
 
-    while (!hasRevealedContent && !win.isDestroyed() && Date.now() - startedAt < maxWaitMs) {
+    while (
+      startupLifecycle.isCurrent(attemptGeneration) &&
+      !startupLifecycle.isRevealed(attemptGeneration) &&
+      !win.isDestroyed() &&
+      Date.now() - startedAt < maxWaitMs
+    ) {
       try {
-        const status = await win.webContents.executeJavaScript(`
-          (() => {
-            const root = document.getElementById('root');
-            const text = (document.body?.innerText || '').replace(/\\s+/g, ' ').trim();
-            const hasMainNav = /StarCanvas/.test(text) && /资源/.test(text) && /智能体/.test(text) && /设置/.test(text);
-            const isLoading = /^Loading\\.\\.\\.$/.test(text) || text === 'Loading...';
-            const rootRect = root?.getBoundingClientRect?.();
-            return {
-              readyState: document.readyState,
-              appReady: document.documentElement.dataset.wanjuanAppReady === 'true',
-              projectId: document.documentElement.dataset.wanjuanProjectId || '',
-              themeMode: document.documentElement.dataset.wanjuanThemeMode || '',
-              desktopBridge: {
-                hasProxyFetch: typeof window.wanjuanDesktop?.proxyFetch === 'function',
-                hasAbortProxyFetch: typeof window.wanjuanDesktop?.abortProxyFetch === 'function',
-                hasSaveDownload: typeof window.wanjuanDesktop?.saveDownload === 'function',
-                hasUploadPublicMedia: typeof window.wanjuanDesktop?.uploadPublicMedia === 'function',
-                hasMainWorldFetchProxy: window.__wanjuanMainWorldFetchProxyInstalled === true
-              },
-              hasMainNav,
-              isLoading,
-              rootChildren: root?.childElementCount || 0,
-              rootWidth: Math.round(rootRect?.width || 0),
-              rootHeight: Math.round(rootRect?.height || 0)
-            };
-          })();
-        `, true);
+        const status = await win.webContents.executeJavaScript(
+          `(${inspectRendererStartupDocument.toString()})(document, window)`,
+          true
+        );
+        if (!startupLifecycle.isCurrent(attemptGeneration)) return;
         lastStatus = status;
 
-        const baseReady =
-          status &&
-          (status.readyState === "interactive" || status.readyState === "complete") &&
-          status.hasMainNav &&
-          !status.isLoading &&
-          status.rootChildren > 0 &&
-          status.rootWidth > 200 &&
-          status.rootHeight > 200;
+        const baseReady = isRendererBaseReady(status);
         const ready = baseReady && status.appReady;
 
         if (ready) {
@@ -251,8 +234,8 @@ function createMainWindow(baseUrl) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    if (hasRevealedContent || win.isDestroyed()) return;
-    hasRevealedContent = true;
+    if (!startupLifecycle.isCurrent(attemptGeneration) || win.isDestroyed()) return;
+    if (!startupLifecycle.markRevealed(attemptGeneration)) return;
     if (!rendererReady && !shellReadyFallback) {
       try {
         await win.webContents.executeJavaScript(`
@@ -266,6 +249,7 @@ function createMainWindow(baseUrl) {
       } catch {}
       appendDesktopLog("window-reveal-timeout", {
         reason,
+        generation: attemptGeneration,
         waitMs: Date.now() - startedAt,
         status: lastStatus
       });
@@ -282,6 +266,7 @@ function createMainWindow(baseUrl) {
     } catch {}
     appendDesktopLog("window-revealed", {
       reason,
+      generation: attemptGeneration,
       waitMs: Date.now() - startedAt,
       readiness: rendererReady ? "app-ready" : "stable-shell-fallback",
       status: lastStatus
@@ -289,6 +274,7 @@ function createMainWindow(baseUrl) {
     runProxyFetchSelfTest().catch(() => {});
     runTextApiSelfTest().catch(() => {});
     showWindowShell("reveal-content");
+    startupLifecycle.finishReveal(attemptGeneration);
   };
 
   appendDesktopLog("desktop-web-preferences", {
@@ -410,6 +396,9 @@ function createMainWindow(baseUrl) {
     }
     if (!blankScreenTimer) blankScreenTimer = setInterval(checkForBlankScreen, 5000);
     setTimeout(checkForBlankScreen, 6000);
+    revealWindowWhenStable("did-finish-load").catch((error) => {
+      appendDesktopLog("window-reveal-failed", { reason: "did-finish-load", message: String(error?.message || error) });
+    });
   });
   // 先显示由 preload 注入的开屏动画，真正 App 内容仍由 wanjuan-booting 遮罩。
   win.webContents.once("dom-ready", () => {
@@ -499,6 +488,8 @@ function createMainWindow(baseUrl) {
     }
   };
   win.webContents.on("did-start-loading", () => {
+    const generation = startupLifecycle.beginNavigation();
+    appendDesktopLog("window-startup-rearmed", { generation });
     desktopCssInjected = false;
   });
   win.webContents.on("dom-ready", () => {

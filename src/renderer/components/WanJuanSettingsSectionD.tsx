@@ -491,6 +491,7 @@ export function WanJuanSettingsSectionD(props: any) {
                   className: `flex-1 relative`,
                   children: jsx(
                     WanJuanCanvasShell, {
+                      appLanguage: (globalThis as any).wanjuanI18nRuntime?.getLanguage?.() || `zh-CN`,
                       projectId: activeProjectId,
                       textApiUrl: textApiUrl,
                       textApiKey: textApiKey,

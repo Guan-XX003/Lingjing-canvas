@@ -48,7 +48,7 @@ StarCanvas is a powerful local desktop AI creation workbench that integrates tex
 2. **Main Visual**: Current StarCanvas canvas screenshot with text, image, and video nodes
 3. **Title**: "StarCanvas" in large serif font
 4. **Tagline**: "AI 创作流程的桌面画布 | Desktop Canvas for AI Workflow"
-5. **Badge**: Version 1.4.5, Platform icons (macOS, Windows)
+5. **Badge**: Version 1.4.6, Platform icons (macOS, Windows)
 6. **Footer**: GitHub username or project URL
 
 ### File Location

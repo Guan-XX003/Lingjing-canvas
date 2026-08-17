@@ -25,12 +25,13 @@ export function use_confirmProjectGroupRename(deps: UseConfirmProjectGroupRename
     setEditingProjectGroupName,
     showToast2,
   } = deps;
+  const projectGroupT = (text: string) => (globalThis as any).wanjuanI18nRuntime?.t?.(text) || text;
   const confirmProjectGroupRename = () => {
           if (!editingProjectGroupId) return;
           let normalizedGroups = normalizeProjectGroups(projectGroups),
             trimmedGroupName = String(editingProjectGroupName || ``).trim();
           if (!trimmedGroupName) {
-            showToast2(`分组名称不能为空`);
+            showToast2(projectGroupT(`分组名称不能为空`));
             return;
           }
           (persistProjectGroups(normalizedGroups.map((group) => group.id === editingProjectGroupId ? {
@@ -39,7 +40,7 @@ export function use_confirmProjectGroupRename(deps: UseConfirmProjectGroupRename
           } : group)),
             setEditingProjectGroupId(null),
             setEditingProjectGroupName(``),
-            showToast2(`分组已重命名`));
+            showToast2(projectGroupT(`分组已重命名`)));
         };
   return { confirmProjectGroupRename };
 }

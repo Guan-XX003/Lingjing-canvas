@@ -1,5 +1,7 @@
 /** 项目分组管理面板（projectGroupPanelOpen）。自 WanJuanAppRoot 抽出，props 传入，行为不变。 */
 import { jsx, jsxs } from "react/jsx-runtime";
+import { X } from "lucide-react";
+import { useEffect } from "react";
 declare const chrome: any;
 
 export function WanJuanProjectGroupPanel({
@@ -25,19 +27,41 @@ export function WanJuanProjectGroupPanel({
   setProjectGroupSearch,
   ungroupedProjectList,
 }: any) {
+  const projectGroupT = (text: string) => (globalThis as any).wanjuanI18nRuntime?.t?.(text) || text;
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === `Escape`) setProjectGroupPanelOpen(false);
+    };
+    window.addEventListener(`keydown`, handleKeyDown);
+    return () => window.removeEventListener(`keydown`, handleKeyDown);
+  }, [setProjectGroupPanelOpen]);
+
   return jsx(`div`, {
-                  className: `absolute inset-0 bg-[#05070b]/88 flex items-center justify-center z-50`,
+                  className: `wanjuan-project-group-overlay bg-[#05070b]/88 flex items-center justify-center`,
+                  role: `presentation`,
+                  onMouseDown: (event) => {
+                    if (event.target === event.currentTarget) setProjectGroupPanelOpen(false);
+                  },
                   style: {
+                    position: `fixed`,
+                    inset: 0,
+                    zIndex: 2000,
+                    padding: `24px`,
                     backgroundColor: `rgba(5, 7, 11, 0.88)`
                   },
                   children: jsxs(`div`, {
                     className: `wanjuan-project-group-dialog bg-[#161a20] rounded-xl border border-[#6b7280] shadow-[0_24px_80px_rgba(0,0,0,0.72)] w-[720px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-140px)] flex flex-col overflow-hidden`,
+                    role: `dialog`,
+                    "aria-modal": `true`,
+                    "aria-labelledby": `wanjuan-project-group-title`,
                     style: {
                       backgroundColor: `#161a20`,
                       borderColor: `#6b7280`,
                       boxShadow: `0 24px 80px rgba(0,0,0,0.72)`,
                       width: `720px`,
-                      maxWidth: `calc(100vw - 48px)`
+                      maxWidth: `calc(100vw - 48px)`,
+                      maxHeight: `calc(100vh - 48px)`
                     },
                     children: [
                       jsxs(`div`, {
@@ -47,19 +71,22 @@ export function WanJuanProjectGroupPanel({
                             className: `flex flex-col`,
                             children: [
                               jsx(`h3`, {
+                                id: `wanjuan-project-group-title`,
                                 className: `text-gray-100 text-sm font-bold`,
-                                children: `项目分组`,
+                                children: projectGroupT(`项目分组`),
                               }),
                               jsx(`span`, {
                                 className: `text-[11px] text-gray-500`,
-                                children: `给项目选择分组，旧项目会保留在未分组`,
+                                children: projectGroupT(`给项目选择分组，旧项目会保留在未分组`),
                               }),
                             ],
                           }),
                           jsx(`button`, {
                             onClick: () => setProjectGroupPanelOpen(false),
-                            className: `text-gray-400 hover:text-white text-lg leading-none`,
-                            children: `×`,
+                            className: `text-gray-400 hover:text-white leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400`,
+                            title: projectGroupT(`关闭`),
+                            "aria-label": projectGroupT(`关闭`),
+                            children: jsx(X, { size: 18, "aria-hidden": `true` }),
                           }),
                         ],
                       }),
@@ -69,7 +96,7 @@ export function WanJuanProjectGroupPanel({
                           jsx(`input`, {
                             value: projectGroupSearch,
                             onChange: (event) => setProjectGroupSearch(event.target.value),
-                            placeholder: `搜索项目`,
+                            placeholder: projectGroupT(`搜索项目`),
                             className: `wanjuan-project-group-input bg-[#181b20] border border-[#3a4048] rounded-lg px-3 py-2 text-xs text-gray-200 outline-none focus:border-blue-500`,
                           }),
                           jsx(`input`, {
@@ -78,13 +105,13 @@ export function WanJuanProjectGroupPanel({
                             onKeyDown: (event) => {
                               event.key === `Enter` && createProjectGroup();
                             },
-                            placeholder: `新分组名称`,
+                            placeholder: projectGroupT(`新分组名称`),
                             className: `wanjuan-project-group-input bg-[#181b20] border border-[#3a4048] rounded-lg px-3 py-2 text-xs text-gray-200 outline-none focus:border-blue-500`,
                           }),
                           jsx(`button`, {
                             onClick: createProjectGroup,
                             className: `wanjuan-project-group-primary bg-blue-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-blue-500`,
-                            children: `新建分组`,
+                            children: projectGroupT(`新建分组`),
                           }),
                         ],
                       }),
@@ -106,18 +133,18 @@ export function WanJuanProjectGroupPanel({
                                 children: [
                                   jsx(`span`, {
                                     className: `text-xs font-semibold text-gray-200`,
-                                    children: `未分组`,
+                                    children: projectGroupT(`未分组`),
                                   }),
                                   jsx(`span`, {
                                     className: `text-[10px] text-gray-500`,
-                                    children: `${ungroupedProjectList.length} 个项目`,
+                                    children: projectGroupT(`${ungroupedProjectList.length} 个项目`),
                                   }),
                                 ],
                               }),
                               ungroupedProjectList.length === 0 ?
                               jsx(`div`, {
                                 className: `px-3 py-3 text-xs text-gray-500`,
-                                children: `没有未分组项目`,
+                                children: projectGroupT(`没有未分组项目`),
                               }) :
                               ungroupedProjectList.map((project) =>
                                 jsxs(`div`, {
@@ -139,11 +166,11 @@ export function WanJuanProjectGroupPanel({
                                       value: project.groupId || ``,
                                       onChange: (event) => moveProjectToGroup(project.id, event.target.value),
                                       className: `wanjuan-project-group-select w-36 bg-[#15181d] border border-[#3a4048] rounded px-2 py-1 text-[11px] text-gray-300 outline-none`,
-                                      title: `移动到分组`,
+                                      title: projectGroupT(`移动到分组`),
                                       children: [
                                         jsx(`option`, {
                                           value: ``,
-                                          children: `未分组`,
+                                          children: projectGroupT(`未分组`),
                                         }),
                                         projectGroupList.map((group) =>
                                           jsx(`option`, {
@@ -179,7 +206,7 @@ export function WanJuanProjectGroupPanel({
                                           collapsed: !group2.collapsed
                                         } : group2)),
                                       className: `text-gray-400 hover:text-white text-xs w-4`,
-                                      title: group.collapsed ? `展开分组` : `折叠分组`,
+                                      title: group.collapsed ? projectGroupT(`展开分组`) : projectGroupT(`折叠分组`),
                                       children: group.collapsed ? `›` : `⌄`,
                                     }),
                                     editingProjectGroupId === group.id ?
@@ -202,18 +229,18 @@ export function WanJuanProjectGroupPanel({
                                     }),
                                     jsx(`span`, {
                                       className: `text-[10px] text-gray-500`,
-                                      children: `${group.projects.length} 个项目`,
+                                      children: projectGroupT(`${group.projects.length} 个项目`),
                                     }),
                                     editingProjectGroupId === group.id ?
                                     jsx(`button`, {
                                       onClick: confirmProjectGroupRename,
                                       className: `text-[10px] text-blue-300 hover:text-blue-200`,
-                                      children: `保存`,
+                                      children: projectGroupT(`保存`),
                                     }) :
                                     jsx(`button`, {
                                       onClick: () => renameProjectGroup(group.id),
                                       className: `text-[10px] text-gray-500 hover:text-blue-300`,
-                                      children: `重命名`,
+                                      children: projectGroupT(`重命名`),
                                     }),
                                     editingProjectGroupId === group.id &&
                                     jsx(`button`, {
@@ -222,12 +249,12 @@ export function WanJuanProjectGroupPanel({
                                           setEditingProjectGroupName(``));
                                       },
                                       className: `text-[10px] text-gray-500 hover:text-white`,
-                                      children: `取消`,
+                                      children: projectGroupT(`取消`),
                                     }),
                                     jsx(`button`, {
                                       onClick: () => deleteProjectGroup(group.id),
                                       className: `text-[10px] text-red-400 hover:text-red-300`,
-                                      children: `删除`,
+                                      children: projectGroupT(`删除`),
                                     }),
                                   ],
                                 }),
@@ -235,7 +262,7 @@ export function WanJuanProjectGroupPanel({
                                 (group.projects.length === 0 ?
                                   jsx(`div`, {
                                     className: `px-3 py-3 text-xs text-gray-500`,
-                                    children: `暂无项目`,
+                                    children: projectGroupT(`暂无项目`),
                                   }) :
                                   group.projects.map((project) =>
                                     jsxs(`div`, {
@@ -257,11 +284,11 @@ export function WanJuanProjectGroupPanel({
                                           value: project.groupId || ``,
                                           onChange: (event) => moveProjectToGroup(project.id, event.target.value),
                                           className: `wanjuan-project-group-select w-36 bg-[#15181d] border border-[#3a4048] rounded px-2 py-1 text-[11px] text-gray-300 outline-none`,
-                                          title: `移动到分组`,
+                                          title: projectGroupT(`移动到分组`),
                                           children: [
                                             jsx(`option`, {
                                               value: ``,
-                                              children: `未分组`,
+                                              children: projectGroupT(`未分组`),
                                             }),
                                             projectGroupList.map((group2) =>
                                               jsx(`option`, {

@@ -1,7 +1,10 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
 
 const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value));
+const i18nRuntime = () => (globalThis as any).wanjuanI18nRuntime;
+const subscribeI18n = (listener: () => void) => i18nRuntime()?.subscribe?.(listener) || (() => {});
+const i18nLanguage = () => i18nRuntime()?.getLanguage?.() || "zh-CN";
 
 const nodeHasMedia = (node: any) => {
   const data = node?.data || {};
@@ -17,6 +20,7 @@ const nodeHasMedia = (node: any) => {
 };
 
 export const WanJuanCanvasPressureMeter = memo(({ nodes = [], edges = [] }: any) => {
+  useSyncExternalStore(subscribeI18n, i18nLanguage, () => "zh-CN");
   const structural = useMemo(() => {
     let media = 0;
     let loading = 0;
@@ -107,21 +111,35 @@ export const WanJuanCanvasPressureMeter = memo(({ nodes = [], edges = [] }: any)
   );
   const pressure = clamp(Math.round(structuralPressure * 0.62 + runtimePressure * 0.38));
   const level = pressure >= 82 ? "overload" : pressure >= 62 ? "high" : pressure >= 36 ? "medium" : "low";
-  const label = level === "overload" ? "过载" : level === "high" ? "高" : level === "medium" ? "中" : "低";
+  const i18n = i18nRuntime();
+  const t = (text: string) => i18n?.t?.(text) || text;
+  const tf = (text: string, values: Record<string, unknown>) =>
+    i18n?.format?.(text, values) || text.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => values[key] == null ? match : String(values[key]));
+  const label = t(level === "overload" ? "过载" : level === "high" ? "高" : level === "medium" ? "中" : "低");
+  const pressureValues = {
+    label,
+    pressure,
+    fps: Math.round(runtime.fps),
+    nodes: nodes.length,
+    edges: edges.length,
+    full: structural.full,
+    lite: structural.lite,
+    shell: structural.shell,
+  };
 
   return jsxs("div", {
     className: "wanjuan-canvas-pressure-meter wanjuan-canvas-pressure-meter-native",
     "data-pressure-level": level,
     style: { "--wanjuan-pressure": `${pressure}%` } as any,
-    title: `当前画布渲染压力：${label}（${pressure}%）\nFPS ${Math.round(runtime.fps)}\n节点 ${nodes.length}，连线 ${edges.length}，完整 ${structural.full}，轻量 ${structural.lite}，外壳 ${structural.shell}`,
+    title: tf("当前画布渲染压力：{label}（{pressure}%）\nFPS {fps}\n节点 {nodes}，连线 {edges}，完整 {full}，轻量 {lite}，外壳 {shell}", pressureValues),
     children: [
       jsxs("div", {
         className: "wanjuan-canvas-pressure-copy",
         children: [
-          jsx("span", { className: "wanjuan-canvas-pressure-title", children: "画布压力" }),
+          jsx("span", { className: "wanjuan-canvas-pressure-title", children: t("画布压力") }),
           jsx("span", {
             className: "wanjuan-canvas-pressure-meta",
-            children: `${nodes.length} 节点 · ${Math.round(runtime.fps)} FPS`,
+            children: tf("{count} 节点 · {fps} FPS", { count: nodes.length, fps: Math.round(runtime.fps) }),
           }),
         ],
       }),

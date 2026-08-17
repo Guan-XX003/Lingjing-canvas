@@ -50,6 +50,14 @@ export function use_refreshGlobalTask(deps: UseRefreshGlobalTaskDeps) {
     storedGlobalConfigs,
   } = deps;
   const refreshGlobalTask = async (task, manualRefreshOptions = {}) => {
+	                // A renderer can restore globalTasks before the enterprise storage
+	                // overlay is ready. Re-bootstrap only for Tianji tasks so the
+	                // current managed config is available before polling.
+	                if (task?.provider === `tianji-seedance`) {
+	                  try {
+	                    await (globalThis as any).wanjuanDesktop?.accountBootstrap?.();
+	                  } catch {}
+	                }
 	                let notify = manualRefreshOptions?.silent === true ? () => {} : showToast2;
 	                const taskCredentialConfigs = collectTaskCredentialConfigs(apiConfigs, storedGlobalConfigs);
 	                const markRefreshFailed = (message) => {

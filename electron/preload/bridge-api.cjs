@@ -15,7 +15,7 @@ const {
   localFileToDataUrl,
   uploadPayloadWithReadableBytes,
 } = require("./media-utils.cjs");
-const { getDesktopStorageItems, getPerformanceSettings, persistPerformanceProfile } = require("./storage.cjs");
+const { getDesktopStorageItems, getPerformanceSettings, persistPerformanceProfile, resetEnterpriseStorageOverlay } = require("./storage.cjs");
 const { showWanjuanInputDialog } = require("./input-dialog.cjs");
 const { defaultCloudPromptStore } = require("./cloud-prompt-store.cjs");
 const {
@@ -116,14 +116,23 @@ exposeGlobal("wanjuanDesktop", {
   enterpriseTeamTemplates: async (payload = {}) =>
     ipcRenderer.invoke("wanjuan:enterprise-team-templates", payload),
   cloudPrompts: async (payload = {}) => ipcRenderer.invoke("wanjuan:cloud-prompts", payload),
-  accountBootstrap: async () => ipcRenderer.invoke("wanjuan:account-bootstrap"),
+  accountBootstrap: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-bootstrap");
+    resetEnterpriseStorageOverlay();
+    return result;
+  },
   accountSendCode: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-send-code", payload),
   accountLogin: async (payload = {}) => {
     const result = await ipcRenderer.invoke("wanjuan:account-login", payload);
+    resetEnterpriseStorageOverlay();
     if (result?.ok !== false) window.dispatchEvent(new CustomEvent("wanjuan:account-session-changed"));
     return result;
   },
-  accountRefresh: async () => ipcRenderer.invoke("wanjuan:account-refresh"),
+  accountRefresh: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-refresh");
+    resetEnterpriseStorageOverlay();
+    return result;
+  },
   accountMe: async () => ipcRenderer.invoke("wanjuan:account-me"),
   accountContinueLocal: async () => {
     const result = await ipcRenderer.invoke("wanjuan:account-local-mode");
@@ -132,22 +141,35 @@ exposeGlobal("wanjuanDesktop", {
   },
   accountLogout: async () => {
     const result = await ipcRenderer.invoke("wanjuan:account-logout");
+    resetEnterpriseStorageOverlay();
     await defaultCloudPromptStore.clearAll().catch(() => {});
     window.dispatchEvent(new CustomEvent("wanjuan:account-session-changed"));
     return result;
   },
-  accountConnectEnterprise: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-connect-enterprise", payload),
+  accountConnectEnterprise: async (payload = {}) => {
+    const result = await ipcRenderer.invoke("wanjuan:account-connect-enterprise", payload);
+    resetEnterpriseStorageOverlay();
+    return result;
+  },
   accountCreateEnterpriseGateway: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-create-enterprise-gateway", payload),
   accountTakeoverEnterpriseGateway: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-takeover-enterprise-gateway", payload),
   accountReleaseEnterpriseGateway: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-release-enterprise-gateway", payload),
   accountPublishEnterpriseConfig: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-publish-enterprise-config", payload),
-  accountRefreshEnterpriseConfig: async () => ipcRenderer.invoke("wanjuan:account-refresh-enterprise-config"),
+  accountRefreshEnterpriseConfig: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-refresh-enterprise-config");
+    resetEnterpriseStorageOverlay();
+    return result;
+  },
   accountEnterpriseManagement: async () => ipcRenderer.invoke("wanjuan:account-enterprise-management"),
   accountEnterpriseMemberUpdate: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-enterprise-member-update", payload),
   accountEnterpriseMemberRemove: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-enterprise-member-remove", payload),
   accountEnterpriseQuotaDefaultUpdate: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-enterprise-quota-default-update", payload),
   accountEnterpriseQuotaMemberUpdate: async (payload = {}) => ipcRenderer.invoke("wanjuan:account-enterprise-quota-member-update", payload),
-  accountDisconnectEnterprise: async () => ipcRenderer.invoke("wanjuan:account-disconnect-enterprise"),
+  accountDisconnectEnterprise: async () => {
+    const result = await ipcRenderer.invoke("wanjuan:account-disconnect-enterprise");
+    resetEnterpriseStorageOverlay();
+    return result;
+  },
   enterpriseGatewayStart: async () => ipcRenderer.invoke("wanjuan:enterprise-gateway-start"),
   enterpriseGatewayStop: async () => ipcRenderer.invoke("wanjuan:enterprise-gateway-stop"),
   accountResetOnboarding: async () => ipcRenderer.invoke("wanjuan:account-reset-onboarding"),

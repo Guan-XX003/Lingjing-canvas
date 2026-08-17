@@ -40,6 +40,8 @@ export function WanJuanSettingsSectionB(props: any) {
   const account = useSyncExternalStore(subscribeAccount, getAccountState, getAccountState);
   const enterpriseSettingsManaged = account.enterprise?.connected === true && account.enterprise?.mode !== "host";
   const [managedLockNotice, setManagedLockNotice] = useState("");
+  const settingsT = (text: string) =>
+    (globalThis as any).wanjuanI18nRuntime?.t?.(text, props.appLanguage) || text;
   const [oneStopCenterUrl, setOneStopCenterUrl] = useState(() => {
     try {
       return normalizeOneStopCenterUrl(window.localStorage?.getItem(WANJUAN_ONE_STOP_CENTER_URL_KEY)) || WANJUAN_JIXIN_DEFAULT_API_URL;
@@ -308,11 +310,11 @@ export function WanJuanSettingsSectionB(props: any) {
                   children: [
                     jsx(`div`, {
                       className: `text-[10px] text-gray-500 font-bold px-3 py-2 mb-1 uppercase tracking-wider wanjuan-settings-sidebar-title`,
-	                      children: wanjuanT(`设置菜单`),
+	                      children: settingsT(`设置菜单`),
                     }),
                     jsx(`div`, {
                       className: `text-[10px] text-gray-600 font-semibold px-3 pt-1 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
-                      children: `账号`,
+                      children: settingsT(`账号`),
                     }),
                     jsxs(`button`, {
                       onClick: () => setActiveSettingsTab(`account`),
@@ -322,12 +324,12 @@ export function WanJuanSettingsSectionB(props: any) {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-account`,
                           children: `👤`,
                         }),
-                        ` 我的账号`,
+                        settingsT(`我的账号`),
                       ],
                     }),
                     jsx(`div`, {
                       className: `text-[10px] text-gray-600 font-semibold px-3 pt-2 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
-                      children: `模型服务`,
+                      children: settingsT(`模型服务`),
                     }),
                     jsxs(`button`, {
                       onClick: () => setActiveSettingsTab(`oneStop`),
@@ -337,47 +339,47 @@ export function WanJuanSettingsSectionB(props: any) {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-one-stop`,
                           children: `🌐`,
                         }),
-                        ` 一站式中心`,
+                        settingsT(`一站式中心`),
                       ],
                     }),
                     jsxs(`button`, {
                       onClick: () => selectSettingsTab(`api`),
-                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      title: enterpriseSettingsManaged ? settingsT(`由企业网关管理`) : ``,
                       className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `api` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-300 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [
                         jsx(`span`, {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-api`,
                           children: `🔐`,
                         }),
-	                        ` API 配置`,
+	                        settingsT(`API 配置`),
                         enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` }),
                       ],
                     }),
                     jsxs(`button`, {
                       onClick: () => selectSettingsTab(`models`),
-                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      title: enterpriseSettingsManaged ? settingsT(`由企业网关管理`) : ``,
                       className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `models` ? `wanjuan-settings-nav-item-active bg-[#252525] text-purple-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [
                         jsx(`span`, {
                           className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-models`,
                           children: `🧠`,
                         }),
-	                        ` 模型配置`,
+	                        settingsT(`模型配置`),
                         enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` }),
                       ],
                     }),
                     jsxs(`button`, {
                       onClick: () => selectSettingsTab(`cloud`),
-                      title: enterpriseSettingsManaged ? `由企业网关管理` : ``,
+                      title: enterpriseSettingsManaged ? settingsT(`由企业网关管理`) : ``,
                       className: `text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1.5 flex items-center gap-2 wanjuan-settings-nav-item ${enterpriseSettingsManaged ? `wanjuan-settings-nav-item-managed` : ``} ${activeSettingsTab === `cloud` ? `wanjuan-settings-nav-item-active bg-[#252525] text-cyan-400 font-bold border border-[#333] shadow-sm` : `text-gray-300 hover:bg-[#222] hover:text-gray-100 border border-transparent`}`,
                       children: [jsx(`span`, {
                         className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-cloud`,
                         children: `☁️`
-	                      }), ` 上传与直链`, enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` })],
+	                      }), settingsT(`上传与直链`), enterpriseSettingsManaged && jsx(`span`, { className: `wanjuan-settings-managed-lock`, children: `🔒` })],
                     }),
 	                    jsx(`div`, {
 	                      className: `text-[10px] text-gray-600 font-semibold px-3 pt-3 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
-	                      children: `运行`,
+	                      children: settingsT(`运行`),
 	                    }),
 	                    jsxs(`button`, {
 	                      onClick: () => setActiveSettingsTab(`generation`),
@@ -385,7 +387,7 @@ export function WanJuanSettingsSectionB(props: any) {
 	                      children: [jsx(`span`, {
 	                        className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-generation`,
 	                        children: `✨`
-		                      }), ` 生成与下载`],
+	                      }), settingsT(`生成与下载`)],
 	                    }),
 	                    jsxs(`button`, {
 	                      onClick: () => setActiveSettingsTab(`extensions`),
@@ -393,11 +395,11 @@ export function WanJuanSettingsSectionB(props: any) {
 	                      children: [jsx(`span`, {
 	                        className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-extensions`,
 	                        children: `🧩`
-		                      }), ` 本地工具`],
+	                      }), settingsT(`本地工具`)],
 	                    }),
 	                    jsx(`div`, {
 	                      className: `text-[10px] text-gray-600 font-semibold px-3 pt-3 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
-	                      children: `数据`,
+	                      children: settingsT(`数据`),
 	                    }),
 	                    jsxs(`button`, {
 	                      onClick: () => setActiveSettingsTab(`data`),
@@ -405,11 +407,11 @@ export function WanJuanSettingsSectionB(props: any) {
                       children: [jsx(`span`, {
                         className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-data`,
                         children: `🗄️`,
-	                      }), ` 项目与备份`],
+	                      }), settingsT(`项目与备份`)],
                     }),
                     jsx(`div`, {
                       className: `text-[10px] text-gray-600 font-semibold px-3 pt-3 pb-1 uppercase tracking-wider wanjuan-settings-sidebar-group`,
-                      children: `基础`,
+                      children: settingsT(`基础`),
                     }),
                     jsxs(`button`, {
                       onClick: () => setActiveSettingsTab(`basic`),
@@ -417,7 +419,7 @@ export function WanJuanSettingsSectionB(props: any) {
                       children: [jsx(`span`, {
                         className: `wanjuan-skeuo-icon wanjuan-skeuo-icon-basic`,
                         children: `🪄`,
-	                      }), ` 外观与通用`],
+	                      }), settingsT(`外观与通用`)],
                     }),
                   ],
                 }),

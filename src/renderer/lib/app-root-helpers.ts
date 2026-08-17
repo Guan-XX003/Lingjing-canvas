@@ -9,7 +9,7 @@ import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 export { compactGlobalTasks } from "./global-tasks";
 
-export const WANJUAN_RELEASE_NOTES_1_4_5 = `1.4.5：StarCanvas 品牌升级，保留本地数据与自动化兼容能力。`;
+export const WANJUAN_RELEASE_NOTES_1_4_6 = `1.4.6：修复企业网关成员异步任务轮询与重启恢复，并完善界面语言切换稳定性。`;
 
 export const membershipLimits = {
       FREE: {

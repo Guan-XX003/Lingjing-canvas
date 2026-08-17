@@ -6,7 +6,7 @@
 
 **Desktop Canvas Application for AI Creation Workflow**
 
-[![Version](https://img.shields.io/badge/version-1.4.5-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
+[![Version](https://img.shields.io/badge/version-1.4.6-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-lightgrey.svg)](#installation)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange.svg)](../LICENSE)
 
@@ -98,8 +98,8 @@ Customize theme, language, and application-wide preferences.
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
-| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.5-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [StarCanvas-1.4.5-x64.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.6-arm64.dmg](../../releases/latest) |
+| Windows | x64 | [StarCanvas-1.4.6-x64.exe](../../releases/latest) |
 
 ---
 
@@ -161,9 +161,14 @@ Build artifacts output to `release/` directory.
 
 ## 📋 Latest Updates
 
-### v1.4.5 (2026-06-29)
-- 🌐 Added an official website button next to update checking
-- 🛡️ Packaged builds now ignore development user-data overrides
+### v1.4.6 (2026-08-17)
+- Fixed enterprise-gateway member task submission and asynchronous polling so tasks resume and restore results after an App restart.
+- Isolated account/gateway configuration overlays and improved startup recovery and Simplified Chinese, Traditional Chinese, and English language switching.
+- Kept the project-group close control visible and localized the task drawer and project-group action messages.
+
+### v1.4.5 (2026-08-15)
+- Rebranded the desktop application, installer, workspace UI, CLI documentation, and release metadata as StarCanvas.
+- Kept the existing bundle identifier, local data directories, and `wanjuan` automation commands for seamless upgrades.
 
 ### v1.3.4 (2026-06-27)
 - 📦 Released official macOS and Windows installers

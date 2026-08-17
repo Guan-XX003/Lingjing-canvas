@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
 import {
   FileUp,
@@ -65,6 +65,10 @@ const TOOL_GROUPS = [
   },
 ];
 
+const i18nRuntime = () => (globalThis as any).wanjuanI18nRuntime;
+const subscribeI18n = (listener: () => void) => i18nRuntime()?.subscribe?.(listener) || (() => {});
+const i18nLanguage = () => i18nRuntime()?.getLanguage?.() || "zh-CN";
+
 export function WanJuanCanvasBottomDock({
   createNodeAt,
   fileInputRef,
@@ -73,6 +77,12 @@ export function WanJuanCanvasBottomDock({
   screenToFlowPosition,
   wrapperRef,
 }: any) {
+  useSyncExternalStore(subscribeI18n, i18nLanguage, () => "zh-CN");
+  const runtime = i18nRuntime();
+  const t = (text: string) => runtime?.t?.(text) || text;
+  const tf = (text: string, values: Record<string, unknown>) =>
+    runtime?.format?.(text, values) ||
+    text.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => values[key] == null ? match : String(values[key]));
   const [openPanel, setOpenPanel] = useState<"tools" | "resources" | null>(null);
   const [activeToolGroup, setActiveToolGroup] = useState("format");
   const dockRef = useRef<HTMLDivElement | null>(null);
@@ -120,8 +130,8 @@ export function WanJuanCanvasBottomDock({
       onDragStart: options.draggable === false ? undefined : (event: any) => beginDrag(event, item),
       onClick: options.onClick || (() => create(item.type, item.data)),
       className: `wanjuan-canvas-dock-button ${options.active ? "is-active" : ""}`,
-      title: options.title || `${item.label}（点击创建，拖动可指定位置）`,
-      children: [jsx(Icon, { size: 19, className: item.color || "text-gray-300" }), jsx("span", { children: item.label })],
+      title: options.title ? t(options.title) : tf("{label}（点击创建，拖动可指定位置）", { label: t(item.label) }),
+      children: [jsx(Icon, { size: 19, className: item.color || "text-gray-300" }), jsx("span", { children: t(item.label) })],
     }, item.type || item.label);
   };
 
@@ -141,7 +151,7 @@ export function WanJuanCanvasBottomDock({
                 type: "button",
                 onClick: () => setActiveToolGroup(group.id),
                 className: `wanjuan-canvas-dock-tool-tab ${activeToolGroup === group.id ? "is-active" : ""}`,
-                children: [jsx(Icon, { size: 15, className: group.color }), jsx("span", { children: group.label })],
+                children: [jsx(Icon, { size: 15, className: group.color }), jsx("span", { children: t(group.label) })],
               }, group.id);
             }),
           }),

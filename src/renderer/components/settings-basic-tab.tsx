@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-	                                          children: wanjuanT(`1.4.5：StarCanvas 品牌升级，保留本地数据与自动化兼容能力。`),
+	                                          children: wanjuanT(`1.4.6：修复企业网关成员异步任务轮询与重启恢复，并完善界面语言切换稳定性。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-	                                          children: `1.4.5`,
+	                                          children: `1.4.6`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

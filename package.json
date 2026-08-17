@@ -1,6 +1,6 @@
 {
   "name": "wanjuan-lingjing",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "private": true,
   "description": "StarCanvas - macOS AI 创作画布桌面应用",
   "author": "",
@@ -28,7 +28,7 @@
     "test:extension-tools": "node scripts/test-extension-tool-runtime.cjs",
     "test:update-checker": "electron scripts/test-update-checker.cjs",
     "test:workspace-team": "npm run build:web && node scripts/test-workspace-team.cjs",
-    "test:i18n:workspace": "node scripts/test-workspace-i18n.cjs",
+    "test:i18n:workspace": "node scripts/test-workspace-i18n.cjs && node scripts/test-i18n-static.cjs",
     "test:storage": "node scripts/test-storage-lab.mjs",
     "test:storage:electron": "node scripts/test-storage-electron.cjs",
     "test:storage:state": "node scripts/test-storage-state-policy.mjs",
@@ -46,6 +46,9 @@
     "test:cloud-prompts": "node scripts/test-cloud-prompts.cjs",
     "test:cloud-prompts:production": "electron scripts/test-cloud-prompts-production.cjs",
     "test:enterprise-gateway": "node scripts/test-enterprise-gateway.cjs",
+    "test:preload-proxy": "node scripts/test-preload-proxy.cjs",
+    "test:enterprise-overlay-cache": "node scripts/test-enterprise-overlay-cache.cjs",
+    "test:automation-canvas-state": "node scripts/test-automation-canvas-state.cjs",
     "test:enterprise-team-templates": "node scripts/test-enterprise-team-templates.cjs",
     "test:local-secret-storage": "node scripts/test-local-secret-storage.cjs",
     "test:local-data-cleanup": "node scripts/test-local-data-cleanup.cjs",
@@ -87,7 +90,7 @@
   "build": {
     "appId": "com.wanjuan.lingjing",
     "productName": "StarCanvas",
-    "artifactName": "StarCanvas-1.4.5-${arch}.${ext}",
+    "artifactName": "StarCanvas-1.4.6-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -110,8 +113,8 @@
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
       "extendInfo": {
-        "CFBundleShortVersionString": "1.4.5",
-        "CFBundleVersion": "1.4.5"
+        "CFBundleShortVersionString": "1.4.6",
+        "CFBundleVersion": "1.4.6"
       }
     },
     "win": {
