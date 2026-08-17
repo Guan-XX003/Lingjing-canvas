@@ -8,6 +8,7 @@ const archKey = process.arch === "x64" ? "x64" : process.arch === "ia32" ? "ia32
 const isWindows = process.platform === "win32";
 const targetRoot = path.join(repoRoot, "tool-runtime", `${platformKey}-${archKey}`, "deface");
 const platformRoot = path.dirname(targetRoot);
+const binRoot = path.join(platformRoot, "bin");
 const venvRoot = path.join(targetRoot, "venv");
 const venvBin = path.join(venvRoot, isWindows ? "Scripts" : "bin");
 const venvPython = path.join(venvBin, isWindows ? "python.exe" : "python");
@@ -17,6 +18,13 @@ const manifestPath = path.join(targetRoot, "wanjuan-bundled-deface.json");
 const defaceVersion = process.env.WANJUAN_BUNDLED_DEFACE_VERSION || "1.5.0";
 const bootstrapRoot = path.join(repoRoot, ".wanjuan-build-tools", `${platformKey}-${archKey}`, "virtualenv-bootstrap");
 const bootstrapPython = path.join(bootstrapRoot, isWindows ? "Scripts" : "bin", isWindows ? "python.exe" : "python");
+const windowsBuildRoot = path.join(repoRoot, ".wanjuan-build-tools", `${platformKey}-${archKey}`, "deface-pyinstaller");
+const windowsBuildVenv = path.join(windowsBuildRoot, "venv");
+const windowsBuildPython = path.join(windowsBuildVenv, "Scripts", "python.exe");
+const windowsEntryPath = path.join(windowsBuildRoot, "wanjuan_deface_entry.py");
+const windowsWorkPath = path.join(windowsBuildRoot, "work");
+const windowsSpecPath = path.join(windowsBuildRoot, "spec");
+const pyInstallerVersion = process.env.WANJUAN_BUNDLED_PYINSTALLER_VERSION || "6.16.0";
 
 function run(command, args, options = {}) {
   console.log([command, ...args].join(" "));
@@ -80,7 +88,10 @@ function writeLicenseNote() {
       "- Deface: https://github.com/ORB-HD/deface",
       "- License: MIT",
       `- Bundled version: ${defaceVersion}`,
-      "- Runtime dependencies are installed into the local virtual environment during release preparation.",
+      isWindows
+        ? "- Runtime dependencies are frozen during release preparation."
+        : "- Runtime dependencies are installed into the local virtual environment during release preparation.",
+      ...(isWindows ? ["- The Windows runtime is frozen with PyInstaller and does not require system Python or pip."] : []),
       "",
       "Do not place Qwen-TTS here. Qwen-TTS is distributed as an official optional offline tool pack."
     ].join("\n"),
@@ -98,14 +109,17 @@ function writeManifest() {
       platform: platformKey,
       arch: archKey,
       preparedAt: new Date().toISOString(),
-      command: path.relative(platformRoot, bundledDefaceCommandPath())
+      command: path.relative(platformRoot, bundledDefaceCommandPath()),
+      runtime: isWindows ? "pyinstaller-onefile" : "venv",
+      requiresSystemPython: false,
+      ...(isWindows ? { backend: "opencv-cpu", pyInstallerVersion } : {})
     }, null, 2),
     "utf8"
   );
 }
 
 function bundledDefaceCommandPath() {
-  if (isWindows) return venvDeface;
+  if (isWindows) return path.join(binRoot, "deface.exe");
   return path.join(platformRoot, "bin", "deface");
 }
 
@@ -147,6 +161,50 @@ function createPortableVenv(python) {
   run(virtualenvPython.command, [...virtualenvPython.prefixArgs, "-m", "virtualenv", "--copies", venvRoot]);
 }
 
+function prepareWindowsStandalone(python) {
+  fs.mkdirSync(windowsBuildRoot, { recursive: true });
+  if (!fs.existsSync(windowsBuildPython)) {
+    run(python.command, [...python.prefixArgs, "-m", "venv", windowsBuildVenv]);
+  }
+  run(windowsBuildPython, ["-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"]);
+  run(windowsBuildPython, [
+    "-m", "pip", "install", "--upgrade",
+    `deface==${defaceVersion}`,
+    `pyinstaller==${pyInstallerVersion}`
+  ]);
+  fs.writeFileSync(
+    windowsEntryPath,
+    [
+      "from deface.deface import main",
+      "",
+      "if __name__ == '__main__':",
+      "    main()"
+    ].join("\n"),
+    "utf8"
+  );
+  fs.rmSync(binRoot, { recursive: true, force: true });
+  fs.rmSync(windowsWorkPath, { recursive: true, force: true });
+  fs.rmSync(windowsSpecPath, { recursive: true, force: true });
+  fs.mkdirSync(binRoot, { recursive: true });
+  fs.mkdirSync(windowsWorkPath, { recursive: true });
+  fs.mkdirSync(windowsSpecPath, { recursive: true });
+  run(windowsBuildPython, [
+    "-m", "PyInstaller",
+    "--noconfirm",
+    "--clean",
+    "--onefile",
+    "--console",
+    "--noupx",
+    "--name", "deface",
+    "--distpath", binRoot,
+    "--workpath", windowsWorkPath,
+    "--specpath", windowsSpecPath,
+    "--collect-data", "deface",
+    "--collect-all", "imageio_ffmpeg",
+    windowsEntryPath
+  ]);
+}
+
 function assertNoAbsolutePythonLink() {
   if (isWindows) return;
   const pythonVersionPath = path.join(venvBin, "python3.12");
@@ -171,6 +229,16 @@ if (commandWorks(bundledDefaceCommandPath(), ["--version"]) || commandWorks(bund
 
 const python = findPython();
 fs.mkdirSync(targetRoot, { recursive: true });
+if (isWindows) {
+  prepareWindowsStandalone(python);
+  if (!commandWorks(bundledDefaceCommandPath(), ["--version"]) && !commandWorks(bundledDefaceCommandPath(), ["--help"])) {
+    throw new Error(`Frozen Deface was built but is not runnable: ${bundledDefaceCommandPath()}`);
+  }
+  writeLicenseNote();
+  writeManifest();
+  console.log(`Bundled Deface prepared: ${bundledDefaceCommandPath()}`);
+  process.exit(0);
+}
 if (!fs.existsSync(venvPython)) {
   createPortableVenv(python);
 }

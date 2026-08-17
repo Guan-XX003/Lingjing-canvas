@@ -1,1 +1,1 @@
-Local face detection and anonymization workflow for producing blurred video outputs.
+Local face detection and anonymization workflow for producing MP4 outputs. Windows x64 uses a packaged PyInstaller Deface runtime with the OpenCV CPU backend, requires no system Python or online install, and is a fail-closed packaging requirement; macOS keeps its existing bundled-venv resolution path.

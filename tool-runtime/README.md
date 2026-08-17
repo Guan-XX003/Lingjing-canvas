@@ -26,10 +26,29 @@ Each folder may contain executables directly or under `bin/`, for example:
 
 Deface can also be bundled as a prepared venv, for example:
 - `deface/venv/bin/deface`
-- `deface/venv/Scripts/deface.exe`
+
+Windows x64 uses a relocatable PyInstaller runtime instead of a venv, because a
+normal Windows venv still depends on the Python installation of the build
+machine:
+- `win32-x64/bin/deface.exe`
+- `win32-x64/deface/wanjuan-bundled-deface.json`
+- `win32-x64/deface/LICENSES.md`
+
+The Windows manifest must declare `runtime: pyinstaller-onefile`,
+`requiresSystemPython: false`, and `backend: opencv-cpu`. Windows x64 packaging
+fails closed when this runtime is missing or malformed.
 
 The preparation script writes a wrapper at `bin/deface` on macOS so the app can
 resolve Deface through the same bundled runtime path as other command-line tools.
+
+Native Windows x64 release sequence:
+
+```powershell
+npm run prepare:bundled-deface
+npm run verify:bundled-deface
+npm run test:bundled-deface
+npm run build:win:x64:native
+```
 
 When a bundled runtime is absent, the app falls back to managed per-user
 downloads under the app user data directory, then to system commands.

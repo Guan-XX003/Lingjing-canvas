@@ -831,7 +831,10 @@ function registerDesktopIpc() {
     try {
       return await blurVideoFaces(payload || {});
     } catch (error) {
-      console.error("blur-video-faces failed", error);
+      console.error("blur-video-faces failed", {
+        name: String(error?.name || "Error"),
+        code: /^[A-Z0-9_-]{1,32}$/i.test(String(error?.code || "")) ? String(error.code) : "RUNTIME_FAILED"
+      });
       return { ok: false, error: formatErrorMessage(error) };
     }
   });

@@ -87,6 +87,14 @@ function bundledToolCommand(name) {
   return "";
 }
 
+function isBundledToolCommand(command) {
+  const resolved = path.resolve(String(command || ""));
+  return toolRuntimeRoots().some((root) => {
+    const base = path.resolve(root);
+    return resolved === base || resolved.startsWith(`${base}${path.sep}`);
+  });
+}
+
 function managedToolBinRoot() {
   return path.join(safeUserPath("userData"), "extension-tools", "bin", `${PLATFORM_KEY}-${ARCH_KEY}`);
 }
@@ -944,6 +952,9 @@ async function ensureFfmpegCommand() {
 
 function resolveDefaceCommand() {
   const bundledDeface = bundledToolCommand("deface");
+  if (IS_WINDOWS && bundledDeface && isBundledToolCommand(bundledDeface) && fs.existsSync(bundledDeface)) {
+    return bundledDeface;
+  }
   const managedDeface = defaceVenvCommand();
   const userDefaceBins = [];
   try {
@@ -971,7 +982,25 @@ function resolveDefaceCommand() {
   ].filter(Boolean);
   for (const candidate of candidates) {
     if (candidate.includes(path.sep) && !fs.existsSync(candidate)) continue;
-    if (hasCommand(candidate, ["--version"]) || hasCommand(candidate, ["--help"])) return candidate;
+    const timeout = IS_WINDOWS && isBundledToolCommand(candidate) ? 60000 : 15000;
+    try {
+      execFileSync(candidate, ["--version"], {
+        encoding: "utf8",
+        timeout,
+        windowsHide: true,
+        maxBuffer: 1024 * 1024
+      });
+      return candidate;
+    } catch {}
+    try {
+      execFileSync(candidate, ["--help"], {
+        encoding: "utf8",
+        timeout,
+        windowsHide: true,
+        maxBuffer: 1024 * 1024
+      });
+      return candidate;
+    } catch {}
   }
   return "deface";
 }
@@ -1705,10 +1734,12 @@ async function cloneVoiceWithQwenTts(payload = {}) {
 
 function getDefaceToolStatus() {
   const command = resolveDefaceCommand();
+  const timeout = IS_WINDOWS && isBundledToolCommand(command) ? 60000 : 15000;
   try {
     const result = execFileSync(command, ["--version"], {
       encoding: "utf8",
-      timeout: 15000,
+      timeout,
+      windowsHide: true,
       maxBuffer: 1024 * 1024
     });
     return {
@@ -1721,7 +1752,8 @@ function getDefaceToolStatus() {
     try {
       execFileSync(command, ["--help"], {
         encoding: "utf8",
-        timeout: 15000,
+        timeout,
+        windowsHide: true,
         maxBuffer: 1024 * 1024
       });
       return {
@@ -1735,12 +1767,17 @@ function getDefaceToolStatus() {
       ok: true,
       installed: false,
       command: "",
-      error: formatErrorMessage(error)
+      error: "Deface 未安装或内置运行时不可用"
     };
   }
 }
 
 async function installDefaceTool() {
+  if (IS_WINDOWS) {
+    const status = getDefaceToolStatus();
+    if (status.installed && isBundledToolCommand(status.command)) return status;
+    throw new Error("Windows 版 Deface 随 StarCanvas 安装包提供，不支持在线安装；请重新安装或修复 StarCanvas。");
+  }
   const python = await ensureQwenTtsPythonCommand();
   await ensureFfmpegCommand().catch(() => "");
   const root = defaceToolRoot();
@@ -1775,6 +1812,18 @@ async function installDefaceTool() {
   };
 }
 
+function defaceFailureMessage(error) {
+  const message = String(error?.message || error || "");
+  if (error?.code === "ENOENT" || /ENOENT|not found|no such file/i.test(message)) {
+    return "未找到 deface。请重新安装或修复 StarCanvas。";
+  }
+  if (error?.killed || /timed?\s*out|timeout/i.test(message)) {
+    return "视频人脸打码失败：本地处理超时，请缩短视频后重试";
+  }
+  const code = /^[A-Z0-9_-]{1,32}$/i.test(String(error?.code || "")) ? String(error.code) : "RUNTIME_FAILED";
+  return `视频人脸打码失败：Deface 本地运行失败（${code}）`;
+}
+
 async function blurVideoFaces(payload = {}) {
   const { buffer, mime, filename: rawFilename } = await bufferFromMediaPayload(payload || {});
   const sourceName = sanitizeFilename(payload?.filename || rawFilename || `source-${Date.now()}${extensionFromMime(mime) || ".mp4"}`);
@@ -1804,18 +1853,23 @@ async function blurVideoFaces(payload = {}) {
     String(scale)
   ];
   if (keepAudio) args.push("--keep-audio");
+  const command = resolveDefaceCommand();
+  if (IS_WINDOWS && isBundledToolCommand(command)) args.push("--backend", "opencv");
 
   try {
-    await execFileWithTimeout(resolveDefaceCommand(), args, {
+    const options = {
       timeoutMs: Math.max(60 * 1000, Math.min(2 * 60 * 60 * 1000, Number(payload?.timeoutMs || 30 * 60 * 1000)))
-    });
-  } catch (error) {
-    const message = String(error?.message || error || "");
-    const detail = String(error?.stderr || error?.stdout || "").trim();
-    if (error?.code === "ENOENT" || /ENOENT|not found|no such file/i.test(message)) {
-      throw new Error("未找到 deface。请先在 设置 > 拓展功能 中点击安装或重新安装 Deface。");
+    };
+    if (IS_WINDOWS) {
+      options.windowsHide = true;
+      options.env = {
+        ...process.env,
+        PATH: `${path.dirname(command)}${path.delimiter}${process.env.PATH || ""}`
+      };
     }
-    throw new Error(`视频人脸打码失败：${detail || message}`);
+    await execFileWithTimeout(command, args, options);
+  } catch (error) {
+    throw new Error(defaceFailureMessage(error));
   }
 
   if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 1024) {
@@ -1945,6 +1999,7 @@ module.exports = {
   ensureUvCommand,
   ensureUvPythonCommand,
   bundledToolCommand,
+  isBundledToolCommand,
   managedToolCommand,
   resolveDefaceCommand,
   defaceToolRoot,
@@ -1982,6 +2037,7 @@ module.exports = {
   cloneVoiceWithQwenTts,
   getDefaceToolStatus,
   installDefaceTool,
+  defaceFailureMessage,
   blurVideoFaces,
   importExtensionToolPack,
   realEsrganJobs

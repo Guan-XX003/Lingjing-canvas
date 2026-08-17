@@ -119,4 +119,10 @@ macOS 导入时 App 会自动给常见脚本和可执行文件补 `755` 权限�
 - 不要把 Win 和 Mac 混在一个包里，按平台架构拆分。
 - Qwen-TTS 的 venv 和模型体积较大，必须单独版本化，不要放进常规 App 安装包。
 - Deface 默认随 App 内置；只有需要修复或替换 Deface 时，才制作包含 `deface` 条目的离线工具包。
+- Windows x64 常规安装包中的 Deface 必须是
+  `resources/tool-runtime/win32-x64/bin/deface.exe` 的 PyInstaller 独立运行时；
+  它固定使用 OpenCV CPU 后端，不依赖用户系统 Python、pip 或联网安装。
+- Windows x64 正式构建必须先在 Windows 原生环境运行
+  `npm run prepare:bundled-deface` 和 `npm run verify:bundled-deface`，再运行
+  `npm run build:win:x64:native`。缺少运行时会直接阻止打包，不能再静默降级。
 - 每次发布工具包前，先在同平台空白机器上导入并点击“检测状态”确认通过。

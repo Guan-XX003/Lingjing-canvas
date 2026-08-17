@@ -27,6 +27,15 @@ if (process.platform === "win32") {
 assert.equal(path.basename(tools.defaceVenvCommand()).startsWith("deface"), true);
 assert.equal(typeof tools.bundledToolCommand("deface"), "string");
 assert.equal(typeof tools.managedToolCommand("deface"), "string");
+assert.equal(typeof tools.defaceFailureMessage, "function");
+assert.equal(
+  tools.defaceFailureMessage({ code: "ENOENT", message: "spawn C:\\Users\\测试 用户\\deface.exe ENOENT" }),
+  "未找到 deface。请重新安装或修复 StarCanvas。"
+);
+assert.equal(
+  /测试 用户|deface\.exe/.test(tools.defaceFailureMessage({ message: "C:\\Users\\测试 用户\\deface.exe failed" })),
+  false
+);
 
 const expandArchiveArgs = tools.windowsExpandArchiveArgs("C:\\Users\\Test User\\uv.zip", "C:\\Users\\Test User\\tools");
 assert.equal(expandArchiveArgs[0], "-NoProfile");
