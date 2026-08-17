@@ -27,7 +27,7 @@
     "test:lib": "node scripts/test-lib.mjs",
     "test:windows-paths": "node scripts/test-windows-file-url-paths.cjs",
     "test:extension-tools": "node scripts/test-extension-tool-runtime.cjs",
-    "test:bundled-deface": "node scripts/test-bundled-deface-contract.cjs",
+    "test:bundled-deface": "node scripts/test-bundled-deface-contract.cjs && node scripts/test-deface-windows-staging.cjs",
     "test:update-checker": "electron scripts/test-update-checker.cjs",
     "test:workspace-team": "npm run build:web && node scripts/test-workspace-team.cjs",
     "test:i18n:workspace": "node scripts/test-workspace-i18n.cjs && node scripts/test-i18n-static.cjs",

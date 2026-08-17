@@ -1,5 +1,6 @@
 // 外部工具链：python/ffmpeg/qwen-tts/real-esrgan/deface/homebrew 的探测、安装与运行
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const https = require("https");
 const crypto = require("crypto");
@@ -1813,6 +1814,7 @@ async function installDefaceTool() {
 }
 
 function defaceFailureMessage(error) {
+  if (error?.wanjuanSafe === true) return String(error.message || "视频人脸打码失败");
   const message = String(error?.message || error || "");
   if (error?.code === "ENOENT" || /ENOENT|not found|no such file/i.test(message)) {
     return "未找到 deface。请重新安装或修复 StarCanvas。";
@@ -1824,65 +1826,177 @@ function defaceFailureMessage(error) {
   return `视频人脸打码失败：Deface 本地运行失败（${code}）`;
 }
 
-async function blurVideoFaces(payload = {}) {
-  const { buffer, mime, filename: rawFilename } = await bufferFromMediaPayload(payload || {});
-  const sourceName = sanitizeFilename(payload?.filename || rawFilename || `source-${Date.now()}${extensionFromMime(mime) || ".mp4"}`);
-  const inputExt = path.extname(sourceName) || extensionFromMime(mime) || ".mp4";
-  const workRoot = path.join(safeUserPath("userData"), "video-face-blur");
-  fs.mkdirSync(workRoot, { recursive: true });
-  const jobId = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
-  const inputPath = path.join(workRoot, `${jobId}-input${inputExt}`);
-  const outputName = sanitizeFilename(payload?.outputFilename || sourceName.replace(/\.[^.]+$/i, "") || "face-blur");
-  const outputPath = path.join(workRoot, `${jobId}-${outputName.replace(/\.[^.]+$/i, "")}-打码.mp4`);
-  fs.writeFileSync(inputPath, buffer);
+function defaceSafeError(message, code = "DEFACE_FAILED") {
+  const error = new Error(String(message || "视频人脸打码失败"));
+  error.code = code;
+  error.wanjuanSafe = true;
+  return error;
+}
 
-  const mode = String(payload?.mode || "mosaic").trim().toLowerCase();
-  const validMode = ["blur", "solid", "mosaic"].includes(mode) ? mode : "mosaic";
-  const threshold = Math.max(0.02, Math.min(0.99, Number(payload?.threshold || 0.3)));
-  const scale = Math.max(0.1, Math.min(4, Number(payload?.scale || 1.3)));
-  const keepAudio = payload?.keepAudio !== false;
-  const args = [
-    inputPath,
-    "--output",
-    outputPath,
-    "--replacewith",
-    validMode,
-    "--thresh",
-    String(threshold),
-    "--mask-scale",
-    String(scale)
-  ];
-  if (keepAudio) args.push("--keep-audio");
-  const command = resolveDefaceCommand();
-  if (IS_WINDOWS && isBundledToolCommand(command)) args.push("--backend", "opencv");
+function isAsciiFilesystemPath(value) {
+  const text = String(value || "");
+  return !!text && !text.includes("\0") && /^[\x20-\x7e]+$/.test(text);
+}
 
+function pathIsInside(root, candidate) {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function defaultWindowsDefaceTempCandidates() {
+  const candidates = [];
+  if (process.env.WANJUAN_TEST_MODE === "1" && process.env.WANJUAN_TEST_DEFACE_TEMP_ROOT) {
+    candidates.push(process.env.WANJUAN_TEST_DEFACE_TEMP_ROOT);
+  }
+  candidates.push(os.tmpdir());
+  if (process.env.SystemRoot) candidates.push(path.join(process.env.SystemRoot, "Temp"));
+  candidates.push("C:\\Windows\\Temp");
+  return [...new Set(candidates.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+function writableAsciiDirectory(candidate) {
+  if (!isAsciiFilesystemPath(candidate) || !path.isAbsolute(candidate)) return "";
   try {
+    fs.mkdirSync(candidate, { recursive: true });
+    const realRoot = fs.realpathSync(candidate);
+    if (!isAsciiFilesystemPath(realRoot) || !path.isAbsolute(realRoot)) return "";
+    const probe = fs.mkdtempSync(path.join(realRoot, "starcanvas-write-test-"));
+    try {
+      const realProbe = fs.realpathSync(probe);
+      if (!isAsciiFilesystemPath(realProbe) || !pathIsInside(realRoot, realProbe)) return "";
+    } finally {
+      fs.rmSync(probe, { recursive: true, force: true });
+    }
+    return realRoot;
+  } catch {
+    return "";
+  }
+}
+
+function createWindowsDefaceStaging(candidates = defaultWindowsDefaceTempCandidates()) {
+  for (const candidate of candidates) {
+    const root = writableAsciiDirectory(candidate);
+    if (!root) continue;
+    let staging = "";
+    try {
+      staging = fs.mkdtempSync(path.join(root, "starcanvas-deface-"));
+      const realStaging = fs.realpathSync(staging);
+      if (!isAsciiFilesystemPath(realStaging) || !pathIsInside(root, realStaging)) {
+        fs.rmSync(staging, { recursive: true, force: true });
+        continue;
+      }
+      return realStaging;
+    } catch {
+      try {
+        if (staging) fs.rmSync(staging, { recursive: true, force: true });
+      } catch {}
+    }
+  }
+  throw defaceSafeError("Windows 本地处理需要可写的 ASCII 临时目录，当前环境不可用", "ASCII_TEMP_UNAVAILABLE");
+}
+
+function asciiMediaExtension(value, fallback = ".mp4") {
+  const extension = String(value || "").trim();
+  return /^\.[A-Za-z0-9]{1,10}$/.test(extension) ? extension.toLowerCase() : fallback;
+}
+
+async function blurVideoFaces(payload = {}, runtime = {}) {
+  let stagingRoot = "";
+  let partialOutputPath = "";
+  let outputPath = "";
+  try {
+    const { buffer, mime, filename: rawFilename } = await bufferFromMediaPayload(payload || {});
+    const sourceName = sanitizeFilename(payload?.filename || rawFilename || `source-${Date.now()}${extensionFromMime(mime) || ".mp4"}`);
+    const inputExt = asciiMediaExtension(path.extname(sourceName) || extensionFromMime(mime) || ".mp4");
+    const isWindows = runtime.isWindows ?? IS_WINDOWS;
+    const userDataRoot = runtime.userDataPath || safeUserPath("userData");
+    const workRoot = path.join(userDataRoot, "video-face-blur");
+    fs.mkdirSync(workRoot, { recursive: true });
+    const jobId = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+    const outputName = sanitizeFilename(payload?.outputFilename || sourceName.replace(/\.[^.]+$/i, "") || "face-blur");
+    outputPath = path.join(workRoot, `${jobId}-${outputName.replace(/\.[^.]+$/i, "")}-打码.mp4`);
+    if (!pathIsInside(workRoot, outputPath)) {
+      throw defaceSafeError("视频人脸打码失败：输出文件名不安全", "DEFACE_PATH_REJECTED");
+    }
+    const mode = String(payload?.mode || "mosaic").trim().toLowerCase();
+    const validMode = ["blur", "solid", "mosaic"].includes(mode) ? mode : "mosaic";
+    const threshold = Math.max(0.02, Math.min(0.99, Number(payload?.threshold || 0.3)));
+    const scale = Math.max(0.1, Math.min(4, Number(payload?.scale || 1.3)));
+    const keepAudio = payload?.keepAudio !== false;
+    const command = runtime.resolveCommand?.() || resolveDefaceCommand();
+    const commandIsBundled = runtime.isBundledCommand?.(command) ?? isBundledToolCommand(command);
+    const runCommand = runtime.runCommand || execFileWithTimeout;
+    if (isWindows) {
+      const candidates = Array.isArray(runtime.asciiTempCandidates)
+        ? runtime.asciiTempCandidates
+        : defaultWindowsDefaceTempCandidates();
+      stagingRoot = createWindowsDefaceStaging(candidates);
+    }
+    const inputPath = isWindows ? path.join(stagingRoot, `input${inputExt}`) : path.join(workRoot, `${jobId}-input${inputExt}`);
+    const commandOutputPath = isWindows ? path.join(stagingRoot, "output.mp4") : outputPath;
+    fs.writeFileSync(inputPath, buffer);
+    const args = [
+      inputPath,
+      "--output",
+      commandOutputPath,
+      "--replacewith",
+      validMode,
+      "--thresh",
+      String(threshold),
+      "--mask-scale",
+      String(scale)
+    ];
+    if (keepAudio) args.push("--keep-audio");
+    if (isWindows && commandIsBundled) args.push("--backend", "opencv");
     const options = {
       timeoutMs: Math.max(60 * 1000, Math.min(2 * 60 * 60 * 1000, Number(payload?.timeoutMs || 30 * 60 * 1000)))
     };
-    if (IS_WINDOWS) {
+    if (isWindows) {
       options.windowsHide = true;
       options.env = {
         ...process.env,
         PATH: `${path.dirname(command)}${path.delimiter}${process.env.PATH || ""}`
       };
     }
-    await execFileWithTimeout(command, args, options);
+    try {
+      await runCommand(command, args, options);
+    } catch (error) {
+      throw defaceSafeError(defaceFailureMessage(error), "DEFACE_RUNTIME_FAILED");
+    }
+    if (!fs.existsSync(commandOutputPath) || fs.statSync(commandOutputPath).size < 1024) {
+      throw defaceSafeError("视频人脸打码失败：没有生成有效输出文件", "DEFACE_OUTPUT_INVALID");
+    }
+    if (isWindows) {
+      partialOutputPath = `${outputPath}.partial-${crypto.randomBytes(4).toString("hex")}`;
+      fs.copyFileSync(commandOutputPath, partialOutputPath);
+      if (fs.statSync(partialOutputPath).size < 1024) {
+        throw defaceSafeError("视频人脸打码失败：没有生成有效输出文件", "DEFACE_OUTPUT_INVALID");
+      }
+      fs.renameSync(partialOutputPath, outputPath);
+      partialOutputPath = "";
+    }
+    if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 1024) {
+      throw defaceSafeError("视频人脸打码失败：没有生成有效输出文件", "DEFACE_OUTPUT_INVALID");
+    }
+    return {
+      ok: true,
+      url: fileUrlFromLocalPath(outputPath) || outputPath,
+      localPath: outputPath,
+      filename: path.basename(outputPath),
+      mime: "video/mp4",
+      size: fs.statSync(outputPath).size
+    };
   } catch (error) {
-    throw new Error(defaceFailureMessage(error));
+    if (error?.wanjuanSafe === true) throw error;
+    throw defaceSafeError("视频人脸打码失败：本地文件处理失败（FILESYSTEM_FAILED）", "FILESYSTEM_FAILED");
+  } finally {
+    try {
+      if (partialOutputPath) fs.rmSync(partialOutputPath, { force: true });
+    } catch {}
+    try {
+      if (stagingRoot) fs.rmSync(stagingRoot, { recursive: true, force: true });
+    } catch {}
   }
-
-  if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 1024) {
-    throw new Error("视频人脸打码失败：没有生成有效输出文件");
-  }
-  return {
-    ok: true,
-    url: fileUrlFromLocalPath(outputPath) || outputPath,
-    localPath: outputPath,
-    filename: path.basename(outputPath),
-    mime: "video/mp4",
-    size: fs.statSync(outputPath).size
-  };
 }
 
 async function trimVideoSegment(payload = {}) {
@@ -2038,6 +2152,9 @@ module.exports = {
   getDefaceToolStatus,
   installDefaceTool,
   defaceFailureMessage,
+  isAsciiFilesystemPath,
+  createWindowsDefaceStaging,
+  asciiMediaExtension,
   blurVideoFaces,
   importExtensionToolPack,
   realEsrganJobs
