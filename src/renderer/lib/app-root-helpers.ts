@@ -9,7 +9,7 @@ import { GlobalTask, Project, ResourceItem } from "./types";
 import { localPathFromProjectFileUrl } from "./project-asset-binding";
 export { compactGlobalTasks } from "./global-tasks";
 
-export const WANJUAN_RELEASE_NOTES_1_4_6 = `1.4.6：修复企业网关成员异步任务轮询与重启恢复，并完善界面语言切换稳定性。`;
+export const WANJUAN_RELEASE_NOTES_1_4_7 = `1.4.7：修复天玑已审核人像切换后残留旧引用；Windows 内置离线 CPU Deface，并兼容中文用户目录。`;
 
 export const membershipLimits = {
       FREE: {

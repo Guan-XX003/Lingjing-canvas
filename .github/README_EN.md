@@ -6,7 +6,7 @@
 
 **Desktop Canvas Application for AI Creation Workflow**
 
-[![Version](https://img.shields.io/badge/version-1.4.6-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
+[![Version](https://img.shields.io/badge/version-1.4.7-blue.svg)](https://github.com/Guan-XX003/StarCanvas/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-lightgrey.svg)](#installation)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange.svg)](../LICENSE)
 
@@ -98,8 +98,8 @@ Customize theme, language, and application-wide preferences.
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
-| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.6-arm64.dmg](../../releases/latest) |
-| Windows | x64 | [StarCanvas-1.4.6-x64.exe](../../releases/latest) |
+| macOS | Apple Silicon (arm64) | [StarCanvas-1.4.7-arm64.dmg](../../releases/latest) |
+| Windows | x64 | [StarCanvas-1.4.7-x64.exe](../../releases/latest) |
 
 ---
 
@@ -160,6 +160,11 @@ Build artifacts output to `release/` directory.
 ---
 
 ## 📋 Latest Updates
+
+### v1.4.7 (2026-08-19)
+- Fixed stale reviewed Tianji portrait references after switching portraits by resolving one authoritative canvas snapshot and failing closed on ambiguous legacy bindings.
+- Bundled offline CPU Deface in the Windows x64 package without requiring system Python or pip, including Unicode Windows user-profile support through safe ASCII staging.
+- Preserved strict separation between ordinary images, reviewed Tianji portraits, and the Ark official-compatible trusted-asset path.
 
 ### v1.4.6 (2026-08-17)
 - Fixed enterprise-gateway member task submission and asynchronous polling so tasks resume and restore results after an App restart.

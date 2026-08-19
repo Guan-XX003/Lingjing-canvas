@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.7 - 2026-08-19
+
+- Fixed stale reviewed Tianji portrait references after switching portraits by using a single authoritative React Flow snapshot, persisted binding revisions, typed reference channels, and fail-closed conflict handling.
+- Removed claimed portrait previews and stale source contexts from ordinary Tianji image URLs while preserving legitimate multi-portrait and ordinary-media references.
+- Bundled offline CPU Deface in the Windows x64 application without requiring system Python or pip, and added safe ASCII staging so Unicode Windows user profiles can process and save videos normally.
+- Preserved the existing Ark official-compatible trusted-asset path and kept ordinary unreviewed images out of the reviewed-portrait channel.
+
 ## 1.4.6 - 2026-08-17
 
 - Fixed enterprise-gateway member task routing so Seedance POST polling uses the proxy-fetch path instead of creating duplicate task ledgers or quota reservations.

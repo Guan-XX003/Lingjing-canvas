@@ -4,7 +4,7 @@
 
 不安装桌面应用时，可下载与本版本匹配的 CLI/MCP 压缩包：
 
-[下载 starcanvas-cli-1.4.6.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.6-release/starcanvas-cli-1.4.6.zip)
+[下载 starcanvas-cli-1.4.7.zip](https://github.com/Guan-XX003/StarCanvas/releases/download/v1.4.7-release/starcanvas-cli-1.4.7.zip)
 
 压缩包只包含 CLI/MCP 程序与本说明，不包含账号会话、API Key 或用户数据。
 

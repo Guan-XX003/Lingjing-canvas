@@ -319,7 +319,7 @@ export function WanJuanSettingsBasicTab({
 	                                        }),
 	                                        jsx(`div`, {
 	                                          className: `pt-2 border-t border-[#262626] text-[11px] text-gray-500`,
-	                                          children: wanjuanT(`1.4.6：修复企业网关成员异步任务轮询与重启恢复，并完善界面语言切换稳定性。`),
+	                                          children: wanjuanT(`1.4.7：修复天玑已审核人像切换后残留旧引用；Windows 内置离线 CPU Deface，并兼容中文用户目录。`),
 	                                        }),
 	                                      ],
 	                                    }),
@@ -336,7 +336,7 @@ export function WanJuanSettingsBasicTab({
                                       children: [
                                         jsx(`span`, {
                                           className: `text-sm font-semibold text-gray-100`,
-	                                          children: `1.4.6`,
+	                                          children: `1.4.7`,
 	                                        }),
 	                                        jsxs(`div`, {
 	                                          className: `flex items-center gap-2 ml-auto`,

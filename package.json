@@ -1,6 +1,6 @@
 {
   "name": "wanjuan-lingjing",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "private": true,
   "description": "StarCanvas - macOS AI 创作画布桌面应用",
   "author": "",
@@ -92,7 +92,7 @@
   "build": {
     "appId": "com.wanjuan.lingjing",
     "productName": "StarCanvas",
-    "artifactName": "StarCanvas-1.4.6-${arch}.${ext}",
+    "artifactName": "StarCanvas-1.4.7-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -115,8 +115,8 @@
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
       "extendInfo": {
-        "CFBundleShortVersionString": "1.4.6",
-        "CFBundleVersion": "1.4.6"
+        "CFBundleShortVersionString": "1.4.7",
+        "CFBundleVersion": "1.4.7"
       }
     },
     "win": {
