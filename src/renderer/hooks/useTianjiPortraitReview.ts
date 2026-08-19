@@ -6,6 +6,7 @@ import { useCallback } from "react";
 import type { SetState, Toast, WjNode } from "../lib/app-types";
 import { WANJUAN_TIANJI_ASSET_PAGE_SIZE, wanjuanTianjiFinalPortraitAsset, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData, wanjuanUploadTianjiVirtualPortrait } from "../lib/tianji-assets";
 import { wanjuanGetSyncedTianjiSeedanceConfig } from "../lib/tianji-api";
+import { wanjuanNextTianjiPortraitBindingRevision } from "../lib/tianji-portrait";
 
 interface UseTianjiPortraitReviewDeps {
   setNodes: SetState<WjNode[]>;
@@ -35,6 +36,7 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                       sourceOrigin: `tianji-portrait`,
                       tianjiPortraitBindingStatus: `reviewing`,
                       tianjiPortraitBindingMessage: `正在提交天玑人像审核...`,
+                      tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(node2.data),
                     },
                   } :
                   node2,
@@ -77,6 +79,7 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                       }),
                       sourceOrigin: `tianji-portrait`,
                       tianjiPortraitReviewedAt: Date.now(),
+                      tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(node2.data),
                     },
                   } :
                   node2,
@@ -123,6 +126,7 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                             tianjiPortraitBindingStatus: `ready`,
                             tianjiPortraitBindingMessage: `已自动绑定天玑素材库最终人像 ID`,
                             tianjiPortraitBoundAt: Date.now(),
+                            tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(node2.data),
                           },
                         } :
                         node2,
@@ -152,6 +156,7 @@ export function useTianjiPortraitReview(deps: UseTianjiPortraitReviewDeps) {
                       sourceOrigin: `tianji-portrait`,
                       tianjiPortraitBindingStatus: `failed`,
                       tianjiPortraitBindingMessage: errorMessage || `绑定失败，需手动从天玑人像库选择`,
+                      tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(node2.data),
                     },
                   } :
                   node2,

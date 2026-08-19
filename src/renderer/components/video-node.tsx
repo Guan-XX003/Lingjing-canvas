@@ -22,7 +22,7 @@ import { wanjuanNormalizeSeedanceVirtualPortraits, wanjuanPortableSeedancePortra
 import { wanjuanGetSyncedTianjiSeedanceConfig } from "../lib/tianji-api";
 import { WANJUAN_TIANJI_LOCAL_PREVIEW_STORAGE_KEY } from "../lib/tianji-local-previews";
 import { wanjuanTianjiApplyLocalPreviews, wanjuanTianjiFlattenPortraitAssets, wanjuanTianjiPortraitAvailabilityFromItem, wanjuanTianjiRefreshPortraitAssets, wanjuanTianjiResolvePortraitAssetForNodeData } from "../lib/tianji-assets";
-import { wanjuanNormalizeTianjiPortraitAssets, wanjuanTianjiPortraitToResource } from "../lib/tianji-portrait";
+import { wanjuanNextTianjiPortraitBindingRevision, wanjuanNormalizeTianjiPortraitAssets, wanjuanTianjiPortraitBindingRevision, wanjuanTianjiPortraitToResource } from "../lib/tianji-portrait";
 import { normalizeVideoAspectRatioValue } from "../lib/video-aspect-ratio";
 import { wanjuanResolveVideoParameterMode, wanjuanVideoParameterModeLabel } from "../lib/video-parameter-mode";
 import { WanJuanConfigButlerHelp } from "./config-butler-help";
@@ -292,6 +292,7 @@ export const WanJuanVideoNode = reactMemo(({
               tianjiPortraitBindingStatus: `ready`,
               tianjiPortraitBindingMessage: `已自动绑定天玑素材库最终人像 ID`,
               tianjiPortraitBoundAt: Date.now(),
+              tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(node.data),
             },
           };
         }),
@@ -946,6 +947,8 @@ export const WanJuanVideoNode = reactMemo(({
             tianjiPortraitGroupType: resource.groupType,
             tianjiPortraitBindingStatus: `ready`,
             tianjiPortraitBindingMessage: `已从天玑 Active 素材库绑定`,
+            tianjiPortraitBindingRevision: wanjuanTianjiPortraitBindingRevision(resource) || 1,
+            tianjiPortraitSourceId: resource.id || void 0,
             isTianjiPortrait: !0,
             sourceOrigin: `tianji-portrait`,
           },

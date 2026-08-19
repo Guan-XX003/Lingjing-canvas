@@ -167,10 +167,13 @@ export const WanJuanImageNode = reactMemo(({
               let reader = new FileReader();
               ((reader.onload = (event2) => {
                   let text = event2.target?.result || ``;
+                  let nextTextUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(String(text))}`;
                   updateNodeData(nodeId, {
-                    imageUrl: `data:text/plain;charset=utf-8,${encodeURIComponent(String(text))}`,
+                    ...wanjuanResetTianjiPortraitBindingForImage(data, nextTextUrl),
+                    imageUrl: nextTextUrl,
                     label: file.name,
                     mediaKind: `text`,
+                    sourceOrigin: data.sourceOrigin === `tianji-portrait` ? `external-upload` : data.sourceOrigin || `external-upload`,
                   });
                 }),
                 reader.readAsText(file),
@@ -187,7 +190,7 @@ export const WanJuanImageNode = reactMemo(({
                   thumbnailUrl: mediaKind === `image` ? mediaUrl : data.thumbnailUrl,
                   label: file.name,
                   mediaKind,
-                  sourceOrigin: data.sourceOrigin || `external-upload`,
+                  sourceOrigin: data.sourceOrigin === `tianji-portrait` ? `external-upload` : data.sourceOrigin || `external-upload`,
                   originalName: file.name,
                   ...(nativePath ? {
                     localPath: nativePath,

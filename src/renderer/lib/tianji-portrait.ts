@@ -58,6 +58,161 @@ export const wanjuanIsReadyTianjiPortraitBinding = (data: any): boolean =>
         data.type === `image/tianji-portrait`),
   );
 
+export const WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR = `天玑人像绑定正在同步，请稍后重试/刷新`;
+
+export const wanjuanTianjiPortraitBindingRevision = (data: any): number => {
+  const explicit = Number(data?.tianjiPortraitBindingRevision || 0);
+  if (Number.isSafeInteger(explicit) && explicit > 0) return explicit;
+  const legacy = Math.max(
+    Number(data?.tianjiPortraitReviewedAt || 0),
+    Number(data?.tianjiPortraitBoundAt || 0),
+  );
+  return Number.isFinite(legacy) && legacy > 0 ? Math.floor(legacy) : 0;
+};
+
+/** Persisted monotonic revision used to order asynchronous portrait binding updates. */
+export const wanjuanNextTianjiPortraitBindingRevision = (data: any): number =>
+  wanjuanTianjiPortraitBindingRevision(data) + 1;
+
+const portraitAssetId = (data: any) => String(data?.tianjiPortraitAssetId || ``).trim();
+
+const portraitSourceIdentity = (data: any) =>
+  String(
+    data?.tianjiPortraitBindingSourceUrl ||
+      data?.tianjiPortraitBindingLookupUrl ||
+      data?.imageUrl ||
+      data?.url ||
+      ``,
+  ).trim();
+
+const PORTRAIT_IDENTITY_FIELDS = new Set([
+  `imageUrl`,
+  `url`,
+  `source`,
+  `sourceOrigin`,
+  `type`,
+  `isTianjiPortrait`,
+  `tianjiPortraitAssetId`,
+  `tianjiPortraitBindingStatus`,
+  `tianjiPortraitBindingSourceUrl`,
+  `tianjiPortraitBindingLookupUrl`,
+  `tianjiPortraitBindingRevision`,
+  `selectedContextResources`,
+]);
+
+const supplementMissingNonIdentityData = (authoritativeData: any, fallbacks: any[]) => {
+  const merged = { ...(authoritativeData || {}) };
+  fallbacks.forEach((fallbackData) => {
+    if (!fallbackData || typeof fallbackData !== `object`) return;
+    Object.entries(fallbackData).forEach(([key, value]) => {
+      if (key.startsWith(`tianjiPortrait`) || PORTRAIT_IDENTITY_FIELDS.has(key) || Object.prototype.hasOwnProperty.call(merged, key)) return;
+      merged[key] = value;
+    });
+  });
+  return merged;
+};
+
+export interface TianjiGenerationCanvasSnapshot {
+  nodes: any[];
+  portraitConflictCount: number;
+  stalePortraitSnapshotCount: number;
+}
+
+/**
+ * Resolve one immutable generation snapshot. React Flow nodes own current topology and identity.
+ * Rendered/ref snapshots may fill absent non-identity fields, but never replace current identity.
+ */
+export const wanjuanResolveTianjiGenerationCanvasSnapshot = ({
+  nodes,
+  renderedNodes = [],
+  refNodes = [],
+}: {
+  nodes?: any[];
+  renderedNodes?: any[];
+  refNodes?: any[];
+}): TianjiGenerationCanvasSnapshot => {
+  const authoritativeNodes = Array.isArray(nodes) ? nodes : [];
+  const fallbackLists = [Array.isArray(renderedNodes) ? renderedNodes : [], Array.isArray(refNodes) ? refNodes : []];
+  const fallbackById = fallbackLists.map((list) => new Map(list.map((node) => [String(node?.id || ``), node])));
+  let portraitConflictCount = 0;
+  let stalePortraitSnapshotCount = 0;
+
+  const resolvedNodes = authoritativeNodes.map((node) => {
+    const nodeId = String(node?.id || ``);
+    const fallbacks = fallbackById.map((map) => map.get(nodeId)).filter(Boolean);
+    if (!fallbacks.length) return node;
+    const authoritativeData = node?.data || {};
+    let data = supplementMissingNonIdentityData(authoritativeData, fallbacks.map((fallback) => fallback?.data));
+    const currentAssetId = portraitAssetId(authoritativeData);
+    const currentRevision = wanjuanTianjiPortraitBindingRevision(authoritativeData);
+    const currentHasClaim = wanjuanHasTianjiPortraitClaim(authoritativeData);
+    const readyFallbacks = fallbacks
+      .map((fallback) => fallback?.data)
+      .filter((fallbackData) => wanjuanIsReadyTianjiPortraitBinding(fallbackData));
+    const conflictingFallbacks = readyFallbacks.filter(
+      (fallbackData) => portraitAssetId(fallbackData) && portraitAssetId(fallbackData) !== currentAssetId,
+    );
+
+    if (currentAssetId && wanjuanIsReadyTianjiPortraitBinding(authoritativeData)) {
+      const unresolvedConflict = conflictingFallbacks.some((fallbackData) => {
+        const fallbackRevision = wanjuanTianjiPortraitBindingRevision(fallbackData);
+        if (currentRevision > 0 && currentRevision > fallbackRevision) {
+          stalePortraitSnapshotCount += 1;
+          return false;
+        }
+        return true;
+      });
+      if (unresolvedConflict) portraitConflictCount += 1;
+      return data === authoritativeData ? node : { ...node, data };
+    }
+
+    // A current ordinary/replaced image is authoritative. Never resurrect a reviewed fallback.
+    if (!currentHasClaim) {
+      if (readyFallbacks.length) stalePortraitSnapshotCount += readyFallbacks.length;
+      return data === authoritativeData ? node : { ...node, data };
+    }
+
+    // Only supplement an incomplete current claim when one unambiguous fallback represents
+    // the same source image. This keeps legacy projects without revisions compatible.
+    const currentSource = portraitSourceIdentity(authoritativeData);
+    const compatibleFallbacks = readyFallbacks.filter((fallbackData) => {
+      const fallbackSource = portraitSourceIdentity(fallbackData);
+      return Boolean(currentSource && fallbackSource && currentSource === fallbackSource);
+    });
+    const compatibleAssetIds = [...new Set(compatibleFallbacks.map(portraitAssetId).filter(Boolean))];
+    if (compatibleAssetIds.length > 1) {
+      portraitConflictCount += 1;
+      return { ...node, data };
+    }
+    if (compatibleAssetIds.length === 1) {
+      const matching = compatibleFallbacks
+        .filter((fallbackData) => portraitAssetId(fallbackData) === compatibleAssetIds[0])
+        .sort((a, b) => wanjuanTianjiPortraitBindingRevision(b) - wanjuanTianjiPortraitBindingRevision(a))[0];
+      const fallbackRevision = wanjuanTianjiPortraitBindingRevision(matching);
+      if (currentRevision > 0 && fallbackRevision < currentRevision) {
+        stalePortraitSnapshotCount += 1;
+      } else {
+        data = {
+          ...data,
+          tianjiPortraitAssetId: portraitAssetId(matching),
+          tianjiPortraitBindingStatus: `ready`,
+          tianjiPortraitBindingSourceUrl: matching.tianjiPortraitBindingSourceUrl || authoritativeData.tianjiPortraitBindingSourceUrl,
+          tianjiPortraitBindingLookupUrl: matching.tianjiPortraitBindingLookupUrl || authoritativeData.tianjiPortraitBindingLookupUrl,
+          tianjiPortraitBindingRevision: fallbackRevision || currentRevision || undefined,
+          isTianjiPortrait: true,
+          sourceOrigin: `tianji-portrait`,
+        };
+      }
+    } else if (readyFallbacks.length) {
+      // A reviewed fallback for another image is stale, not a valid supplement.
+      stalePortraitSnapshotCount += readyFallbacks.length;
+    }
+    return { ...node, data };
+  });
+
+  return { nodes: resolvedNodes, portraitConflictCount, stalePortraitSnapshotCount };
+};
+
 /**
  * React Flow 的 getNodes() 在节点数据刚更新时可能短暂返回旧快照。
  * 合并两个快照时，同 ID 节点始终采用 React state ref 中的最新数据。
@@ -98,6 +253,7 @@ export const wanjuanTianjiPortraitNodeDataFromAutomation = (assetId: any): any =
     isTianjiPortrait: true,
     source: `tianji-portrait`,
     sourceOrigin: `tianji-portrait`,
+    tianjiPortraitBindingRevision: 1,
   };
 };
 
@@ -113,6 +269,8 @@ export const wanjuanTianjiPortraitReferenceFromNodeData = (data: any): any => {
     tianjiPortraitPreviewUrl: data.tianjiPortraitPreviewUrl,
     tianjiPortraitBindingStatus: `ready`,
     tianjiPortraitBindingMessage: data.tianjiPortraitBindingMessage,
+    tianjiPortraitBindingRevision: wanjuanTianjiPortraitBindingRevision(data) || undefined,
+    tianjiPortraitSourceId: data.tianjiPortraitSourceId,
     isTianjiPortrait: true,
     source: data.source === `tianji-portrait` ? data.source : undefined,
     sourceOrigin: `tianji-portrait`,
@@ -131,6 +289,7 @@ export const wanjuanRecoverTianjiPortraitNodeData = (data: any, resolved: any): 
     sourceOrigin: `tianji-portrait`,
     tianjiPortraitBindingStatus: `ready`,
     tianjiPortraitBindingMessage: `已从本地 Active 素材缓存恢复最终人像 ID`,
+    tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(data),
   };
 };
 
@@ -148,10 +307,12 @@ export function wanjuanResetTianjiPortraitBindingForImage(data: any, nextImageUr
     tianjiPortraitBindingLookupUrl: undefined,
     tianjiPortraitBindingName: undefined,
     tianjiPortraitBindingSourceUrl: undefined,
+    tianjiPortraitSourceId: undefined,
     tianjiPortraitBindingStatus: undefined,
     tianjiPortraitBindingMessage: undefined,
     tianjiPortraitReviewedAt: undefined,
     tianjiPortraitBoundAt: undefined,
+    tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(data),
     isTianjiPortrait: false,
     sourceOrigin: data?.sourceOrigin === `tianji-portrait` ? `generated` : data?.sourceOrigin,
   };
@@ -207,6 +368,7 @@ export function wanjuanTianjiPortraitToResource(portrait: any, index = 0): any {
   if (!portraitAssetId) return null;
   return {
     id: `tianji-portrait-${portrait?.id || index}`,
+    tianjiPortraitSourceId: `tianji-portrait-${portrait?.id || index}`,
     tianjiPortraitAssetId: portraitAssetId,
     url: `asset://${portraitAssetId}`,
     thumbnailUrl: displayPreviewUrl,
@@ -223,5 +385,6 @@ export function wanjuanTianjiPortraitToResource(portrait: any, index = 0): any {
     localUploaded: portrait?.localUploaded === !0,
     isTianjiPortrait: !0,
     tianjiPortraitBindingStatus: `ready`,
+    tianjiPortraitBindingRevision: wanjuanTianjiPortraitBindingRevision(portrait) || 1,
   };
 }

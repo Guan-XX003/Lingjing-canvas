@@ -26,19 +26,41 @@ export interface TianjiManualPortraitInputs {
   claimedSourceNodeIds: Set<string>;
   claimedContextIndexes: Set<number>;
   reviewedPortraitClaimCount: number;
+  reviewedPortraitResidualCount: number;
 }
+
+export interface TianjiPortraitReferenceFilterResult {
+  references: any[];
+  reviewedPortraitResidualCount: number;
+}
+
+export const wanjuanFilterTianjiPortraitPreviews = (
+  imageReferences: any[] = [],
+  portraitPreviewUrls: Set<string> = new Set(),
+  claimedSourceNodeIds: Set<string> = new Set(),
+): TianjiPortraitReferenceFilterResult => {
+  let reviewedPortraitResidualCount = 0;
+  const references = imageReferences.filter((reference) => {
+    const sourceNodeId = String(reference && typeof reference === `object` ? reference.sourceNodeId || reference.sourceId || reference.nodeId || `` : ``).trim();
+    if (sourceNodeId && claimedSourceNodeIds.has(sourceNodeId)) {
+      reviewedPortraitResidualCount += 1;
+      return false;
+    }
+    const url = String(typeof reference === `string` ? reference : reference?.url || ``).trim();
+    if (url && portraitPreviewUrls.has(url)) {
+      reviewedPortraitResidualCount += 1;
+      return false;
+    }
+    return true;
+  });
+  return { references, reviewedPortraitResidualCount };
+};
 
 export const wanjuanExcludeTianjiPortraitPreviews = (
   imageReferences: any[] = [],
   portraitPreviewUrls: Set<string> = new Set(),
   claimedSourceNodeIds: Set<string> = new Set(),
-): any[] =>
-  imageReferences.filter((reference) => {
-    const sourceNodeId = String(reference && typeof reference === `object` ? reference.sourceNodeId || reference.nodeId || `` : ``).trim();
-    if (sourceNodeId && claimedSourceNodeIds.has(sourceNodeId)) return false;
-    const url = String(typeof reference === `string` ? reference : reference?.url || ``).trim();
-    return !portraitPreviewUrls.has(url);
-  });
+): any[] => wanjuanFilterTianjiPortraitPreviews(imageReferences, portraitPreviewUrls, claimedSourceNodeIds).references;
 
 const portraitPreviewUrlsFromData = (data: any): string[] =>
   [
@@ -71,6 +93,7 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
   const assetIds = new Set<string>();
   const claimedSourceNodeIds = new Set<string>();
   const claimedContextIndexes = new Set<number>();
+  let reviewedPortraitResidualCount = 0;
 
   const collect = (data: any, identifyClaim: () => void) => {
     if (!wanjuanHasTianjiPortraitClaim(data)) return;
@@ -89,12 +112,17 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
   edges.forEach((edge) => {
     const sourceNode = nodeList.find((node) => node?.id === edge?.source);
     if (!sourceNode) return;
-    collect(sourceNode.data, () => claimedSourceNodeIds.add(String(sourceNode.id)));
+    collect(sourceNode.data, () => {
+      claimedSourceNodeIds.add(String(sourceNode.id));
+      const portraitSourceId = String(sourceNode.data?.tianjiPortraitSourceId || ``).trim();
+      if (portraitSourceId) claimedSourceNodeIds.add(portraitSourceId);
+    });
   });
   contexts.forEach((resource, index) => {
-    const sourceId = String(resource?.sourceId || resource?.nodeId || resource?.id || ``).trim();
+    const sourceId = String(resource?.sourceNodeId || resource?.sourceId || resource?.nodeId || resource?.id || ``).trim();
     if (sourceId && claimedSourceNodeIds.has(sourceId)) {
       claimedContextIndexes.add(index);
+      reviewedPortraitResidualCount += 1;
       return;
     }
     collect(resource, () => claimedContextIndexes.add(index));
@@ -106,5 +134,38 @@ export const wanjuanCollectTianjiManualPortraitInputs = ({
     claimedSourceNodeIds,
     claimedContextIndexes,
     reviewedPortraitClaimCount: portraitAssetIds.length,
+    reviewedPortraitResidualCount,
   };
+};
+
+const resourceSourceIds = (resource: any) =>
+  [resource?.sourceNodeId, resource?.sourceId, resource?.nodeId, resource?.id]
+    .map((value) => String(value || ``).trim())
+    .filter(Boolean);
+
+const portraitSourceIds = (node: any) =>
+  [node?.id, node?.data?.tianjiPortraitSourceId]
+    .map((value) => String(value || ``).trim())
+    .filter(Boolean);
+
+/** Remove only cached contexts that explicitly belong to a reviewed portrait source. */
+export const wanjuanRemoveTianjiPortraitContextsForSources = (
+  contextResources: any[] = [],
+  sourceNodes: any[] = [],
+): { resources: any[]; removedCount: number } => {
+  const sources = (Array.isArray(sourceNodes) ? sourceNodes : []).filter((node) => wanjuanHasTianjiPortraitClaim(node?.data));
+  if (!sources.length) return { resources: Array.isArray(contextResources) ? contextResources : [], removedCount: 0 };
+  let removedCount = 0;
+  const resources = (Array.isArray(contextResources) ? contextResources : []).filter((resource) => {
+    const ids = resourceSourceIds(resource);
+    const resourceAssetId = String(resource?.tianjiPortraitAssetId || ``).trim();
+    const matches = sources.some((sourceNode) => {
+      if (ids.some((id) => portraitSourceIds(sourceNode).includes(id))) return true;
+      const sourceAssetId = String(sourceNode?.data?.tianjiPortraitAssetId || ``).trim();
+      return Boolean(sourceAssetId && resourceAssetId && sourceAssetId === resourceAssetId);
+    });
+    if (matches) removedCount += 1;
+    return !matches;
+  });
+  return { resources, removedCount };
 };

@@ -27,6 +27,8 @@ function inspectTianjiGenerationRequest(payload = {}, body = Buffer.alloc(0)) {
   }));
   const reviewedPortraitCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.reviewedPortraitCount || 0)));
   const ordinaryImageCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.ordinaryImageCount || 0)));
+  const reviewedPortraitResidualCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.reviewedPortraitResidualCount || 0)));
+  const portraitConflictCount = Math.max(0, Math.floor(Number(payload?.tianjiGenerationProfile?.portraitConflictCount || 0)));
   const reviewedPortraitPreviewUrls = new Set(
     (Array.isArray(payload?.tianjiGenerationProfile?.reviewedPortraitPreviewUrls)
       ? payload.tianjiGenerationProfile.reviewedPortraitPreviewUrls
@@ -36,10 +38,12 @@ function inspectTianjiGenerationRequest(payload = {}, body = Buffer.alloc(0)) {
   );
   const reviewedPortraitPreviewMatches = [...params.getAll("images[]"), ...params.getAll("images")]
     .filter((value) => reviewedPortraitPreviewUrls.has(String(value || "").trim())).length;
-  return { endpoint: pathname, encoding: contentType, reviewedPortraitCount, ordinaryImageCount, reviewedPortraitPreviewMatches, media };
+  return { endpoint: pathname, encoding: contentType, reviewedPortraitCount, ordinaryImageCount, reviewedPortraitResidualCount, portraitConflictCount, reviewedPortraitPreviewMatches, media };
 }
 
 function validateTianjiGenerationRequest(profile) {
+  if (profile?.portraitConflictCount > 0)
+    throw Error("天玑人像绑定状态存在冲突，已阻止提交");
   if (!profile || profile.reviewedPortraitCount <= 0) return;
   if (!/application\/x-www-form-urlencoded/i.test(profile.encoding))
     throw Error("天玑已审核人像请求必须使用表单编码");

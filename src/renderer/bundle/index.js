@@ -1523,7 +1523,7 @@ function WanJuanAppCanvas({
   (useCanvasLoadEffect({ GlobalTasks, LoadOnceRef, abortControllersRef, canvasStateKeyPrefix, desktopCanvasMirrorPrefix, hydrateProjectAssetContainer, initialEmptyProject, localforageModule, onInitialEmptyProjectReady, projectId, projectIdRef, resolveWanjuanPlayableTaskUrl, setEdges, setNodes, setShouldFitView, shouldFitViewRef }),
     useGlobalTasksSyncEffect({ GlobalTasks, projectIdRef, resolveWanjuanPlayableTaskUrl, setNodes, shouldFitView }),
 	    useSafeEffect11({ nodes, setEdges, shouldFitView }),
-	    useSafeEffect12({ edges, setNodes, shouldFitView, wanjuanPrevEdgesRef }),
+	    useSafeEffect12({ edges, nodes, setNodes, shouldFitView, wanjuanPrevEdgesRef }),
 		    useLateEffect1184({ edges, nodes, saveCanvasState, shouldFitView }),
 		    useEffect(() => () => {
 		      shouldFitViewRef.current && saveCanvasState();

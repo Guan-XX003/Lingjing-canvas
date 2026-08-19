@@ -1,5 +1,6 @@
 import { wanjuanBuildProjectAssetBinding } from "./project-asset-binding";
 import { buildProjectMediaFileUrl, wanjuanClearProjectAssetBindingsFromData } from "./resource";
+import { wanjuanNextTianjiPortraitBindingRevision } from "./tianji-portrait";
 
 const imageMimeFromUrl = (value: any) => {
   const path = String(value || ``).split(/[?#]/, 1)[0].toLowerCase();
@@ -59,10 +60,12 @@ export function wanjuanClearEditedImageReviewIdentity(data: any) {
     tianjiPortraitBindingLookupUrl: undefined,
     tianjiPortraitBindingName: undefined,
     tianjiPortraitBindingSourceUrl: undefined,
+    tianjiPortraitSourceId: undefined,
     tianjiPortraitBindingStatus: undefined,
     tianjiPortraitBindingMessage: undefined,
     tianjiPortraitReviewedAt: undefined,
     tianjiPortraitBoundAt: undefined,
+    tianjiPortraitBindingRevision: wanjuanNextTianjiPortraitBindingRevision(data),
     isTianjiPortrait: false,
     sourceOrigin: data?.sourceOrigin === `tianji-portrait` ? `generated` : data?.sourceOrigin,
   };

@@ -126,8 +126,8 @@ async function run() {
     wanjuanTianjiLocalPreviewEntryKey,
     wanjuanTianjiLocalPreviewScope,
   } = await import(pathToFileURL(join(outDir, "tianji-local-previews.js")).href);
-  const { wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNormalizeTianjiPortraitAssets, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
-  const { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
+  const { WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR, wanjuanHasTianjiPortraitClaim, wanjuanIsReadyTianjiPortraitBinding, wanjuanNextTianjiPortraitBindingRevision, wanjuanNormalizeTianjiPortraitAssets, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData, wanjuanResetTianjiPortraitBindingForImage, wanjuanResolveTianjiGenerationCanvasSnapshot, wanjuanTianjiPortraitBindingRevision, wanjuanTianjiPortraitNodeDataFromAutomation, wanjuanTianjiPortraitReferenceFromNodeData, wanjuanTianjiPortraitToResource } = await import(pathToFileURL(join(outDir, "tianji-portrait.js")).href);
+  const { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews, wanjuanFilterTianjiPortraitPreviews, wanjuanRemoveTianjiPortraitContextsForSources } = await import(pathToFileURL(join(outDir, "tianji-manual-reference.js")).href);
   const { inspectTianjiGenerationRequest, validateTianjiGenerationRequest } = await import(pathToFileURL(join(root, "electron/main/tianji-request-guard.cjs")).href);
   const arkTrustedAssets = await import(pathToFileURL(join(outDir, "ark-trusted-assets.js")).href);
   const imageEditor = await import(pathToFileURL(join(outDir, "image-editor.js")).href);
@@ -180,7 +180,7 @@ async function run() {
   check("tianji connection requires trusted source, ready status and final id", videoGenerationSource.includes('sourceHasTianjiPortraitClaim = Boolean(sourceNode?.data?.tianjiPortraitAssetId || sourceNode?.data?.isTianjiPortrait)') && videoGenerationSource.includes('sourceTianjiBindingStatus !== `ready` || !sourceTianjiPortraitAssetId') && !videoGenerationSource.includes('sourceTianjiPortraitPreviewUrl = String('), true);
   check("tianji manual collection keeps reviewed portraits out of image refs", videoGenerationSource.includes("wanjuanCollectTianjiManualPortraitInputs") && videoGenerationSource.includes("portraitAssetIds: seedanceConnectedPortraitAssetIds") && !videoGenerationSource.includes("addVideoReferenceImage(wanjuanTianjiPortraitReferenceFromNodeData(sourceNode.data))"), true);
   check("rendered node props are registered as the freshest runtime snapshot", renderModeSource.includes("renderedNodes?.set?.(props.id, { id: props.id, type: nodeType, data: props.data })") && renderModeSource.includes("renderedNodes.delete(props.id)"), true);
-  check("manual video generation merges rendered, React and React Flow node states", videoGenerationSource.includes("globalThis.__wanjuanRenderRuntime?.renderedNodes?.values?.()") && videoGenerationSource.includes("wanjuanPreferCurrentCanvasNodes(renderedNodes, wanjuanPreferCurrentCanvasNodes(nodesRef.current, getNodes()))") && videoGenerationSource.includes("nodes2 = currentCanvasNodes()"), true);
+  check("manual video generation captures React Flow topology once and only supplements stale runtime snapshots", videoGenerationSource.includes("flowNodesSnapshot = [...(getNodes() || [])]") && videoGenerationSource.includes("flowEdgesSnapshot = [...(getEdges() || [])]") && videoGenerationSource.includes("wanjuanResolveTianjiGenerationCanvasSnapshot") && !videoGenerationSource.includes("wanjuanPreferCurrentCanvasNodes"), true);
   check("packaged Tianji preflight validates and blocks upstream", desktopIpcSource.includes("inspectTianjiGenerationRequest") && desktopIpcSource.includes("validateTianjiGenerationRequest") && desktopIpcSource.includes("if (preflight) return preflight"), true);
   check("tianji badges require ready id and trusted source", [readFileSync(join(root, "src/renderer/components/image-node.tsx"), "utf8"), readFileSync(join(root, "src/renderer/components/prompt-node.tsx"), "utf8")].every((source) => source.includes("String(data.tianjiPortraitAssetId || ``).trim()") && source.includes("data.sourceOrigin === `tianji-portrait`")), true);
   check("tianji request diagnostics expose only scheme counts", tianjiApiSource.includes('imageSchemes: referenceSchemeCounts([') && !tianjiApiSource.includes('promptPreview:') && !tianjiApiSource.includes('imageRefs: imageUrls.map'), true);
@@ -240,7 +240,7 @@ async function run() {
   check(
     "tianji image binding clears for new result",
     wanjuanResetTianjiPortraitBindingForImage({ imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: "asset-a", tianjiPortraitBindingStatus: "ready", tianjiPortraitBindingMessage: "bound", isTianjiPortrait: true, sourceOrigin: "tianji-portrait" }, "https://cdn/b.png"),
-    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitLocalPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated" }
+    { imageUrl: "https://cdn/a.png", tianjiPortraitAssetId: undefined, tianjiPortraitGroupType: undefined, tianjiPortraitPreviewUrl: undefined, tianjiPortraitLocalPreviewUrl: undefined, tianjiPortraitBindingLookupUrl: undefined, tianjiPortraitBindingName: undefined, tianjiPortraitBindingSourceUrl: undefined, tianjiPortraitBindingStatus: undefined, tianjiPortraitBindingMessage: undefined, tianjiPortraitReviewedAt: undefined, tianjiPortraitBoundAt: undefined, isTianjiPortrait: false, sourceOrigin: "generated", tianjiPortraitBindingRevision: 1 }
   );
   check(
     "ark binding survives the same image",
@@ -1308,6 +1308,192 @@ async function run() {
     ids: historicalContextPortraitInputs.portraitAssetIds,
     claimedContext: historicalContextPortraitInputs.claimedContextIndexes.has(0),
   }, { ids: ["active-verified"], claimedContext: true });
+  const reviewedNode = (id, assetId, revision, imageName) => ({
+    id,
+    type: "imageNode",
+    data: {
+      imageUrl: `https://media.example.invalid/${imageName}.jpg`,
+      tianjiPortraitPreviewUrl: `https://preview.example.invalid/${imageName}.jpg`,
+      tianjiPortraitBindingSourceUrl: `https://media.example.invalid/${imageName}.jpg`,
+      tianjiPortraitAssetId: assetId,
+      tianjiPortraitBindingStatus: "ready",
+      tianjiPortraitBindingRevision: revision || undefined,
+      sourceOrigin: "tianji-portrait",
+      isTianjiPortrait: true,
+    },
+  });
+  const captureManualTianjiForm = ({ nodes, edges, renderedNodes = [], refNodes = [] }) => {
+    const snapshot = wanjuanResolveTianjiGenerationCanvasSnapshot({ nodes, renderedNodes, refNodes });
+    if (snapshot.portraitConflictCount) throw Error(WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR);
+    const target = snapshot.nodes.find((node) => node.id === "target");
+    const incomingEdges = edges.filter((edge) => edge.target === "target");
+    const inputs = wanjuanCollectTianjiManualPortraitInputs({
+      nodes: snapshot.nodes,
+      incomingEdges,
+      contextResources: target?.data?.selectedContextResources || [],
+    });
+    const imageReferences = [];
+    incomingEdges.forEach((edge) => {
+      const source = snapshot.nodes.find((node) => node.id === edge.source);
+      if (source && !wanjuanHasTianjiPortraitClaim(source.data) && source.data?.imageUrl)
+        imageReferences.push({ url: source.data.imageUrl, sourceNodeId: source.id });
+    });
+    (target?.data?.selectedContextResources || []).forEach((resource, index) => {
+      if (!inputs.claimedContextIndexes.has(index)) imageReferences.push(resource);
+    });
+    const filtered = wanjuanFilterTianjiPortraitPreviews(imageReferences, inputs.portraitPreviewUrls, inputs.claimedSourceNodeIds);
+    const request = wanjuanBuildTianjiGenerationRequest({
+      mode: "reference-media",
+      common: { prompt: "mock" },
+      imageUrls: filtered.references.map((reference) => String(typeof reference === "string" ? reference : reference.url || "")),
+      portraitAssetIds: inputs.portraitAssetIds,
+      reviewedPortraitClaimCount: inputs.reviewedPortraitClaimCount,
+      reviewedPortraitResidualCount: inputs.reviewedPortraitResidualCount + filtered.reviewedPortraitResidualCount,
+      portraitConflictCount: snapshot.portraitConflictCount,
+    });
+    const form = new URLSearchParams();
+    Object.entries(request.payload).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((item) => form.append(key, String(item)));
+      else form.append(key, String(value));
+    });
+    const profile = inspectTianjiGenerationRequest({
+      url: `https://api.example.invalid${request.endpoint}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      tianjiGenerationProfile: {
+        reviewedPortraitCount: inputs.reviewedPortraitClaimCount,
+        ordinaryImageCount: filtered.references.length,
+        reviewedPortraitResidualCount: inputs.reviewedPortraitResidualCount + filtered.reviewedPortraitResidualCount,
+        portraitConflictCount: snapshot.portraitConflictCount,
+      },
+    }, Buffer.from(form.toString()));
+    validateTianjiGenerationRequest(profile);
+    return { snapshot, inputs, filtered, request, profile };
+  };
+  const portraitARevision1 = reviewedNode("portrait-source", "portrait-a", 1, "portrait-a");
+  const portraitBRevision2 = reviewedNode("portrait-source", "portrait-b", 2, "portrait-b");
+  const targetNode = { id: "target", type: "seedanceNode", data: { seedanceMode: "tianji", selectedContextResources: [] } };
+  const replacedPortraitCapture = captureManualTianjiForm({
+    nodes: [portraitBRevision2, targetNode],
+    edges: [{ source: "portrait-source", target: "target" }],
+    renderedNodes: [portraitARevision1, targetNode],
+    refNodes: [portraitARevision1, targetNode],
+  });
+  check("A to B uses only authoritative B when rendered and ref snapshots still hold A", {
+    values: replacedPortraitCapture.request.payload["images[]"],
+    schemes: replacedPortraitCapture.profile.media.images,
+    conflicts: replacedPortraitCapture.snapshot.portraitConflictCount,
+    stale: replacedPortraitCapture.snapshot.stalePortraitSnapshotCount,
+  }, {
+    values: ["asset://portrait-b"],
+    schemes: { count: 1, asset: 1, http: 0, other: 0 },
+    conflicts: 0,
+    stale: 2,
+  });
+  const historicalContextTarget = {
+    ...targetNode,
+    data: {
+      ...targetNode.data,
+      selectedContextResources: [{ sourceId: "portrait-source", type: "image", url: "https://media.example.invalid/portrait-a.jpg" }],
+    },
+  };
+  const historicalContextCapture = captureManualTianjiForm({
+    nodes: [portraitBRevision2, historicalContextTarget],
+    edges: [{ source: "portrait-source", target: "target" }],
+  });
+  check("B edge claims and removes metadata-stripped historical A context", {
+    values: historicalContextCapture.request.payload["images[]"],
+    residuals: historicalContextCapture.inputs.reviewedPortraitResidualCount,
+    schemes: historicalContextCapture.profile.media.images,
+  }, {
+    values: ["asset://portrait-b"],
+    residuals: 1,
+    schemes: { count: 1, asset: 1, http: 0, other: 0 },
+  });
+  let disconnectedMessage = "";
+  try { captureManualTianjiForm({ nodes: [portraitBRevision2, targetNode], edges: [] }); }
+  catch (error) { disconnectedMessage = String(error?.message || error); }
+  check("disconnecting the only reference sends no request", disconnectedMessage, "天玑参考素材生视频需要连接至少一项图片、视频或音频参考素材");
+  const ordinaryAfterPortrait = {
+    id: "portrait-source",
+    type: "imageNode",
+    data: {
+      imageUrl: "https://media.example.invalid/ordinary-b.jpg",
+      sourceOrigin: "external-upload",
+      tianjiPortraitBindingRevision: 2,
+    },
+  };
+  const ordinaryCapture = captureManualTianjiForm({
+    nodes: [ordinaryAfterPortrait, targetNode],
+    edges: [{ source: "portrait-source", target: "target" }],
+    renderedNodes: [portraitARevision1, targetNode],
+    refNodes: [portraitARevision1, targetNode],
+  });
+  check("A to ordinary image cannot resurrect reviewed A", {
+    values: ordinaryCapture.request.payload["images[]"],
+    schemes: ordinaryCapture.profile.media.images,
+    stale: ordinaryCapture.snapshot.stalePortraitSnapshotCount,
+  }, {
+    values: ["https://media.example.invalid/ordinary-b.jpg"],
+    schemes: { count: 1, asset: 0, http: 1, other: 0 },
+    stale: 2,
+  });
+  const portraitBIndependent = reviewedNode("portrait-b-source", "portrait-b", 1, "portrait-b");
+  const twoPortraitCapture = captureManualTianjiForm({
+    nodes: [portraitARevision1, portraitBIndependent, targetNode],
+    edges: [
+      { source: "portrait-source", target: "target" },
+      { source: "portrait-b-source", target: "target" },
+    ],
+  });
+  check("two independent reviewed portrait nodes remain legal", {
+    count: twoPortraitCapture.profile.media.images.count,
+    asset: twoPortraitCapture.profile.media.images.asset,
+    http: twoPortraitCapture.profile.media.images.http,
+  }, { count: 2, asset: 2, http: 0 });
+  const duplicateEdgeCapture = captureManualTianjiForm({
+    nodes: [portraitBRevision2, targetNode],
+    edges: [
+      { source: "portrait-source", target: "target" },
+      { source: "portrait-source", target: "target" },
+    ],
+  });
+  check("duplicate reviewed edges produce one asset reference", duplicateEdgeCapture.profile.media.images, { count: 1, asset: 1, http: 0, other: 0 });
+  const ambiguousSnapshot = wanjuanResolveTianjiGenerationCanvasSnapshot({
+    nodes: [reviewedNode("portrait-source", "portrait-b", 0, "portrait-b"), targetNode],
+    renderedNodes: [reviewedNode("portrait-source", "portrait-a", 0, "portrait-a"), targetNode],
+  });
+  let ambiguousSnapshotMessage = "";
+  try {
+    wanjuanBuildTianjiGenerationRequest({
+      mode: "reference-media",
+      common: { prompt: "mock" },
+      portraitAssetIds: ["portrait-b"],
+      reviewedPortraitClaimCount: 1,
+      portraitConflictCount: ambiguousSnapshot.portraitConflictCount,
+    });
+  } catch (error) { ambiguousSnapshotMessage = String(error?.message || error); }
+  check("same-node legacy ready identities fail closed when revision cannot order them", {
+    conflicts: ambiguousSnapshot.portraitConflictCount,
+    message: ambiguousSnapshotMessage,
+  }, { conflicts: 1, message: WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR });
+  const cleanedContexts = wanjuanRemoveTianjiPortraitContextsForSources([
+    { sourceId: "portrait-source", type: "image", url: "https://media.example.invalid/portrait-a.jpg" },
+    { sourceId: "ordinary-source", type: "image", url: "https://media.example.invalid/ordinary.jpg" },
+  ], [portraitARevision1]);
+  check("portrait replacement cleanup removes only the claimed historical context", {
+    removed: cleanedContexts.removedCount,
+    remainingSources: cleanedContexts.resources.map((resource) => resource.sourceId),
+  }, { removed: 1, remainingSources: ["ordinary-source"] });
+  const replacedImageData = wanjuanResetTianjiPortraitBindingForImage({
+    ...portraitARevision1.data,
+    tianjiPortraitBindingRevision: 4,
+  }, "https://media.example.invalid/ordinary.jpg");
+  check("image replacement clears source identity and advances portrait revision", {
+    sourceOrigin: replacedImageData.sourceOrigin,
+    asset: replacedImageData.tianjiPortraitAssetId || null,
+    revision: wanjuanTianjiPortraitBindingRevision(replacedImageData),
+    nextRevision: wanjuanNextTianjiPortraitBindingRevision(replacedImageData),
+  }, { sourceOrigin: "generated", asset: null, revision: 5, nextRevision: 6 });
   const manualGenerationRequest = wanjuanBuildTianjiGenerationRequest({
     mode: "reference-media",
     common: { prompt: "mock" },
@@ -1571,6 +1757,24 @@ async function run() {
   }, Buffer.from(capturedTianjiFormBody));
   check("main process sees the manual reviewed portrait as asset=1/http=0", guardedProfile.media.images, { count: 1, asset: 1, http: 0, other: 0 });
   validateTianjiGenerationRequest(guardedProfile);
+  const anonymousResidualProfile = inspectTianjiGenerationRequest({
+    url: capturedTianjiRequest.url,
+    headers: capturedTianjiRequest.headers,
+    tianjiGenerationProfile: { reviewedPortraitCount: 1, reviewedPortraitResidualCount: 1, portraitConflictCount: 0 },
+  }, Buffer.from(capturedTianjiFormBody));
+  check("main request profile carries only anonymous portrait residual/conflict counts", {
+    residuals: anonymousResidualProfile.reviewedPortraitResidualCount,
+    conflicts: anonymousResidualProfile.portraitConflictCount,
+  }, { residuals: 1, conflicts: 0 });
+  let guardedConflictMessage = "";
+  try {
+    validateTianjiGenerationRequest(inspectTianjiGenerationRequest({
+      url: capturedTianjiRequest.url,
+      headers: capturedTianjiRequest.headers,
+      tianjiGenerationProfile: { reviewedPortraitCount: 1, portraitConflictCount: 1 },
+    }, Buffer.from(capturedTianjiFormBody)));
+  } catch (error) { guardedConflictMessage = String(error?.message || error); }
+  check("main process fails closed on an anonymous portrait snapshot conflict", guardedConflictMessage, "天玑人像绑定状态存在冲突，已阻止提交");
   let mixedPortraitPreviewMessage = "";
   const mixedPortraitPreviewProfile = inspectTianjiGenerationRequest({
     url: "https://mock.example.invalid/api/cut/model/coze-seedance-video-special",

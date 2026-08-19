@@ -69,6 +69,8 @@ interface TianjiRequestOptions {
   encoding?: `json` | `form`;
   reviewedPortraitCount?: number;
   ordinaryImageCount?: number;
+  reviewedPortraitResidualCount?: number;
+  portraitConflictCount?: number;
   reviewedPortraitPreviewUrls?: string[];
   enterpriseRequestKind?: `submit` | `poll` | `request`;
 }
@@ -83,6 +85,8 @@ interface RunTianjiSeedanceVideoOptions {
   imageRefs?: any[];
   portraitAssetIds?: string[];
   reviewedPortraitClaimCount?: number;
+  reviewedPortraitResidualCount?: number;
+  portraitConflictCount?: number;
   reviewedPortraitPreviewUrls?: string[];
   videoRefs?: any[];
   audioRefs?: any[];
@@ -138,6 +142,8 @@ export const wanjuanBuildTianjiGenerationRequest = ({
   imageUrls = [],
   portraitAssetIds = [],
   reviewedPortraitClaimCount = 0,
+  reviewedPortraitResidualCount = 0,
+  portraitConflictCount = 0,
   videoUrls = [],
   audioUrls = [],
 }: {
@@ -146,6 +152,8 @@ export const wanjuanBuildTianjiGenerationRequest = ({
   imageUrls?: string[];
   portraitAssetIds?: string[];
   reviewedPortraitClaimCount?: number;
+  reviewedPortraitResidualCount?: number;
+  portraitConflictCount?: number;
   videoUrls?: string[];
   audioUrls?: string[];
 }): { endpoint: string; payload: Record<string, any>; generationMode: TianjiSeedanceGenerationMode; encoding: `form` } => {
@@ -157,6 +165,10 @@ export const wanjuanBuildTianjiGenerationRequest = ({
     throw Error(`天玑普通图片通道只允许 HTTP(S) 素材，审核人像必须使用独立素材 ID`);
   if (reviewedPortraitClaimCount > normalizedPortraitAssetIds.length)
     throw Error(`天玑已审核人像素材 ID 在生成前丢失，已阻止使用预览图片替代`);
+  if (portraitConflictCount > 0)
+    throw Error(`天玑人像绑定正在同步，请稍后重试/刷新`);
+  if (!Number.isFinite(Number(reviewedPortraitResidualCount)) || Number(reviewedPortraitResidualCount) < 0)
+    throw Error(`天玑人像引用残留计数无效`);
   if (generationMode !== `reference-media` && normalizedPortraitAssetIds.length)
     throw Error(`天玑已审核人像仅支持参考素材生视频模式`);
   const payload = { ...common };
@@ -499,6 +511,8 @@ export const wanjuanTianjiRequest = async (
     encoding = `json`,
     reviewedPortraitCount = 0,
     ordinaryImageCount = 0,
+    reviewedPortraitResidualCount = 0,
+    portraitConflictCount = 0,
     reviewedPortraitPreviewUrls = [],
     enterpriseRequestKind,
   }: TianjiRequestOptions = {},
@@ -547,6 +561,8 @@ export const wanjuanTianjiRequest = async (
           ? {
               reviewedPortraitCount: Math.max(0, Math.floor(Number(reviewedPortraitCount || 0))),
               ordinaryImageCount: Math.max(0, Math.floor(Number(ordinaryImageCount || 0))),
+              reviewedPortraitResidualCount: Math.max(0, Math.floor(Number(reviewedPortraitResidualCount || 0))),
+              portraitConflictCount: Math.max(0, Math.floor(Number(portraitConflictCount || 0))),
               reviewedPortraitPreviewUrls: reviewedPortraitPreviewUrls
                 .map((value) => String(value || ``).trim())
                 .filter((value) => /^https?:\/\//i.test(value)),
@@ -950,6 +966,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     imageUrls,
     portraitAssetIds,
     reviewedPortraitClaimCount: Number(options.reviewedPortraitClaimCount || 0),
+    reviewedPortraitResidualCount: Number(options.reviewedPortraitResidualCount || 0),
+    portraitConflictCount: Number(options.portraitConflictCount || 0),
     videoUrls,
     audioUrls,
   });
@@ -970,6 +988,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
     generationMode,
     imageCount: imageUrls.length + portraitAssetIds.length,
     reviewedPortraitCount: portraitAssetIds.length,
+    reviewedPortraitResidualCount: Math.max(0, Math.floor(Number(options.reviewedPortraitResidualCount || 0))),
+    portraitConflictCount: Math.max(0, Math.floor(Number(options.portraitConflictCount || 0))),
     videoCount: videoUrls.length,
     audioCount: audioUrls.length,
     imageSchemes: referenceSchemeCounts([
@@ -987,6 +1007,8 @@ export async function wanjuanRunTianjiSeedanceVideo(options: RunTianjiSeedanceVi
       enterpriseRequestKind: `submit`,
       reviewedPortraitCount: Number(options.reviewedPortraitClaimCount || 0),
       ordinaryImageCount: imageUrls.length,
+      reviewedPortraitResidualCount: Number(options.reviewedPortraitResidualCount || 0),
+      portraitConflictCount: Number(options.portraitConflictCount || 0),
       reviewedPortraitPreviewUrls: options.reviewedPortraitPreviewUrls || [],
       signal: abortController.signal,
     }),

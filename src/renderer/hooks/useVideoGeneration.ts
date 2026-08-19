@@ -6,8 +6,8 @@ import { useCallback } from "react";
 import type { ApiBindings, ApiConfig, ProtocolBindings, ProtocolRegistry, Ref, SetAny, SetState, Toast, WjEdge, WjNode } from "../lib/app-types";
 import { buildApiUrl, extractVideoTaskErrorHelper, resolveModelApiBindingIdHelper, resolveModelProtocolBindingHelper } from "../lib/model-binding";
 import { mediaUrlToDataUrl, wanjuanCollectNodeReferenceMedia, wanjuanNormalizeReferenceMediaUrl } from "../lib/reference-media";
-import { wanjuanHasTianjiPortraitClaim, wanjuanPreferCurrentCanvasNodes, wanjuanRecoverTianjiPortraitNodeData } from "../lib/tianji-portrait";
-import { wanjuanCollectTianjiManualPortraitInputs, wanjuanExcludeTianjiPortraitPreviews } from "../lib/tianji-manual-reference";
+import { WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR, wanjuanHasTianjiPortraitClaim, wanjuanRecoverTianjiPortraitNodeData, wanjuanResolveTianjiGenerationCanvasSnapshot } from "../lib/tianji-portrait";
+import { wanjuanCollectTianjiManualPortraitInputs, wanjuanFilterTianjiPortraitPreviews } from "../lib/tianji-manual-reference";
 import { normalizeVideoAspectRatioValue, normalizeVideoSizeValue } from "../lib/video-aspect-ratio";
 import { safeStringifyRequestForLog, serializeErrorPreview } from "../lib/log-utils";
 import { wanjuanClearProjectAssetBindingsFromData, wanjuanResourceKind } from "../lib/resource";
@@ -117,11 +117,15 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	            .map((item) => item.trim())
 	            .filter(Boolean)[0] || `grok-video-4.2`,
 		            modelName = normalizeVideoModelName(WanJuanGetPreferredModel(videoModel, modelName2 || ``) || modelName2 || videoModel),
-		            currentCanvasNodes = () => {
-		              const renderedNodes = Array.from(globalThis.__wanjuanRenderRuntime?.renderedNodes?.values?.() || []);
-		              return wanjuanPreferCurrentCanvasNodes(renderedNodes, wanjuanPreferCurrentCanvasNodes(nodesRef.current, getNodes()));
-		            },
-		            seedanceSourceNode = currentCanvasNodes().find((node) => node.id === nodeId);
+		            flowNodesSnapshot = [...(getNodes() || [])],
+		            flowEdgesSnapshot = [...(getEdges() || [])],
+		            renderedNodesSnapshot = Array.from(globalThis.__wanjuanRenderRuntime?.renderedNodes?.values?.() || []),
+		            generationCanvasSnapshot = wanjuanResolveTianjiGenerationCanvasSnapshot({
+		              nodes: flowNodesSnapshot,
+		              renderedNodes: renderedNodesSnapshot,
+		              refNodes: [...(nodesRef.current || [])],
+		            }),
+		            seedanceSourceNode = generationCanvasSnapshot.nodes.find((node) => node.id === nodeId);
 	          if (seedanceSourceNode?.type === `seedanceNode` && seedanceSourceNode?.data?.seedanceMode !== `tianji`) {
 	            let seedanceOfficialModelText = seedanceSourceNode?.data?.seedanceModel || seedanceSourceNode?.data?.videoModel || ``,
 	              seedanceOfficialModel = WanJuanGetPreferredModel(
@@ -339,9 +343,16 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               } : edge)),
             ));
           try {
+	          if (seedanceSourceNode?.data?.seedanceMode === `tianji` && generationCanvasSnapshot.portraitConflictCount > 0) {
+	            console.warn(`Tianji portrait generation snapshot blocked`, {
+	              portraitConflictCount: generationCanvasSnapshot.portraitConflictCount,
+	              stalePortraitSnapshotCount: generationCanvasSnapshot.stalePortraitSnapshotCount,
+	            });
+	            throw Error(WANJUAN_TIANJI_PORTRAIT_SYNC_ERROR);
+	          }
             showToast(`正在提交视频生成任务...`);
-	            let edgesList = getEdges(),
-	              nodes2 = currentCanvasNodes(),
+	            let edgesList = flowEdgesSnapshot,
+	              nodes2 = generationCanvasSnapshot.nodes,
               incomingEdges = edgesList.filter((edge) => edge.target === nodeId),
               imageReferences = [],
               promptParts = [],
@@ -598,14 +609,18 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
               });
 	            // Take the snapshots only after connected/context resources have all been collected.
 	            // Otherwise resources added from the context picker are omitted from Tianji payloads.
-	            let seedanceConnectedImageRefs = wanjuanExcludeTianjiPortraitPreviews(
+	            let filteredTianjiImageReferences = wanjuanFilterTianjiPortraitPreviews(
 	                imageReferences,
 	                tianjiManualPortraitInputs?.portraitPreviewUrls,
 	                tianjiManualPortraitInputs?.claimedSourceNodeIds,
 	              ),
+	              seedanceConnectedImageRefs = filteredTianjiImageReferences.references,
 	              seedanceConnectedVideoRefs = [...videoReferences],
 	              seedanceConnectedAudioRefs = [...seedanceAudioRefs],
-	              seedanceConnectedPortraitAssetIds = [...(tianjiManualPortraitInputs?.portraitAssetIds || [])];
+	              seedanceConnectedPortraitAssetIds = [...(tianjiManualPortraitInputs?.portraitAssetIds || [])],
+	              seedanceReviewedPortraitResidualCount =
+	                Number(tianjiManualPortraitInputs?.reviewedPortraitResidualCount || 0) +
+	                Number(filteredTianjiImageReferences.reviewedPortraitResidualCount || 0);
             if (seedanceSourceNode?.type === `tongyiWanxiangNode`) {
               let tongyiMode =
                   seedanceSourceNode?.data?.tongyiWanxiangMode || `text-to-video`,
@@ -1089,6 +1104,8 @@ export function useVideoGeneration(deps: UseVideoGenerationDeps) {
 	                  imageRefs: seedanceConnectedImageRefs,
 	                  portraitAssetIds: seedanceConnectedPortraitAssetIds,
 	                  reviewedPortraitClaimCount: tianjiManualPortraitInputs?.reviewedPortraitClaimCount || 0,
+	                  reviewedPortraitResidualCount: seedanceReviewedPortraitResidualCount,
+	                  portraitConflictCount: generationCanvasSnapshot.portraitConflictCount,
 	                  reviewedPortraitPreviewUrls: [...(tianjiManualPortraitInputs?.portraitPreviewUrls || [])],
                   videoRefs: seedanceConnectedVideoRefs,
                   audioRefs: seedanceConnectedAudioRefs,
